@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useDeferredValue, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { templateApi } from '../api/templateApi';
 import { customizationApi } from '../api/customizationApi';
@@ -27,6 +27,32 @@ export default function CustomizerPage() {
     isPublished: true,
   });
   const [currentCustomizationId, setCurrentCustomizationId] = useState(customizationId || null);
+
+  // Smooth typing & live visual feedback highlight
+  const deferredConfig = useDeferredValue(config);
+  const [activeEditSection, setActiveEditSection] = useState(null);
+  const [editFeedbackKey, setEditFeedbackKey] = useState(0);
+  const highlightTimeoutRef = useRef(null);
+
+  const handleSectionEdit = useCallback((sectionKey) => {
+    setActiveEditSection(sectionKey);
+    setEditFeedbackKey((k) => k + 1);
+
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+    highlightTimeoutRef.current = setTimeout(() => {
+      setActiveEditSection(null);
+    }, 900);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -198,6 +224,7 @@ export default function CustomizerPage() {
           onChange={setConfig}
           metadata={metadata}
           onMetadataChange={setMetadata}
+          onSectionEdit={handleSectionEdit}
         />
 
         {/* Right: Live Interactive Canvas */}
@@ -205,9 +232,11 @@ export default function CustomizerPage() {
           {viewport === 'desktop' ? (
             <div className="w-full h-full rounded-2xl overflow-y-auto shadow-2xl bg-white no-scrollbar">
               <LandingPageRenderer
-                config={config}
+                config={deferredConfig}
                 customizationId={currentCustomizationId}
                 isPreview={true}
+                activeEditSection={activeEditSection}
+                editFeedbackKey={editFeedbackKey}
               />
             </div>
           ) : (
@@ -217,9 +246,11 @@ export default function CustomizerPage() {
                 <div className="w-20 h-3 bg-gray-900 rounded-full" />
               </div>
               <LandingPageRenderer
-                config={config}
+                config={deferredConfig}
                 customizationId={currentCustomizationId}
                 isPreview={true}
+                activeEditSection={activeEditSection}
+                editFeedbackKey={editFeedbackKey}
               />
             </div>
           )}

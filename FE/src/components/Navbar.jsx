@@ -104,7 +104,7 @@ export default function Navbar() {
   const displayedMenus = menus.length > 0 ? menus : fallbackMenus;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all">
+    <header className="sticky top-0 z-40 backdrop-blur-md bg-white/80 border-b border-gray-100/60 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
@@ -373,9 +373,44 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Backdrop Overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-3 pb-6 space-y-2 shadow-xl max-h-[85vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-gray-950/50 backdrop-blur-sm z-50 md:hidden transition-opacity duration-300"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Slide-in Drawer */}
+      <div
+        className={`fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-white z-50 shadow-2xl flex flex-col justify-between transition-transform duration-300 ease-out md:hidden ${
+          mobileMenuOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
+        }`}
+      >
+        {/* Drawer Header */}
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <Link
+            to="/"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center space-x-2"
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <span className="font-extrabold text-base tracking-tight text-gray-900">
+              Motion<span className="text-rose-600">Sites</span>
+            </span>
+          </Link>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Drawer Menu Items */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 no-scrollbar">
           {displayedMenus.map((menu) => {
             const IconComp = resolveIcon(menu.icon, Sparkles);
             const hasChildren = menu.subMenus && menu.subMenus.length > 0;
@@ -531,40 +566,41 @@ export default function Navbar() {
               <span>Trang Quản Trị</span>
             </Link>
           )}
-
-          <div className="pt-3 border-t border-gray-100">
-            {isAuthenticated ? (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleLogout();
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Đăng xuất ({user?.fullName})</span>
-              </button>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <Link
-                  to="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-center px-4 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-700"
-                >
-                  Đăng nhập
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-center px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white shadow-md shadow-rose-500/20"
-                >
-                  Đăng ký
-                </Link>
-              </div>
-            )}
-          </div>
         </div>
-      )}
+
+        {/* Drawer Footer / Auth */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50/70">
+          {isAuthenticated ? (
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleLogout();
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Đăng xuất ({user?.fullName})</span>
+            </button>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-center px-4 py-2 rounded-xl text-xs font-bold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+              >
+                Đăng nhập
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-center px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white shadow-md shadow-rose-500/20 hover:bg-rose-700"
+              >
+                Đăng ký
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
     </header>
   );
 }

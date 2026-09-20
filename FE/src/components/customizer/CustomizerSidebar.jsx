@@ -11,11 +11,12 @@ import {
   removePersonHelper 
 } from '../../utils/animationConstants';
 
-export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange }) => {
+export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange, onSectionEdit }) => {
   const [activeTab, setActiveTab] = useState('theme');
 
   // Deep update helper
   const updateConfig = (section, field, value) => {
+    onSectionEdit?.(section);
     onChange({
       ...config,
       [section]: {
@@ -26,6 +27,7 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
   };
 
   const updateNestedConfig = (section, subSection, field, value) => {
+    onSectionEdit?.(section);
     onChange({
       ...config,
       [section]: {
@@ -42,6 +44,7 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
   const persons = extractPersonsList(config?.coupleOrCelebrant);
 
   const handlePersonFieldChange = (personKey, field, value) => {
+    onSectionEdit?.('couple');
     onChange({
       ...config,
       coupleOrCelebrant: {
@@ -55,6 +58,7 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
   };
 
   const handleAddPerson = () => {
+    onSectionEdit?.('couple');
     const updatedCouple = addPersonHelper(config.coupleOrCelebrant);
     onChange({
       ...config,
@@ -64,6 +68,7 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
 
   const handleRemovePerson = (personKey) => {
     if (persons.length <= 1) return;
+    onSectionEdit?.('couple');
     const updatedCouple = removePersonHelper(config.coupleOrCelebrant, personKey);
     onChange({
       ...config,
@@ -73,12 +78,14 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
 
   // Timeline helpers
   const handleTimelineChange = (index, field, value) => {
+    onSectionEdit?.('timeline');
     const updated = [...(config.timeline || [])];
     updated[index] = { ...updated[index], [field]: value };
     onChange({ ...config, timeline: updated });
   };
 
   const addTimelineItem = () => {
+    onSectionEdit?.('timeline');
     const newItem = {
       id: Date.now().toString(),
       time: '19:00',
@@ -91,18 +98,21 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
   };
 
   const removeTimelineItem = (index) => {
+    onSectionEdit?.('timeline');
     const updated = (config.timeline || []).filter((_, idx) => idx !== index);
     onChange({ ...config, timeline: updated });
   };
 
   // Gallery helpers
   const handleGalleryChange = (index, field, value) => {
+    onSectionEdit?.('gallery');
     const updated = [...(config.gallery || [])];
     updated[index] = { ...updated[index], [field]: value };
     onChange({ ...config, gallery: updated });
   };
 
   const addGalleryItem = () => {
+    onSectionEdit?.('gallery');
     const newItem = {
       id: Date.now().toString(),
       url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80',
@@ -113,6 +123,7 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
   };
 
   const removeGalleryItem = (index) => {
+    onSectionEdit?.('gallery');
     const updated = (config.gallery || []).filter((_, idx) => idx !== index);
     onChange({ ...config, gallery: updated });
   };
@@ -121,12 +132,16 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
   const extraSections = config?.extraSections || [];
 
   const handleExtraSectionChange = (index, field, value) => {
+    const secId = extraSections[index]?.id || 'extra';
+    onSectionEdit?.(secId);
     const updated = [...extraSections];
     updated[index] = { ...updated[index], [field]: value };
     onChange({ ...config, extraSections: updated });
   };
 
   const handleExtraSectionNestedChange = (index, parentField, field, value) => {
+    const secId = extraSections[index]?.id || 'extra';
+    onSectionEdit?.(secId);
     const updated = [...extraSections];
     updated[index] = {
       ...updated[index],
@@ -140,6 +155,7 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
 
   const addExtraSection = (type) => {
     const newSectionId = `extra-${Date.now()}`;
+    onSectionEdit?.(newSectionId);
     let newSection = {
       id: newSectionId,
       type,
@@ -197,11 +213,14 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
   };
 
   const removeExtraSection = (index) => {
+    onSectionEdit?.('extra');
     const updated = extraSections.filter((_, idx) => idx !== index);
     onChange({ ...config, extraSections: updated });
   };
 
   const addQaItem = (sectionIndex) => {
+    const secId = extraSections[sectionIndex]?.id || 'extra';
+    onSectionEdit?.(secId);
     const updated = [...extraSections];
     const items = updated[sectionIndex].items || [];
     updated[sectionIndex].items = [
@@ -212,6 +231,8 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
   };
 
   const removeQaItem = (sectionIndex, itemIndex) => {
+    const secId = extraSections[sectionIndex]?.id || 'extra';
+    onSectionEdit?.(secId);
     const updated = [...extraSections];
     const items = (updated[sectionIndex].items || []).filter((_, idx) => idx !== itemIndex);
     updated[sectionIndex].items = items;
@@ -219,6 +240,8 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
   };
 
   const updateQaItem = (sectionIndex, itemIndex, field, value) => {
+    const secId = extraSections[sectionIndex]?.id || 'extra';
+    onSectionEdit?.(secId);
     const updated = [...extraSections];
     const items = [...(updated[sectionIndex].items || [])];
     items[itemIndex] = { ...items[itemIndex], [field]: value };
@@ -748,7 +771,10 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
             <AnimationSelector
               label="Hiệu ứng toàn bộ lịch trình"
               value={config.timelineAnimation || 'fade-up'}
-              onChange={(val) => onChange({ ...config, timelineAnimation: val })}
+              onChange={(val) => {
+                onSectionEdit?.('timeline');
+                onChange({ ...config, timelineAnimation: val });
+              }}
             />
 
             <div className="space-y-3">
@@ -825,7 +851,10 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
             <AnimationSelector
               label="Hiệu ứng toàn bộ album"
               value={config.galleryAnimation || 'fade-up'}
-              onChange={(val) => onChange({ ...config, galleryAnimation: val })}
+              onChange={(val) => {
+                onSectionEdit?.('gallery');
+                onChange({ ...config, galleryAnimation: val });
+              }}
             />
 
             <div className="space-y-3">

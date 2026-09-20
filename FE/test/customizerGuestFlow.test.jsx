@@ -229,4 +229,80 @@ describe('Guest Customization Flow (Happy Paths & Error Handling)', () => {
       'Đám Cưới Hoàng Gia - Thiệp Mời'
     );
   });
+
+  describe('Failure Paths & Access Control (Kiểm soát quyền & Lỗi nghiệp vụ)', () => {
+    it('handles 403 Forbidden when Guest tries to update another user customization', async () => {
+      const unauthorizedCustomizationId = 'cust-registered-user-111';
+      const mockCustomization = {
+        id: unauthorizedCustomizationId,
+        templateId: 'tpl-wedding-01',
+        title: 'Thiệp Của Người Khác',
+        slug: 'other-user-slug',
+        isPublished: true,
+        configJson: JSON.stringify({
+          hero: { title: 'Thiệp Của Người Khác' },
+        }),
+      };
+
+      customizationApi.getCustomizationById.mockResolvedValueOnce(mockCustomization);
+      // Simulate backend rejecting with 403 Forbidden
+      customizationApi.updateCustomization.mockRejectedValueOnce(
+        new Error('Bạn không có quyền chỉnh sửa thiệp này (403 Forbidden)')
+      );
+
+      renderCustomizer(`/customize/tpl-wedding-01/${unauthorizedCustomizationId}`);
+
+      await waitFor(() => {
+        expect(screen.getByText('Thiệp Của Người Khác')).toBeInTheDocument();
+      });
+
+      const saveBtn = screen.getByRole('button', { name: /^lưu$/i });
+      fireEvent.click(saveBtn);
+
+      await waitFor(() => {
+        expect(window.alert).toHaveBeenCalledWith(
+          expect.stringContaining('403 Forbidden')
+        );
+      });
+
+      // Ensure local draft is still preserved for user safety
+      const draft = localStorage.getItem('guest_draft_tpl-wedding-01');
+      expect(draft).not.toBeNull();
+    });
+
+    it('handles DuplicateSlug validation error when saving customization', async () => {
+      customizationApi.saveCustomization.mockRejectedValueOnce(
+        new Error('Đường dẫn tùy biến (Slug) đã tồn tại, vui lòng chọn đường dẫn khác')
+      );
+
+      renderCustomizer('/customize/tpl-wedding-01');
+
+      await waitFor(() => {
+        expect(screen.getByText('Đám Cưới Hoàng Gia - Thiệp Mời')).toBeInTheDocument();
+      });
+
+      const saveBtn = screen.getByRole('button', { name: /^lưu$/i });
+      fireEvent.click(saveBtn);
+
+      await waitFor(() => {
+        expect(window.alert).toHaveBeenCalledWith(
+          expect.stringContaining('Đường dẫn tùy biến (Slug) đã tồn tại')
+        );
+      });
+    });
+
+    it('handles 404 NotFound error gracefully by falling back to default template without crashing', async () => {
+      customizationApi.getCustomizationById.mockRejectedValueOnce(
+        new Error('Customization not found (404)')
+      );
+
+      renderCustomizer('/customize/tpl-wedding-01/non-existent-id');
+
+      // Should not crash, and should load default wedding config
+      await waitFor(() => {
+        expect(screen.getByText('Thiệp Mời Của Tôi')).toBeInTheDocument();
+      });
+    });
+  });
 });
+
