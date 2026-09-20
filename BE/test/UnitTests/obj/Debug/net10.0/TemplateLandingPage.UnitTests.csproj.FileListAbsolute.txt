@@ -124,3 +124,15 @@ e:\Code\TemplateLandingPage\BE\test\UnitTests\obj\Debug\net10.0\refint\TemplateL
 e:\Code\TemplateLandingPage\BE\test\UnitTests\obj\Debug\net10.0\TemplateLandingPage.UnitTests.pdb
 e:\Code\TemplateLandingPage\BE\test\UnitTests\obj\Debug\net10.0\TemplateLandingPage.UnitTests.genruntimeconfig.cache
 e:\Code\TemplateLandingPage\BE\test\UnitTests\obj\Debug\net10.0\ref\TemplateLandingPage.UnitTests.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\Microsoft.Extensions.Configuration.Abstractions.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\Microsoft.Extensions.Configuration.Binder.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\Microsoft.Extensions.Options.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\Microsoft.Extensions.Options.ConfigurationExtensions.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\Microsoft.Extensions.Primitives.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\Microsoft.IdentityModel.Abstractions.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\Microsoft.IdentityModel.JsonWebTokens.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\Microsoft.IdentityModel.Logging.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\Microsoft.IdentityModel.Tokens.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.Infrastructure.dll
+e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.Infrastructure.pdb

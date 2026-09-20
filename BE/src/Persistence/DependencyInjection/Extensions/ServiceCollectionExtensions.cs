@@ -25,6 +25,11 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ITemplateRepository, TemplateRepository>();
+        services.AddScoped<ICustomizationRepository, CustomizationRepository>();
+        services.AddScoped<IRsvpRepository, RsvpRepository>();
+        services.AddScoped<IGuestbookRepository, GuestbookRepository>();
 
         return services;
     }

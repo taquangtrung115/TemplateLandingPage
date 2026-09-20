@@ -278,6 +278,115 @@
         }
       }
     },
+    "e:\\Code\\TemplateLandingPage\\BE\\src\\Infrastructure\\TemplateLandingPage.Infrastructure.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "e:\\Code\\TemplateLandingPage\\BE\\src\\Infrastructure\\TemplateLandingPage.Infrastructure.csproj",
+        "projectName": "TemplateLandingPage.Infrastructure",
+        "projectPath": "e:\\Code\\TemplateLandingPage\\BE\\src\\Infrastructure\\TemplateLandingPage.Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\trung\\.nuget\\packages\\",
+        "outputPath": "e:\\Code\\TemplateLandingPage\\BE\\src\\Infrastructure\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "E:\\Visual2\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\trung\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net10.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net10.0": {
+            "framework": "net10.0",
+            "targetAlias": "net10.0",
+            "projectReferences": {
+              "e:\\Code\\TemplateLandingPage\\BE\\src\\Application\\TemplateLandingPage.Application.csproj": {
+                "projectPath": "e:\\Code\\TemplateLandingPage\\BE\\src\\Application\\TemplateLandingPage.Application.csproj"
+              },
+              "e:\\Code\\TemplateLandingPage\\BE\\src\\Contract\\TemplateLandingPage.Contract.csproj": {
+                "projectPath": "e:\\Code\\TemplateLandingPage\\BE\\src\\Contract\\TemplateLandingPage.Contract.csproj"
+              },
+              "e:\\Code\\TemplateLandingPage\\BE\\src\\Domain\\TemplateLandingPage.Domain.csproj": {
+                "projectPath": "e:\\Code\\TemplateLandingPage\\BE\\src\\Domain\\TemplateLandingPage.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "all"
+        },
+        "SdkAnalysisLevel": "10.0.400"
+      },
+      "frameworks": {
+        "net10.0": {
+          "framework": "net10.0",
+          "targetAlias": "net10.0",
+          "dependencies": {
+            "Microsoft.Extensions.Configuration.Abstractions": {
+              "target": "Package",
+              "version": "[9.0.2, )"
+            },
+            "Microsoft.Extensions.Options.ConfigurationExtensions": {
+              "target": "Package",
+              "version": "[9.0.2, )"
+            },
+            "Microsoft.IdentityModel.Tokens": {
+              "target": "Package",
+              "version": "[8.5.0, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[8.5.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[10.0.12, 10.0.12]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[10.0.12, 10.0.12]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[10.0.12, 10.0.12]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Users\\trung\\dotnet10_env\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
     "e:\\Code\\TemplateLandingPage\\BE\\test\\UnitTests\\TemplateLandingPage.UnitTests.csproj": {
       "version": "1.0.0",
       "restore": {
@@ -315,6 +424,9 @@
               },
               "e:\\Code\\TemplateLandingPage\\BE\\src\\Domain\\TemplateLandingPage.Domain.csproj": {
                 "projectPath": "e:\\Code\\TemplateLandingPage\\BE\\src\\Domain\\TemplateLandingPage.Domain.csproj"
+              },
+              "e:\\Code\\TemplateLandingPage\\BE\\src\\Infrastructure\\TemplateLandingPage.Infrastructure.csproj": {
+                "projectPath": "e:\\Code\\TemplateLandingPage\\BE\\src\\Infrastructure\\TemplateLandingPage.Infrastructure.csproj"
               }
             }
           }

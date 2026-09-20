@@ -12,6 +12,11 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
     }
 
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Template> Templates => Set<Template>();
+    public DbSet<UserCustomization> UserCustomizations => Set<UserCustomization>();
+    public DbSet<RsvpEntry> RsvpEntries => Set<RsvpEntry>();
+    public DbSet<GuestbookEntry> GuestbookEntries => Set<GuestbookEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

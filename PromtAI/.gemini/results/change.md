@@ -1,159 +1,143 @@
-# BÀN GIAO KẾT QUẢ TRIỂN KHAI (CHANGE LOG)
+# BÁO CÁO THAY ĐỔI VÀ HIỆN THỰC HÓA MÃ NGUỒN (CHẶNG 2: CODER)
 
-## 1. Danh sách file đã tạo mới & chỉnh sửa
-
-### Backend (.NET 10 Clean Architecture + CQRS + MediatR)
-- `BE/TemplateLandingPage.sln`
-- `BE/src/Domain/TemplateLandingPage.Domain.csproj`
-- `BE/src/Domain/Abstractions/Entity.cs`
-- `BE/src/Domain/Abstractions/IAuditableEntity.cs`
-- `BE/src/Domain/Abstractions/ISoftDelete.cs`
-- `BE/src/Domain/Abstractions/IDomainEvent.cs`
-- `BE/src/Domain/Abstractions/AggregateRoot.cs`
-- `BE/src/Domain/Abstractions/Repositories/IRepositoryBase.cs`
-- `BE/src/Domain/Abstractions/Repositories/IUnitOfWork.cs`
-- `BE/src/Domain/Entities/Product.cs` *(Đã cập nhật kiểm tra price <= 0)*
-- `BE/src/Domain/Repositories/IProductRepository.cs`
-- `BE/src/Domain/Exceptions/DomainException.cs`
-- `BE/src/Contract/TemplateLandingPage.Contract.csproj`
-- `BE/src/Contract/Abstractions/Shared/Error.cs`
-- `BE/src/Contract/Abstractions/Shared/Result.cs`
-- `BE/src/Contract/Abstractions/Shared/IValidationResult.cs`
-- `BE/src/Contract/Abstractions/Shared/ValidationResult.cs`
-- `BE/src/Contract/Abstractions/Message/ICommand.cs`
-- `BE/src/Contract/Abstractions/Message/IQuery.cs`
-- `BE/src/Contract/Services/V1/Products/Command.cs`
-- `BE/src/Contract/Services/V1/Products/Query.cs`
-- `BE/src/Contract/Services/V1/Products/Response.cs`
-- `BE/src/Application/TemplateLandingPage.Application.csproj`
-- `BE/src/Application/Abstractions/ICommandHandler.cs`
-- `BE/src/Application/Abstractions/IQueryHandler.cs`
-- `BE/src/Application/Behaviors/ValidationPipelineBehavior.cs` *(Đã sửa lỗi ép kiểu CS0029 & dùng TResponse trực tiếp)*
-- `BE/src/Application/Behaviors/LoggingPipelineBehavior.cs`
-- `BE/src/Application/Exceptions/ValidationException.cs`
-- `BE/src/Application/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`
-- `BE/src/Application/UseCases/V1/Products/Commands/CreateProductCommandHandler.cs`
-- `BE/src/Application/UseCases/V1/Products/Commands/CreateProductCommandValidator.cs`
-- `BE/src/Application/UseCases/V1/Products/Commands/UpdateProductCommandHandler.cs`
-- `BE/src/Application/UseCases/V1/Products/Commands/UpdateProductCommandValidator.cs`
-- `BE/src/Application/UseCases/V1/Products/Commands/DeleteProductCommandHandler.cs`
-- `BE/src/Application/UseCases/V1/Products/Queries/GetProductsQueryHandler.cs`
-- `BE/src/Application/UseCases/V1/Products/Queries/GetProductByIdQueryHandler.cs`
-- `BE/src/Persistence/TemplateLandingPage.Persistence.csproj`
-- `BE/src/Persistence/Constants/TableNames.cs`
-- `BE/src/Persistence/ApplicationDbContext.cs`
-- `BE/src/Persistence/Configurations/ProductConfiguration.cs`
-- `BE/src/Persistence/Interceptors/AuditableEntityInterceptor.cs`
-- `BE/src/Persistence/Repositories/RepositoryBase.cs`
-- `BE/src/Persistence/Repositories/ProductRepository.cs`
-- `BE/src/Persistence/UnitOfWork.cs`
-- `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`
-- `BE/src/Infrastructure/TemplateLandingPage.Infrastructure.csproj`
-- `BE/src/Infrastructure/Abstractions/IDateTimeProvider.cs`
-- `BE/src/Infrastructure/Services/DateTimeProvider.cs`
-- `BE/src/Infrastructure/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`
-- `BE/src/Presentation/TemplateLandingPage.Presentation.csproj`
-- `BE/src/Presentation/Abstractions/IEndpoint.cs`
-- `BE/src/Presentation/APIs/Products/ProductApi.cs`
-- `BE/src/Presentation/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`
-- `BE/src/API/TemplateLandingPage.API.csproj`
-- `BE/src/API/Program.cs`
-- `BE/src/API/Middlewares/ExceptionHandlingMiddleware.cs`
-- `BE/src/API/appsettings.json`
-- `BE/src/API/appsettings.Development.json`
-- `BE/test/Architecture.Tests/TemplateLandingPage.Architecture.Tests.csproj`
-- `BE/test/Architecture.Tests/ArchitectureTests.cs`
-- `BE/test/UnitTests/TemplateLandingPage.UnitTests.csproj`
-- `BE/test/UnitTests/Application/Products/CreateProductCommandHandlerTests.cs`
-- `BE/test/UnitTests/Application/Products/GetProductsQueryHandlerTests.cs`
-- `BE/test/UnitTests/Domain/ProductTests.cs` *(Đã cập nhật Theory test giá <= 0)*
-
-### Frontend (React 19 + Vite + Tailwind CSS)
-- `FE/package.json`
-- `FE/vite.config.js`
-- `FE/tailwind.config.js`
-- `FE/postcss.config.js`
-- `FE/index.html`
-- `FE/.env.example`
-- `FE/.gitignore`
-- `FE/src/index.css`
-- `FE/src/main.jsx`
-- `FE/src/App.jsx`
-- `FE/src/api/axios.js`
-- `FE/src/api/productApi.js`
-- `FE/src/utils/formatters.js`
-- `FE/src/components/Navbar.jsx`
-- `FE/src/components/Footer.jsx`
-- `FE/src/components/Modal.jsx`
-- `FE/src/components/LoadingSpinner.jsx`
-- `FE/src/hooks/useProducts.js`
-- `FE/src/pages/HomePage.jsx`
-- `FE/src/pages/ProductsPage.jsx`
-- `FE/src/pages/NotFoundPage.jsx`
-- `FE/src/routes/index.jsx`
+## 1. TỔNG QUAN
+Dự án đã được triển khai đầy đủ cả 2 phần Backend (.NET 10 CQRS Clean Architecture + MediatR) và Frontend (React 19 + Vite + Tailwind CSS) đúng theo kế hoạch tại `PromtAI/.gemini/results/plan.md`.
+- **Backend**: Đã biên dịch thành công (`dotnet build`) với 0 cảnh báo, 0 lỗi. Toàn bộ 93 tests (88 Unit Tests + 5 Architecture NetArchTests) đều vượt qua 100% (`Passed: 93/93`).
+- **Frontend**: Đã build thành công (`npm run build`) với Vite 6 và React 19 trong 10.11s, không có bất kỳ lỗi cú pháp hay import nào.
 
 ---
 
-## 2. Mục đích triển khai của từng thành phần
+## 2. DANH SÁCH FILE THAY ĐỔI & TẠO MỚI
 
 ### A. Backend (.NET 10 CQRS Clean Architecture)
-1. **Domain Layer**: Chứa thực thể cốt lõi `Product` (kế thừa `AggregateRoot`, cài đặt `IAuditableEntity`, `ISoftDelete`), repository interfaces (`IProductRepository`, `IRepositoryBase`, `IUnitOfWork`), exception cơ bản và domain events. Độc lập hoàn toàn, không reference bất kỳ project nào.
-2. **Contract Layer**: Định nghĩa Result Pattern (`Result`, `Result<T>`, `ValidationResult`, `Error`), MediatR contracts (`ICommand`, `IQuery`), và DTOs / Messages cho Product (`CreateProductCommand`, `UpdateProductCommand`, `DeleteProductCommand`, `GetProductsQuery`, `GetProductByIdQuery`, `ProductResponse`).
-3. **Application Layer**: Cài đặt các use case handlers, tích hợp `ValidationPipelineBehavior` (FluentValidation) chặn lỗi trước khi vào handler trả về `ValidationResult` (HTTP 400), `LoggingPipelineBehavior` ghi nhật ký, và cấu hình DI tự động.
-4. **Persistence Layer**: Cài đặt `ApplicationDbContext` (hỗ trợ `IUnitOfWork`), `ProductConfiguration` (Fluent API, Global Query Filter soft delete `!IsDeleted`), `AuditableEntityInterceptor` tự động gán `CreatedAtUtc`/`ModifiedAtUtc`, và `ProductRepository` kế thừa `RepositoryBase`.
-5. **Infrastructure Layer**: Cung cấp `DateTimeProvider` phục vụ trừu tượng hóa thời gian hệ thống và các dịch vụ nền tảng bên ngoài.
-6. **Presentation Layer**: Cài đặt Minimal API endpoints thông qua interface `IEndpoint`. Lớp này nhận HTTP request, gửi qua MediatR `ISender` và ánh xạ `Result` thành HTTP response chuẩn (200, 201, 400, 404). Hoàn toàn không truy cập DbContext hay chứa logic nghiệp vụ.
-7. **API Layer**: Composition Root cấu hình Swagger/OpenAPI, CORS policy cho Frontend (`http://localhost:5173`), `ExceptionHandlingMiddleware` bắt lỗi unhandled exception (HTTP 500 RFC 7807), và nạp toàn bộ cấu hình từ các layer.
-8. **Tests**:
-   - `Architecture.Tests`: Kiểm thử quy tắc phân tầng với `NetArchTest` (Domain không phụ thuộc bên ngoài, Presentation không phụ thuộc DbContext, Application Handler tuân thủ quy chuẩn đặt tên).
-   - `UnitTests`: Kiểm thử chức năng với `xUnit`, `Moq`, `FluentAssertions` cho Domain entity `Product` và các Command/Query Handler (`CreateProductCommandHandler`, `GetProductsQueryHandler`).
+
+#### 1. Domain Layer (`BE/src/Domain/`)
+- `BE/src/Domain/Entities/User.cs`: Thực thể User với quản trị Email, PBKDF2 PasswordHash, FullName, Role (`Admin`/`User`), IsActive, Soft Delete.
+- `BE/src/Domain/Entities/Template.cs`: Thực thể Master Template với Category (`Wedding`/`Birthday`), ThumbnailUrl, PreviewUrl, DefaultConfigJson.
+- `BE/src/Domain/Entities/UserCustomization.cs`: Bản lưu tùy biến của người dùng liên kết Template, Slug độc nhất, ConfigJson và cờ IsPublished.
+- `BE/src/Domain/Entities/RsvpEntry.cs`: Thực thể phản hồi tham dự (Tên khách, Email, SĐT, Trạng thái tham dự, Số khách, Ăn kiêng, Lời chúc).
+- `BE/src/Domain/Entities/GuestbookEntry.cs`: Thực thể lời chúc trên sổ lưu bút ảo.
+- `BE/src/Domain/Repositories/IUserRepository.cs`: Repository interface tìm theo Email, kiểm tra trùng Email.
+- `BE/src/Domain/Repositories/ITemplateRepository.cs`: Repository interface tìm theo Slug, kiểm tra trùng Slug.
+- `BE/src/Domain/Repositories/ICustomizationRepository.cs`: Repository interface lấy theo Slug, lấy theo UserId, kiểm tra trùng Slug.
+- `BE/src/Domain/Repositories/IRsvpRepository.cs`: Repository interface lấy danh sách RSVP theo CustomizationId.
+- `BE/src/Domain/Repositories/IGuestbookRepository.cs`: Repository interface lấy danh sách Guestbook theo CustomizationId.
+
+#### 2. Contract Layer (`BE/src/Contract/`)
+- `BE/src/Contract/Services/V1/Auth/AuthCommandsAndQueries.cs`: DTO và Command/Query cho Register, Login, Me, TokenResponse.
+- `BE/src/Contract/Services/V1/Users/UserCommandsAndQueries.cs`: DTO và Command/Query cho quản lý Users (CRUD, phân quyền Admin).
+- `BE/src/Contract/Services/V1/Templates/TemplateCommandsAndQueries.cs`: DTO và Command/Query cho Master Templates.
+- `BE/src/Contract/Services/V1/Customizations/CustomizationCommandsAndQueries.cs`: DTO và Command/Query cho User Customizations.
+- `BE/src/Contract/Services/V1/Interactions/InteractionCommandsAndQueries.cs`: DTO và Command/Query cho RSVP và Guestbook.
+
+#### 3. Application Layer (`BE/src/Application/`)
+- `BE/src/Application/Abstractions/IPasswordHasher.cs` & `IJwtTokenGenerator.cs`: Giao diện trừu tượng bảo mật.
+- `BE/src/Application/UseCases/V1/Auth/`: Các Command Handler và FluentValidation Validators cho Đăng ký, Đăng nhập, Lấy profile.
+- `BE/src/Application/UseCases/V1/Users/`: Các Handler và Validator cho CRUD Người dùng và phân quyền.
+- `BE/src/Application/UseCases/V1/Templates/`: Các Handler và Validator cho CRUD Master Templates, lấy theo Slug/Id.
+- `BE/src/Application/UseCases/V1/Customizations/`: Các Handler và Validator cho Tạo/Sửa/Xóa tùy biến, lấy theo Slug cho khách xem public.
+- `BE/src/Application/UseCases/V1/Interactions/`: Các Handler và Validator cho Gửi/Lấy danh sách RSVP và Guestbook.
+
+#### 4. Infrastructure Layer (`BE/src/Infrastructure/`)
+- `BE/src/Infrastructure/TemplateLandingPage.Infrastructure.csproj`: Bổ sung `Microsoft.IdentityModel.Tokens`, `System.IdentityModel.Tokens.Jwt`, `Microsoft.Extensions.Configuration.Abstractions`, `Microsoft.Extensions.Options.ConfigurationExtensions`.
+- `BE/src/Infrastructure/Authentication/JwtSettings.cs`: POCO cấu hình SecretKey, Issuer, Audience, Expiration.
+- `BE/src/Infrastructure/Services/PasswordHasher.cs`: Băm mật khẩu bằng PBKDF2 SHA-512 với cryptographic salt chuẩn RFC 2898. Bọc `Convert.FromBase64String` trong khối `try ... catch (FormatException)` để trả về `false` một cách an toàn khi chuỗi hash chứa ký tự không hợp lệ, không gây gián đoạn hệ thống.
+- `BE/src/Infrastructure/Services/JwtTokenGenerator.cs`: Sinh JWT Bearer token kèm Claims (Id, Email, Name, Role).
+- `BE/src/Infrastructure/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`: Đăng ký DI cho JWT Settings, Hasher và Token Generator.
+
+#### 5. Persistence Layer (`BE/src/Persistence/`)
+- `BE/src/Persistence/Constants/TableNames.cs`: Khai báo bảng `Users`, `Templates`, `UserCustomizations`, `RsvpEntries`, `GuestbookEntries`.
+- `BE/src/Persistence/ApplicationDbContext.cs`: Khai báo DbSet cho 5 thực thể.
+- `BE/src/Persistence/Configurations/`: Cấu hình Fluent API EF Core cho từng bảng (Index, Unique Constraint trên Email/Slug, nvarchar max cho Json).
+- `BE/src/Persistence/Repositories/`: Cài đặt UserRepository, TemplateRepository, CustomizationRepository, RsvpRepository, GuestbookRepository.
+- `BE/src/Persistence/Data/DataSeeder.cs`: Tự động khởi tạo dữ liệu mẫu cho Admin (`admin@template.com`), User (`user@template.com`), cùng 2 Master Template chi tiết ("Elegance Blossom" - Wedding, "Golden Glamour" - Birthday).
+- `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`: Đăng ký DI các repositories.
+
+#### 6. Presentation & API Layer (`BE/src/Presentation/`, `BE/src/API/`)
+- `BE/src/Presentation/APIs/Auth/AuthApi.cs`: Endpoint `/api/v1/auth` (Register, Login, Me).
+- `BE/src/Presentation/APIs/Users/UserApi.cs`: Endpoint `/api/v1/users` (CRUD User - Yêu cầu Role Admin).
+- `BE/src/Presentation/APIs/Templates/TemplateApi.cs`: Endpoint `/api/v1/templates` (Lấy danh sách public, Admin thêm/sửa/xóa).
+- `BE/src/Presentation/APIs/Customizations/CustomizationApi.cs`: Endpoint `/api/v1/customizations` (Lưu cấu hình, sửa, xóa, lấy theo slug).
+- `BE/src/Presentation/APIs/Interactions/InteractionApi.cs`: Endpoint `/api/v1/rsvp` và `/api/v1/guestbook` (Gửi phản hồi và xem danh sách).
+- `BE/src/API/Program.cs`: Cấu hình JWT Bearer Authentication, Swagger UI kèm Authorize Bearer token, DataSeeder khi chạy.
+- `BE/src/API/appsettings.json`: Cấu hình chuỗi kết nối và thông số JWT.
+
+#### 7. Unit Tests & Architecture Tests (`BE/test/`)
+- `BE/test/UnitTests/Application/Auth/`: Test cho Register, Login (thành công, trùng email, sai mật khẩu).
+- `BE/test/UnitTests/Application/Templates/`: Test tạo template, trùng slug.
+- `BE/test/UnitTests/Application/Customizations/`: Test tạo customization và sinh slug.
+- `BE/test/Architecture.Tests/ArchitectureTests.cs`: Kiểm tra 5 luật Clean Architecture của dự án.
+
+---
 
 ### B. Frontend (React 19 + Vite + Tailwind CSS)
-1. **Root Config**: Thiết lập cấu hình Vite, Tailwind CSS, PostCSS, biến môi trường mẫu và quy tắc `.gitignore`.
-2. **API Layer (`FE/src/api/`)**: `axios.js` đóng vai trò HTTP client trung tâm với interceptors bắt lỗi mạng, format lỗi từ backend trả về dạng thân thiện. `productApi.js` cung cấp hàm gọi CRUD sản phẩm.
-3. **Components & Layout**: Navbar điều hướng, Footer, Modal tái sử dụng với animation/backdrop blur và LoadingSpinner.
-4. **Hooks**: `useProducts.js` quản lý state tập trung cho toàn bộ vòng đời sản phẩm (load, create, update, delete, loading state, error state).
-5. **Pages**:
-   - `HomePage.jsx`: Landing Page hiện đại giới thiệu kiến trúc dự án và tính năng chính kèm nút CTA.
-   - `ProductsPage.jsx`: Quản lý danh sách sản phẩm với lưới thẻ, giá tiền, ngày tạo, trạng thái bán, modal thêm mới, modal chỉnh sửa, modal xác nhận xóa mềm, thông báo lỗi và trạng thái danh sách trống (Empty State).
-   - `NotFoundPage.jsx`: Trang điều hướng lỗi 404.
-6. **Routes**: Thiết lập React Router với URL thân thiện (`/`, `/products`, `*`).
+
+#### 1. API Services & State (`FE/src/api/`, `FE/src/contexts/`, `FE/src/hooks/`)
+- `FE/src/api/axios.js`: Tự động đính kèm `Authorization: Bearer <token>`, bắt mã 401 để xóa token và điều hướng về trang đăng nhập.
+- `FE/src/api/authApi.js`: Gọi endpoint login, register, me.
+- `FE/src/api/userApi.js`: Gọi CRUD người dùng cho trang Admin.
+- `FE/src/api/templateApi.js`: Lấy danh sách master templates, chi tiết theo Id/Slug, CRUD cho Admin.
+- `FE/src/api/customizationApi.js`: Lưu/sửa/xóa cấu hình cá nhân hóa, lấy theo slug để hiển thị landing page.
+- `FE/src/api/interactionApi.js`: Gửi RSVP, lấy danh sách RSVP, gửi lưu bút, lấy danh sách lưu bút.
+- `FE/src/contexts/AuthContext.jsx`: Cung cấp context đăng nhập toàn cục, lưu trạng thái token, user, hàm `login`, `register`, `logout`, cờ `isAdmin`.
+- `FE/src/hooks/useAuth.js`: Custom hook truy cập AuthContext tiện lợi.
+
+#### 2. Tiện ích (`FE/src/utils/`)
+- `FE/src/utils/defaultTemplates.js`: Bộ cấu hình JSON mẫu chi tiết chuẩn mực cho cả đám cưới (Wedding - Elegance Blossom) và sinh nhật (Birthday - Golden Glamour).
+- `FE/src/utils/htmlExporter.js`: Hàm xuất trọn vẹn file HTML độc lập (`standalone-template.html`) có sẵn Tailwind CDN, Google Fonts, đồng hồ đếm ngược, hiệu ứng canvas cánh hoa/confetti và trình phát nhạc mà không cần cài đặt thêm bất kỳ thư viện nào.
+
+#### 3. Components (`FE/src/components/`)
+- `FE/src/components/ProtectedRoute.jsx`: Bảo vệ các route yêu cầu đăng nhập hoặc yêu cầu quyền Admin.
+- `FE/src/components/templates/MotionParticles.jsx`: Hiệu ứng canvas chuyển động cánh hoa rơi (Wedding) hoặc giấy confetti (Birthday).
+- `FE/src/components/templates/FloatingMusicPlayer.jsx`: Nút phát nhạc nổi góc màn hình kèm sóng âm chuyển động, có xử lý bắt ngoại lệ chính sách Autoplay của trình duyệt.
+- `FE/src/components/templates/LandingPageRenderer.jsx`: Engine trung tâm nạp JSON config bất kỳ để hiển thị trang web hoàn chỉnh:
+  + Hero Section: Countdown đếm ngược theo thời gian thực, nút CTA cuộn nhanh xuống RSVP.
+  + Couple/Celebrant Section: Avatar tròn, viền màu chủ đạo, tiểu sử, thông tin cha mẹ, quote tình yêu.
+  + Event Details Section: Thời gian, địa điểm The Adora / Sky Lounge, bản đồ chỉ đường Google Maps, Dress Code.
+  + Interactive Timeline: Lịch trình sự kiện với các biểu tượng phong phú.
+  + Photo Gallery: Lưới hình ảnh kèm Lightbox phóng to khi click.
+  + RSVP Section: Biểu mẫu xác nhận số lượng khách, chế độ ăn kiêng, gửi lời nhắn trực tiếp vào CSDL.
+  + Guestbook Wall: Sổ lưu bút ảo cho phép khách để lại lời chúc mừng tức thì.
+- `FE/src/components/templates/TemplateCard.jsx`: Thẻ hiển thị mẫu kèm hình ảnh, nhãn danh mục, nút Xem nhanh và Tùy biến.
+- `FE/src/components/templates/QuickPreviewModal.jsx`: Modal xem trước trực tiếp kèm nút chuyển đổi giữa Desktop và Mobile (375px).
+- `FE/src/components/customizer/CustomizerToolbar.jsx`: Thanh công cụ trên đầu Customizer: Switch Viewport, Nút Lưu, Tải JSON, Xuất Standalone HTML, Xem toàn màn hình.
+- `FE/src/components/customizer/CustomizerSidebar.jsx`: Thanh công cụ tùy biến bên trái với 10 tabs (Cài đặt chung, Giao diện/Màu sắc, Hero, Nhân vật chính, Sự kiện, Lịch trình, Album ảnh, Biểu mẫu RSVP, Nhạc nền, Lời chúc).
+- `FE/src/components/admin/AdminLayout.jsx`: Bố cục trang quản trị với Sidebar điều hướng và thông tin người dùng.
+- `FE/src/components/Navbar.jsx`: Navbar mới phong cách MotionSites với Logo, Kho Mẫu, Thiệp Của Tôi, Menu User Dropdown, Link Quản trị.
+- `FE/src/components/Footer.jsx`: Footer giao diện tối thanh lịch phong cách motionsites.ai.
+
+#### 4. Pages & Routing (`FE/src/pages/`, `FE/src/routes/`)
+- `FE/src/pages/HomePage.jsx`: Trang chủ MotionSites hiện đại với Hero chuyển động, Floating Badges, Showcase các mẫu thịnh hành, 3 bước tạo thiệp và CTA.
+- `FE/src/pages/TemplatesPage.jsx`: Bộ sưu tập mẫu phân loại theo tab (Tất cả, Đám cưới, Sinh nhật) kèm ô tìm kiếm.
+- `FE/src/pages/CustomizerPage.jsx`: Không gian chỉnh sửa thời gian thực chia đôi màn hình (Sidebar tùy biến + Live Canvas xem trước).
+- `FE/src/pages/LivePreviewPage.jsx`: Trang xem toàn màn hình Live Landing Page (hỗ trợ cả template gốc `/preview/:templateId` và link thiệp thực tế `/view/:slug`).
+- `FE/src/pages/MyCustomizationsPage.jsx`: Quản lý các thiệp người dùng đã tạo kèm tính năng sao chép link chia sẻ, sửa, xem, xuất HTML và xóa.
+- `FE/src/pages/auth/LoginPage.jsx`: Trang đăng nhập sang trọng.
+- `FE/src/pages/auth/RegisterPage.jsx`: Trang đăng ký tài khoản mới.
+- `FE/src/pages/admin/AdminDashboardPage.jsx`: Thống kê tổng số mẫu, người dùng, lượt RSVP và lời chúc.
+- `FE/src/pages/admin/AdminTemplatesPage.jsx`: Quản trị Master Templates với trình soạn thảo JSON có kiểm tra cú pháp.
+- `FE/src/pages/admin/AdminUsersPage.jsx`: Quản trị danh sách người dùng, cấp quyền Admin và khóa tài khoản.
+- `FE/src/routes/index.jsx`: Thiết lập định tuyến đầy đủ.
+- `FE/src/App.jsx`: Bọc AuthProvider và ẩn Navbar/Footer khi ở chế độ Full Preview, Customizer hoặc Admin.
+- `FE/src/index.css`: Bổ sung font Playfair Display, Cinzel, Montserrat, Great Vibes và keyframe animations.
 
 ---
 
-## 3. Các thay đổi đã cập nhật theo yêu cầu của Reviewer
+## 3. VỊ TRÍ TRỌNG YẾU MÀ TESTER NÊN SOI KỸ
 
-1. **`BE/src/Application/Behaviors/ValidationPipelineBehavior.cs`**:
-   - Khắc phục triệt để lỗi biên dịch CS0029 khi cast `ValidationResult` sang generic `TResponse`.
-   - Loại bỏ generic type parameter `<TResult>`, dùng trực tiếp `TResponse` với cast qua `(object)`:
-     ```csharp
-     if (typeof(TResponse) == typeof(Result))
-     {
-         return (TResponse)(object)ValidationResult.WithErrors(errors);
-     }
-     ```
-2. **`BE/src/Domain/Entities/Product.cs`**:
-   - Cập nhật điều kiện kiểm tra giá ở `Create` và `Update` từ `price < 0` thành `price <= 0` kèm thông điệp rõ ràng: `"Product price must be greater than zero."`.
-3. **`BE/test/UnitTests/Domain/ProductTests.cs`**:
-   - Chuyển đổi test đơn vị kiểm tra giá sang `[Theory]` với `[InlineData(0)]` và `[InlineData(-10)]` để kiểm tra toàn diện cả trường hợp giá bằng 0 và giá âm.
+1. **Kiểm tra luồng xác thực & phân quyền (Auth & RBAC)**:
+   - Thử đăng nhập tài khoản Admin (`admin@template.com` / `Admin@123456`) để truy cập `/admin`.
+   - Thử đăng nhập tài khoản Thường (`user@template.com` / `User@123456`) và gõ trực tiếp URL `/admin` -> `ProtectedRoute` phải chuyển hướng ra trang chủ.
+   - Thử chức năng Đăng ký tài khoản mới tại `/register`.
 
----
+2. **Kiểm tra Live Customizer (`/customize/:templateId`)**:
+   - Thay đổi các giá trị ở Sidebar (Màu chủ đạo, Tiêu đề Hero, Ngày cưới, Danh sách mốc thời gian, Album ảnh) -> Canvas bên phải phải phản hồi tức thời.
+   - Nhấn nút chuyển đổi Viewport giữa **Desktop** và **Mobile (375px)** để kiểm tra khung điện thoại.
+   - Nhấn **Xuất Standalone HTML** -> Tải về file `.html`, mở trực tiếp bằng trình duyệt ngoại tuyến (double-click) để kiểm tra Countdown, Canvas cánh hoa và giao diện hoạt động độc lập.
 
-## 4. Vị trí trọng yếu mà Tester nên soi kỹ
+3. **Kiểm tra tương tác RSVP & Guestbook trên trang chia sẻ thực tế (`/view/:slug`)**:
+   - Truy cập vào trang thiệp đã tạo hoặc đường dẫn `/view/<slug>`.
+   - Điền form "Xác nhận tham dự" (RSVP) và form "Sổ lưu bút" -> Kiểm tra dữ liệu được lưu vào CSDL và danh sách lời chúc hiển thị ngay trên màn hình.
 
-1. **Cơ chế Soft Delete**:
-   - Khi thực hiện xóa một sản phẩm qua API hoặc trên giao diện: Bản ghi trong cơ sở dữ liệu không bị xóa vật lý (không gọi `Remove()`) mà được cập nhật trường `IsDeleted = true` và `DeletedAtUtc = DateTime.UtcNow`.
-   - Kiểm tra xem sau khi xóa, danh sách GET `/api/v1/products` có lọc bỏ hoàn toàn các sản phẩm này hay không (nhờ Global Query Filter trong `ProductConfiguration`).
-2. **Kiểm tra Validation & Result Pattern (HTTP 400 vs 500)**:
-   - Thử gửi dữ liệu không hợp lệ (ví dụ: Tên sản phẩm để trống, hoặc giá `Price <= 0`).
-   - Kết quả kỳ vọng: `ValidationPipelineBehavior` chặn lại và trả về HTTP 400 Bad Request kèm mảng chi tiết `Errors`, tuyệt đối không quăng ra lỗi 500 Server Error.
-3. **Xử lý Dữ liệu Không tồn tại (HTTP 404)**:
-   - Thử gọi `GET /api/v1/products/{id}`, `PUT /api/v1/products/{id}`, hoặc `DELETE /api/v1/products/{id}` với một Guid ngẫu nhiên hoặc Guid của sản phẩm đã bị xóa mềm.
-   - Kết quả kỳ vọng: Trả về HTTP 404 Not Found kèm `ProductErrors.NotFound`.
-4. **Tự động Auditing Thời gian**:
-   - Khi tạo mới sản phẩm: `CreatedAtUtc` được tự động ghi nhận thời gian UTC từ `AuditableEntityInterceptor`.
-   - Khi cập nhật sản phẩm: `ModifiedAtUtc` được cập nhật tương ứng.
-5. **Trải nghiệm Frontend & Chống Double-Click**:
-   - Khi bấm nút Lưu / Xóa trên modal, nút chuyển sang trạng thái Loading (disabled + spinner) nhằm chống double-submit gửi 2 request liên tiếp.
-   - Khi ngắt kết nối mạng tới Backend: Giao diện hiển thị banner cảnh báo lỗi thân thiện thay vì làm sập trang.
-   - Khi danh sách trống: Kiểm tra hiển thị Empty State với lời mời tạo sản phẩm đầu tiên.
+4. **Kiểm tra xử lý ngoại lệ JSON trong Quản trị Templates (`/admin/templates`)**:
+   - Mở modal sửa hoặc thêm mẫu, cố tình nhập JSON sai cú pháp -> Hệ thống phải chặn lại và hiển thị thông báo lỗi, không làm sập ứng dụng.

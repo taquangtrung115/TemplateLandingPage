@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\Application\TemplateLandingPage.Application.csproj" />
     <ProjectReference Include="..\..\src\Contract\TemplateLandingPage.Contract.csproj" />
     <ProjectReference Include="..\..\src\Domain\TemplateLandingPage.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Infrastructure\TemplateLandingPage.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,15 +1,19 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 15000,
 });
 
 axiosInstance.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -22,7 +26,15 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    let errorMessage = 'An unexpected error occurred. Please try again.';
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+        window.location.href = '/login';
+      }
+    }
+
+    let errorMessage = 'Đã có lỗi xảy ra. Vui lòng thử lại!';
 
     if (error.response) {
       const data = error.response.data;
@@ -32,9 +44,11 @@ axiosInstance.interceptors.response.use(
         errorMessage = data.error.message;
       } else if (data?.title) {
         errorMessage = data.title;
+      } else if (typeof data === 'string') {
+        errorMessage = data;
       }
     } else if (error.request) {
-      errorMessage = 'Unable to connect to the server. Please check your network connection.';
+      errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng!';
     }
 
     const enhancedError = new Error(errorMessage);
