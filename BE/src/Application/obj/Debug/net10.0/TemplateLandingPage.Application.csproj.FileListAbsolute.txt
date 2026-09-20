@@ -1,0 +1,17 @@
+e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\TemplateLandingPage.Application.csproj.AssemblyReference.cache
+e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\TemplateLandingPage.Application.GeneratedMSBuildEditorConfig.editorconfig
+e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\TemplateLandingPage.Application.AssemblyInfoInputs.cache
+e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\TemplateLandingPage.Application.AssemblyInfo.cs
+e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\TemplateLandingPage.Application.csproj.CoreCompileInputs.cache
+e:\Code\TemplateLandingPage\BE\src\Application\bin\Debug\net10.0\TemplateLandingPage.Application.deps.json
+e:\Code\TemplateLandingPage\BE\src\Application\bin\Debug\net10.0\TemplateLandingPage.Application.dll
+e:\Code\TemplateLandingPage\BE\src\Application\bin\Debug\net10.0\TemplateLandingPage.Application.pdb
+e:\Code\TemplateLandingPage\BE\src\Application\bin\Debug\net10.0\TemplateLandingPage.Contract.dll
+e:\Code\TemplateLandingPage\BE\src\Application\bin\Debug\net10.0\TemplateLandingPage.Domain.dll
+e:\Code\TemplateLandingPage\BE\src\Application\bin\Debug\net10.0\TemplateLandingPage.Domain.pdb
+e:\Code\TemplateLandingPage\BE\src\Application\bin\Debug\net10.0\TemplateLandingPage.Contract.pdb
+e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\Template.B096B30F.Up2Date
+e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\TemplateLandingPage.Application.dll
+e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\refint\TemplateLandingPage.Application.dll
+e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\TemplateLandingPage.Application.pdb
+e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\ref\TemplateLandingPage.Application.dll
