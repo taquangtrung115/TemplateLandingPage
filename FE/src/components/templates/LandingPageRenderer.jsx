@@ -13,9 +13,16 @@ import ExtraSections from './sections/ExtraSections';
 import RsvpSection from './sections/RsvpSection';
 import WishesSection from './sections/WishesSection';
 
+// New specialized sections for diverse formats
+import SpeakersSection from './sections/SpeakersSection';
+import PricingSection from './sections/PricingSection';
+import ServicesSection from './sections/ServicesSection';
+import FeatureCardsSection from './sections/FeatureCardsSection';
+
 /**
  * Orchestrator Component renders the complete responsive Landing Page
  * Composed of memoized sub-components for optimal 60fps rendering performance.
+ * Supports 6 distinct formats: Romance, Tech Summit, App Showcase, Dental Clinic, SaaS, Birthday.
  */
 export const LandingPageRenderer = ({
   config,
@@ -35,6 +42,16 @@ export const LandingPageRenderer = ({
   const music = config?.music || {};
   const wishes = config?.wishes || {};
   const extraSections = config?.extraSections || [];
+
+  // Specialized data for diverse landing page templates
+  const speakers = config?.speakers || [];
+  const pricingTickets = config?.pricingTickets || [];
+  const pricingPackages = config?.pricingPackages || [];
+  const servicesGrid = config?.servicesGrid || [];
+  const treatmentProcess = config?.treatmentProcess || [];
+  const booking = config?.booking || {};
+  const featureCardsGrid = config?.featureCardsGrid || [];
+  const metrics = config?.metrics || [];
 
   // Color & Theme styles
   const primaryColor = theme.primaryColor || '#e11d48';
@@ -123,40 +140,88 @@ export const LandingPageRenderer = ({
         isHighlighted={activeEditSection === 'hero' || activeEditSection === 'theme'}
       />
 
-      {/* 2. Dynamic Couple / Celebrant Section */}
-      <PersonsSection
-        couple={couple}
-        personsList={personsList}
-        primaryColor={primaryColor}
-        isHighlighted={
-          activeEditSection === 'couple' || activeEditSection === 'coupleOrCelebrant'
-        }
-      />
+      {/* 2. Dynamic Couple / Celebrant Section (nếu có người) */}
+      {personsList.length > 0 && (
+        <PersonsSection
+          couple={couple}
+          personsList={personsList}
+          primaryColor={primaryColor}
+          isHighlighted={
+            activeEditSection === 'couple' || activeEditSection === 'coupleOrCelebrant'
+          }
+        />
+      )}
 
-      {/* 3. Event Details Section */}
-      <EventDetailsSection
-        eventDetails={eventDetails}
-        primaryColor={primaryColor}
-        isHighlighted={activeEditSection === 'event' || activeEditSection === 'eventDetails'}
-      />
+      {/* 3. Feature Cards Section (SaaS & ADHD Planner format) */}
+      {featureCardsGrid.length > 0 && (
+        <FeatureCardsSection
+          featureCardsGrid={featureCardsGrid}
+          metrics={metrics}
+          primaryColor={primaryColor}
+          isHighlighted={activeEditSection === 'features'}
+        />
+      )}
 
-      {/* 4. Interactive Timeline */}
-      <TimelineSection
-        timeline={timeline}
-        timelineAnimation={config?.timelineAnimation || 'fade-up'}
-        primaryColor={primaryColor}
-        secondaryColor={secondaryColor}
-        isHighlighted={activeEditSection === 'timeline'}
-      />
+      {/* 4. Dental & Medical Services Section */}
+      {servicesGrid.length > 0 && (
+        <ServicesSection
+          servicesGrid={servicesGrid}
+          treatmentProcess={treatmentProcess}
+          booking={booking}
+          primaryColor={primaryColor}
+          isHighlighted={activeEditSection === 'services'}
+        />
+      )}
 
-      {/* 5. Photo Gallery with Lightbox trigger */}
-      <GallerySection
-        gallery={gallery}
-        galleryAnimation={config?.galleryAnimation || 'fade-up'}
-        primaryColor={primaryColor}
-        onOpenLightbox={(idx) => setLightboxIndex(idx)}
-        isHighlighted={activeEditSection === 'gallery'}
-      />
+      {/* 5. Keynote Speakers Section (Tech Summit format) */}
+      {speakers.length > 0 && (
+        <SpeakersSection
+          speakers={speakers}
+          primaryColor={primaryColor}
+          isHighlighted={activeEditSection === 'speakers'}
+        />
+      )}
+
+      {/* 6. Pricing & Passes Section (Summit & SaaS format) */}
+      {(pricingTickets.length > 0 || pricingPackages.length > 0) && (
+        <PricingSection
+          pricingTickets={pricingTickets}
+          pricingPackages={pricingPackages}
+          primaryColor={primaryColor}
+          isHighlighted={activeEditSection === 'pricing'}
+        />
+      )}
+
+      {/* 7. Event Details Section (nếu có thông tin sự kiện) */}
+      {(eventDetails.ceremonyName || eventDetails.venueName || eventDetails.address) && (
+        <EventDetailsSection
+          eventDetails={eventDetails}
+          primaryColor={primaryColor}
+          isHighlighted={activeEditSection === 'event' || activeEditSection === 'eventDetails'}
+        />
+      )}
+
+      {/* 8. Interactive Timeline */}
+      {timeline.length > 0 && (
+        <TimelineSection
+          timeline={timeline}
+          timelineAnimation={config?.timelineAnimation || 'fade-up'}
+          primaryColor={primaryColor}
+          secondaryColor={secondaryColor}
+          isHighlighted={activeEditSection === 'timeline'}
+        />
+      )}
+
+      {/* 9. Photo Gallery with Lightbox trigger */}
+      {gallery.length > 0 && (
+        <GallerySection
+          gallery={gallery}
+          galleryAnimation={config?.galleryAnimation || 'fade-up'}
+          primaryColor={primaryColor}
+          onOpenLightbox={(idx) => setLightboxIndex(idx)}
+          isHighlighted={activeEditSection === 'gallery'}
+        />
+      )}
 
       {/* Lightbox Modal */}
       {lightboxIndex !== null && gallery[lightboxIndex] && (
@@ -188,38 +253,44 @@ export const LandingPageRenderer = ({
         </div>
       )}
 
-      {/* 6. Extra Sections (Thank You, VietQR, Q&A, Custom) */}
-      <ExtraSections
-        extraSections={extraSections}
-        primaryColor={primaryColor}
-        openQaIndex={openQaIndex}
-        toggleQa={toggleQa}
-        copiedStk={copiedStk}
-        handleCopyStk={handleCopyStk}
-        isHighlighted={activeEditSection === 'extra'}
-        activeEditSection={activeEditSection}
-      />
+      {/* 10. Extra Sections (Thank You, VietQR, Q&A, Custom) */}
+      {extraSections.length > 0 && (
+        <ExtraSections
+          extraSections={extraSections}
+          primaryColor={primaryColor}
+          openQaIndex={openQaIndex}
+          toggleQa={toggleQa}
+          copiedStk={copiedStk}
+          handleCopyStk={handleCopyStk}
+          isHighlighted={activeEditSection === 'extra'}
+          activeEditSection={activeEditSection}
+        />
+      )}
 
-      {/* 7. RSVP Section */}
-      <RsvpSection
-        rsvp={rsvp}
-        primaryColor={primaryColor}
-        customizationId={customizationId}
-        isHighlighted={activeEditSection === 'rsvp'}
-      />
+      {/* 11. RSVP Section */}
+      {rsvp?.enabled !== false && (
+        <RsvpSection
+          rsvp={rsvp}
+          primaryColor={primaryColor}
+          customizationId={customizationId}
+          isHighlighted={activeEditSection === 'rsvp'}
+        />
+      )}
 
-      {/* 8. Guestbook Wall */}
-      <WishesSection
-        wishes={wishes}
-        primaryColor={primaryColor}
-        customizationId={customizationId}
-        isHighlighted={activeEditSection === 'wishes'}
-      />
+      {/* 12. Guestbook Wall */}
+      {wishes?.enabled !== false && (
+        <WishesSection
+          wishes={wishes}
+          primaryColor={primaryColor}
+          customizationId={customizationId}
+          isHighlighted={activeEditSection === 'wishes'}
+        />
+      )}
 
       {/* Footer of Landing Page */}
       <footer className="py-12 px-4 text-center text-xs opacity-60 border-t border-gray-200/50 relative z-20">
         <p className="font-medium">
-          {hero.title || 'Minh & Linh'} • Forever & Always
+          {hero.title || 'Motion Landing Page'} • Forever & Always
         </p>
         <p className="mt-1 text-[11px] opacity-75">
           Created with Motion Landing Page Builder

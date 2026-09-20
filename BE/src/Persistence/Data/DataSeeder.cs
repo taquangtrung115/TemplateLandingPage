@@ -45,12 +45,16 @@ public static class DataSeeder
                 ?? adminUser;
         }
 
-        // 2. Seed 5 Standard Cinelove Categories
+        // 2. Seed 9 Standard Categories (Wedding & Diverse Formats)
         Category weddingCat;
         Category engagementCat;
         Category birthdayCat;
         Category anniversaryCat;
         Category babyShowerCat;
+        Category conferenceCat;
+        Category appShowcaseCat;
+        Category medicalCat;
+        Category saasCat;
 
         if (!await context.Categories.AnyAsync())
         {
@@ -94,7 +98,39 @@ public static class DataSeeder
                 5,
                 true);
 
-            context.Categories.AddRange(weddingCat, engagementCat, birthdayCat, anniversaryCat, babyShowerCat);
+            conferenceCat = Category.Create(
+                "Hội Nghị & Sự Kiện",
+                "conference",
+                "Hội nghị cấp cao, công nghệ, diễn giả và hệ thống bán vé trực tuyến.",
+                "Mic",
+                6,
+                true);
+
+            appShowcaseCat = Category.Create(
+                "Ứng Dụng & Năng Suất",
+                "app-showcase",
+                "Landing page ứng dụng di động, video demo và triết lý sản phẩm.",
+                "Layers",
+                7,
+                true);
+
+            medicalCat = Category.Create(
+                "Y Tế & Nha Khoa",
+                "medical",
+                "Phòng khám nha khoa cao cấp, danh mục dịch vụ và đặt lịch hẹn tư vấn.",
+                "Stethoscope",
+                8,
+                true);
+
+            saasCat = Category.Create(
+                "Nền Tảng SaaS",
+                "saas",
+                "Giải pháp phần mềm B2B, tự động hóa quy trình và bảng giá dịch vụ.",
+                "Cpu",
+                9,
+                true);
+
+            context.Categories.AddRange(weddingCat, engagementCat, birthdayCat, anniversaryCat, babyShowerCat, conferenceCat, appShowcaseCat, medicalCat, saasCat);
             await context.SaveChangesAsync();
         }
         else
@@ -104,6 +140,10 @@ public static class DataSeeder
             birthdayCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "birthday") ?? weddingCat;
             anniversaryCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "anniversary") ?? weddingCat;
             babyShowerCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "baby-shower") ?? birthdayCat;
+            conferenceCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "conference") ?? weddingCat;
+            appShowcaseCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "app-showcase") ?? weddingCat;
+            medicalCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "medical") ?? weddingCat;
+            saasCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "saas") ?? weddingCat;
         }
 
         // 3. Seed Dynamic Navigation Menus (Parent & Submenu Tree)
@@ -604,11 +644,231 @@ public static class DataSeeder
         }
         """;
 
-        // 4. Seed Templates (Rich Mockup, Audio, LongPreview for all 5 Categories)
+        var aiSummitConfigJson = """
+        {
+          "format": "summit",
+          "theme": {
+            "primaryColor": "#2563eb",
+            "secondaryColor": "#3b82f6",
+            "accentColor": "#60a5fa",
+            "backgroundColor": "#090d16",
+            "textColor": "#f8fafc",
+            "fontFamily": "Inter"
+          },
+          "hero": {
+            "badge": "GLOBAL VIRTUAL SUMMIT 2026",
+            "title": "Generative AI & Future Intelligence",
+            "subtitle": "Hội nghị cấp cao quy tụ 50+ chuyên gia AI hàng đầu thế giới",
+            "eventDate": "2026-11-20T09:00:00",
+            "coverImageUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1600&q=80",
+            "callToActionText": "Đặt Vé Ngay"
+          },
+          "speakers": [
+            {
+              "id": "spk-1",
+              "name": "Dr. Elena Rostova",
+              "role": "Chief AI Scientist",
+              "company": "DeepNexus Labs",
+              "bio": "Tiên phong trong kiến trúc Large Reasoning Models và Autonomous Agents.",
+              "avatarUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80"
+            },
+            {
+              "id": "spk-2",
+              "name": "Marcus Vance",
+              "role": "VP of Engineering",
+              "company": "Synthetix AI",
+              "bio": "Kiến trúc sư hạ tầng phân tán xử lý mô hình 100 tỷ tham số.",
+              "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80"
+            }
+          ],
+          "pricingTickets": [
+            {
+              "id": "early-bird",
+              "name": "Standard Pass",
+              "price": "1.490.000 đ",
+              "originalPrice": "2.500.000 đ",
+              "badge": "EARLY BIRD",
+              "perks": ["Truy cập toàn bộ livestream", "Bộ slide thuyết trình", "Chứng nhận tham dự NFT"],
+              "ctaText": "Đặt Vé Standard"
+            },
+            {
+              "id": "vip-pass",
+              "name": "VIP Executive",
+              "price": "4.990.000 đ",
+              "badge": "POPULAR",
+              "perks": ["Bao gồm quyền lợi Standard", "Phòng thảo luận kín với Speakers", "Tài khoản Pro 1 năm đối tác AI"],
+              "ctaText": "Đặt Vé VIP"
+            }
+          ],
+          "eventDetails": {
+            "ceremonyName": "Hội Nghị Virtual AI Summit 2026",
+            "time": "09:00 - Thứ Sáu, 20/11/2026",
+            "venueName": "Online Metaverse Stage & Metropole",
+            "address": "Phát trực tuyến toàn cầu",
+            "dressCode": "Business Casual"
+          },
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-11-10",
+            "note": "Xác nhận để nhận mã vé QR Code tham dự sự kiện."
+          },
+          "extraSections": [
+            {
+              "id": "summit-qa",
+              "type": "qa",
+              "enabled": true,
+              "title": "Hỏi Đáp Về Sự Kiện (FAQ)",
+              "items": [
+                { "question": "Tôi có thể xem lại video sau sự kiện không?", "answer": "Có, toàn bộ video các phiên thuyết trình sẽ được lưu trữ trọn đời." }
+              ]
+            }
+          ]
+        }
+        """;
+
+        var driftPlannerConfigJson = """
+        {
+          "format": "app-showcase",
+          "theme": {
+            "primaryColor": "#10b981",
+            "secondaryColor": "#059669",
+            "accentColor": "#34d399",
+            "backgroundColor": "#0f172a",
+            "textColor": "#f8fafc",
+            "fontFamily": "Inter"
+          },
+          "hero": {
+            "badge": "ADHD-FRIENDLY WORKSPACE",
+            "title": "Drift — Năng Suất Nhẹ Nhàng Dành Cho Não Bộ Của Bạn",
+            "subtitle": "Biến những danh sách công việc ngột ngạt thành các dòng sông thời gian êm dịu.",
+            "videoUrl": "https://cdn.pixabay.com/video/demo-preview.mp4",
+            "coverImageUrl": "https://images.unsplash.com/photo-1517842645767-c639042777db?w=1600&q=80",
+            "callToActionText": "Dùng Thử 14 Ngày Miễn Phí"
+          },
+          "eventDetails": {
+            "ceremonyName": "Drift ADHD Workspace Showcase",
+            "time": "Phát hành phiên bản 2.0 toàn cầu",
+            "venueName": "App Store & Google Play",
+            "address": "driftplanner.app"
+          },
+          "featureCardsGrid": [
+            {
+              "id": "f-1",
+              "title": "Time-Blocking Trực Quan",
+              "description": "Các khối năng lượng linh hoạt giúp bạn dễ dàng thích nghi khi tâm trạng biến đổi."
+            },
+            {
+              "id": "f-2",
+              "title": "Âm Thanh Tập Trung Song Nhĩ",
+              "description": "Tần số sóng não 40Hz kích thích dopamin tự nhiên, đưa bạn vào trạng thái deep work."
+            },
+            {
+              "id": "f-3",
+              "title": "Tự Động Rã Nhỏ Nhiệm Vụ",
+              "description": "Trợ lý AI tự động rã dự án khó thành các bước 5 phút dễ như ăn kẹo."
+            }
+          ],
+          "metrics": [
+            { "value": "50,000+", "label": "Người dùng ADHD phục hồi năng lượng" },
+            { "value": "4.9/5", "label": "Đánh giá trên App Store" }
+          ],
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-12-31"
+          }
+        }
+        """;
+
+        var dentalClinicConfigJson = """
+        {
+          "format": "dental-services",
+          "theme": {
+            "primaryColor": "#0ea5e9",
+            "secondaryColor": "#0284c7",
+            "accentColor": "#7dd3fc",
+            "backgroundColor": "#ffffff",
+            "textColor": "#0f172a",
+            "fontFamily": "Inter"
+          },
+          "hero": {
+            "badge": "TIÊU CHUẨN NHA KHOA THỤY SỸ",
+            "title": "Kiến Tạo Nụ Cười Hoàn Hảo & Tự Tin",
+            "subtitle": "Phòng khám chuẩn Châu Âu với công nghệ Scan 3D không xâm lấn.",
+            "coverImageUrl": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=1600&q=80",
+            "callToActionText": "Đặt Lịch Khám Ngay"
+          },
+          "servicesGrid": [
+            { "id": "veneers", "name": "Veneers Sứ Siêu Mỏng", "description": "Bảo tồn 100% răng thật, tự nhiên như ngọc trai.", "priceFrom": "6.000.000 đ/răng" },
+            { "id": "crowns", "name": "Bọc Răng Sứ Thẩm Mỹ", "description": "Khắc phục triệt để răng ố vàng nặng, chịu lực gấp 5 lần răng thật.", "priceFrom": "4.500.000 đ/răng" },
+            { "id": "whitening", "name": "Tẩy Trắng Laser Extra-White", "description": "Nâng 3-5 tone ngay sau 45 phút, an toàn tuyệt đối.", "priceFrom": "2.500.000 đ" },
+            { "id": "implants", "name": "Cấy Ghép Implant Kỹ Thuật Số", "description": "Trồng răng trọn gói, tích hợp xương sinh học không đau.", "priceFrom": "15.000.000 đ/trụ" }
+          ],
+          "treatmentProcess": [
+            { "step": "01", "title": "Thăm khám & Chụp CT 3D", "desc": "Đánh giá cấu trúc hàm mặt chính xác" },
+            { "step": "02", "title": "Mô phỏng DSD", "desc": "Xem trước nụ cười trên màn hình" },
+            { "step": "03", "title": "Điều trị nhẹ nhàng", "desc": "Bác sĩ 15 năm kinh nghiệm thực hiện" },
+            { "step": "04", "title": "Bảo hành trọn đời", "desc": "Cấp thẻ bảo hành điện tử chính hãng" }
+          ],
+          "booking": {
+            "enabled": true,
+            "title": "Đặt Lịch Hẹn Tư Vấn Miễn Phí"
+          },
+          "rsvp": {
+            "enabled": false
+          }
+        }
+        """;
+
+        var modernSaasConfigJson = """
+        {
+          "format": "saas",
+          "theme": {
+            "primaryColor": "#6366f1",
+            "secondaryColor": "#4f46e5",
+            "accentColor": "#818cf8",
+            "backgroundColor": "#0b0f19",
+            "textColor": "#f8fafc",
+            "fontFamily": "Inter"
+          },
+          "hero": {
+            "badge": "ENTERPRISE WORKFLOW AUTOMATION",
+            "title": "Nền Tảng Tự Động Hóa Dòng Chảy Dữ Liệu Doanh Nghiệp",
+            "subtitle": "Kết nối mọi API, xử lý 10 triệu events/giây với độ trễ dưới 5ms.",
+            "coverImageUrl": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1600&q=80",
+            "callToActionText": "Dùng Thử Ngay"
+          },
+          "featureCardsGrid": [
+            { "title": "API-First Architecture", "description": "Tích hợp GraphQL, REST và Webhooks bảo mật cao." },
+            { "title": "Realtime Stream Engine", "description": "Phân tích dữ liệu theo thời gian thực không độ trễ." },
+            { "title": "Multi-Tenant Security", "description": "Mã hóa AES-256 từ đầu cuối đến cơ sở dữ liệu." },
+            { "title": "Automated CI/CD Workflows", "description": "Tự động triển khai và roll-back chỉ với 1 cú click." },
+            { "title": "Global Edge Network", "description": "Mạng lưới phân tán 320 điểm trên toàn thế giới." },
+            { "title": "Smart Cost Optimization", "description": "Tự động co giãn tài nguyên đám mây, tiết kiệm 40% chi phí." }
+          ],
+          "pricingPackages": [
+            { "id": "starter", "name": "Starter", "price": "$49", "billingPeriod": "tháng", "description": "Dành cho startup nhỏ", "perks": ["100K events/tháng", "5 Pipelines"] },
+            { "id": "business", "name": "Business Pro", "price": "$199", "billingPeriod": "tháng", "badge": "POPULAR", "description": "Dành cho doanh nghiệp", "perks": ["5M events/tháng", "Không giới hạn"] }
+          ],
+          "metrics": [
+            { "value": "10M+", "label": "Events/giây" },
+            { "value": "99.99%", "label": "Uptime SLA" }
+          ],
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-12-31"
+          }
+        }
+        """;
+
+        // 4. Seed Templates (Rich Mockup, Audio, LongPreview for all Categories)
         Template t1;
         Template t2;
         Template t5;
         Template t6;
+        Template tAiSummit;
+        Template tDriftPlanner;
+        Template tSmileCraft;
+        Template tCloudFlow;
 
         if (!await context.Templates.AnyAsync())
         {
@@ -710,7 +970,63 @@ public static class DataSeeder
                 "Beautiful In White - Acoustic Guitar",
                 engagementConfigJson);
 
-            context.Templates.AddRange(t1, t2, t3, t4, t5, t6, t7);
+            tAiSummit = Template.Create(
+                "Virtual AI Summit 2026",
+                "ai-summit-pro",
+                "Hội nghị thượng đỉnh quy tụ 50+ chuyên gia AI hàng đầu thế giới thảo luận về tương lai của Autonomous Agents.",
+                conferenceCat.Id,
+                "Conference",
+                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
+                "/preview/ai-summit-pro",
+                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
+                "Premium",
+                null,
+                null,
+                aiSummitConfigJson);
+
+            tDriftPlanner = Template.Create(
+                "Drift ADHD Planner",
+                "drift-planner-app",
+                "Ứng dụng quản lý thời gian và năng suất nhẹ nhàng dành riêng cho não bộ ADHD, không áp lực.",
+                appShowcaseCat.Id,
+                "AppShowcase",
+                "https://images.unsplash.com/photo-1517842645767-c639042777db?w=800&q=80",
+                "/preview/drift-planner-app",
+                "https://images.unsplash.com/photo-1517842645767-c639042777db?w=800&q=80",
+                "Hot",
+                null,
+                null,
+                driftPlannerConfigJson);
+
+            tSmileCraft = Template.Create(
+                "SmileCraft Dental Clinic",
+                "smilecraft-dental",
+                "Phòng khám nha khoa thẩm mỹ cao cấp chuẩn Thụy Sỹ với công nghệ Scan 3D không xâm lấn.",
+                medicalCat.Id,
+                "Medical",
+                "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&q=80",
+                "/preview/smilecraft-dental",
+                "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&q=80",
+                "Premium",
+                null,
+                null,
+                dentalClinicConfigJson);
+
+            tCloudFlow = Template.Create(
+                "CloudFlow Modern SaaS",
+                "cloudflow-saas",
+                "Nền tảng tự động hóa luồng dữ liệu doanh nghiệp thời gian thực với độ trễ dưới 5ms.",
+                saasCat.Id,
+                "SaaS",
+                "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+                "/preview/cloudflow-saas",
+                "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+                "New",
+                null,
+                null,
+                modernSaasConfigJson);
+
+            context.Templates.AddRange(t1, t2, t3, t4, t5, t6, t7, tAiSummit, tDriftPlanner, tSmileCraft, tCloudFlow);
             await context.SaveChangesAsync();
         }
         else
@@ -719,6 +1035,10 @@ public static class DataSeeder
             t2 = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "golden-glamour") ?? t1;
             t5 = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "pastel-dream-baby") ?? t1;
             t6 = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "silver-jubilee") ?? t1;
+            tAiSummit = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "ai-summit-pro") ?? t1;
+            tDriftPlanner = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "drift-planner-app") ?? t1;
+            tSmileCraft = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "smilecraft-dental") ?? t1;
+            tCloudFlow = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "cloudflow-saas") ?? t1;
         }
 
         // 5. Seed UserCustomizations (Published customized landing pages)
@@ -726,6 +1046,8 @@ public static class DataSeeder
         UserCustomization? c2 = null;
         UserCustomization? c3 = null;
         UserCustomization? c4 = null;
+        UserCustomization? c5 = null;
+        UserCustomization? c6 = null;
 
         if (!await context.UserCustomizations.AnyAsync())
         {
@@ -761,7 +1083,23 @@ public static class DataSeeder
                 anniversaryConfigJson,
                 true);
 
-            context.UserCustomizations.AddRange(c1, c2, c3, c4);
+            c5 = UserCustomization.Create(
+                adminUser.Id,
+                tAiSummit.Id,
+                "Virtual AI Summit 2026 - Global Keynote",
+                "global-ai-summit-2026",
+                aiSummitConfigJson,
+                true);
+
+            c6 = UserCustomization.Create(
+                normalUser.Id,
+                tDriftPlanner.Id,
+                "Drift — Không Gian Năng Suất Nhẹ Nhàng",
+                "drift-workspace-adhd",
+                driftPlannerConfigJson,
+                true);
+
+            context.UserCustomizations.AddRange(c1, c2, c3, c4, c5, c6);
             await context.SaveChangesAsync();
         }
         else
@@ -770,6 +1108,8 @@ public static class DataSeeder
             c2 = await context.UserCustomizations.FirstOrDefaultAsync(c => c.Slug == "be-bap-1-tuoi");
             c3 = await context.UserCustomizations.FirstOrDefaultAsync(c => c.Slug == "hoang-nam-30th");
             c4 = await context.UserCustomizations.FirstOrDefaultAsync(c => c.Slug == "huy-phuong-silver-jubilee");
+            c5 = await context.UserCustomizations.FirstOrDefaultAsync(c => c.Slug == "global-ai-summit-2026");
+            c6 = await context.UserCustomizations.FirstOrDefaultAsync(c => c.Slug == "drift-workspace-adhd");
         }
 
         // 6. Seed RsvpEntries

@@ -49,12 +49,13 @@ public class DataSeederTests : IDisposable
         users.Should().Contain(u => u.Email == "minhlinh@template.com" && u.Role == "User");
         users.All(u => u.PasswordHash.StartsWith("hashed_")).Should().BeTrue();
 
-        // Assert - 2. Categories (5 categories)
+        // Assert - 2. Categories (9 categories including conference, app-showcase, medical, saas)
         var categories = await _dbContext.Categories.ToListAsync();
-        categories.Should().HaveCount(5);
+        categories.Should().HaveCount(9);
         categories.Select(c => c.Slug).Should().BeEquivalentTo(new[]
         {
-            "wedding", "engagement", "birthday", "anniversary", "baby-shower"
+            "wedding", "engagement", "birthday", "anniversary", "baby-shower",
+            "conference", "app-showcase", "medical", "saas"
         });
 
         // Assert - 3. NavigationMenus (5 root + 5 submenus = 10 total)
@@ -75,9 +76,9 @@ public class DataSeederTests : IDisposable
             "/templates?category=baby-shower"
         });
 
-        // Assert - 4. Templates (7 templates)
+        // Assert - 4. Templates (11 templates: 7 classic + 4 diverse formats)
         var templates = await _dbContext.Templates.ToListAsync();
-        templates.Should().HaveCount(7);
+        templates.Should().HaveCount(11);
         templates.Select(t => t.Slug).Should().BeEquivalentTo(new[]
         {
             "elegance-blossom",
@@ -86,20 +87,26 @@ public class DataSeederTests : IDisposable
             "eternal-love",
             "pastel-dream-baby",
             "silver-jubilee",
-            "traditional-grace"
+            "traditional-grace",
+            "ai-summit-pro",
+            "drift-planner-app",
+            "smilecraft-dental",
+            "cloudflow-saas"
         });
         templates.All(t => !string.IsNullOrWhiteSpace(t.DefaultConfigJson)).Should().BeTrue();
         templates.All(t => !string.IsNullOrWhiteSpace(t.ThumbnailUrl)).Should().BeTrue();
 
-        // Assert - 5. UserCustomizations (4 customizations)
+        // Assert - 5. UserCustomizations (6 customizations)
         var customizations = await _dbContext.UserCustomizations.ToListAsync();
-        customizations.Should().HaveCount(4);
+        customizations.Should().HaveCount(6);
         customizations.Select(c => c.Slug).Should().BeEquivalentTo(new[]
         {
             "minh-linh-wedding",
             "be-bap-1-tuoi",
             "hoang-nam-30th",
-            "huy-phuong-silver-jubilee"
+            "huy-phuong-silver-jubilee",
+            "global-ai-summit-2026",
+            "drift-workspace-adhd"
         });
         customizations.All(c => c.IsPublished).Should().BeTrue();
         customizations.All(c => c.UserId.HasValue).Should().BeTrue();
@@ -145,10 +152,10 @@ public class DataSeederTests : IDisposable
 
         // Assert - Counts should remain unchanged (no duplicate records)
         (await _dbContext.Users.CountAsync()).Should().Be(3);
-        (await _dbContext.Categories.CountAsync()).Should().Be(5);
+        (await _dbContext.Categories.CountAsync()).Should().Be(9);
         (await _dbContext.NavigationMenus.CountAsync()).Should().Be(10);
-        (await _dbContext.Templates.CountAsync()).Should().Be(7);
-        (await _dbContext.UserCustomizations.CountAsync()).Should().Be(4);
+        (await _dbContext.Templates.CountAsync()).Should().Be(11);
+        (await _dbContext.UserCustomizations.CountAsync()).Should().Be(6);
         (await _dbContext.RsvpEntries.CountAsync()).Should().Be(6);
         (await _dbContext.GuestbookEntries.CountAsync()).Should().Be(7);
         (await _dbContext.Products.CountAsync()).Should().Be(4);
@@ -171,10 +178,10 @@ public class DataSeederTests : IDisposable
 
         // Assert - Seeder should safely reuse existing records and proceed with remaining tables
         var templates = await _dbContext.Templates.ToListAsync();
-        templates.Should().HaveCount(7);
+        templates.Should().HaveCount(11);
 
         var customizations = await _dbContext.UserCustomizations.ToListAsync();
-        customizations.Should().HaveCount(4);
+        customizations.Should().HaveCount(6);
 
         var products = await _dbContext.Products.ToListAsync();
         products.Should().HaveCount(4);
@@ -205,7 +212,65 @@ public class DataSeederTests : IDisposable
             var root = doc.RootElement;
             root.TryGetProperty("theme", out _).Should().BeTrue();
             root.TryGetProperty("hero", out _).Should().BeTrue();
-            root.TryGetProperty("eventDetails", out _).Should().BeTrue();
+            root.TryGetProperty("eventDetails", out var eventDetails).Should().BeTrue();
+            eventDetails.TryGetProperty("ceremonyName", out var ceremonyName).Should().BeTrue();
+            ceremonyName.GetString().Should().NotBeNullOrWhiteSpace();
         }
+    }
+
+    [Fact]
+    public async Task SeedAsync_Should_ContainSpecificProperties_ForDiverseTemplates()
+    {
+        // Act
+        await DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
+
+        // Assert Summit template
+        var summit = await _dbContext.Templates.FirstAsync(t => t.Slug == "ai-summit-pro");
+        using (var doc = JsonDocument.Parse(summit.DefaultConfigJson))
+        {
+            doc.RootElement.TryGetProperty("speakers", out var speakers).Should().BeTrue();
+            speakers.GetArrayLength().Should().BeGreaterThan(0);
+            doc.RootElement.TryGetProperty("pricingTickets", out var tickets).Should().BeTrue();
+            tickets.GetArrayLength().Should().BeGreaterThan(0);
+        }
+
+        // Assert Drift Planner template
+        var drift = await _dbContext.Templates.FirstAsync(t => t.Slug == "drift-planner-app");
+        using (var doc = JsonDocument.Parse(drift.DefaultConfigJson))
+        {
+            doc.RootElement.TryGetProperty("featureCardsGrid", out var features).Should().BeTrue();
+            features.GetArrayLength().Should().BeGreaterThan(0);
+            doc.RootElement.GetProperty("hero").TryGetProperty("videoUrl", out _).Should().BeTrue();
+        }
+
+        // Assert Dental Clinic template
+        var dental = await _dbContext.Templates.FirstAsync(t => t.Slug == "smilecraft-dental");
+        using (var doc = JsonDocument.Parse(dental.DefaultConfigJson))
+        {
+            doc.RootElement.TryGetProperty("servicesGrid", out var services).Should().BeTrue();
+            services.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("treatmentProcess", out var process).Should().BeTrue();
+            process.GetArrayLength().Should().Be(4);
+        }
+
+        // Assert SaaS template
+        var saas = await _dbContext.Templates.FirstAsync(t => t.Slug == "cloudflow-saas");
+        using (var doc = JsonDocument.Parse(saas.DefaultConfigJson))
+        {
+            doc.RootElement.TryGetProperty("featureCardsGrid", out var features).Should().BeTrue();
+            features.GetArrayLength().Should().Be(6);
+            doc.RootElement.TryGetProperty("pricingPackages", out var packages).Should().BeTrue();
+            packages.GetArrayLength().Should().BeGreaterThan(0);
+        }
+    }
+
+    [Fact]
+    public async Task SeedAsync_Should_ThrowException_WhenContextIsNull()
+    {
+        // Act
+        var act = () => DataSeeder.SeedAsync(null!, _passwordHasherMock.Object);
+
+        // Assert
+        await act.Should().ThrowAsync<NullReferenceException>();
     }
 }

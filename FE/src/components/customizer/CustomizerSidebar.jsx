@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   Palette, Image, Users, Calendar, Clock, Sparkles, 
   CheckSquare, Music, MessageSquare, Plus, Trash2, Layers,
-  HelpCircle, QrCode, HeartHandshake, FileText
+  HelpCircle, QrCode, HeartHandshake, FileText,
+  Mic, Ticket, Stethoscope, Tag
 } from 'lucide-react';
 import AnimationSelector from './AnimationSelector';
 import { 
@@ -249,19 +250,122 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
     onChange({ ...config, extraSections: updated });
   };
 
-  const tabs = [
+  // Speakers helpers
+  const handleSpeakerChange = (index, field, value) => {
+    onSectionEdit?.('speakers');
+    const updated = [...(config.speakers || [])];
+    updated[index] = { ...updated[index], [field]: value };
+    onChange({ ...config, speakers: updated });
+  };
+
+  const addSpeaker = () => {
+    onSectionEdit?.('speakers');
+    const newItem = {
+      id: `spk-${Date.now()}`,
+      name: 'Diễn giả mới',
+      role: 'Chuyên gia AI',
+      company: 'Tech Organization',
+      bio: 'Tiểu sử và kinh nghiệm chuyên sâu...',
+      avatarUrl: '',
+    };
+    onChange({ ...config, speakers: [...(config.speakers || []), newItem] });
+  };
+
+  const removeSpeaker = (index) => {
+    onSectionEdit?.('speakers');
+    const updated = (config.speakers || []).filter((_, idx) => idx !== index);
+    onChange({ ...config, speakers: updated });
+  };
+
+  // Pricing tickets & packages helpers
+  const handlePricingChange = (index, field, value) => {
+    onSectionEdit?.('pricing');
+    const key = Array.isArray(config.pricingTickets) ? 'pricingTickets' : 'pricingPackages';
+    const updated = [...(config[key] || [])];
+    updated[index] = { ...updated[index], [field]: value };
+    onChange({ ...config, [key]: updated });
+  };
+
+  const addPricingTicket = () => {
+    onSectionEdit?.('pricing');
+    const key = Array.isArray(config.pricingTickets) ? 'pricingTickets' : 'pricingPackages';
+    const newItem = {
+      id: `tier-${Date.now()}`,
+      name: 'Hạng Vé Mới',
+      price: '1.990.000 đ',
+      description: 'Mô tả quyền lợi chi tiết của gói vé',
+      perks: ['Quyền lợi 1', 'Quyền lợi 2'],
+      ctaText: 'Đăng Ký Ngay',
+    };
+    onChange({ ...config, [key]: [...(config[key] || []), newItem] });
+  };
+
+  const removePricingTicket = (index) => {
+    onSectionEdit?.('pricing');
+    const key = Array.isArray(config.pricingTickets) ? 'pricingTickets' : 'pricingPackages';
+    const updated = (config[key] || []).filter((_, idx) => idx !== index);
+    onChange({ ...config, [key]: updated });
+  };
+
+  // Services helpers
+  const handleServiceChange = (index, field, value) => {
+    onSectionEdit?.('services');
+    const updated = [...(config.servicesGrid || [])];
+    updated[index] = { ...updated[index], [field]: value };
+    onChange({ ...config, servicesGrid: updated });
+  };
+
+  // Feature cards helpers
+  const handleFeatureChange = (index, field, value) => {
+    onSectionEdit?.('features');
+    const updated = [...(config.featureCardsGrid || [])];
+    updated[index] = { ...updated[index], [field]: value };
+    onChange({ ...config, featureCardsGrid: updated });
+  };
+
+  // Dynamic Tabs detection based on template format and fields
+  const hasSpeakers = Array.isArray(config?.speakers) || config?.format === 'summit';
+  const hasPricing = Array.isArray(config?.pricingTickets) || Array.isArray(config?.pricingPackages) || config?.format === 'summit' || config?.format === 'saas';
+  const hasServices = Array.isArray(config?.servicesGrid) || config?.format === 'dental-services' || config?.format === 'medical';
+  const hasFeatures = Array.isArray(config?.featureCardsGrid) || config?.format === 'app-showcase' || config?.format === 'saas';
+
+  const baseTabs = [
     { id: 'general', label: 'Xuất bản', icon: Sparkles },
     { id: 'theme', label: 'Màu & Phông', icon: Palette },
     { id: 'hero', label: 'Màn hình đầu', icon: Image },
-    { id: 'couple', label: 'Nhân vật (Dynamic)', icon: Users },
+  ];
+
+  if (hasFeatures) {
+    baseTabs.push({ id: 'features', label: 'Tính năng', icon: Layers });
+  }
+
+  if (hasServices) {
+    baseTabs.push({ id: 'services', label: 'Dịch vụ', icon: Stethoscope });
+  }
+
+  if (hasSpeakers) {
+    baseTabs.push({ id: 'speakers', label: 'Diễn giả', icon: Mic });
+  }
+
+  if (hasPricing) {
+    baseTabs.push({ id: 'pricing', label: 'Gói vé / Giá', icon: Ticket });
+  }
+
+  if (persons.length > 0) {
+    baseTabs.push({ id: 'couple', label: 'Nhân vật (Dynamic)', icon: Users });
+  }
+
+  baseTabs.push(
     { id: 'event', label: 'Địa điểm & Giờ', icon: Calendar },
     { id: 'timeline', label: 'Lịch trình', icon: Clock },
     { id: 'gallery', label: 'Album ảnh', icon: Image },
     { id: 'rsvp', label: 'Biểu mẫu RSVP', icon: CheckSquare },
     { id: 'music', label: 'Nhạc nền', icon: Music },
     { id: 'wishes', label: 'Sổ lưu bút', icon: MessageSquare },
-    { id: 'extra', label: 'Mở rộng (Sections)', icon: Layers },
-  ];
+    { id: 'extra', label: 'Mở rộng (Sections)', icon: Layers }
+  );
+
+  const tabs = baseTabs;
 
   return (
     <div className="w-full lg:w-96 bg-white border-r border-gray-200 flex flex-col h-full overflow-hidden shadow-sm">
@@ -1254,6 +1358,269 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
                     value={sec.animation || 'fade-up'}
                     onChange={(val) => handleExtraSectionChange(idx, 'animation', val)}
                   />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 11: Speakers Lineup Controls */}
+        {activeTab === 'speakers' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div>
+                <h4 className="font-bold text-sm text-gray-900">Diễn Giả Hội Nghị</h4>
+                <p className="text-xs text-gray-400">Quản lý danh sách Keynote Speakers</p>
+              </div>
+              <button
+                type="button"
+                onClick={addSpeaker}
+                className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 font-bold text-xs hover:bg-blue-100 transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Thêm</span>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {(config.speakers || []).map((spk, idx) => (
+                <div key={spk.id || idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-200/80 space-y-3 relative">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-700">Diễn giả #{idx + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeSpeaker(idx)}
+                      className="p-1 text-gray-400 hover:text-rose-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Họ và tên</label>
+                    <input
+                      type="text"
+                      value={spk.name || ''}
+                      onChange={(e) => handleSpeakerChange(idx, 'name', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-600 block mb-1">Chức danh / Vai trò</label>
+                      <input
+                        type="text"
+                        value={spk.role || ''}
+                        onChange={(e) => handleSpeakerChange(idx, 'role', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-600 block mb-1">Công ty / Tổ chức</label>
+                      <input
+                        type="text"
+                        value={spk.company || ''}
+                        onChange={(e) => handleSpeakerChange(idx, 'company', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Tiểu sử tóm tắt</label>
+                    <textarea
+                      rows={2}
+                      value={spk.bio || ''}
+                      onChange={(e) => handleSpeakerChange(idx, 'bio', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Ảnh Avatar (URL)</label>
+                    <input
+                      type="text"
+                      value={spk.avatarUrl || ''}
+                      onChange={(e) => handleSpeakerChange(idx, 'avatarUrl', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-mono text-[11px]"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 12: Pricing & Tickets Controls */}
+        {activeTab === 'pricing' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div>
+                <h4 className="font-bold text-sm text-gray-900">Bảng Giá & Gói Vé</h4>
+                <p className="text-xs text-gray-400">Quản lý các hạng vé và mức giá</p>
+              </div>
+              <button
+                type="button"
+                onClick={addPricingTicket}
+                className="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 font-bold text-xs hover:bg-indigo-100 transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Thêm hạng vé</span>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {((config.pricingTickets || config.pricingPackages) || []).map((ticket, idx) => (
+                <div key={ticket.id || idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-200/80 space-y-3 relative">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-700">Hạng vé #{idx + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => removePricingTicket(idx)}
+                      className="p-1 text-gray-400 hover:text-rose-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-600 block mb-1">Tên gói / Vé</label>
+                      <input
+                        type="text"
+                        value={ticket.name || ''}
+                        onChange={(e) => handlePricingChange(idx, 'name', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-600 block mb-1">Giá vé</label>
+                      <input
+                        type="text"
+                        value={ticket.price || ''}
+                        onChange={(e) => handlePricingChange(idx, 'price', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-bold"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-600 block mb-1">Giá gạch (Original)</label>
+                      <input
+                        type="text"
+                        value={ticket.originalPrice || ''}
+                        onChange={(e) => handlePricingChange(idx, 'originalPrice', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-600 block mb-1">Huy hiệu (Badge)</label>
+                      <input
+                        type="text"
+                        placeholder="EARLY BIRD / POPULAR"
+                        value={ticket.badge || ''}
+                        onChange={(e) => handlePricingChange(idx, 'badge', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white uppercase font-bold"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Mô tả ngắn</label>
+                    <input
+                      type="text"
+                      value={ticket.description || ''}
+                      onChange={(e) => handlePricingChange(idx, 'description', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Nút bấm (CTA Text)</label>
+                    <input
+                      type="text"
+                      value={ticket.ctaText || ''}
+                      onChange={(e) => handlePricingChange(idx, 'ctaText', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 13: Services & Clinic Controls */}
+        {activeTab === 'services' && (
+          <div className="space-y-6">
+            <div className="pb-3 border-b border-gray-100">
+              <h4 className="font-bold text-sm text-gray-900">Dịch Vụ Y Tế & Nha Khoa</h4>
+              <p className="text-xs text-gray-400">Chỉnh sửa danh mục điều trị và chi phí</p>
+            </div>
+
+            <div className="space-y-4">
+              {(config.servicesGrid || []).map((srv, idx) => (
+                <div key={srv.id || idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-700">Dịch vụ #{idx + 1}</span>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Tên dịch vụ</label>
+                    <input
+                      type="text"
+                      value={srv.name || ''}
+                      onChange={(e) => handleServiceChange(idx, 'name', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Chi phí từ</label>
+                    <input
+                      type="text"
+                      value={srv.priceFrom || ''}
+                      onChange={(e) => handleServiceChange(idx, 'priceFrom', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Mô tả dịch vụ</label>
+                    <textarea
+                      rows={2}
+                      value={srv.description || ''}
+                      onChange={(e) => handleServiceChange(idx, 'description', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 14: Feature Cards Controls */}
+        {activeTab === 'features' && (
+          <div className="space-y-6">
+            <div className="pb-3 border-b border-gray-100">
+              <h4 className="font-bold text-sm text-gray-900">Tính Năng Nổi Bật</h4>
+              <p className="text-xs text-gray-400">Các thẻ tính năng công nghệ hoặc năng suất</p>
+            </div>
+
+            <div className="space-y-4">
+              {(config.featureCardsGrid || []).map((feat, idx) => (
+                <div key={feat.id || idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-200/80 space-y-3">
+                  <span className="text-xs font-bold text-gray-700">Tính năng #{idx + 1}</span>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Tiêu đề tính năng</label>
+                    <input
+                      type="text"
+                      value={feat.title || ''}
+                      onChange={(e) => handleFeatureChange(idx, 'title', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Mô tả tính năng</label>
+                    <textarea
+                      rows={2}
+                      value={feat.description || feat.desc || ''}
+                      onChange={(e) => handleFeatureChange(idx, 'description', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
                 </div>
               ))}
             </div>

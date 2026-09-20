@@ -14,7 +14,7 @@ describe('SplashScreen Component', () => {
 
   describe('Happy Paths (Đường chạy thuận lợi)', () => {
     it('renders MotionSites brand and progress bar', () => {
-      render(<SplashScreen onComplete={vi.fn()} durationMs={1000} />);
+      render(<SplashScreen onComplete={vi.fn()} durationMs={2000} />);
 
       expect(screen.getByRole('status', { name: /loading splash screen/i })).toBeInTheDocument();
       expect(screen.getByText('Motion')).toBeInTheDocument();
@@ -23,28 +23,41 @@ describe('SplashScreen Component', () => {
       expect(screen.getByText(/đang khởi tạo không gian tương tác/i)).toBeInTheDocument();
     });
 
-    it('smoothly counts to 100%, applies fade-out, and calls onComplete', () => {
+    it('smoothly counts to 100%, applies hold delay, fade-out, and calls onComplete', () => {
       const onCompleteMock = vi.fn();
 
-      const { container } = render(<SplashScreen onComplete={onCompleteMock} durationMs={1000} />);
+      const { container } = render(
+        <SplashScreen
+          onComplete={onCompleteMock}
+          durationMs={2000}
+          holdDelayMs={200}
+          fadeDurationMs={700}
+        />
+      );
       const splashContainer = container.querySelector('[role="status"]');
       expect(splashContainer).toHaveClass('opacity-100');
 
       // Advance timer by durationMs + extra frame time to reach linearProgress >= 1 and trigger finish()
       act(() => {
-        vi.advanceTimersByTime(1100);
+        vi.advanceTimersByTime(2100);
       });
 
-      // Progress reaches 100% and opacity-0 is applied
+      // Progress reaches 100%
       expect(screen.getByText('100')).toBeInTheDocument();
+
+      // Hold delay of 200ms before fade-out begins
+      expect(splashContainer).not.toHaveClass('opacity-0');
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
       expect(splashContainer).toHaveClass('opacity-0');
 
-      // onComplete should NOT be called before fade-out timer (400ms) completes
+      // onComplete should NOT be called before fade-out timer (700ms) completes
       expect(onCompleteMock).not.toHaveBeenCalled();
 
-      // Advance fade-out timer (400ms)
+      // Advance fade-out timer (700ms)
       act(() => {
-        vi.advanceTimersByTime(400);
+        vi.advanceTimersByTime(700);
       });
 
       expect(onCompleteMock).toHaveBeenCalledTimes(1);
@@ -58,26 +71,36 @@ describe('SplashScreen Component', () => {
       // Mock requestAnimationFrame to NOT call callback (simulate stalling/tab hidden)
       vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 12345);
 
-      const { container } = render(<SplashScreen onComplete={onCompleteMock} durationMs={1000} />);
+      const { container } = render(
+        <SplashScreen
+          onComplete={onCompleteMock}
+          durationMs={2000}
+          holdDelayMs={200}
+          fadeDurationMs={700}
+        />
+      );
       const splashContainer = container.querySelector('[role="status"]');
 
-      // Fallback is Math.max(durationMs + 600, 1800) -> 1800ms
+      // Fallback is Math.max(2000 + 200 + 600, 3000) -> 3000ms
       act(() => {
-        vi.advanceTimersByTime(1799);
+        vi.advanceTimersByTime(2999);
       });
       expect(onCompleteMock).not.toHaveBeenCalled();
 
-      // Trigger fallback at 1800ms
+      // Trigger fallback at 3000ms
       act(() => {
         vi.advanceTimersByTime(1);
       });
 
-      // Fade-out starts at fallback trigger
+      // Hold delay (200ms)
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
       expect(splashContainer).toHaveClass('opacity-0');
 
-      // Advance fade-out timer (400ms)
+      // Advance fade-out timer (700ms)
       act(() => {
-        vi.advanceTimersByTime(400);
+        vi.advanceTimersByTime(700);
       });
 
       expect(onCompleteMock).toHaveBeenCalledTimes(1);
@@ -88,7 +111,7 @@ describe('SplashScreen Component', () => {
       const clearTimeoutSpy = vi.spyOn(window, 'clearTimeout');
       const onCompleteMock = vi.fn();
 
-      const { unmount } = render(<SplashScreen onComplete={onCompleteMock} durationMs={1000} />);
+      const { unmount } = render(<SplashScreen onComplete={onCompleteMock} durationMs={2000} />);
 
       unmount();
 
@@ -97,7 +120,7 @@ describe('SplashScreen Component', () => {
 
       // Advance time and ensure onComplete is never called after unmount
       act(() => {
-        vi.advanceTimersByTime(3000);
+        vi.advanceTimersByTime(5000);
       });
 
       expect(onCompleteMock).not.toHaveBeenCalled();

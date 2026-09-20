@@ -3,11 +3,21 @@ import { Sparkles } from 'lucide-react';
 
 /**
  * Component hiển thị màn hình tải mở đầu đếm số mượt từ 0% đến 100%
+ * Theo chuẩn prompt: Counter ở góc dưới bên trái (bottom-left), số to text-7xl md:text-9xl tabular-nums,
+ * đếm từ 0 đến 100 trong 2000ms (20ms/bước), dừng 200ms, fade-out 700ms.
+ *
  * @param {Object} props
  * @param {Function} props.onComplete Callback khi đếm xong 100% và kết thúc animation fade out
- * @param {number} [props.durationMs=1200] Tổng thời gian đếm từ 0 đến 100
+ * @param {number} [props.durationMs=2000] Tổng thời gian đếm từ 0 đến 100
+ * @param {number} [props.holdDelayMs=200] Thời gian dừng ở 100% trước khi fade-out
+ * @param {number} [props.fadeDurationMs=700] Thời gian mờ dần
  */
-export default function SplashScreen({ onComplete, durationMs = 1200 }) {
+export default function SplashScreen({
+  onComplete,
+  durationMs = 2000,
+  holdDelayMs = 200,
+  fadeDurationMs = 700,
+}) {
   const [progress, setProgress] = useState(0);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const completedRef = useRef(false);
@@ -15,6 +25,7 @@ export default function SplashScreen({ onComplete, durationMs = 1200 }) {
   useEffect(() => {
     let animFrameId = null;
     let fallbackTimer = null;
+    let holdTimer = null;
     let fadeOutTimer = null;
     const startTime = performance.now();
 
@@ -22,11 +33,13 @@ export default function SplashScreen({ onComplete, durationMs = 1200 }) {
       if (completedRef.current) return;
       completedRef.current = true;
       setProgress(100);
-      setIsFadingOut(true);
 
-      fadeOutTimer = setTimeout(() => {
-        onComplete?.();
-      }, 400);
+      holdTimer = setTimeout(() => {
+        setIsFadingOut(true);
+        fadeOutTimer = setTimeout(() => {
+          onComplete?.();
+        }, fadeDurationMs);
+      }, holdDelayMs);
     };
 
     // Easing function: easeOutQuart
@@ -48,36 +61,37 @@ export default function SplashScreen({ onComplete, durationMs = 1200 }) {
 
     animFrameId = requestAnimationFrame(step);
 
-    // Fallback safety timer (durationMs + 600ms or 1800ms) to ensure splash screen never gets stuck
+    // Safety fallback timer to guarantee splash screen never hangs
     fallbackTimer = setTimeout(() => {
       finish();
-    }, Math.max(durationMs + 600, 1800));
+    }, Math.max(durationMs + holdDelayMs + 600, 3000));
 
     return () => {
       if (animFrameId) cancelAnimationFrame(animFrameId);
       if (fallbackTimer) clearTimeout(fallbackTimer);
+      if (holdTimer) clearTimeout(holdTimer);
       if (fadeOutTimer) clearTimeout(fadeOutTimer);
     };
-  }, [durationMs, onComplete]);
+  }, [durationMs, holdDelayMs, fadeDurationMs, onComplete]);
 
   return (
     <div
       role="status"
       aria-label="Loading splash screen"
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-950 text-white transition-opacity duration-400 ease-out select-none pointer-events-none ${
+      className={`fixed inset-0 z-50 flex flex-col justify-between items-start p-8 md:p-16 bg-gray-950 text-white transition-opacity duration-700 ease-out select-none pointer-events-none ${
         isFadingOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
-      {/* Background ambient lighting */}
-      <div className="absolute w-96 h-96 bg-rose-600/20 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse-glow" />
+      {/* Background ambient lighting glow */}
+      <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-rose-600/15 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse-glow" />
 
-      {/* Brand & MotionSites Logo */}
-      <div className="flex flex-col items-center space-y-4 mb-8">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white shadow-2xl shadow-rose-500/30 scale-100 animate-float-slow">
-          <Sparkles className="w-7 h-7 animate-spin-slow" />
+      {/* Top Left: Brand Logo & MotionSites Info */}
+      <div className="flex items-center space-x-3.5 z-10">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white shadow-xl shadow-rose-500/25">
+          <Sparkles className="w-5 h-5 animate-spin-slow" />
         </div>
-        <div className="text-center space-y-1">
-          <h2 className="text-2xl font-black tracking-tight text-white">
+        <div>
+          <h2 className="text-xl md:text-2xl font-black tracking-tight text-white">
             Motion<span className="text-rose-500">Sites</span>
           </h2>
           <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">
@@ -86,24 +100,27 @@ export default function SplashScreen({ onComplete, durationMs = 1200 }) {
         </div>
       </div>
 
-      {/* Percentage Counter */}
-      <div className="text-5xl sm:text-6xl font-black font-mono tracking-tighter text-white/95 mb-6">
-        {progress}
-        <span className="text-2xl sm:text-3xl text-rose-500 ml-1">%</span>
-      </div>
+      {/* Bottom Left: Giant Counter & Progress Indicator */}
+      <div className="z-10 space-y-4 max-w-xl">
+        <div className="flex items-baseline">
+          <span className="text-7xl md:text-9xl font-bold tabular-nums tracking-tighter text-white leading-none">
+            {progress}
+          </span>
+          <span className="text-3xl md:text-5xl font-bold text-rose-500 ml-2">%</span>
+        </div>
 
-      {/* Modern Progress Bar */}
-      <div className="w-64 sm:w-80 h-1.5 bg-gray-800/80 rounded-full overflow-hidden border border-white/10 relative">
-        <div
-          className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 rounded-full transition-all duration-75 ease-out shadow-lg shadow-rose-500/50"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+        {/* Minimal Progress Bar */}
+        <div className="w-64 sm:w-96 h-1 bg-white/10 rounded-full overflow-hidden relative">
+          <div
+            className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 rounded-full transition-all duration-75 ease-out shadow-md shadow-rose-500/50"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
 
-      {/* Subtle indicator caption */}
-      <p className="mt-4 text-xs text-gray-400 tracking-wider font-medium">
-        Đang khởi tạo không gian tương tác...
-      </p>
+        <p className="text-xs text-gray-400 tracking-wider font-medium">
+          Đang khởi tạo không gian tương tác...
+        </p>
+      </div>
     </div>
   );
 }
