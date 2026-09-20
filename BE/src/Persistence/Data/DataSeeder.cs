@@ -8,6 +8,8 @@ public static class DataSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context, IPasswordHasher passwordHasher)
     {
+        await context.Database.EnsureCreatedAsync();
+
         // 1. Seed Users
         if (!await context.Users.AnyAsync())
         {
@@ -27,7 +29,189 @@ public static class DataSeeder
             await context.SaveChangesAsync();
         }
 
-        // 2. Seed Master Templates
+        // 2. Seed 5 Standard Cinelove Categories
+        Category weddingCat;
+        Category engagementCat;
+        Category birthdayCat;
+        Category anniversaryCat;
+        Category babyShowerCat;
+
+        if (!await context.Categories.AnyAsync())
+        {
+            weddingCat = Category.Create(
+                "Thiệp Cưới",
+                "wedding",
+                "Mẫu thiệp cưới online lãng mạn, hiện đại tích hợp album ảnh, âm nhạc và xác nhận RSVP.",
+                "Heart",
+                1,
+                true);
+
+            engagementCat = Category.Create(
+                "Lễ Đính Hôn",
+                "engagement",
+                "Thiệp lễ ăn hỏi, đính hôn phong cách thanh lịch truyền thống kết hợp hiện đại.",
+                "Ring",
+                2,
+                true);
+
+            birthdayCat = Category.Create(
+                "Sinh Nhật",
+                "birthday",
+                "Mẫu thiệp sinh nhật dạ tiệc sôi động, pháo hoa giấy và âm thanh lôi cuốn.",
+                "Cake",
+                3,
+                true);
+
+            anniversaryCat = Category.Create(
+                "Kỷ Niệm Ngày Cưới",
+                "anniversary",
+                "Ôn lại chặng đường tình yêu ngọt ngào với thiệp kỷ niệm ngày chung đôi.",
+                "Sparkles",
+                4,
+                true);
+
+            babyShowerCat = Category.Create(
+                "Thôi Nôi & Đầy Tháng",
+                "baby-shower",
+                "Chào đón thiên thần nhỏ với những thiết kế dễ thương, ấm áp.",
+                "Baby",
+                5,
+                true);
+
+            context.Categories.AddRange(weddingCat, engagementCat, birthdayCat, anniversaryCat, babyShowerCat);
+            await context.SaveChangesAsync();
+        }
+        else
+        {
+            weddingCat = await context.Categories.FirstAsync(c => c.Slug == "wedding");
+            engagementCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "engagement") ?? weddingCat;
+            birthdayCat = await context.Categories.FirstAsync(c => c.Slug == "birthday");
+            anniversaryCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "anniversary") ?? weddingCat;
+            babyShowerCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "baby-shower") ?? birthdayCat;
+        }
+
+        // 3. Seed Dynamic Navigation Menus (Parent & Submenu Tree)
+        if (!await context.NavigationMenus.AnyAsync())
+        {
+            var homeMenu = NavigationMenu.Create(
+                "Trang Chủ",
+                "/",
+                null,
+                1,
+                "_self",
+                null,
+                null,
+                "Home",
+                true);
+
+            var templatesMenu = NavigationMenu.Create(
+                "Kho Mẫu Thiệp",
+                "/templates",
+                null,
+                2,
+                "_self",
+                "HOT",
+                "rose",
+                "LayoutTemplate",
+                true);
+
+            var pricingMenu = NavigationMenu.Create(
+                "Bảng Giá",
+                "/#pricing",
+                null,
+                3,
+                "_self",
+                null,
+                null,
+                "BadgePercent",
+                true);
+
+            var guideMenu = NavigationMenu.Create(
+                "Hướng Dẫn",
+                "/#guide",
+                null,
+                4,
+                "_self",
+                null,
+                null,
+                "BookOpen",
+                true);
+
+            var contactMenu = NavigationMenu.Create(
+                "Liên Hệ",
+                "/#contact",
+                null,
+                5,
+                "_self",
+                null,
+                null,
+                "Mail",
+                true);
+
+            context.NavigationMenus.AddRange(homeMenu, templatesMenu, pricingMenu, guideMenu, contactMenu);
+            await context.SaveChangesAsync();
+
+            // Submenus under "Kho Mẫu Thiệp"
+            var sub1 = NavigationMenu.Create(
+                "Thiệp Cưới",
+                "/templates?category=wedding",
+                templatesMenu.Id,
+                1,
+                "_self",
+                "HOT",
+                "rose",
+                "Heart",
+                true);
+
+            var sub2 = NavigationMenu.Create(
+                "Lễ Đính Hôn",
+                "/templates?category=engagement",
+                templatesMenu.Id,
+                2,
+                "_self",
+                null,
+                null,
+                "Ring",
+                true);
+
+            var sub3 = NavigationMenu.Create(
+                "Thiệp Sinh Nhật",
+                "/templates?category=birthday",
+                templatesMenu.Id,
+                3,
+                "_self",
+                "NEW",
+                "blue",
+                "Cake",
+                true);
+
+            var sub4 = NavigationMenu.Create(
+                "Kỷ Niệm Ngày Cưới",
+                "/templates?category=anniversary",
+                templatesMenu.Id,
+                4,
+                "_self",
+                null,
+                null,
+                "Sparkles",
+                true);
+
+            var sub5 = NavigationMenu.Create(
+                "Thôi Nôi & Đầy Tháng",
+                "/templates?category=baby-shower",
+                templatesMenu.Id,
+                5,
+                "_self",
+                null,
+                null,
+                "Baby",
+                true);
+
+            context.NavigationMenus.AddRange(sub1, sub2, sub3, sub4, sub5);
+            await context.SaveChangesAsync();
+        }
+
+        // 4. Seed Templates (Rich Mockup, Audio, LongPreview)
         if (!await context.Templates.AnyAsync())
         {
             var weddingConfigJson = """
@@ -97,7 +281,7 @@ public static class DataSeeder
               "music": {
                 "enabled": true,
                 "audioUrl": "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
-                "title": "A Thousand Years - Instrumental",
+                "title": "A Thousand Years - Piano Instrumental",
                 "autoPlay": true
               },
               "wishes": {
@@ -108,95 +292,91 @@ public static class DataSeeder
             }
             """;
 
-            var weddingTemplate = Template.Create(
+            var t1 = Template.Create(
                 "Elegance Blossom",
                 "elegance-blossom",
-                "Mẫu thiệp cưới sang trọng mang phong cách châu Âu với hiệu ứng cánh hoa bay lãng mạn.",
+                "Mẫu thiệp cưới sang trọng phong cách Châu Âu, tone màu hồng pastel dịu dàng với hiệu ứng cánh hoa bay lãng mạn.",
+                weddingCat.Id,
                 "Wedding",
                 "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
                 "/preview/elegance-blossom",
+                "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
+                "Premium",
+                "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
+                "A Thousand Years - Piano Instrumental",
                 weddingConfigJson);
 
-            var birthdayConfigJson = """
-            {
-              "theme": {
-                "primaryColor": "#d97706",
-                "secondaryColor": "#f59e0b",
-                "accentColor": "#fde68a",
-                "backgroundColor": "#0f172a",
-                "textColor": "#f8fafc",
-                "fontFamily": "Cinzel",
-                "stylePreset": "luxury",
-                "particlesEffect": "confetti"
-              },
-              "hero": {
-                "badge": "HAPPY 30TH BIRTHDAY",
-                "title": "Hoàng Nam",
-                "subtitle": "Đêm tiệc kỷ niệm cột mốc tuổi 30 đáng nhớ",
-                "eventDate": "2026-11-12T19:00:00",
-                "coverImageUrl": "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80",
-                "callToActionText": "Đăng ký tham dự"
-              },
-              "coupleOrCelebrant": {
-                "type": "birthday",
-                "person1": {
-                  "name": "Trần Hoàng Nam",
-                  "title": "Chủ Nhân Buổi Tiệc",
-                  "avatarUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&q=80",
-                  "bio": "Founder & Tech Enthusiast, đón chào tuổi 30 bùng nổ cùng những người bạn tuyệt vời!",
-                  "parents": "Gia đình họ Trần"
-                },
-                "storyQuote": "Tuổi 30 không phải là già đi, mà là bắt đầu chương rực rỡ nhất của cuộc đời."
-              },
-              "eventDetails": {
-                "ceremonyName": "Gala Dinner & Rooftop Night",
-                "time": "18:30 - Thứ Bảy, 12/11/2026",
-                "venueName": "Sky Lounge 36",
-                "address": "Tầng 36, Tòa nhà Landmark, Quận 1, TP. Hồ Chí Minh",
-                "mapEmbedUrl": "https://maps.google.com",
-                "mapDirectLink": "https://maps.google.com",
-                "dressCode": "Black Tie / Ánh Kim / Dạ Hội"
-              },
-              "timeline": [
-                { "id": "1", "time": "18:30", "title": "Check-in & Welcome Cocktail", "description": "Đón tiếp khách mời và thưởng thức cocktail khai tiệc", "icon": "GlassWater" },
-                { "id": "2", "time": "19:30", "title": "Thổi nến & Khai tiệc", "description": "Nghi thức thổi nến chúc mừng tuổi mới", "icon": "Cake" },
-                { "id": "3", "time": "20:30", "title": "DJ Party & Chill Night", "description": "Âm nhạc sôi động và nâng ly cùng bạn bè", "icon": "Music" }
-              ],
-              "gallery": [
-                { "id": "1", "url": "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80", "caption": "Ánh sáng lễ hội" },
-                { "id": "2", "url": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80", "caption": "Khoảnh khắc tiệc tùng" }
-              ],
-              "rsvp": {
-                "enabled": true,
-                "deadline": "2026-11-05",
-                "note": "Xin vui lòng xác nhận sớm để ban tổ chức chuẩn bị chỗ ngồi chu đáo nhất!",
-                "allowDietaryNotes": false,
-                "allowPlusOnes": true
-              },
-              "music": {
-                "enabled": true,
-                "audioUrl": "https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77c30.mp3",
-                "title": "Celebration Night - Acoustic",
-                "autoPlay": false
-              },
-              "wishes": {
-                "enabled": true,
-                "title": "Gửi Lời Chúc Mừng Sinh Nhật",
-                "subtitle": "Để lại những kỷ niệm đẹp cùng Nam nhé!"
-              }
-            }
-            """;
-
-            var birthdayTemplate = Template.Create(
+            var t2 = Template.Create(
                 "Golden Glamour",
                 "golden-glamour",
-                "Mẫu thiệp sinh nhật dạ tiệc sang trọng với tone vàng kim và hiệu ứng pháo hoa giấy confetti rực rỡ.",
+                "Mẫu thiệp sinh nhật dạ tiệc sang trọng với tone vàng kim, hiệu ứng pháo hoa giấy confetti lung linh rực rỡ.",
+                birthdayCat.Id,
                 "Birthday",
                 "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80",
                 "/preview/golden-glamour",
-                birthdayConfigJson);
+                "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80",
+                "Hot",
+                "https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77c30.mp3",
+                "Celebration Night - Acoustic Vibe",
+                weddingConfigJson.Replace("Minh & Linh", "Hoàng Nam").Replace("SAVE THE DATE", "HAPPY BIRTHDAY"));
 
-            context.Templates.AddRange(weddingTemplate, birthdayTemplate);
+            var t3 = Template.Create(
+                "Sweet Romance",
+                "sweet-romance",
+                "Mẫu thiệp cưới cổ điển phương Tây, font chữ thanh lịch cùng giai điệu vĩ cầm du dương.",
+                weddingCat.Id,
+                "Wedding",
+                "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
+                "/preview/sweet-romance",
+                "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
+                "Basic",
+                "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3",
+                "Can't Help Falling in Love - Violin Cover",
+                weddingConfigJson.Replace("Minh & Linh", "Tuấn & Trang"));
+
+            var t4 = Template.Create(
+                "Eternal Love",
+                "eternal-love",
+                "Mẫu thiệp cưới tối giản hiện đại (Minimalist), tinh khôi và trường tồn cùng năm tháng.",
+                weddingCat.Id,
+                "Wedding",
+                "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
+                "/preview/eternal-love",
+                "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
+                "Free",
+                "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3",
+                "River Flows in You - Yiruma",
+                weddingConfigJson.Replace("Minh & Linh", "Bảo & Vy"));
+
+            var t5 = Template.Create(
+                "Pastel Dream Baby",
+                "pastel-dream-baby",
+                "Mẫu thiệp thôi nôi đầy tháng ngọt ngào với gam màu baby pastel, hình vẽ ngộ nghĩnh và lời nhắn ấm áp.",
+                babyShowerCat.Id,
+                "BabyShower",
+                "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80",
+                "/preview/pastel-dream-baby",
+                "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80",
+                "New",
+                "https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3",
+                "Lullaby Goodnight - Music Box",
+                weddingConfigJson.Replace("Minh & Linh", "Bé Bắp Tròn 1 Tuổi").Replace("SAVE THE DATE", "HAPPY 1ST BIRTHDAY"));
+
+            var t6 = Template.Create(
+                "Silver Jubilee",
+                "silver-jubilee",
+                "Mẫu thiệp kỷ niệm ngày cưới bạc và vàng, gắn kết những khoảnh khắc yêu thương suốt nhiều thập kỷ.",
+                anniversaryCat.Id,
+                "Anniversary",
+                "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80",
+                "/preview/silver-jubilee",
+                "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80",
+                "Premium",
+                "https://cdn.pixabay.com/download/audio/2022/11/06/audio_03d659ad76.mp3",
+                "Memories of Love - Orchestra",
+                weddingConfigJson.Replace("Minh & Linh", "Huy & Phương (25 Năm)").Replace("SAVE THE DATE", "25TH ANNIVERSARY"));
+
+            context.Templates.AddRange(t1, t2, t3, t4, t5, t6);
             await context.SaveChangesAsync();
         }
     }

@@ -33,9 +33,14 @@ public class CreateTemplateCommandHandlerTests
             "Royal Gold",
             "royal-gold",
             "Mẫu tiệc cưới hoàng gia",
+            null,
             "Wedding",
             "https://thumb.url",
             "/preview/royal-gold",
+            "https://thumb.url/long.jpg",
+            "Premium",
+            "https://music.mp3",
+            "Wedding March",
             "{}");
 
         _templateRepositoryMock.Setup(r => r.ExistsBySlugAsync(command.Slug, It.IsAny<CancellationToken>()))
@@ -62,9 +67,14 @@ public class CreateTemplateCommandHandlerTests
             "Royal Gold",
             "existing-slug",
             "Mẫu tiệc cưới hoàng gia",
+            null,
             "Wedding",
             "https://thumb.url",
             "/preview/royal-gold",
+            "https://thumb.url/long.jpg",
+            "Premium",
+            "https://music.mp3",
+            "Wedding March",
             "{}");
 
         _templateRepositoryMock.Setup(r => r.ExistsBySlugAsync(command.Slug, It.IsAny<CancellationToken>()))

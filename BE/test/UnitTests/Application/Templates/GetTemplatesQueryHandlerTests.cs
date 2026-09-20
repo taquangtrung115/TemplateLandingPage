@@ -26,10 +26,16 @@ public class GetTemplatesQueryHandlerTests
         var t1 = Template.Create("Wedding 1", "w-1", "Desc 1", "Wedding", "thumb1", null, "{}");
         var t2 = Template.Create("Birthday 1", "b-1", "Desc 2", "Birthday", "thumb2", null, "{}");
 
-        _templateRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+        _templateRepositoryMock.Setup(r => r.GetListAsync(
+            It.IsAny<string?>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<string?>(),
+            It.IsAny<bool?>(),
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Template> { t1, t2 });
 
-        var query = new GetTemplatesQuery(null, null);
+        var query = new GetTemplatesQuery();
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -44,12 +50,17 @@ public class GetTemplatesQueryHandlerTests
     {
         // Arrange
         var t1 = Template.Create("Wedding 1", "w-1", "Desc 1", "Wedding", "thumb1", null, "{}");
-        var t2 = Template.Create("Birthday 1", "b-1", "Desc 2", "Birthday", "thumb2", null, "{}");
 
-        _templateRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Template> { t1, t2 });
+        _templateRepositoryMock.Setup(r => r.GetListAsync(
+            "Wedding",
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<string?>(),
+            It.IsAny<bool?>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Template> { t1 });
 
-        var query = new GetTemplatesQuery("Wedding", null);
+        var query = new GetTemplatesQuery(Category: "Wedding");
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -64,10 +75,16 @@ public class GetTemplatesQueryHandlerTests
     public async Task Handle_Should_ReturnEmptyList_WhenNoTemplatesExist()
     {
         // Arrange
-        _templateRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+        _templateRepositoryMock.Setup(r => r.GetListAsync(
+            It.IsAny<string?>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<string?>(),
+            It.IsAny<bool?>(),
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Template>());
 
-        var query = new GetTemplatesQuery(null, null);
+        var query = new GetTemplatesQuery();
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -75,5 +92,84 @@ public class GetTemplatesQueryHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_Should_FilterByCategoryId_WhenCategoryIdProvided()
+    {
+        // Arrange
+        var catId = Guid.NewGuid();
+        var t1 = Template.Create("Wedding 1", "w-1", "Desc", catId, "Wedding", "thumb", null, null, "HOT", null, null, "{}");
+
+        _templateRepositoryMock.Setup(r => r.GetListAsync(
+            null,
+            catId,
+            null,
+            null,
+            null,
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Template> { t1 });
+
+        var query = new GetTemplatesQuery(CategoryId: catId);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(1);
+        result.Value[0].CategoryId.Should().Be(catId);
+    }
+
+    [Fact]
+    public async Task Handle_Should_FilterByBadge_WhenBadgeProvided()
+    {
+        // Arrange
+        var t1 = Template.Create("Wedding Premium", "w-prem", "Desc", null, "Wedding", "thumb", null, null, "PREMIUM", null, null, "{}");
+
+        _templateRepositoryMock.Setup(r => r.GetListAsync(
+            null,
+            null,
+            "PREMIUM",
+            null,
+            null,
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Template> { t1 });
+
+        var query = new GetTemplatesQuery(Badge: "PREMIUM");
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(1);
+        result.Value[0].Badge.Should().Be("PREMIUM");
+    }
+
+    [Fact]
+    public async Task Handle_Should_FilterBySearch_WhenSearchProvided()
+    {
+        // Arrange
+        var t1 = Template.Create("Golden Luxury", "golden-lux", "Thiệp cưới sang trọng", null, "Wedding", "thumb", null, null, null, null, null, "{}");
+
+        _templateRepositoryMock.Setup(r => r.GetListAsync(
+            null,
+            null,
+            null,
+            "Luxury",
+            null,
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Template> { t1 });
+
+        var query = new GetTemplatesQuery(Search: "Luxury");
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(1);
+        result.Value[0].Name.Should().Be("Golden Luxury");
     }
 }

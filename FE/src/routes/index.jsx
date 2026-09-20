@@ -10,6 +10,8 @@ import RegisterPage from '../pages/auth/RegisterPage';
 import AdminLayout from '../components/admin/AdminLayout';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminTemplatesPage from '../pages/admin/AdminTemplatesPage';
+import AdminCategoriesPage from '../pages/admin/AdminCategoriesPage';
+import AdminMenusPage from '../pages/admin/AdminMenusPage';
 import AdminUsersPage from '../pages/admin/AdminUsersPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -62,6 +64,8 @@ export default function AppRoutes() {
       >
         <Route index element={<AdminDashboardPage />} />
         <Route path="templates" element={<AdminTemplatesPage />} />
+        <Route path="categories" element={<AdminCategoriesPage />} />
+        <Route path="menus" element={<AdminMenusPage />} />
         <Route path="users" element={<AdminUsersPage />} />
       </Route>
 

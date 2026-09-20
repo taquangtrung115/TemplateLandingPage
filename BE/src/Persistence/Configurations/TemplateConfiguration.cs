@@ -27,6 +27,8 @@ public sealed class TemplateConfiguration : IEntityTypeConfiguration<Template>
         builder.Property(t => t.Description)
             .HasMaxLength(1000);
 
+        builder.Property(t => t.CategoryId);
+
         builder.Property(t => t.Category)
             .HasMaxLength(100)
             .IsRequired();
@@ -37,6 +39,18 @@ public sealed class TemplateConfiguration : IEntityTypeConfiguration<Template>
 
         builder.Property(t => t.PreviewUrl)
             .HasMaxLength(1000);
+
+        builder.Property(t => t.LongPreviewUrl)
+            .HasMaxLength(1000);
+
+        builder.Property(t => t.Badge)
+            .HasMaxLength(50);
+
+        builder.Property(t => t.AudioUrl)
+            .HasMaxLength(1000);
+
+        builder.Property(t => t.MusicTitle)
+            .HasMaxLength(200);
 
         builder.Property(t => t.DefaultConfigJson)
             .IsRequired();
@@ -50,6 +64,11 @@ public sealed class TemplateConfiguration : IEntityTypeConfiguration<Template>
         builder.Property(t => t.DeletedAtUtc);
         builder.Property(t => t.CreatedAtUtc).IsRequired();
         builder.Property(t => t.ModifiedAtUtc);
+
+        builder.HasOne(t => t.CategoryRef)
+            .WithMany(c => c.Templates)
+            .HasForeignKey(t => t.CategoryId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.Ignore(t => t.DomainEvents);
 

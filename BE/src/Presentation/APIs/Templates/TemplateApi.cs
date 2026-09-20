@@ -15,9 +15,9 @@ public sealed class TemplateApi : IEndpoint
         var group = app.MapGroup("/api/v1/templates")
             .WithTags("Templates");
 
-        group.MapGet(string.Empty, async (string? category, bool? isActiveOnly, ISender sender) =>
+        group.MapGet(string.Empty, async (string? category, Guid? categoryId, string? badge, string? search, bool? isActiveOnly, ISender sender) =>
         {
-            var result = await sender.Send(new GetTemplatesQuery(category, isActiveOnly));
+            var result = await sender.Send(new GetTemplatesQuery(category, categoryId, badge, search, isActiveOnly));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetTemplates")
@@ -58,9 +58,14 @@ public sealed class TemplateApi : IEndpoint
                 request.Name,
                 request.Slug,
                 request.Description,
+                request.CategoryId,
                 request.Category,
                 request.ThumbnailUrl,
                 request.PreviewUrl,
+                request.LongPreviewUrl,
+                request.Badge,
+                request.AudioUrl,
+                request.MusicTitle,
                 request.DefaultConfigJson,
                 request.IsActive);
 
@@ -124,8 +129,13 @@ public record UpdateTemplateRequest(
     string Name,
     string Slug,
     string? Description,
+    Guid? CategoryId,
     string Category,
     string ThumbnailUrl,
     string? PreviewUrl,
+    string? LongPreviewUrl,
+    string? Badge,
+    string? AudioUrl,
+    string? MusicTitle,
     string DefaultConfigJson,
     bool IsActive);

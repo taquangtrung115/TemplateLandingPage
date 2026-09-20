@@ -1,12 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "vNmv0nELkmc=",
+  "dgSpecHash": "9+EmX5G5j7M=",
   "success": true,
-  "projectFilePath": "e:\\Code\\TemplateLandingPage\\BE\\src\\Domain\\TemplateLandingPage.Domain.csproj",
-  "expectedPackageFiles": [
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.netcore.app.ref\\10.0.12\\microsoft.netcore.app.ref.10.0.12.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\10.0.12\\microsoft.windowsdesktop.app.ref.10.0.12.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\10.0.12\\microsoft.aspnetcore.app.ref.10.0.12.nupkg.sha512"
-  ],
+  "projectFilePath": "E:\\Code\\TemplateLandingPage\\BE\\src\\Domain\\TemplateLandingPage.Domain.csproj",
+  "expectedPackageFiles": [],
   "logs": []
 }

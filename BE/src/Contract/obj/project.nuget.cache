@@ -1,13 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "DKhGRXVEdgs=",
+  "dgSpecHash": "LSEHHuIs+gE=",
   "success": true,
-  "projectFilePath": "e:\\Code\\TemplateLandingPage\\BE\\src\\Contract\\TemplateLandingPage.Contract.csproj",
+  "projectFilePath": "E:\\Code\\TemplateLandingPage\\BE\\src\\Contract\\TemplateLandingPage.Contract.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\trung\\.nuget\\packages\\mediatr.contracts\\2.0.1\\mediatr.contracts.2.0.1.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.netcore.app.ref\\10.0.12\\microsoft.netcore.app.ref.10.0.12.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\10.0.12\\microsoft.windowsdesktop.app.ref.10.0.12.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\10.0.12\\microsoft.aspnetcore.app.ref.10.0.12.nupkg.sha512"
+    "C:\\Users\\trung\\.nuget\\packages\\mediatr.contracts\\2.0.1\\mediatr.contracts.2.0.1.nupkg.sha512"
   ],
   "logs": []
 }

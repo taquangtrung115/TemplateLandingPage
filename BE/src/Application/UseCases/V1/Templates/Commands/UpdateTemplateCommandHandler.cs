@@ -37,9 +37,14 @@ public sealed class UpdateTemplateCommandHandler : ICommandHandler<UpdateTemplat
             request.Name,
             request.Slug,
             request.Description,
+            request.CategoryId,
             request.Category,
             request.ThumbnailUrl,
             request.PreviewUrl,
+            request.LongPreviewUrl,
+            request.Badge,
+            request.AudioUrl,
+            request.MusicTitle,
             request.DefaultConfigJson,
             request.IsActive);
 

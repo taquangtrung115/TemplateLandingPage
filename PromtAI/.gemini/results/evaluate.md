@@ -1,78 +1,94 @@
 PHÁN QUYẾT: CHỐT
 
-# BÁO CÁO ĐÁNH GIÁ CỦA REVIEWER (CODE REVIEW & EVALUATION)
-**Tính năng**: Hệ thống Quản lý & Tùy biến Landing Page Thiệp cưới / Thiệp sinh nhật (Template Engine, Customizer Editor, Live Preview, Export Standalone HTML & Admin Management)  
-**Nhánh**: `feature/template-engine-auth`  
+# BÁO CÁO ĐÁNH GIÁ CHẤT LƯỢNG MÃ NGUỒN (SENIOR CODE REVIEW)
+**Tính năng**: Clone UI Cinelove & Dynamic Navigation Menu Engine  
+**Nhánh git**: `feature/cinelove-ui-menu-system`  
+**Thời gian đánh giá**: 2026-09-20  
+**Vai trò**: Reviewer cấp cao (Chặng 4 - Tuyến phòng thủ cuối)  
 
 ---
 
-## 1. CÂU HỎI 1: CODE CÓ KHỚP BẢN KẾ HOẠCH KHÔNG?
-- **Khớp cấu trúc và phạm vi:** ✅ **HOÀN TOÀN KHỚP (100%)**
-  - **Backend (.NET 10 Clean Architecture + CQRS + MediatR)**:
-    - `Domain Layer`: Đầy đủ các AggregateRoot / Entity `User`, `Template`, `UserCustomization`, `RsvpEntry`, `GuestbookEntry` cùng 5 repository interfaces tương ứng (`IUserRepository`, `ITemplateRepository`, `ICustomizationRepository`, `IRsvpRepository`, `IGuestbookRepository`).
-    - `Contract Layer`: Định nghĩa đầy đủ DTOs, Commands, Queries, Responses và Errors cho các phân hệ `Auth`, `Users`, `Templates`, `Customizations`, `Interactions` (RSVP & Guestbook).
-    - `Application Layer`: Đầy đủ UseCase Handlers và FluentValidation Validators. Tất cả handlers đều tuân thủ nghiêm ngặt quy chuẩn đặt tên kết thúc bằng hậu tố `Handler`.
-    - `Infrastructure Layer`: Đầy đủ `PasswordHasher` (PBKDF2 SHA-512), `JwtTokenGenerator` (HS256 với đầy đủ Claims: sub, email, name, role) và `JwtSettings`.
-    - `Persistence Layer`: Khai báo đầy đủ 5 DbSet trong `ApplicationDbContext`, cấu hình Fluent API (Unique Index trên Email/Slug, Global Query Filter soft delete `!IsDeleted`), triển khai 5 repositories kế thừa `RepositoryBase<T, Guid>`, và `DataSeeder` khởi tạo tài khoản Admin (`admin@template.com`), User (`user@template.com`) cùng 2 Master Template chuẩn ("Elegance Blossom" - Wedding, "Golden Glamour" - Birthday).
-    - `Presentation Layer`: Gom nhóm Minimal API endpoints kế thừa `IEndpoint` (`AuthApi`, `UserApi`, `TemplateApi`, `CustomizationApi`, `InteractionApi`), gửi request qua MediatR `ISender`, phản hồi chuẩn theo Result Pattern (`200`, `201`, `400`, `404`).
-    - `API Layer`: `Program.cs` cấu hình tích hợp JWT Bearer Authentication, Authorization, Swagger UI Security Definition Bearer, CORS policy mở cho Frontend Vite.
-  - **Frontend (React 19 + Vite + Tailwind CSS)**:
-    - Đầy đủ API services (`authApi.js`, `userApi.js`, `templateApi.js`, `customizationApi.js`, `interactionApi.js`), `axios.js` tự động gắn Bearer Token và bắt 401 tự động logout.
-    - `AuthContext.jsx` và custom hook `useAuth.js` quản lý phiên làm việc toàn cục (login, register, logout, `isAdmin`).
-    - `ProtectedRoute.jsx` bảo vệ chặt chẽ các route yêu cầu đăng nhập và phân quyền Admin.
-    - `LandingPageRenderer.jsx`: Engine trung tâm nạp JSON config render đầy đủ các section: Hero Countdown thời gian thực, Đôi uyên ương / Chủ tiệc, Chi tiết sự kiện & bản đồ, Interactive Timeline, Photo Gallery có Lightbox xem phóng to, Form RSVP, Sổ lưu bút Guestbook, Floating Music Player (xử lý autoplay policy của trình duyệt), và hiệu ứng Canvas cánh hoa / confetti lơ lửng.
-    - `CustomizerPage.jsx` kèm `CustomizerSidebar.jsx` & `CustomizerToolbar.jsx`: Không gian chỉnh sửa thời gian thực chia đôi màn hình, chuyển đổi khung nhìn Desktop vs Mobile (375px), xuất Standalone HTML offline (`htmlExporter.js`).
-    - Trang Quản trị Admin (`AdminLayout.jsx`, `AdminDashboardPage.jsx`, `AdminTemplatesPage.jsx`, `AdminUsersPage.jsx`): Thống kê tổng quan, Quản trị Master Templates với trình biên tập JSON kiểm tra cú pháp, Quản trị Users (phân quyền Admin, khóa tài khoản).
-    - Trang chủ `HomePage.jsx` hiện đại phong cách motionsites.ai, bộ sưu tập `TemplatesPage.jsx`, quản lý `MyCustomizationsPage.jsx`, xem trực tiếp `LivePreviewPage.jsx`.
+## I. TRẢ LỜI BA CÂU HỎI CỐT LÕI
+
+### 1. Code có khớp bản kế hoạch không?
+**ĐÁNH GIÁ: KHỚP 100%**
+- **Về cấu trúc Backend (.NET 10 Clean Architecture)**:
+  - Đầy đủ Domain Entities: [`Category.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Domain/Entities/Category.cs) và [`NavigationMenu.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Domain/Entities/NavigationMenu.cs) kế thừa `AggregateRoot<Guid>`, `IAuditableEntity`, `ISoftDelete`. Entity [`Template.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Domain/Entities/Template.cs) được bổ sung chính xác các trường `CategoryId`, `CategoryRef`, `Badge`, `AudioUrl`, `MusicTitle`, `LongPreviewUrl`.
+  - CQRS & MediatR: Tạo đầy đủ Commands, Queries, Validators và Handlers cho cả `Categories` và `NavigationMenus`. Cập nhật các use cases của `Templates` tương thích hoàn toàn.
+  - Persistence Layer: Cấu hình Fluent API chuẩn chỉnh (`CategoryConfiguration.cs`, `NavigationMenuConfiguration.cs`, `TemplateConfiguration.cs`), có Soft Delete Query Filter, Unique Index cho Slug, Restricted delete cho quan hệ Parent-Child NavigationMenu. Đăng ký Scoped DI đầy đủ trong `ServiceCollectionExtensions.cs`.
+  - Presentation Minimal APIs: Triển khai chuẩn `IEndpoint` cho `/api/v1/categories`, `/api/v1/menus`, cập nhật `/api/v1/templates`. Có phân quyền rõ ràng (`.RequireAuthorization()` cho Create, Update, Delete; Public cho Get queries).
+- **Về cấu trúc Frontend (React 19 + Vite + Tailwind CSS)**:
+  - Tách tầng API riêng biệt: [`categoryApi.js`](file:///e:/Code/TemplateLandingPage/FE/src/api/categoryApi.js), [`navigationMenuApi.js`](file:///e:/Code/TemplateLandingPage/FE/src/api/navigationMenuApi.js), unwrap an toàn qua `res.data?.value ?? res.data`.
+  - Dynamic Navigation: [`Navbar.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/components/Navbar.jsx) tải động cây menu từ API, render dropdown submenu trên desktop (hover) và accordion trên mobile, phân biệt an toàn internal link (`<Link>`) và external link (`<a>`). Có fallback navigation cứng khi database chưa có dữ liệu.
+  - Giao diện Cinelove Clone:
+    - [`TemplatesPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/TemplatesPage.jsx): Breadcrumb, Hero Title, thanh category tabs cuộn ngang, bộ lọc huy hiệu (Badge), tìm kiếm từ khóa, quản lý phát nhạc tập trung.
+    - [`TemplateCard.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/components/templates/TemplateCard.jsx): Phone mockup frame, auto-scroll ảnh dài khi hover bằng CSS transform, nút nghe thử nhạc kèm animation sóng nhạc, badge góc thẻ, hover overlay "Xem demo" và "Dùng mẫu".
+    - [`QuickPreviewModal.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/components/templates/QuickPreviewModal.jsx): Trình phát nhạc tích hợp, bộ chuyển đổi chế độ xem Mobile (375px notch) / Desktop.
+  - Trang Quản trị Admin:
+    - [`AdminCategoriesPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/admin/AdminCategoriesPage.jsx): CRUD danh mục, tự động sinh slug tiếng Việt không dấu, đếm số template liên kết, xóa an toàn.
+    - [`AdminMenusPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/admin/AdminMenusPage.jsx): Quản lý cây menu phân cấp cha - con, thứ tự, badge màu sắc, icon Lucide.
+    - [`AdminTemplatesPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/admin/AdminTemplatesPage.jsx): Form mở rộng chọn danh mục động, gói thiệp, mockup dài, cấu hình audio.
+- **Xử lý toàn bộ 10/10 Edge Cases trong kế hoạch**:
+  1. *Chống vòng lặp tự làm cha*: Kiểm tra cả ở Domain Entity và Application Handler (`CannotBeSelfParent`).
+  2. *Chặn xóa menu cha khi còn menu con*: Kiểm tra qua `HasChildrenAsync` (`HasChildMenus`).
+  3. *Chặn xóa danh mục khi có thiệp liên kết*: Kiểm tra qua `HasAssociatedTemplatesAsync` (`HasAssociatedTemplates`).
+  4. *Fallback ảnh cuộn*: Tự fallback sang `thumbnailUrl` và áp dụng zoom thay vì cuộn nếu thiếu `longPreviewUrl`.
+  5. *Ẩn nút nhạc nếu thiếu file*: Thẻ chỉ hiển thị nút audio khi có `audioUrl`.
+  6. *Chống xung đột phát nhiều bài hát*: Cơ chế Centralized Audio Player duy nhất trên trang.
+  7. *Phân giải Icon động không crash*: Tiện ích `resolveIcon` kiểm tra tồn tại và fallback về `Sparkles`.
+  8. *Điều hướng Link*: Phân biệt regex URL ngoại vi (`target="_blank"`, `rel="noopener noreferrer"`) và URL nội bộ (`<Link>`).
+  9. *Nạp dữ liệu ban đầu*: `DataSeeder.cs` chuẩn bị sẵn dữ liệu mẫu thực tế.
+  10. *Tương thích ngược*: Giữ nguyên cột text `Category` bên cạnh `CategoryId`.
 
 ---
 
-## 2. CÂU HỎI 2: TEST CÓ GIÁ TRỊ THẬT HAY CHỈ VIẾT CHO CÓ?
-- **Đánh giá giá trị bộ test:** ✅ **GIÁ TRỊ THẬT, CHẤT LƯỢNG CAO VÀ RẤT TOÀN DIỆN**
-  - **Số lượng & Tỷ lệ đạt:** 93/93 tests **PASSED 100%** (0 Failed, 0 Skipped).
-  - **Kiểm thử kiến trúc (5 Architecture Tests - `NetArchTest`):**
-    - Domain không phụ thuộc các tầng khác.
-    - Contract không phụ thuộc các tầng lõi.
-    - Application không phụ thuộc các tầng ngoài (Persistence, Infrastructure, Presentation, API).
-    - Toàn bộ MediatR Handler đều kết thúc bằng `Handler`.
-    - Presentation tuyệt đối không gọi trực tiếp `DbContext`.
-  - **Kiểm thử chức năng & nghiệp vụ (88 Unit Tests - `xUnit` + `Moq` + `FluentAssertions`):**
-    - *Happy Path (23 tests):* Đăng ký tài khoản mới mã hóa PBKDF2; Đăng nhập sinh JWT token; Lấy profile; Lọc master templates theo category; Tạo master template; Tạo bản tùy biến sinh slug; Truy vấn theo slug; Gửi RSVP; Gửi lưu bút; Sinh token JWT kèm claims; Xác minh mật khẩu đúng; Các bài test validator hợp lệ; CRUD Product.
-    - *Edge Cases (7 tests):* Truy vấn danh sách rỗng an toàn; Kiểm tra biên số lượng khách RSVP = 1; Xử lý chuỗi hash PBKDF2 bị hỏng / sai định dạng Base64 bằng `[Theory]` với 5 trường hợp dị biệt trả về `false` an toàn mà không làm sập ứng dụng; Bắt lỗi JSON rỗng; Bắt lỗi mật khẩu ngắn (< 6 ký tự); Giá trị biên tiền tệ `0.01m`.
-    - *Failure Path (16 tests):* Đăng nhập sai mật khẩu trả về `AuthErrors.InvalidCredentials`; Đăng ký trùng email trả về `AuthErrors.DuplicateEmail`; Tạo template trùng slug trả về `TemplateErrors.DuplicateSlug`; Slug tùy biến không tồn tại trả về `CustomizationErrors.NotFound`; Các kiểm thử bắt lỗi validation email sai định dạng, họ tên quá 100 ký tự, tên rỗng, v.v.
-  - Toàn bộ test case đều có assertions rõ ràng, mock repository và unit of work chuẩn mực, không có test rỗng hay viết cho có.
+### 2. Test có giá trị thật hay chỉ viết cho có?
+**ĐÁNH GIÁ: TEST CÓ GIÁ TRỊ THẬT CAO, KHÔNG PHẢI VIẾT CHO CÓ**
+- **Độ bao phủ**:
+  - 154/154 bài test Backend chạy thành công 100% (bao gồm 5 Architecture Tests và 149 Unit Tests).
+  - Phủ đều cả 3 nhóm theo đúng quy chuẩn kiểm thử chuyên nghiệp:
+    1. *Happy Path*: Kiểm tra toàn bộ luồng tạo, cập nhật, lấy cây phân cấp, tính đếm số template, lọc danh mục/gói/từ khóa.
+    2. *Edge Cases*: Kiểm tra chặn menu tự làm cha, chặn xóa menu có con, chặn xóa category có template, chặn trùng slug.
+    3. *Failure Cases*: Kiểm tra NotFound errors, FluentValidation kiểm tra null/empty/whitespace cho toàn bộ các trường bắt buộc.
+- **Chất lượng Assertions & Verifications**:
+  - Các bài test kiểm tra trực tiếp trạng thái Domain Model: `category.IsDeleted.Should().BeTrue()`, `category.Name.Should().Be(...)`, `result.Value.Should().NotBeEmpty()`.
+  - Mock repository và UnitOfWork được `Verify` chính xác với `Times.Once`.
+  - Kiểm tra cụ thể mã lỗi và thông báo lỗi nghiệp vụ (`CategoryErrors.DuplicateSlug`, `NavigationMenuErrors.CannotBeSelfParent`, v.v.), không dùng các câu lệnh vô nghĩa như `Assert.True(true)`.
+- **Frontend Verification**:
+  - Bản build production của Vite 6 đóng gói 1696 modules hoàn tất thành công, không phát hiện lỗi cú pháp, typing hay import sai.
 
 ---
 
-## 3. CÂU HỎI 3: CÓ VẤN ĐỀ GÌ VỀ BẢO MẬT, HIỆU NĂNG, TÍNH ĐÚNG ĐẮN KHÔNG?
+### 3. Có vấn đề gì về bảo mật, hiệu năng, tính đúng đắn không?
+**ĐÁNH GIÁ: ĐẢM BẢO CHẤT LƯỢNG CAO, AN TOÀN VÀ TỐI ƯU**
 
-### A. Về Bảo mật (Security): ✅ ĐẠT CHUẨN XUẤT SẮC
-1. **Lưu trữ & Xác thực Mật khẩu**:
-   - Sử dụng chuẩn RFC 2898 PBKDF2 với thuật toán SHA-512, cryptographic salt ngẫu nhiên 128-bit (`RandomNumberGenerator.GetBytes`) và 100,000 vòng lặp (vượt chuẩn khuyến nghị của OWASP).
-   - So sánh hash bằng `CryptographicOperations.FixedTimeEquals` chống tấn công Timing Attack.
-   - Bắt ngoại lệ `FormatException` khi giải mã Base64 chuỗi hash malformed, ngăn chặn nguy cơ denial-of-service do unhandled exception.
-2. **Quản lý Phiên & Phân quyền (JWT & RBAC)**:
-   - JWT Bearer Token ký bằng HMAC-SHA256 với SecretKey an toàn, thời hạn hết hạn rõ ràng.
-   - `UserApi` yêu cầu xác thực JWT. Các thao tác sửa/xóa bản tùy biến (`UpdateCustomizationCommand`, `DeleteCustomizationCommand`) kiểm tra chặt chẽ quyền sở hữu (`UserId == CurrentUserId` hoặc `Role == "Admin"`).
-   - Phía Frontend: `ProtectedRoute` chặn truy cập trái phép vào route Admin `/admin/*`, `axios.js` tự động xóa token và điều hướng về `/login` khi nhận mã 401.
-3. **An toàn Xuất Standalone HTML**:
-   - Trong `htmlExporter.js`, dữ liệu cấu hình JSON được serialize an toàn bằng cách thay thế `<` thành `\u003c` và `>` thành `\u003e`, loại bỏ triệt để nguy cơ tấn công XSS khi nhúng vào thẻ `<script>`.
+1. **Bảo mật (Security)**:
+   - **Authorization**: Toàn bộ endpoint nhạy cảm (thêm, sửa, xóa danh mục, menu, template) tại `CategoryApi`, `NavigationMenuApi`, `TemplateApi` đều được bảo vệ nghiêm ngặt bằng `.RequireAuthorization()`. Các endpoint đọc phục vụ khách hàng duyệt landing page được mở public.
+   - **XSS & Tabnabbing**: Toàn bộ liên kết ngoại vi (`target="_blank"`) đều có thuộc tính bảo vệ `rel="noopener noreferrer"`. Dữ liệu hiển thị trong React được escape tự động, không sử dụng `dangerouslySetInnerHTML`.
+   - **SQL Injection**: 100% truy vấn dữ liệu được thực hiện qua Entity Framework Core với Parameterized Queries.
+   - **Data Validation**: Kết hợp chặt chẽ xác thực FluentValidation ở tầng Application và ràng buộc ràng buộc Database (`HasMaxLength`, `IsUnique`).
 
-### B. Về Hiệu năng (Performance): ✅ TỐI ƯU
-1. **Backend**:
-   - Minimal API giảm tải routing overhead.
-   - EF Core Global Query Filter trên soft delete `!IsDeleted` xử lý lọc bản ghi ngay tại tầng cơ sở dữ liệu.
-   - Các API truy vấn danh sách trả về DTO gọn nhẹ, không tải dư thừa các trường không cần thiết.
-2. **Frontend**:
-   - Vite 6 build production bundle siêu tốc (9.14s) với dung lượng cực kỳ gọn gàng: CSS ~46KB (gzip ~8KB), JS ~495KB (gzip ~142KB).
-   - Live Customizer được tối ưu re-render mượt mà: Sidebar cuộn độc lập, Live Canvas cập nhật tức thì.
-   - Tất cả các nút bấm gửi biểu mẫu đều có trạng thái `disabled + loading` chống double-submission request.
+2. **Hiệu năng (Performance)**:
+   - **Tối ưu truy vấn CSDL**:
+     - Cột `Slug` của bảng `Categories` được đánh Unique Index.
+     - Lấy cây menu `GetTreeAsync` chỉ truy vấn các menu gốc (`ParentId == null`) và Eager Load `SubMenus`, không sinh ra N+1 roundtrips.
+     - Bộ lọc `GetListAsync` trên `TemplateRepository` biên dịch trực tiếp xuống SQL Server với `AsNoTracking` / filter ở database level.
+   - **Tối ưu tài nguyên Frontend**:
+     - Centralized Audio Player dùng duy nhất một instance HTML5 Audio (`audioPlayerRef`), giải phóng tài nguyên và dừng phát ngay khi component unmount (`useEffect cleanup`).
+     - Hiệu ứng cuộn mockup dài dọc trên `TemplateCard` hoàn toàn dựa trên CSS hardware-accelerated transform (`translateY` và `transition: transform`), không dùng JavaScript timer, đảm bảo tốc độ khung hình 60 FPS ổn định.
+     - Biểu tượng Lucide được giải quyết an toàn, không gây re-render hay crash Virtual DOM.
 
-### C. Tính đúng đắn (Correctness): ✅ CHUẨN XÁC
-- Cả Backend (93/93 tests PASSED) và Frontend (`npm run build` exit code 0) đều biên dịch thành công hoàn hảo.
-- Không phát hiện bất kỳ lỗi biên dịch hay vi phạm quy chuẩn Clean Architecture nào.
+3. **Tính đúng đắn (Correctness)**:
+   - Hệ thống áp dụng triệt để Soft Delete (`ISoftDelete`) kèm Global Query Filter `builder.HasQueryFilter(x => !x.IsDeleted)`, loại bỏ nguy cơ rò rỉ bản ghi đã xóa trong các truy vấn liên kết.
+   - Các mối quan hệ ngoại khóa được cấu hình tường minh (`DeleteBehavior.Restrict` cho menu cha-con, `DeleteBehavior.SetNull` cho template-category), bảo vệ toàn vẹn dữ liệu.
 
 ---
 
-## 4. KẾT LUẬN & BÀN GIAO
-Toàn bộ mã nguồn trên nhánh `feature/template-engine-auth` đã đáp ứng hoàn hảo 100% các tiêu chí kỹ thuật, bảo mật, hiệu năng và nghiệp vụ đề ra trong bản kế hoạch. Reviewer chính thức đưa ra phán quyết **CHỐT** để chuyển sang bước ký duyệt của con người và hợp nhất code (Merge PR) vào dự án.
+## II. KẾT LUẬN & KIẾN NGHỊ BÀN GIAO
+
+Toàn bộ công việc của các chặng Planner, Coder và Tester đã được thực hiện cực kỳ bài bản, tuân thủ nghiêm ngặt kiến trúc dự án và quy ước kỹ thuật. 
+
+- Không cần sửa bất kỳ dòng mã nguồn nào.
+- Nhánh `feature/cinelove-ui-menu-system` đạt tiêu chuẩn chất lượng cao nhất, sẵn sàng để người quản trị dự án xem xét và ký duyệt.
+
+**PHÁN QUYẾT CHÍNH THỨC: CHỐT**

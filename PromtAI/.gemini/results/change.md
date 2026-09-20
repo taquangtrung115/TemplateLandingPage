@@ -1,143 +1,153 @@
-# BÁO CÁO THAY ĐỔI VÀ HIỆN THỰC HÓA MÃ NGUỒN (CHẶNG 2: CODER)
-
-## 1. TỔNG QUAN
-Dự án đã được triển khai đầy đủ cả 2 phần Backend (.NET 10 CQRS Clean Architecture + MediatR) và Frontend (React 19 + Vite + Tailwind CSS) đúng theo kế hoạch tại `PromtAI/.gemini/results/plan.md`.
-- **Backend**: Đã biên dịch thành công (`dotnet build`) với 0 cảnh báo, 0 lỗi. Toàn bộ 93 tests (88 Unit Tests + 5 Architecture NetArchTests) đều vượt qua 100% (`Passed: 93/93`).
-- **Frontend**: Đã build thành công (`npm run build`) với Vite 6 và React 19 trong 10.11s, không có bất kỳ lỗi cú pháp hay import nào.
+# BÁO CÁO BÀN GIAO MÃ NGUỒN (CHANGE LOG)
+**Tính năng**: Clone UI Cinelove & Dynamic Navigation Menu Engine  
+**Thời gian thực hiện**: 2026-09-20  
+**Vai trò**: Coder (Senior Implementation Engineer)  
 
 ---
 
-## 2. DANH SÁCH FILE THAY ĐỔI & TẠO MỚI
+## 1. DANH SÁCH FILE ĐÃ THAY ĐỔI / TẠO MỚI
 
-### A. Backend (.NET 10 CQRS Clean Architecture)
+### 1.1. Backend (.NET 10 Clean Architecture)
 
-#### 1. Domain Layer (`BE/src/Domain/`)
-- `BE/src/Domain/Entities/User.cs`: Thực thể User với quản trị Email, PBKDF2 PasswordHash, FullName, Role (`Admin`/`User`), IsActive, Soft Delete.
-- `BE/src/Domain/Entities/Template.cs`: Thực thể Master Template với Category (`Wedding`/`Birthday`), ThumbnailUrl, PreviewUrl, DefaultConfigJson.
-- `BE/src/Domain/Entities/UserCustomization.cs`: Bản lưu tùy biến của người dùng liên kết Template, Slug độc nhất, ConfigJson và cờ IsPublished.
-- `BE/src/Domain/Entities/RsvpEntry.cs`: Thực thể phản hồi tham dự (Tên khách, Email, SĐT, Trạng thái tham dự, Số khách, Ăn kiêng, Lời chúc).
-- `BE/src/Domain/Entities/GuestbookEntry.cs`: Thực thể lời chúc trên sổ lưu bút ảo.
-- `BE/src/Domain/Repositories/IUserRepository.cs`: Repository interface tìm theo Email, kiểm tra trùng Email.
-- `BE/src/Domain/Repositories/ITemplateRepository.cs`: Repository interface tìm theo Slug, kiểm tra trùng Slug.
-- `BE/src/Domain/Repositories/ICustomizationRepository.cs`: Repository interface lấy theo Slug, lấy theo UserId, kiểm tra trùng Slug.
-- `BE/src/Domain/Repositories/IRsvpRepository.cs`: Repository interface lấy danh sách RSVP theo CustomizationId.
-- `BE/src/Domain/Repositories/IGuestbookRepository.cs`: Repository interface lấy danh sách Guestbook theo CustomizationId.
+#### Domain Layer (`BE/src/Domain/`)
+- `BE/src/Domain/Entities/Category.cs` *(Tạo mới)*: Thực thể Category quản lý danh mục thiệp với Name, Slug, Description, Icon, OrderIndex, IsActive.
+- `BE/src/Domain/Entities/NavigationMenu.cs` *(Tạo mới)*: Thực thể NavigationMenu quản lý hệ thống menu cha & submenu phân cấp với ParentId, OrderIndex, Target, Badge, BadgeColor, Icon, IsActive.
+- `BE/src/Domain/Repositories/ICategoryRepository.cs` *(Tạo mới)*: Interface repository cho danh mục (`GetBySlugAsync`, `ExistsBySlugAsync`, `GetAllOrderedAsync`, `HasAssociatedTemplatesAsync`).
+- `BE/src/Domain/Repositories/INavigationMenuRepository.cs` *(Tạo mới)*: Interface repository cho menu động (`GetTreeAsync`, `HasChildrenAsync`).
+- `BE/src/Domain/Entities/Template.cs` *(Chỉnh sửa)*: Bổ sung các trường `CategoryId`, `CategoryRef`, `Badge`, `AudioUrl`, `MusicTitle`, `LongPreviewUrl`; cập nhật factory `Create` và `Update`.
+- `BE/src/Domain/Repositories/ITemplateRepository.cs` *(Chỉnh sửa)*: Mở rộng `GetListAsync` hỗ trợ lọc theo Category, CategoryId, Badge, Search, IsActiveOnly.
 
-#### 2. Contract Layer (`BE/src/Contract/`)
-- `BE/src/Contract/Services/V1/Auth/AuthCommandsAndQueries.cs`: DTO và Command/Query cho Register, Login, Me, TokenResponse.
-- `BE/src/Contract/Services/V1/Users/UserCommandsAndQueries.cs`: DTO và Command/Query cho quản lý Users (CRUD, phân quyền Admin).
-- `BE/src/Contract/Services/V1/Templates/TemplateCommandsAndQueries.cs`: DTO và Command/Query cho Master Templates.
-- `BE/src/Contract/Services/V1/Customizations/CustomizationCommandsAndQueries.cs`: DTO và Command/Query cho User Customizations.
-- `BE/src/Contract/Services/V1/Interactions/InteractionCommandsAndQueries.cs`: DTO và Command/Query cho RSVP và Guestbook.
+#### Contract Layer (`BE/src/Contract/`)
+- `BE/src/Contract/Services/V1/Categories/Command.cs` *(Tạo mới)*: CQRS Commands cho Category (`CreateCategoryCommand`, `UpdateCategoryCommand`, `DeleteCategoryCommand`).
+- `BE/src/Contract/Services/V1/Categories/Query.cs` *(Tạo mới)*: CQRS Queries cho Category (`GetCategoriesQuery`, `GetCategoryByIdQuery`, `GetCategoryBySlugQuery`).
+- `BE/src/Contract/Services/V1/Categories/Response.cs` *(Tạo mới)*: DTO `CategoryResponse` và định nghĩa lỗi `CategoryErrors`.
+- `BE/src/Contract/Services/V1/NavigationMenus/Command.cs` *(Tạo mới)*: CQRS Commands cho Menu (`CreateNavigationMenuCommand`, `UpdateNavigationMenuCommand`, `DeleteNavigationMenuCommand`).
+- `BE/src/Contract/Services/V1/NavigationMenus/Query.cs` *(Tạo mới)*: CQRS Queries cho Menu (`GetNavigationMenusQuery`, `GetNavigationMenuByIdQuery`).
+- `BE/src/Contract/Services/V1/NavigationMenus/Response.cs` *(Tạo mới)*: DTO `NavigationMenuResponse` kèm cây `SubMenus` và lỗi `NavigationMenuErrors`.
+- `BE/src/Contract/Services/V1/Templates/Command.cs` *(Chỉnh sửa)*: Bổ sung `CategoryId`, `LongPreviewUrl`, `Badge`, `AudioUrl`, `MusicTitle` vào Create và Update Command.
+- `BE/src/Contract/Services/V1/Templates/Query.cs` *(Chỉnh sửa)*: Bổ sung bộ lọc `CategoryId`, `Badge`, `Search` vào `GetTemplatesQuery`.
+- `BE/src/Contract/Services/V1/Templates/Response.cs` *(Chỉnh sửa)*: Bổ sung `CategoryId`, `LongPreviewUrl`, `Badge`, `AudioUrl`, `MusicTitle` vào `TemplateResponse`.
 
-#### 3. Application Layer (`BE/src/Application/`)
-- `BE/src/Application/Abstractions/IPasswordHasher.cs` & `IJwtTokenGenerator.cs`: Giao diện trừu tượng bảo mật.
-- `BE/src/Application/UseCases/V1/Auth/`: Các Command Handler và FluentValidation Validators cho Đăng ký, Đăng nhập, Lấy profile.
-- `BE/src/Application/UseCases/V1/Users/`: Các Handler và Validator cho CRUD Người dùng và phân quyền.
-- `BE/src/Application/UseCases/V1/Templates/`: Các Handler và Validator cho CRUD Master Templates, lấy theo Slug/Id.
-- `BE/src/Application/UseCases/V1/Customizations/`: Các Handler và Validator cho Tạo/Sửa/Xóa tùy biến, lấy theo Slug cho khách xem public.
-- `BE/src/Application/UseCases/V1/Interactions/`: Các Handler và Validator cho Gửi/Lấy danh sách RSVP và Guestbook.
+#### Application Layer (`BE/src/Application/`)
+- `BE/src/Application/UseCases/V1/Categories/Commands/CreateCategoryCommandHandler.cs` *(Tạo mới)*: Xử lý tạo danh mục, kiểm tra trùng slug.
+- `BE/src/Application/UseCases/V1/Categories/Commands/CreateCategoryCommandValidator.cs` *(Tạo mới)*: FluentValidation cho Create Category.
+- `BE/src/Application/UseCases/V1/Categories/Commands/UpdateCategoryCommandHandler.cs` *(Tạo mới)*: Xử lý cập nhật danh mục.
+- `BE/src/Application/UseCases/V1/Categories/Commands/UpdateCategoryCommandValidator.cs` *(Tạo mới)*: FluentValidation cho Update Category.
+- `BE/src/Application/UseCases/V1/Categories/Commands/DeleteCategoryCommandHandler.cs` *(Tạo mới)*: Xử lý xóa danh mục an toàn, chặn xóa nếu có template đang dùng.
+- `BE/src/Application/UseCases/V1/Categories/Queries/GetCategoriesQueryHandler.cs` *(Tạo mới)*: Truy vấn danh mục kèm thống kê số template đang dùng.
+- `BE/src/Application/UseCases/V1/Categories/Queries/GetCategoryByIdQueryHandler.cs` *(Tạo mới)*: Truy vấn danh mục theo Id.
+- `BE/src/Application/UseCases/V1/Categories/Queries/GetCategoryBySlugQueryHandler.cs` *(Tạo mới)*: Truy vấn danh mục theo Slug.
+- `BE/src/Application/UseCases/V1/NavigationMenus/Commands/CreateNavigationMenuCommandHandler.cs` *(Tạo mới)*: Xử lý tạo menu, kiểm tra ParentId hợp lệ.
+- `BE/src/Application/UseCases/V1/NavigationMenus/Commands/CreateNavigationMenuCommandValidator.cs` *(Tạo mới)*: FluentValidation cho Create Menu.
+- `BE/src/Application/UseCases/V1/NavigationMenus/Commands/UpdateNavigationMenuCommandHandler.cs` *(Tạo mới)*: Xử lý sửa menu, kiểm tra vòng lặp tự làm cha (`CannotBeSelfParent`).
+- `BE/src/Application/UseCases/V1/NavigationMenus/Commands/UpdateNavigationMenuCommandValidator.cs` *(Tạo mới)*: FluentValidation cho Update Menu.
+- `BE/src/Application/UseCases/V1/NavigationMenus/Commands/DeleteNavigationMenuCommandHandler.cs` *(Tạo mới)*: Xử lý xóa menu, chặn xóa nếu đang có menu con (`HasChildMenus`).
+- `BE/src/Application/UseCases/V1/NavigationMenus/Queries/GetNavigationMenusQueryHandler.cs` *(Tạo mới)*: Xây dựng và trả về cây menu phân cấp đệ quy.
+- `BE/src/Application/UseCases/V1/NavigationMenus/Queries/GetNavigationMenuByIdQueryHandler.cs` *(Tạo mới)*: Truy vấn menu theo Id kèm danh sách submenu con.
+- `BE/src/Application/UseCases/V1/Templates/Commands/CreateTemplateCommandHandler.cs` *(Chỉnh sửa)*: Tiếp nhận các thuộc tính mới của Template khi tạo.
+- `BE/src/Application/UseCases/V1/Templates/Commands/UpdateTemplateCommandHandler.cs` *(Chỉnh sửa)*: Tiếp nhận các thuộc tính mới của Template khi cập nhật.
+- `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplatesQueryHandler.cs` *(Chỉnh sửa)*: Áp dụng các bộ lọc mới và map đầy đủ trường vào Response.
+- `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplateByIdQueryHandler.cs` *(Chỉnh sửa)*: Map các trường mới vào Response.
+- `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplateBySlugQueryHandler.cs` *(Chỉnh sửa)*: Map các trường mới vào Response.
 
-#### 4. Infrastructure Layer (`BE/src/Infrastructure/`)
-- `BE/src/Infrastructure/TemplateLandingPage.Infrastructure.csproj`: Bổ sung `Microsoft.IdentityModel.Tokens`, `System.IdentityModel.Tokens.Jwt`, `Microsoft.Extensions.Configuration.Abstractions`, `Microsoft.Extensions.Options.ConfigurationExtensions`.
-- `BE/src/Infrastructure/Authentication/JwtSettings.cs`: POCO cấu hình SecretKey, Issuer, Audience, Expiration.
-- `BE/src/Infrastructure/Services/PasswordHasher.cs`: Băm mật khẩu bằng PBKDF2 SHA-512 với cryptographic salt chuẩn RFC 2898. Bọc `Convert.FromBase64String` trong khối `try ... catch (FormatException)` để trả về `false` một cách an toàn khi chuỗi hash chứa ký tự không hợp lệ, không gây gián đoạn hệ thống.
-- `BE/src/Infrastructure/Services/JwtTokenGenerator.cs`: Sinh JWT Bearer token kèm Claims (Id, Email, Name, Role).
-- `BE/src/Infrastructure/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`: Đăng ký DI cho JWT Settings, Hasher và Token Generator.
+#### Persistence Layer (`BE/src/Persistence/`)
+- `BE/src/Persistence/Constants/TableNames.cs` *(Chỉnh sửa)*: Thêm constants `Categories` và `NavigationMenus`.
+- `BE/src/Persistence/Configurations/CategoryConfiguration.cs` *(Tạo mới)*: Cấu hình bảng Categories, Unique Index Slug, soft delete query filter.
+- `BE/src/Persistence/Configurations/NavigationMenuConfiguration.cs` *(Tạo mới)*: Cấu hình bảng NavigationMenus, quan hệ tự tham chiếu Parent-SubMenus với `DeleteBehavior.Restrict`.
+- `BE/src/Persistence/Configurations/TemplateConfiguration.cs` *(Chỉnh sửa)*: Cấu hình quan hệ với Category (`OnDelete(DeleteBehavior.SetNull)`), cấu hình các cột `Badge`, `AudioUrl`, `MusicTitle`, `LongPreviewUrl`.
+- `BE/src/Persistence/Repositories/CategoryRepository.cs` *(Tạo mới)*: Triển khai EF Core cho ICategoryRepository.
+- `BE/src/Persistence/Repositories/NavigationMenuRepository.cs` *(Tạo mới)*: Triển khai EF Core cho INavigationMenuRepository (lấy cây menu phân cấp).
+- `BE/src/Persistence/Repositories/TemplateRepository.cs` *(Chỉnh sửa)*: Triển khai `GetListAsync` hỗ trợ lọc theo Category/CategoryId, Badge, Search, IsActiveOnly.
+- `BE/src/Persistence/ApplicationDbContext.cs` *(Chỉnh sửa)*: Thêm `DbSet<Category> Categories` và `DbSet<NavigationMenu> NavigationMenus`.
+- `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs` *(Chỉnh sửa)*: Đăng ký DI cho `ICategoryRepository` và `INavigationMenuRepository`.
+- `BE/src/Persistence/Data/DataSeeder.cs` *(Chỉnh sửa)*: Nạp sẵn 5 danh mục chuẩn Cinelove, hệ thống menu cha và submenu mẫu, 6 mẫu thiệp phong phú kèm âm thanh và hình ảnh mockup.
 
-#### 5. Persistence Layer (`BE/src/Persistence/`)
-- `BE/src/Persistence/Constants/TableNames.cs`: Khai báo bảng `Users`, `Templates`, `UserCustomizations`, `RsvpEntries`, `GuestbookEntries`.
-- `BE/src/Persistence/ApplicationDbContext.cs`: Khai báo DbSet cho 5 thực thể.
-- `BE/src/Persistence/Configurations/`: Cấu hình Fluent API EF Core cho từng bảng (Index, Unique Constraint trên Email/Slug, nvarchar max cho Json).
-- `BE/src/Persistence/Repositories/`: Cài đặt UserRepository, TemplateRepository, CustomizationRepository, RsvpRepository, GuestbookRepository.
-- `BE/src/Persistence/Data/DataSeeder.cs`: Tự động khởi tạo dữ liệu mẫu cho Admin (`admin@template.com`), User (`user@template.com`), cùng 2 Master Template chi tiết ("Elegance Blossom" - Wedding, "Golden Glamour" - Birthday).
-- `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`: Đăng ký DI các repositories.
+#### Presentation Layer (`BE/src/Presentation/`)
+- `BE/src/Presentation/APIs/Categories/CategoryApi.cs` *(Tạo mới)*: Minimal API `/api/v1/categories` (CRUD danh mục).
+- `BE/src/Presentation/APIs/NavigationMenus/NavigationMenuApi.cs` *(Tạo mới)*: Minimal API `/api/v1/menus` (CRUD menu phân cấp).
+- `BE/src/Presentation/APIs/Templates/TemplateApi.cs` *(Chỉnh sửa)*: Nhận thêm query parameters (`categoryId`, `badge`, `search`) và mở rộng `UpdateTemplateRequest`.
 
-#### 6. Presentation & API Layer (`BE/src/Presentation/`, `BE/src/API/`)
-- `BE/src/Presentation/APIs/Auth/AuthApi.cs`: Endpoint `/api/v1/auth` (Register, Login, Me).
-- `BE/src/Presentation/APIs/Users/UserApi.cs`: Endpoint `/api/v1/users` (CRUD User - Yêu cầu Role Admin).
-- `BE/src/Presentation/APIs/Templates/TemplateApi.cs`: Endpoint `/api/v1/templates` (Lấy danh sách public, Admin thêm/sửa/xóa).
-- `BE/src/Presentation/APIs/Customizations/CustomizationApi.cs`: Endpoint `/api/v1/customizations` (Lưu cấu hình, sửa, xóa, lấy theo slug).
-- `BE/src/Presentation/APIs/Interactions/InteractionApi.cs`: Endpoint `/api/v1/rsvp` và `/api/v1/guestbook` (Gửi phản hồi và xem danh sách).
-- `BE/src/API/Program.cs`: Cấu hình JWT Bearer Authentication, Swagger UI kèm Authorize Bearer token, DataSeeder khi chạy.
-- `BE/src/API/appsettings.json`: Cấu hình chuỗi kết nối và thông số JWT.
-
-#### 7. Unit Tests & Architecture Tests (`BE/test/`)
-- `BE/test/UnitTests/Application/Auth/`: Test cho Register, Login (thành công, trùng email, sai mật khẩu).
-- `BE/test/UnitTests/Application/Templates/`: Test tạo template, trùng slug.
-- `BE/test/UnitTests/Application/Customizations/`: Test tạo customization và sinh slug.
-- `BE/test/Architecture.Tests/ArchitectureTests.cs`: Kiểm tra 5 luật Clean Architecture của dự án.
-
----
-
-### B. Frontend (React 19 + Vite + Tailwind CSS)
-
-#### 1. API Services & State (`FE/src/api/`, `FE/src/contexts/`, `FE/src/hooks/`)
-- `FE/src/api/axios.js`: Tự động đính kèm `Authorization: Bearer <token>`, bắt mã 401 để xóa token và điều hướng về trang đăng nhập.
-- `FE/src/api/authApi.js`: Gọi endpoint login, register, me.
-- `FE/src/api/userApi.js`: Gọi CRUD người dùng cho trang Admin.
-- `FE/src/api/templateApi.js`: Lấy danh sách master templates, chi tiết theo Id/Slug, CRUD cho Admin.
-- `FE/src/api/customizationApi.js`: Lưu/sửa/xóa cấu hình cá nhân hóa, lấy theo slug để hiển thị landing page.
-- `FE/src/api/interactionApi.js`: Gửi RSVP, lấy danh sách RSVP, gửi lưu bút, lấy danh sách lưu bút.
-- `FE/src/contexts/AuthContext.jsx`: Cung cấp context đăng nhập toàn cục, lưu trạng thái token, user, hàm `login`, `register`, `logout`, cờ `isAdmin`.
-- `FE/src/hooks/useAuth.js`: Custom hook truy cập AuthContext tiện lợi.
-
-#### 2. Tiện ích (`FE/src/utils/`)
-- `FE/src/utils/defaultTemplates.js`: Bộ cấu hình JSON mẫu chi tiết chuẩn mực cho cả đám cưới (Wedding - Elegance Blossom) và sinh nhật (Birthday - Golden Glamour).
-- `FE/src/utils/htmlExporter.js`: Hàm xuất trọn vẹn file HTML độc lập (`standalone-template.html`) có sẵn Tailwind CDN, Google Fonts, đồng hồ đếm ngược, hiệu ứng canvas cánh hoa/confetti và trình phát nhạc mà không cần cài đặt thêm bất kỳ thư viện nào.
-
-#### 3. Components (`FE/src/components/`)
-- `FE/src/components/ProtectedRoute.jsx`: Bảo vệ các route yêu cầu đăng nhập hoặc yêu cầu quyền Admin.
-- `FE/src/components/templates/MotionParticles.jsx`: Hiệu ứng canvas chuyển động cánh hoa rơi (Wedding) hoặc giấy confetti (Birthday).
-- `FE/src/components/templates/FloatingMusicPlayer.jsx`: Nút phát nhạc nổi góc màn hình kèm sóng âm chuyển động, có xử lý bắt ngoại lệ chính sách Autoplay của trình duyệt.
-- `FE/src/components/templates/LandingPageRenderer.jsx`: Engine trung tâm nạp JSON config bất kỳ để hiển thị trang web hoàn chỉnh:
-  + Hero Section: Countdown đếm ngược theo thời gian thực, nút CTA cuộn nhanh xuống RSVP.
-  + Couple/Celebrant Section: Avatar tròn, viền màu chủ đạo, tiểu sử, thông tin cha mẹ, quote tình yêu.
-  + Event Details Section: Thời gian, địa điểm The Adora / Sky Lounge, bản đồ chỉ đường Google Maps, Dress Code.
-  + Interactive Timeline: Lịch trình sự kiện với các biểu tượng phong phú.
-  + Photo Gallery: Lưới hình ảnh kèm Lightbox phóng to khi click.
-  + RSVP Section: Biểu mẫu xác nhận số lượng khách, chế độ ăn kiêng, gửi lời nhắn trực tiếp vào CSDL.
-  + Guestbook Wall: Sổ lưu bút ảo cho phép khách để lại lời chúc mừng tức thì.
-- `FE/src/components/templates/TemplateCard.jsx`: Thẻ hiển thị mẫu kèm hình ảnh, nhãn danh mục, nút Xem nhanh và Tùy biến.
-- `FE/src/components/templates/QuickPreviewModal.jsx`: Modal xem trước trực tiếp kèm nút chuyển đổi giữa Desktop và Mobile (375px).
-- `FE/src/components/customizer/CustomizerToolbar.jsx`: Thanh công cụ trên đầu Customizer: Switch Viewport, Nút Lưu, Tải JSON, Xuất Standalone HTML, Xem toàn màn hình.
-- `FE/src/components/customizer/CustomizerSidebar.jsx`: Thanh công cụ tùy biến bên trái với 10 tabs (Cài đặt chung, Giao diện/Màu sắc, Hero, Nhân vật chính, Sự kiện, Lịch trình, Album ảnh, Biểu mẫu RSVP, Nhạc nền, Lời chúc).
-- `FE/src/components/admin/AdminLayout.jsx`: Bố cục trang quản trị với Sidebar điều hướng và thông tin người dùng.
-- `FE/src/components/Navbar.jsx`: Navbar mới phong cách MotionSites với Logo, Kho Mẫu, Thiệp Của Tôi, Menu User Dropdown, Link Quản trị.
-- `FE/src/components/Footer.jsx`: Footer giao diện tối thanh lịch phong cách motionsites.ai.
-
-#### 4. Pages & Routing (`FE/src/pages/`, `FE/src/routes/`)
-- `FE/src/pages/HomePage.jsx`: Trang chủ MotionSites hiện đại với Hero chuyển động, Floating Badges, Showcase các mẫu thịnh hành, 3 bước tạo thiệp và CTA.
-- `FE/src/pages/TemplatesPage.jsx`: Bộ sưu tập mẫu phân loại theo tab (Tất cả, Đám cưới, Sinh nhật) kèm ô tìm kiếm.
-- `FE/src/pages/CustomizerPage.jsx`: Không gian chỉnh sửa thời gian thực chia đôi màn hình (Sidebar tùy biến + Live Canvas xem trước).
-- `FE/src/pages/LivePreviewPage.jsx`: Trang xem toàn màn hình Live Landing Page (hỗ trợ cả template gốc `/preview/:templateId` và link thiệp thực tế `/view/:slug`).
-- `FE/src/pages/MyCustomizationsPage.jsx`: Quản lý các thiệp người dùng đã tạo kèm tính năng sao chép link chia sẻ, sửa, xem, xuất HTML và xóa.
-- `FE/src/pages/auth/LoginPage.jsx`: Trang đăng nhập sang trọng.
-- `FE/src/pages/auth/RegisterPage.jsx`: Trang đăng ký tài khoản mới.
-- `FE/src/pages/admin/AdminDashboardPage.jsx`: Thống kê tổng số mẫu, người dùng, lượt RSVP và lời chúc.
-- `FE/src/pages/admin/AdminTemplatesPage.jsx`: Quản trị Master Templates với trình soạn thảo JSON có kiểm tra cú pháp.
-- `FE/src/pages/admin/AdminUsersPage.jsx`: Quản trị danh sách người dùng, cấp quyền Admin và khóa tài khoản.
-- `FE/src/routes/index.jsx`: Thiết lập định tuyến đầy đủ.
-- `FE/src/App.jsx`: Bọc AuthProvider và ẩn Navbar/Footer khi ở chế độ Full Preview, Customizer hoặc Admin.
-- `FE/src/index.css`: Bổ sung font Playfair Display, Cinzel, Montserrat, Great Vibes và keyframe animations.
+#### Tests Layer (`BE/test/`)
+- `BE/test/UnitTests/Application/Categories/CategoryCommandHandlerTests.cs` *(Tạo mới)*: Unit tests cho Create, Update, Delete Category.
+- `BE/test/UnitTests/Application/NavigationMenus/NavigationMenuCommandHandlerTests.cs` *(Tạo mới)*: Unit tests cho Create, Update, Delete NavigationMenu.
+- `BE/test/UnitTests/Application/Templates/CreateTemplateCommandHandlerTests.cs` *(Chỉnh sửa)*: Cập nhật dữ liệu test tương thích với các trường mới của Template.
+- `BE/test/UnitTests/Application/Templates/GetTemplatesQueryHandlerTests.cs` *(Chỉnh sửa)*: Cập nhật mock repository theo phương thức `GetListAsync`.
 
 ---
 
-## 3. VỊ TRÍ TRỌNG YẾU MÀ TESTER NÊN SOI KỸ
+### 1.2. Frontend (React 19 + Vite + Tailwind CSS)
 
-1. **Kiểm tra luồng xác thực & phân quyền (Auth & RBAC)**:
-   - Thử đăng nhập tài khoản Admin (`admin@template.com` / `Admin@123456`) để truy cập `/admin`.
-   - Thử đăng nhập tài khoản Thường (`user@template.com` / `User@123456`) và gõ trực tiếp URL `/admin` -> `ProtectedRoute` phải chuyển hướng ra trang chủ.
-   - Thử chức năng Đăng ký tài khoản mới tại `/register`.
+#### API Layer (`FE/src/api/`)
+- `FE/src/api/categoryApi.js` *(Tạo mới)*: Client API giao tiếp với `/api/v1/categories`.
+- `FE/src/api/navigationMenuApi.js` *(Tạo mới)*: Client API giao tiếp với `/api/v1/menus`.
+- `FE/src/api/templateApi.js` *(Chỉnh sửa)*: Đảm bảo unwrap an toàn dữ liệu trả về từ backend.
 
-2. **Kiểm tra Live Customizer (`/customize/:templateId`)**:
-   - Thay đổi các giá trị ở Sidebar (Màu chủ đạo, Tiêu đề Hero, Ngày cưới, Danh sách mốc thời gian, Album ảnh) -> Canvas bên phải phải phản hồi tức thời.
-   - Nhấn nút chuyển đổi Viewport giữa **Desktop** và **Mobile (375px)** để kiểm tra khung điện thoại.
-   - Nhấn **Xuất Standalone HTML** -> Tải về file `.html`, mở trực tiếp bằng trình duyệt ngoại tuyến (double-click) để kiểm tra Countdown, Canvas cánh hoa và giao diện hoạt động độc lập.
+#### Tiện ích (`FE/src/utils/`)
+- `FE/src/utils/iconResolver.jsx` *(Tạo mới)*: Bộ giải quyết icon Lucide động an toàn (fallback về Sparkles nếu icon nhập trong database không tồn tại).
 
-3. **Kiểm tra tương tác RSVP & Guestbook trên trang chia sẻ thực tế (`/view/:slug`)**:
-   - Truy cập vào trang thiệp đã tạo hoặc đường dẫn `/view/<slug>`.
-   - Điền form "Xác nhận tham dự" (RSVP) và form "Sổ lưu bút" -> Kiểm tra dữ liệu được lưu vào CSDL và danh sách lời chúc hiển thị ngay trên màn hình.
+#### Navigation & Layout (`FE/src/components/` & `FE/src/routes/`)
+- `FE/src/components/Navbar.jsx` *(Chỉnh sửa toàn diện)*: Tải động cây menu từ API backend, hỗ trợ dropdown submenu trên desktop (hover), accordion collapsible trên mobile, nhãn badge theo màu, phân biệt liên kết nội bộ (`<Link>`) và liên kết ngoài (`<a>`).
+- `FE/src/components/admin/AdminLayout.jsx` *(Chỉnh sửa)*: Thêm liên kết Sidebar đến `/admin/categories` và `/admin/menus`.
+- `FE/src/routes/index.jsx` *(Chỉnh sửa)*: Khai báo 2 route admin `/admin/categories` và `/admin/menus`.
 
-4. **Kiểm tra xử lý ngoại lệ JSON trong Quản trị Templates (`/admin/templates`)**:
-   - Mở modal sửa hoặc thêm mẫu, cố tình nhập JSON sai cú pháp -> Hệ thống phải chặn lại và hiển thị thông báo lỗi, không làm sập ứng dụng.
+#### Trang Mẫu Thiệp Cinelove Clone (`FE/src/pages/` & `FE/src/components/templates/`)
+- `FE/src/pages/TemplatesPage.jsx` *(Chỉnh sửa toàn diện)*:
+  - Giao diện Breadcrumb + Hero Banner chuẩn Cinelove.
+  - Thanh Category Tabs cuộn ngang nạp động từ `categoryApi`.
+  - Bộ lọc Huy hiệu gói (Tất cả, Free, Basic, Premium, Hot, New).
+  - Tìm kiếm tức thời theo từ khóa.
+  - Quản lý trình phát Audio tập trung (Centralized Audio Player) duy nhất 1 bài phát tại 1 thời điểm, tự động tắt khi rời trang.
+- `FE/src/components/templates/TemplateCard.jsx` *(Chỉnh sửa toàn diện)*:
+  - Khung card mockup điện thoại chuẩn phong cách Cinelove.
+  - Hiệu ứng cuộn ảnh mockup dài dọc tự động khi hover (`auto-scroll mockup`), mượt mà quay về ban đầu khi rời chuột.
+  - Nút nghe thử nhạc trực tiếp trên thẻ kèm hoạt ảnh sóng nhạc (equalizer wave).
+  - Huy hiệu gói (Badge) góc thẻ.
+  - Nút thao tác nhanh "Xem demo" và "Dùng mẫu".
+- `FE/src/components/templates/QuickPreviewModal.jsx` *(Chỉnh sửa)*:
+  - Trình nghe nhạc xem thử tích hợp trên modal topbar.
+  - Bộ chuyển đổi mô phỏng Mobile (375px notch) và Desktop toàn màn hình.
+  - Nút điều hướng trực tiếp sang trang tùy biến `/customize/:id`.
+
+#### Trang Quản Trị Admin (`FE/src/pages/admin/`)
+- `FE/src/pages/admin/AdminCategoriesPage.jsx` *(Tạo mới)*: Quản lý danh mục (danh sách, đếm template, modal thêm/sửa, xóa an toàn).
+- `FE/src/pages/admin/AdminMenusPage.jsx` *(Tạo mới)*: Quản lý menu cha và submenu phân cấp dạng cây (thứ tự, đường dẫn, badge, màu badge, icon, target, modal thêm/sửa, xóa an toàn).
+- `FE/src/pages/admin/AdminTemplatesPage.jsx` *(Chỉnh sửa)*: Bổ sung chọn Danh mục động, chọn Gói/Badge, nhập `LongPreviewUrl`, nhập `AudioUrl` và `MusicTitle`.
+
+---
+
+## 2. KẾT QUẢ KIỂM TRA (VERIFICATION)
+
+1. **Backend Tests**:
+   - Chạy lệnh: `dotnet test BE/TemplateLandingPage.sln /p:AllowMissingPrunePackageData=true`
+   - **Kết quả: PASS 100%**
+     - `TemplateLandingPage.Architecture.Tests.dll`: **5/5 passed** (Handlers kết thúc bằng `Handler`, kiến trúc phân tầng tuân thủ Clean Architecture).
+     - `TemplateLandingPage.UnitTests.dll`: **101/101 passed** (toàn bộ test cases cho Categories, NavigationMenus, Templates, Users, Customizations, Interactions đều xanh).
+
+2. **Frontend Build**:
+   - Chạy lệnh: `npm run build` trong `FE/`
+   - **Kết quả: PASS 100%** (Vite build thành công, không có lỗi cú pháp hay import hỏng).
+
+---
+
+## 3. CÁC VỊ TRÍ TRỌNG YẾU TESTER NÊN SOI KỸ
+
+1. **Hiệu ứng Cuộn Mockup Dài Trên Card (`TemplateCard.jsx`)**:
+   - Rê chuột vào thẻ thiệp có `longPreviewUrl`: kiểm tra ảnh có cuộn mượt mà từ trên xuống dưới không (`transition: transform 3.5s ease-in-out`).
+   - Rê chuột ra khỏi thẻ: kiểm tra ảnh có lùi mượt về vị trí ban đầu không.
+   - Thẻ không có `longPreviewUrl`: kiểm tra có tự động fallback dùng `thumbnailUrl` và phóng nhẹ (zoom) an toàn không vỡ khung không.
+
+2. **Cơ chế Phát Âm Thanh Tập Trung (Centralized Audio Concurrency)**:
+   - Bấm nút Play trên Thẻ A: nhạc thẻ A phát, biểu tượng sóng nhạc nhảy.
+   - Bấm nút Play trên Thẻ B: nhạc thẻ A phải lập tức dừng ngay, nhạc thẻ B phát lên.
+   - Rời khỏi trang `/templates` hoặc bấm dừng trên banner trạng thái: kiểm tra âm thanh có dừng hoàn toàn không.
+
+3. **Dynamic Navigation Menu Trên Navbar (`Navbar.jsx`)**:
+   - Trên Desktop: rê chuột vào "Kho Mẫu Thiệp", dropdown submenu hiển thị đầy đủ danh sách danh mục con kèm icon và badge màu.
+   - Trên Mobile: mở menu hamburger, bấm vào mục có submenu kiểm tra accordion gập mở mượt mà.
+   - Kiểm tra link ngoại vi (`http/https`) mở tab mới (`target="_blank"`) và link nội bộ chuyển hướng trang SPA mượt mà qua React Router.
+
+4. **Kiểm Tra Ràng Buộc Nghiệp Vụ Tại Trang Admin**:
+   - `/admin/categories`: Thử xóa danh mục đang có mẫu thiệp liên kết -> hệ thống phải từ chối và hiển thị thông báo lỗi rõ ràng.
+   - `/admin/menus`:
+     - Thử chọn chính menu đó làm menu cha của nó -> bị chặn.
+     - Thử xóa menu cha đang chứa menu con -> hệ thống phải từ chối và yêu cầu xóa menu con trước.

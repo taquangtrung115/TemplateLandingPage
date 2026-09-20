@@ -8,4 +8,6 @@ public static class TableNames
     public const string UserCustomizations = "UserCustomizations";
     public const string RsvpEntries = "RsvpEntries";
     public const string GuestbookEntries = "GuestbookEntries";
+    public const string Categories = "Categories";
+    public const string NavigationMenus = "NavigationMenus";
 }

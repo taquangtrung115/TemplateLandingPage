@@ -13,6 +13,8 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
 
     public DbSet<Product> Products => Set<Product>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<NavigationMenu> NavigationMenus => Set<NavigationMenu>();
     public DbSet<Template> Templates => Set<Template>();
     public DbSet<UserCustomization> UserCustomizations => Set<UserCustomization>();
     public DbSet<RsvpEntry> RsvpEntries => Set<RsvpEntry>();

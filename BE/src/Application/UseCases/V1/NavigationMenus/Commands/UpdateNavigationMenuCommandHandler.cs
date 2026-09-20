@@ -1,0 +1,60 @@
+namespace TemplateLandingPage.Application.UseCases.V1.NavigationMenus.Commands;
+
+using TemplateLandingPage.Application.Abstractions;
+using TemplateLandingPage.Contract.Abstractions.Shared;
+using TemplateLandingPage.Contract.Services.V1.NavigationMenus;
+using TemplateLandingPage.Domain.Abstractions.Repositories;
+using TemplateLandingPage.Domain.Repositories;
+
+public sealed class UpdateNavigationMenuCommandHandler : ICommandHandler<UpdateNavigationMenuCommand>
+{
+    private readonly INavigationMenuRepository _navigationMenuRepository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public UpdateNavigationMenuCommandHandler(
+        INavigationMenuRepository navigationMenuRepository,
+        IUnitOfWork unitOfWork)
+    {
+        _navigationMenuRepository = navigationMenuRepository;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<Result> Handle(UpdateNavigationMenuCommand request, CancellationToken cancellationToken)
+    {
+        var menu = await _navigationMenuRepository.GetByIdAsync(request.Id, cancellationToken);
+        if (menu is null)
+        {
+            return Result.Failure(NavigationMenuErrors.NotFound);
+        }
+
+        if (request.ParentId.HasValue)
+        {
+            if (request.ParentId.Value == request.Id)
+            {
+                return Result.Failure(NavigationMenuErrors.CannotBeSelfParent);
+            }
+
+            var parent = await _navigationMenuRepository.GetByIdAsync(request.ParentId.Value, cancellationToken);
+            if (parent is null)
+            {
+                return Result.Failure(NavigationMenuErrors.ParentNotFound);
+            }
+        }
+
+        menu.Update(
+            request.Title,
+            request.Url,
+            request.ParentId,
+            request.OrderIndex,
+            request.Target,
+            request.Badge,
+            request.BadgeColor,
+            request.Icon,
+            request.IsActive);
+
+        _navigationMenuRepository.Update(menu);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+}

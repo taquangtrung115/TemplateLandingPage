@@ -1,16 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, LayoutTemplate, ShieldCheck, Heart, User, LogOut, LogIn, Menu, X } from 'lucide-react';
+import {
+  Sparkles,
+  LayoutTemplate,
+  ShieldCheck,
+  Heart,
+  LogOut,
+  Menu,
+  X,
+  ChevronDown,
+  ExternalLink,
+} from 'lucide-react';
 import useAuth from '../hooks/useAuth';
+import navigationMenuApi from '../api/navigationMenuApi';
+import { resolveIcon } from '../utils/iconResolver';
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+
+  const [menus, setMenus] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [openSubmenus, setOpenSubmenus] = useState({}); // for mobile accordion { [menuId]: boolean }
+  const [activeDropdown, setActiveDropdown] = useState(null); // for desktop hover { [menuId]: boolean }
 
-  const isActive = (path) => location.pathname === path;
+  useEffect(() => {
+    let isMounted = true;
+    const loadMenus = async () => {
+      try {
+        const data = await navigationMenuApi.getMenus({ isActiveOnly: true });
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setMenus(data);
+        }
+      } catch {
+        // Fallback default navigation if api fails or is empty
+      }
+    };
+    loadMenus();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const isActive = (path) => {
+    if (!path || path.startsWith('#')) return false;
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
 
   const handleLogout = () => {
     logout();
@@ -18,8 +56,55 @@ export default function Navbar() {
     navigate('/login');
   };
 
+  const toggleMobileSubmenu = (menuId) => {
+    setOpenSubmenus((prev) => ({ ...prev, [menuId]: !prev[menuId] }));
+  };
+
+  const getBadgeStyle = (color) => {
+    switch (color?.toLowerCase()) {
+      case 'rose':
+        return 'bg-rose-100 text-rose-700 border-rose-200';
+      case 'blue':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'purple':
+        return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'amber':
+        return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'emerald':
+        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+  const isExternal = (url) => /^https?:\/\//i.test(url);
+
+  // Fallback menus if database has no menus yet
+  const fallbackMenus = [
+    { id: 'home', title: 'Trang Chủ', url: '/', icon: 'Home' },
+    {
+      id: 'templates',
+      title: 'Kho Mẫu Thiệp',
+      url: '/templates',
+      icon: 'LayoutTemplate',
+      badge: 'HOT',
+      badgeColor: 'rose',
+      subMenus: [
+        { id: 'w', title: 'Thiệp Cưới', url: '/templates?category=wedding', icon: 'Heart', badge: 'HOT', badgeColor: 'rose' },
+        { id: 'e', title: 'Lễ Đính Hôn', url: '/templates?category=engagement', icon: 'Ring' },
+        { id: 'b', title: 'Thiệp Sinh Nhật', url: '/templates?category=birthday', icon: 'Cake', badge: 'NEW', badgeColor: 'blue' },
+        { id: 'a', title: 'Kỷ Niệm Ngày Cưới', url: '/templates?category=anniversary', icon: 'Sparkles' },
+        { id: 'bs', title: 'Thôi Nôi & Đầy Tháng', url: '/templates?category=baby-shower', icon: 'Baby' },
+      ],
+    },
+    { id: 'pricing', title: 'Bảng Giá', url: '/#pricing', icon: 'BadgePercent' },
+    { id: 'guide', title: 'Hướng Dẫn', url: '/#guide', icon: 'BookOpen' },
+  ];
+
+  const displayedMenus = menus.length > 0 ? menus : fallbackMenus;
+
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
@@ -32,40 +117,163 @@ export default function Navbar() {
                 Motion<span className="text-rose-600">Sites</span>
               </span>
               <span className="text-[9px] uppercase tracking-widest text-gray-400 font-semibold -mt-1">
-                Template Builder
+                Cinelove Template Engine
               </span>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center space-x-1">
-            <Link
-              to="/"
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors ${
-                isActive('/') ? 'text-rose-600 bg-rose-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Trang Chủ
-            </Link>
+            {displayedMenus.map((menu) => {
+              const IconComp = resolveIcon(menu.icon, Sparkles);
+              const hasChildren = menu.subMenus && menu.subMenus.length > 0;
+              const active = isActive(menu.url);
 
-            <Link
-              to="/templates"
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-colors ${
-                isActive('/templates') ? 'text-rose-600 bg-rose-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <LayoutTemplate className="w-4 h-4" />
-              <span>Kho Mẫu Thiệp</span>
-            </Link>
+              if (hasChildren) {
+                return (
+                  <div
+                    key={menu.id}
+                    className="relative"
+                    onMouseEnter={() => setActiveDropdown(menu.id)}
+                    onMouseLeave={() => setActiveDropdown(null)}
+                  >
+                    <button
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                        active || activeDropdown === menu.id
+                          ? 'text-rose-600 bg-rose-50'
+                          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      <IconComp className="w-3.5 h-3.5" />
+                      <span>{menu.title}</span>
+                      {menu.badge && (
+                        <span
+                          className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border uppercase ${getBadgeStyle(
+                            menu.badgeColor
+                          )}`}
+                        >
+                          {menu.badge}
+                        </span>
+                      )}
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                          activeDropdown === menu.id ? 'rotate-180 text-rose-600' : 'text-gray-400'
+                        }`}
+                      />
+                    </button>
+
+                    {/* Desktop Dropdown */}
+                    {activeDropdown === menu.id && (
+                      <div className="absolute left-0 mt-1 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                        {menu.subMenus.map((sub) => {
+                          const SubIcon = resolveIcon(sub.icon, Sparkles);
+                          const subExternal = isExternal(sub.url);
+
+                          const content = (
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 group-hover:bg-rose-100 transition-colors">
+                                  <SubIcon className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="font-semibold text-xs text-gray-700 group-hover:text-rose-600 transition-colors">
+                                  {sub.title}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                {sub.badge && (
+                                  <span
+                                    className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border uppercase ${getBadgeStyle(
+                                      sub.badgeColor
+                                    )}`}
+                                  >
+                                    {sub.badge}
+                                  </span>
+                                )}
+                                {subExternal && <ExternalLink className="w-3 h-3 text-gray-400" />}
+                              </div>
+                            </div>
+                          );
+
+                          return subExternal ? (
+                            <a
+                              key={sub.id}
+                              href={sub.url}
+                              target={sub.target || '_blank'}
+                              rel="noopener noreferrer"
+                              className="group flex items-center px-3 py-2 rounded-xl hover:bg-rose-50/50 transition-colors"
+                            >
+                              {content}
+                            </a>
+                          ) : (
+                            <Link
+                              key={sub.id}
+                              to={sub.url}
+                              target={sub.target || '_self'}
+                              className="group flex items-center px-3 py-2 rounded-xl hover:bg-rose-50/50 transition-colors"
+                              onClick={() => setActiveDropdown(null)}
+                            >
+                              {content}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return isExternal(menu.url) ? (
+                <a
+                  key={menu.id}
+                  href={menu.url}
+                  target={menu.target || '_self'}
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                >
+                  <IconComp className="w-3.5 h-3.5" />
+                  <span>{menu.title}</span>
+                  {menu.badge && (
+                    <span
+                      className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border uppercase ${getBadgeStyle(
+                        menu.badgeColor
+                      )}`}
+                    >
+                      {menu.badge}
+                    </span>
+                  )}
+                </a>
+              ) : (
+                <Link
+                  key={menu.id}
+                  to={menu.url}
+                  target={menu.target || '_self'}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                    active ? 'text-rose-600 bg-rose-50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <IconComp className="w-3.5 h-3.5" />
+                  <span>{menu.title}</span>
+                  {menu.badge && (
+                    <span
+                      className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border uppercase ${getBadgeStyle(
+                        menu.badgeColor
+                      )}`}
+                    >
+                      {menu.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
 
             {isAuthenticated && (
               <Link
                 to="/my-sites"
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-colors ${
-                  isActive('/my-sites') ? 'text-rose-600 bg-rose-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                  location.pathname === '/my-sites' ? 'text-rose-600 bg-rose-50' : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                <Heart className="w-4 h-4" />
+                <Heart className="w-3.5 h-3.5 text-rose-500" />
                 <span>Thiệp Của Tôi</span>
               </Link>
             )}
@@ -73,11 +281,13 @@ export default function Navbar() {
             {isAdmin && (
               <Link
                 to="/admin"
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-colors ${
-                  location.pathname.startsWith('/admin') ? 'text-rose-600 bg-rose-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                  location.pathname.startsWith('/admin')
+                    ? 'text-rose-600 bg-rose-50'
+                    : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                <ShieldCheck className="w-4 h-4 text-rose-500" />
+                <ShieldCheck className="w-3.5 h-3.5 text-rose-500" />
                 <span>Quản Trị</span>
               </Link>
             )}
@@ -99,7 +309,6 @@ export default function Navbar() {
                   </span>
                 </button>
 
-                {/* Dropdown Menu */}
                 {userDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50 animate-in fade-in">
                     <div className="px-4 py-2 border-b border-gray-100">
@@ -166,37 +375,160 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-3 pb-6 space-y-2 shadow-xl">
-          <Link
-            to="/"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
-          >
-            Trang Chủ
-          </Link>
-          <Link
-            to="/templates"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
-          >
-            Kho Mẫu Thiệp
-          </Link>
+        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-3 pb-6 space-y-2 shadow-xl max-h-[85vh] overflow-y-auto">
+          {displayedMenus.map((menu) => {
+            const IconComp = resolveIcon(menu.icon, Sparkles);
+            const hasChildren = menu.subMenus && menu.subMenus.length > 0;
+            const isSubOpen = !!openSubmenus[menu.id];
+
+            if (hasChildren) {
+              return (
+                <div key={menu.id} className="border-b border-gray-50 pb-1">
+                  <button
+                    onClick={() => toggleMobileSubmenu(menu.id)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-gray-800 hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconComp className="w-4 h-4 text-rose-500" />
+                      <span>{menu.title}</span>
+                      {menu.badge && (
+                        <span
+                          className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border uppercase ${getBadgeStyle(
+                            menu.badgeColor
+                          )}`}
+                        >
+                          {menu.badge}
+                        </span>
+                      )}
+                    </div>
+                    <ChevronDown
+                      className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                        isSubOpen ? 'rotate-180 text-rose-600' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {isSubOpen && (
+                    <div className="pl-6 pr-2 py-1 space-y-1 bg-gray-50/50 rounded-xl mt-1">
+                      {menu.subMenus.map((sub) => {
+                        const SubIcon = resolveIcon(sub.icon, Sparkles);
+                        return isExternal(sub.url) ? (
+                          <a
+                            key={sub.id}
+                            href={sub.url}
+                            target={sub.target || '_blank'}
+                            rel="noopener noreferrer"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-600 hover:text-rose-600"
+                          >
+                            <div className="flex items-center gap-2">
+                              <SubIcon className="w-3.5 h-3.5 text-rose-400" />
+                              <span>{sub.title}</span>
+                            </div>
+                            {sub.badge && (
+                              <span
+                                className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border uppercase ${getBadgeStyle(
+                                  sub.badgeColor
+                                )}`}
+                              >
+                                {sub.badge}
+                              </span>
+                            )}
+                          </a>
+                        ) : (
+                          <Link
+                            key={sub.id}
+                            to={sub.url}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-600 hover:text-rose-600"
+                          >
+                            <div className="flex items-center gap-2">
+                              <SubIcon className="w-3.5 h-3.5 text-rose-400" />
+                              <span>{sub.title}</span>
+                            </div>
+                            {sub.badge && (
+                              <span
+                                className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border uppercase ${getBadgeStyle(
+                                  sub.badgeColor
+                                )}`}
+                              >
+                                {sub.badge}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return isExternal(menu.url) ? (
+              <a
+                key={menu.id}
+                href={menu.url}
+                target={menu.target || '_self'}
+                rel="noopener noreferrer"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-2">
+                  <IconComp className="w-4 h-4 text-rose-500" />
+                  <span>{menu.title}</span>
+                </div>
+                {menu.badge && (
+                  <span
+                    className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border uppercase ${getBadgeStyle(
+                      menu.badgeColor
+                    )}`}
+                  >
+                    {menu.badge}
+                  </span>
+                )}
+              </a>
+            ) : (
+              <Link
+                key={menu.id}
+                to={menu.url}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-2">
+                  <IconComp className="w-4 h-4 text-rose-500" />
+                  <span>{menu.title}</span>
+                </div>
+                {menu.badge && (
+                  <span
+                    className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border uppercase ${getBadgeStyle(
+                      menu.badgeColor
+                    )}`}
+                  >
+                    {menu.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+
           {isAuthenticated && (
             <Link
               to="/my-sites"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
             >
-              Thiệp Của Tôi
+              <Heart className="w-4 h-4 text-rose-500" />
+              <span>Thiệp Của Tôi</span>
             </Link>
           )}
           {isAdmin && (
             <Link
               to="/admin"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50"
             >
-              Trang Quản Trị
+              <ShieldCheck className="w-4 h-4 text-indigo-500" />
+              <span>Trang Quản Trị</span>
             </Link>
           )}
 
@@ -207,7 +539,7 @@ export default function Navbar() {
                   setMobileMenuOpen(false);
                   handleLogout();
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Đăng xuất ({user?.fullName})</span>
@@ -224,7 +556,7 @@ export default function Navbar() {
                 <Link
                   to="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-center px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white"
+                  className="text-center px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white shadow-md shadow-rose-500/20"
                 >
                   Đăng ký
                 </Link>

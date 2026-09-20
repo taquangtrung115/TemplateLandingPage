@@ -1,644 +1,621 @@
-# BẢN KẾ HOẠCH TRIỂN KHAI (IMPLEMENTATION PLAN)
-**Tính năng**: Hệ thống Quản lý & Tùy biến Landing Page Thiệp cưới / Thiệp sinh nhật (Template Engine, Customizer Editor, Live Preview, Export Standalone HTML & Admin Management)
+# KẾ HOẠCH TRIỂN KHAI TÍNH NĂNG: CLONE UI CINELOVE & DYNAMIC NAVIGATION MENU ENGINE
 
----
-
-## 1. CÂU HỎI CÒN BỎ NGỎ
+## CÂU HỎI CÒN BỎ NGỎ
 Không có.
 
 ---
 
-## 2. QUY ƯỚC CẦN BÁM THEO
-- **Quy ước Backend**: Bám sát toàn bộ quy chuẩn tại [PromtAI/.gemini/agents/coder.md](file:///e:/Code/TemplateLandingPage/PromtAI/.gemini/agents/coder.md) (Phần A: Clean Architecture .NET 10 + CQRS + MediatR + EF Core SQL Server; Phần C: Checklist review & Naming).
-  - Domain không phụ thuộc project khác.
-  - Contract chứa Commands, Queries, Responses, Errors, Interfaces Message.
-  - Application chứa UseCases (Command/Query Handlers), FluentValidation Validators, Pipeline Behaviors. Handlers bắt buộc có hậu tố `Handler`.
-  - Persistence chứa EF Core DbContext, Configurations, Repositories kế thừa `RepositoryBase<T, Guid>`.
-  - Infrastructure chứa External services (PasswordHasher PBKDF2 SHA-512, JwtTokenGenerator).
-  - Presentation chứa Minimal API endpoints kế thừa `IEndpoint`, gửi request qua `ISender`.
-- **Quy ước Frontend**: Bám sát [PromtAI/.gemini/agents/coder.md](file:///e:/Code/TemplateLandingPage/PromtAI/.gemini/agents/coder.md) (Phần B & C) kết hợp codebase hiện tại: React 19, Vite, Tailwind CSS 3, Lucide React, React Router DOM 7, Axios instance có Auth interceptor.
-- **Quy ước Test**: Đảm bảo toàn bộ 5 test kiến trúc NetArchTest trong [ArchitectureTests.cs](file:///e:/Code/TemplateLandingPage/BE/test/Architecture.Tests/ArchitectureTests.cs) và các Unit Tests tiếp tục PASS 100%.
+## 1. QUY ƯỚC CẦN BÁM THEO
+- **Tên file quy ước**: `PromtAI/.gemini/agents/coder.md`
+- **Backend**: .NET 10 Clean Architecture + CQRS + MediatR + EF Core SQL Server + FluentValidation.
+  - Tuân thủ nguyên tắc phân tầng: Domain -> Contract -> Application -> Persistence -> Presentation -> API.
+  - Command thay đổi trạng thái trả về `Result` hoặc `Result<TResponse>`, Query chỉ đọc trả về `Result<TResponse>`. Sử dụng `AsNoTracking()` cho queries.
+  - Naming: `{Action}{Entity}Command`, `{Action}{Entity}Query`, `{Command/Query}Handler`, `{Entity}Response`.
+  - Không để business logic trong Presentation/API layer. Presentation triển khai qua `IEndpoint` Minimal API.
+  - Kế thừa `AggregateRoot<Guid>`, `IAuditableEntity`, `ISoftDelete` cho các thực thể chính.
+- **Frontend**: React 19 + Vite + Tailwind CSS + Lucide Icons + React Router.
+  - Tách tầng API riêng biệt trong `src/api/` sử dụng `axiosInstance`. Xử lý unwrap data qua `response.data?.value ?? response.data`.
+  - Component tuân thủ cấu trúc thư mục, xử lý loading/error đầy đủ, không để lộ console.log hay dead code.
 
 ---
 
-## 3. CẤU TRÚC JSON CONFIG SCHEMA CHO TEMPLATE
-Mỗi Master Template và User Customization lưu trữ cấu hình dưới dạng JSON chuỗi string (`ConfigJson`) tuân thủ schema linh hoạt sau:
-```json
-{
-  "theme": {
-    "primaryColor": "#e11d48",
-    "secondaryColor": "#f43f5e",
-    "accentColor": "#fef08a",
-    "backgroundColor": "#fff1f2",
-    "textColor": "#1e293b",
-    "fontFamily": "Playfair Display",
-    "stylePreset": "romantic",
-    "particlesEffect": "petals"
-  },
-  "hero": {
-    "badge": "SAVE THE DATE",
-    "title": "Minh & Linh",
-    "subtitle": "Hân hoan thông báo ngày chung đôi",
-    "eventDate": "2026-10-25T18:00:00",
-    "coverImageUrl": "https://images.unsplash.com/photo-1519741497674-611481863552",
-    "callToActionText": "Xác nhận tham dự"
-  },
-  "coupleOrCelebrant": {
-    "type": "wedding",
-    "person1": {
-      "name": "Nguyễn Văn Minh",
-      "title": "Chú Rể",
-      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-      "bio": "Kỹ sư phần mềm, yêu âm nhạc và nhiếp ảnh",
-      "parents": "Ông Nguyễn Văn A & Bà Trần Thị B"
-    },
-    "person2": {
-      "name": "Lê Thùy Linh",
-      "title": "Cô Dâu",
-      "avatarUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
-      "bio": "Nhà thiết kế đồ họa, thích hoa và du lịch",
-      "parents": "Ông Lê Văn C & Bà Phạm Thị D"
-    },
-    "storyQuote": "Tình yêu không phải là nhìn nhau, mà là cùng nhau nhìn về một hướng."
-  },
-  "eventDetails": {
-    "ceremonyName": "Lễ Thành Hôn",
-    "time": "17:30 - Chủ Nhật, 25/10/2026",
-    "venueName": "The Adora Center",
-    "address": "431 Hoàng Văn Thụ, Phường 4, Tân Bình, TP. Hồ Chí Minh",
-    "mapEmbedUrl": "https://maps.google.com",
-    "mapDirectLink": "https://maps.google.com",
-    "dressCode": "Trắng / Pastel / Be"
-  },
-  "timeline": [
-    { "id": "1", "time": "17:00", "title": "Đón khách & Chụp ảnh", "description": "Chào đón khách quý và chụp ảnh kỷ niệm", "icon": "Camera" },
-    { "id": "2", "time": "18:00", "title": "Làm lễ Thành hôn", "description": "Nghi thức trao nhẫn và cắt bánh cưới", "icon": "Heart" },
-    { "id": "3", "time": "19:00", "title": "Khai tiệc mừng", "description": "Dùng tiệc cùng gia đình và bạn bè", "icon": "Utensils" },
-    { "id": "4", "time": "20:30", "title": "Âm nhạc & Khiêu vũ", "description": "Giao lưu văn nghệ và tung hoa cưới", "icon": "Music" }
-  ],
-  "gallery": [
-    { "id": "1", "url": "https://images.unsplash.com/photo-1519741497674-611481863552", "caption": "Khoảnh khắc hạnh phúc" },
-    { "id": "2", "url": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc", "caption": "Nụ cười rạng rỡ" }
-  ],
-  "rsvp": {
-    "enabled": true,
-    "deadline": "2026-10-15",
-    "note": "Xin vui lòng phản hồi trước ngày 15/10 để chúng mình đón tiếp chu đáo nhất!",
-    "allowDietaryNotes": true,
-    "allowPlusOnes": true
-  },
-  "music": {
-    "enabled": true,
-    "audioUrl": "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
-    "title": "A Thousand Years - Instrumental",
-    "autoPlay": true
-  },
-  "wishes": {
-    "enabled": true,
-    "title": "Sổ Lưu Bút & Lời Chúc",
-    "subtitle": "Gửi những lời chúc yêu thương nhất tới chúng mình"
-  }
-}
-```
+## 2. DANH SÁCH FILE CẦN TẠO MỚI HOẶC CẦN SỬA
+
+### 2.1. Backend (.NET 10)
+
+#### Layer Domain (`BE/src/Domain/`)
+- **Tạo mới**:
+  1. `BE/src/Domain/Entities/Category.cs`: Thực thể quản lý danh mục thiệp.
+  2. `BE/src/Domain/Entities/NavigationMenu.cs`: Thực thể quản lý menu và submenu đa cấp.
+  3. `BE/src/Domain/Repositories/ICategoryRepository.cs`: Interface repository cho Category.
+  4. `BE/src/Domain/Repositories/INavigationMenuRepository.cs`: Interface repository cho NavigationMenu.
+- **Sửa**:
+  5. `BE/src/Domain/Entities/Template.cs`: Bổ sung `CategoryId`, `CategoryRef`, `Badge`, `AudioUrl`, `MusicTitle`, `LongPreviewUrl`, cập nhật constructor, phương thức `Create` và `Update`.
+  6. `BE/src/Domain/Repositories/ITemplateRepository.cs`: Bổ sung tham số truy vấn nâng cao (CategoryId, Badge, Search).
+
+#### Layer Contract (`BE/src/Contract/`)
+- **Tạo mới**:
+  7. `BE/src/Contract/Services/V1/Categories/Command.cs`: Các command Create, Update, Delete Category.
+  8. `BE/src/Contract/Services/V1/Categories/Query.cs`: Các query GetCategories, GetCategoryById, GetCategoryBySlug.
+  9. `BE/src/Contract/Services/V1/Categories/Response.cs`: `CategoryResponse`, `CategoryErrors`.
+  10. `BE/src/Contract/Services/V1/NavigationMenus/Command.cs`: Các command Create, Update, Delete NavigationMenu.
+  11. `BE/src/Contract/Services/V1/NavigationMenus/Query.cs`: Các query GetNavigationMenus (cây phân cấp), GetNavigationMenuById.
+  12. `BE/src/Contract/Services/V1/NavigationMenus/Response.cs`: `NavigationMenuResponse`, `NavigationMenuErrors`.
+- **Sửa**:
+  13. `BE/src/Contract/Services/V1/Templates/Command.cs`: Bổ sung `CategoryId`, `Badge`, `AudioUrl`, `MusicTitle`, `LongPreviewUrl` vào `CreateTemplateCommand`, `UpdateTemplateCommand`.
+  14. `BE/src/Contract/Services/V1/Templates/Query.cs`: Bổ sung `CategoryId`, `Badge`, `Search` vào `GetTemplatesQuery`.
+  15. `BE/src/Contract/Services/V1/Templates/Response.cs`: Bổ sung `CategoryId`, `Badge`, `AudioUrl`, `MusicTitle`, `LongPreviewUrl` vào `TemplateResponse`.
+
+#### Layer Application (`BE/src/Application/`)
+- **Tạo mới**:
+  16. `BE/src/Application/UseCases/V1/Categories/Commands/CreateCategoryCommandHandler.cs`
+  17. `BE/src/Application/UseCases/V1/Categories/Commands/CreateCategoryCommandValidator.cs`
+  18. `BE/src/Application/UseCases/V1/Categories/Commands/UpdateCategoryCommandHandler.cs`
+  19. `BE/src/Application/UseCases/V1/Categories/Commands/UpdateCategoryCommandValidator.cs`
+  20. `BE/src/Application/UseCases/V1/Categories/Commands/DeleteCategoryCommandHandler.cs`
+  21. `BE/src/Application/UseCases/V1/Categories/Queries/GetCategoriesQueryHandler.cs`
+  22. `BE/src/Application/UseCases/V1/Categories/Queries/GetCategoryByIdQueryHandler.cs`
+  23. `BE/src/Application/UseCases/V1/Categories/Queries/GetCategoryBySlugQueryHandler.cs`
+  24. `BE/src/Application/UseCases/V1/NavigationMenus/Commands/CreateNavigationMenuCommandHandler.cs`
+  25. `BE/src/Application/UseCases/V1/NavigationMenus/Commands/CreateNavigationMenuCommandValidator.cs`
+  26. `BE/src/Application/UseCases/V1/NavigationMenus/Commands/UpdateNavigationMenuCommandHandler.cs`
+  27. `BE/src/Application/UseCases/V1/NavigationMenus/Commands/UpdateNavigationMenuCommandValidator.cs`
+  28. `BE/src/Application/UseCases/V1/NavigationMenus/Commands/DeleteNavigationMenuCommandHandler.cs`
+  29. `BE/src/Application/UseCases/V1/NavigationMenus/Queries/GetNavigationMenusQueryHandler.cs`
+  30. `BE/src/Application/UseCases/V1/NavigationMenus/Queries/GetNavigationMenuByIdQueryHandler.cs`
+- **Sửa**:
+  31. `BE/src/Application/UseCases/V1/Templates/Commands/CreateTemplateCommandHandler.cs`
+  32. `BE/src/Application/UseCases/V1/Templates/Commands/CreateTemplateCommandValidator.cs`
+  33. `BE/src/Application/UseCases/V1/Templates/Commands/UpdateTemplateCommandHandler.cs`
+  34. `BE/src/Application/UseCases/V1/Templates/Commands/UpdateTemplateCommandValidator.cs`
+  35. `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplatesQueryHandler.cs`
+  36. `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplateByIdQueryHandler.cs`
+  37. `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplateBySlugQueryHandler.cs`
+
+#### Layer Persistence (`BE/src/Persistence/`)
+- **Tạo mới**:
+  38. `BE/src/Persistence/Configurations/CategoryConfiguration.cs`: Cấu hình Fluent API bảng Categories.
+  39. `BE/src/Persistence/Configurations/NavigationMenuConfiguration.cs`: Cấu hình Fluent API bảng NavigationMenus (self-referencing ParentId).
+  40. `BE/src/Persistence/Repositories/CategoryRepository.cs`: Triển khai `ICategoryRepository`.
+  41. `BE/src/Persistence/Repositories/NavigationMenuRepository.cs`: Triển khai `INavigationMenuRepository`.
+- **Sửa**:
+  42. `BE/src/Persistence/Constants/TableNames.cs`: Thêm constants `Categories` và `NavigationMenus`.
+  43. `BE/src/Persistence/ApplicationDbContext.cs`: Thêm `DbSet<Category>` và `DbSet<NavigationMenu>`.
+  44. `BE/src/Persistence/Configurations/TemplateConfiguration.cs`: Cập nhật cấu hình quan hệ với Category và các cột mới.
+  45. `BE/src/Persistence/Repositories/TemplateRepository.cs`: Cập nhật logic truy vấn và Include/Filter theo Category, Badge, Search.
+  46. `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`: Đăng ký Scoped cho `ICategoryRepository` và `INavigationMenuRepository`.
+  47. `BE/src/Persistence/Data/DataSeeder.cs`: Nạp dữ liệu mặc định ban đầu: 5 danh mục chuẩn Cinelove, hệ thống menu & submenu động, các mẫu thiệp có âm nhạc và ảnh mockup cuộn dài.
+
+#### Layer Presentation (`BE/src/Presentation/`)
+- **Tạo mới**:
+  48. `BE/src/Presentation/APIs/Categories/CategoryApi.cs`: Minimal API cho Category (`/api/v1/categories`).
+  49. `BE/src/Presentation/APIs/NavigationMenus/NavigationMenuApi.cs`: Minimal API cho NavigationMenu (`/api/v1/menus`).
+- **Sửa**:
+  50. `BE/src/Presentation/APIs/Templates/TemplateApi.cs`: Cập nhật tham số truy vấn `GetTemplates` và request DTOs của `CreateTemplate`, `UpdateTemplate`.
+
+#### Layer Tests (`BE/test/`)
+- **Tạo mới**:
+  51. `BE/test/UnitTests/Application/Categories/CategoryCommandHandlerTests.cs`: Unit test cho Create, Update, Delete Category.
+  52. `BE/test/UnitTests/Application/NavigationMenus/NavigationMenuCommandHandlerTests.cs`: Unit test cho Create, Update, Delete NavigationMenu.
+- **Sửa**:
+  53. `BE/test/UnitTests/Application/Templates/CreateTemplateCommandHandlerTests.cs`: Cập nhật test case khớp với các trường mới của Template.
 
 ---
 
-## 4. DANH SÁCH FILE CẦN TẠO MỚI HOẶC CẦN SỬA
+### 2.2. Frontend (React 19 + Vite)
 
-### 4.1. BACKEND (.NET 10)
+#### Tầng API Client (`FE/src/api/`)
+- **Tạo mới**:
+  54. `FE/src/api/categoryApi.js`: Quản lý gọi API danh mục (getCategories, getCategoryById, createCategory, updateCategory, deleteCategory).
+  55. `FE/src/api/navigationMenuApi.js`: Quản lý gọi API menu động (getMenus, getMenuById, createMenu, updateMenu, deleteMenu).
+- **Sửa**:
+  56. `FE/src/api/templateApi.js`: Cập nhật tham số filter (category, categoryId, badge, search) và unwrap an toàn.
 
-#### A. Project `TemplateLandingPage.Domain`
-- **File tạo mới**:
-  1. `BE/src/Domain/Entities/User.cs`: AggregateRoot đại diện User hệ thống.
-  2. `BE/src/Domain/Entities/Template.cs`: AggregateRoot đại diện Master Template.
-  3. `BE/src/Domain/Entities/UserCustomization.cs`: AggregateRoot lưu bản tùy biến của user.
-  4. `BE/src/Domain/Entities/RsvpEntry.cs`: Entity lưu phản hồi xác nhận tham dự.
-  5. `BE/src/Domain/Entities/GuestbookEntry.cs`: Entity lưu lời chúc của khách mời.
-  6. `BE/src/Domain/Repositories/IUserRepository.cs`: Repository interface cho User.
-  7. `BE/src/Domain/Repositories/ITemplateRepository.cs`: Repository interface cho Template.
-  8. `BE/src/Domain/Repositories/ICustomizationRepository.cs`: Repository interface cho Customization.
-  9. `BE/src/Domain/Repositories/IRsvpRepository.cs`: Repository interface cho RsvpEntry.
-  10. `BE/src/Domain/Repositories/IGuestbookRepository.cs`: Repository interface cho GuestbookEntry.
+#### Tầng Layout & Navigation (`FE/src/components/` & `FE/src/routes/`)
+- **Sửa**:
+  57. `FE/src/components/Navbar.jsx`: Thay thế menu tĩnh bằng Dynamic Navigation Tree lấy từ backend API `navigationMenuApi.getMenus({ isActiveOnly: true })`. Hỗ trợ render dropdown submenu đa cấp trên desktop, menu gập mở collapsible trên mobile, nhãn badge theo màu, dynamic Lucide icon resolver.
+  58. `FE/src/components/admin/AdminLayout.jsx`: Thêm mục "Quản Lý Menu Động" (`/admin/menus`) và "Quản Lý Danh Mục" (`/admin/categories`) vào Sidebar navigation.
+  59. `FE/src/routes/index.jsx`: Thêm 2 route admin mới: `/admin/menus` và `/admin/categories`.
 
-#### B. Project `TemplateLandingPage.Contract`
-- **File tạo mới**:
-  1. `BE/src/Contract/Services/V1/Auth/Command.cs`: `RegisterCommand`, `LoginCommand`.
-  2. `BE/src/Contract/Services/V1/Auth/Query.cs`: `GetCurrentUserQuery`.
-  3. `BE/src/Contract/Services/V1/Auth/Response.cs`: `LoginResponse`, `UserResponse`, `AuthErrors`.
-  4. `BE/src/Contract/Services/V1/Users/Command.cs`: `CreateUserCommand`, `UpdateUserCommand`, `DeleteUserCommand`.
-  5. `BE/src/Contract/Services/V1/Users/Query.cs`: `GetUsersQuery`, `GetUserByIdQuery`.
-  6. `BE/src/Contract/Services/V1/Users/Response.cs`: `UserErrors`.
-  7. `BE/src/Contract/Services/V1/Templates/Command.cs`: `CreateTemplateCommand`, `UpdateTemplateCommand`, `DeleteTemplateCommand`.
-  8. `BE/src/Contract/Services/V1/Templates/Query.cs`: `GetTemplatesQuery`, `GetTemplateByIdQuery`, `GetTemplateBySlugQuery`.
-  9. `BE/src/Contract/Services/V1/Templates/Response.cs`: `TemplateResponse`, `TemplateErrors`.
-  10. `BE/src/Contract/Services/V1/Customizations/Command.cs`: `CreateCustomizationCommand`, `UpdateCustomizationCommand`, `DeleteCustomizationCommand`.
-  11. `BE/src/Contract/Services/V1/Customizations/Query.cs`: `GetCustomizationByIdQuery`, `GetCustomizationBySlugQuery`, `GetMyCustomizationsQuery`.
-  12. `BE/src/Contract/Services/V1/Customizations/Response.cs`: `CustomizationResponse`, `CustomizationErrors`.
-  13. `BE/src/Contract/Services/V1/Interactions/Command.cs`: `SubmitRsvpCommand`, `SubmitGuestbookCommand`.
-  14. `BE/src/Contract/Services/V1/Interactions/Query.cs`: `GetRsvpsByCustomizationIdQuery`, `GetGuestbookByCustomizationIdQuery`.
-  15. `BE/src/Contract/Services/V1/Interactions/Response.cs`: `RsvpResponse`, `GuestbookResponse`.
+#### Trang Mẫu Thiệp & Card Component (`FE/src/pages/` & `FE/src/components/templates/`)
+- **Sửa**:
+  60. `FE/src/pages/TemplatesPage.jsx`:
+      - Thiết kế lại 100% phong cách Cinelove: Breadcrumb, Hero Title lãng mạn, thanh Category tabs cuộn ngang lấy từ `categoryApi`.
+      - Bộ lọc huy hiệu / gói: Tất cả, Miễn phí (Free), Tiêu chuẩn (Basic), Cao cấp (Premium), Hot, New.
+      - Thanh tìm kiếm tức thời (Search).
+      - Quản lý Audio Controller tập trung: Cho phép phát nghe thử nhạc trên từng thẻ, dừng bài cũ khi bấm bài mới, hiển thị trạng thái đang phát.
+  61. `FE/src/components/templates/TemplateCard.jsx`:
+      - Khung card mockup điện thoại chuẩn Cinelove, bo góc mềm, hiệu ứng nâng nhẹ khi hover.
+      - Auto-scroll mockup on hover: Vùng chứa ảnh cuộn tự động từ trên xuống dưới (`transition: transform 3.5s ease-in-out` với `translateY(calc(-100% + height))`) khi hover và lùi mượt về ban đầu khi unhover. Sử dụng `longPreviewUrl` (hoặc fallback `thumbnailUrl`).
+      - Huy hiệu gói (Badge) góc trên: FREE (xám), BASIC (xanh dương), PREMIUM (tím), HOT (cam hổ phách), NEW (xanh ngọc).
+      - Nút nghe thử nhạc (Audio preview button) trực tiếp trên card: Icon Play/Pause với animation cột sóng nhạc nhấp nháy, kèm tiêu đề bài hát `musicTitle`.
+      - Hover action overlay: Nút "Xem demo" (mở modal Quick Preview) và nút "Dùng mẫu" (chuyển sang Customize Editor `/customize/:id`).
+  62. `FE/src/components/templates/QuickPreviewModal.jsx`: Bổ sung trình nghe nhạc thử tích hợp, nút chuyển đổi giả lập thiết bị (Mobile/Desktop), hiển thị thông tin gói và nút "Bắt đầu tạo thiệp".
 
-#### C. Project `TemplateLandingPage.Application`
-- **File tạo mới**:
-  - *Feature Auth*:
-    1. `BE/src/Application/UseCases/V1/Auth/Commands/RegisterCommandHandler.cs`
-    2. `BE/src/Application/UseCases/V1/Auth/Commands/RegisterCommandValidator.cs`
-    3. `BE/src/Application/UseCases/V1/Auth/Commands/LoginCommandHandler.cs`
-    4. `BE/src/Application/UseCases/V1/Auth/Commands/LoginCommandValidator.cs`
-    5. `BE/src/Application/UseCases/V1/Auth/Queries/GetCurrentUserQueryHandler.cs`
-  - *Feature Users*:
-    6. `BE/src/Application/UseCases/V1/Users/Commands/CreateUserCommandHandler.cs`
-    7. `BE/src/Application/UseCases/V1/Users/Commands/CreateUserCommandValidator.cs`
-    8. `BE/src/Application/UseCases/V1/Users/Commands/UpdateUserCommandHandler.cs`
-    9. `BE/src/Application/UseCases/V1/Users/Commands/UpdateUserCommandValidator.cs`
-    10. `BE/src/Application/UseCases/V1/Users/Commands/DeleteUserCommandHandler.cs`
-    11. `BE/src/Application/UseCases/V1/Users/Queries/GetUsersQueryHandler.cs`
-    12. `BE/src/Application/UseCases/V1/Users/Queries/GetUserByIdQueryHandler.cs`
-  - *Feature Templates*:
-    13. `BE/src/Application/UseCases/V1/Templates/Commands/CreateTemplateCommandHandler.cs`
-    14. `BE/src/Application/UseCases/V1/Templates/Commands/CreateTemplateCommandValidator.cs`
-    15. `BE/src/Application/UseCases/V1/Templates/Commands/UpdateTemplateCommandHandler.cs`
-    16. `BE/src/Application/UseCases/V1/Templates/Commands/UpdateTemplateCommandValidator.cs`
-    17. `BE/src/Application/UseCases/V1/Templates/Commands/DeleteTemplateCommandHandler.cs`
-    18. `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplatesQueryHandler.cs`
-    19. `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplateByIdQueryHandler.cs`
-    20. `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplateBySlugQueryHandler.cs`
-  - *Feature Customizations*:
-    21. `BE/src/Application/UseCases/V1/Customizations/Commands/CreateCustomizationCommandHandler.cs`
-    22. `BE/src/Application/UseCases/V1/Customizations/Commands/CreateCustomizationCommandValidator.cs`
-    23. `BE/src/Application/UseCases/V1/Customizations/Commands/UpdateCustomizationCommandHandler.cs`
-    24. `BE/src/Application/UseCases/V1/Customizations/Commands/UpdateCustomizationCommandValidator.cs`
-    25. `BE/src/Application/UseCases/V1/Customizations/Commands/DeleteCustomizationCommandHandler.cs`
-    26. `BE/src/Application/UseCases/V1/Customizations/Queries/GetCustomizationByIdQueryHandler.cs`
-    27. `BE/src/Application/UseCases/V1/Customizations/Queries/GetCustomizationBySlugQueryHandler.cs`
-    28. `BE/src/Application/UseCases/V1/Customizations/Queries/GetMyCustomizationsQueryHandler.cs`
-  - *Feature Interactions*:
-    29. `BE/src/Application/UseCases/V1/Interactions/Commands/SubmitRsvpCommandHandler.cs`
-    30. `BE/src/Application/UseCases/V1/Interactions/Commands/SubmitRsvpCommandValidator.cs`
-    31. `BE/src/Application/UseCases/V1/Interactions/Queries/GetRsvpsByCustomizationIdQueryHandler.cs`
-    32. `BE/src/Application/UseCases/V1/Interactions/Commands/SubmitGuestbookCommandHandler.cs`
-    33. `BE/src/Application/UseCases/V1/Interactions/Commands/SubmitGuestbookCommandValidator.cs`
-    34. `BE/src/Application/UseCases/V1/Interactions/Queries/GetGuestbookByCustomizationIdQueryHandler.cs`
-
-#### D. Project `TemplateLandingPage.Infrastructure`
-- **File sửa**:
-  1. `BE/src/Infrastructure/TemplateLandingPage.Infrastructure.csproj`: Thêm package `System.IdentityModel.Tokens.Jwt` (8.5.0) và `Microsoft.IdentityModel.Tokens` (8.5.0).
-  2. `BE/src/Infrastructure/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`: Đăng ký `IPasswordHasher`, `IJwtTokenGenerator`, JwtSettings.
-- **File tạo mới**:
-  3. `BE/src/Infrastructure/Abstractions/IPasswordHasher.cs`
-  4. `BE/src/Infrastructure/Abstractions/IJwtTokenGenerator.cs`
-  5. `BE/src/Infrastructure/Services/PasswordHasher.cs` (Sử dụng RFC 2898 PBKDF2 SHA-512 + cryptographic salt).
-  6. `BE/src/Infrastructure/Services/JwtTokenGenerator.cs`
-  7. `BE/src/Infrastructure/Authentication/JwtSettings.cs`
-
-#### E. Project `TemplateLandingPage.Persistence`
-- **File sửa**:
-  1. `BE/src/Persistence/Constants/TableNames.cs`: Thêm tên bảng `Users`, `Templates`, `UserCustomizations`, `RsvpEntries`, `GuestbookEntries`.
-  2. `BE/src/Persistence/ApplicationDbContext.cs`: Thêm `DbSet<User>`, `DbSet<Template>`, `DbSet<UserCustomization>`, `DbSet<RsvpEntry>`, `DbSet<GuestbookEntry>`.
-  3. `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`: Đăng ký 5 repositories mới.
-- **File tạo mới**:
-  4. `BE/src/Persistence/Configurations/UserConfiguration.cs`
-  5. `BE/src/Persistence/Configurations/TemplateConfiguration.cs`
-  6. `BE/src/Persistence/Configurations/UserCustomizationConfiguration.cs`
-  7. `BE/src/Persistence/Configurations/RsvpEntryConfiguration.cs`
-  8. `BE/src/Persistence/Configurations/GuestbookEntryConfiguration.cs`
-  9. `BE/src/Persistence/Repositories/UserRepository.cs`
-  10. `BE/src/Persistence/Repositories/TemplateRepository.cs`
-  11. `BE/src/Persistence/Repositories/CustomizationRepository.cs`
-  12. `BE/src/Persistence/Repositories/RsvpRepository.cs`
-  13. `BE/src/Persistence/Repositories/GuestbookRepository.cs`
-  14. `BE/src/Persistence/Data/DataSeeder.cs`: Hạt giống khởi tạo Admin, User mẫu, 2 Master Template đầy đủ JSON config.
-
-#### F. Project `TemplateLandingPage.Presentation`
-- **File tạo mới**:
-  1. `BE/src/Presentation/APIs/Auth/AuthApi.cs`: Endpoint `/api/v1/auth` (Register, Login, Me).
-  2. `BE/src/Presentation/APIs/Users/UserApi.cs`: Endpoint `/api/v1/users` (CRUD User).
-  3. `BE/src/Presentation/APIs/Templates/TemplateApi.cs`: Endpoint `/api/v1/templates` (CRUD Template, Get By Slug).
-  4. `BE/src/Presentation/APIs/Customizations/CustomizationApi.cs`: Endpoint `/api/v1/customizations` (Save, Update, Get by Slug, My).
-  5. `BE/src/Presentation/APIs/Interactions/InteractionApi.cs`: Endpoint `/api/v1/rsvp` và `/api/v1/guestbook`.
-
-#### G. Project `TemplateLandingPage.API`
-- **File sửa**:
-  1. `BE/src/API/TemplateLandingPage.API.csproj`: Thêm Package `Microsoft.AspNetCore.Authentication.JwtBearer` (9.0.2).
-  2. `BE/src/API/appsettings.json`: Bổ sung khối `Jwt` (Issuer, Audience, SecretKey, ExpirationMinutes).
-  3. `BE/src/API/Program.cs`: Cấu hình JWT Bearer Authentication, Authorization, Swagger Security Definition (Bearer), gọi `DataSeeder` khi chạy Development.
-
-#### H. Project `TemplateLandingPage.UnitTests`
-- **File tạo mới**:
-  1. `BE/test/UnitTests/Application/Auth/LoginCommandHandlerTests.cs`
-  2. `BE/test/UnitTests/Application/Auth/RegisterCommandHandlerTests.cs`
-  3. `BE/test/UnitTests/Application/Templates/CreateTemplateCommandHandlerTests.cs`
-  4. `BE/test/UnitTests/Application/Customizations/CreateCustomizationCommandHandlerTests.cs`
+#### Các Trang Quản Trị Admin (`FE/src/pages/admin/`)
+- **Tạo mới**:
+  63. `FE/src/pages/admin/AdminMenusPage.jsx`:
+      - Bảng danh sách menu cha & submenu phân cấp dạng cây rõ ràng.
+      - Modal Thêm / Chỉnh sửa Menu: Tiêu đề, Đường dẫn (URL), Menu cha (ParentId dropdown), Thứ tự hiển thị (OrderIndex), Target (`_self` / `_blank`), Huy hiệu (Badge: HOT/NEW/PRO...), Màu huy hiệu (BadgeColor: rose/blue/purple/amber/emerald), Biểu tượng (Icon name), Trạng thái kích hoạt (IsActive).
+      - Thao tác xóa có xác nhận và kiểm tra ràng buộc menu con.
+  64. `FE/src/pages/admin/AdminCategoriesPage.jsx`:
+      - Bảng quản lý danh mục: Biểu tượng, Tên danh mục, Slug, Mô tả, Số lượng mẫu thiệp đang dùng, Thứ tự hiển thị, Trạng thái.
+      - Modal Thêm / Chỉnh sửa Danh mục: Tên, Slug tự sinh hoặc chỉnh tay, Biểu tượng Lucide, Mô tả, OrderIndex, IsActive.
+      - Xóa danh mục an toàn.
+- **Sửa**:
+  65. `FE/src/pages/admin/AdminTemplatesPage.jsx`:
+      - Cập nhật form Thêm / Sửa Template:
+        * Chọn Danh mục từ danh sách Categories động (thay vì cố định 2 option Wedding/Birthday).
+        * Chọn Huy hiệu / Gói: Free, Basic, Premium, Hot, New.
+        * Nhập URL Ảnh Mockup Dài (`longPreviewUrl`) để hiển thị hiệu ứng cuộn ảnh.
+        * Cấu hình Nhạc preview: URL File nhạc (`audioUrl`) và Tên bài hát (`musicTitle`).
+      - Cập nhật hiển thị Badge và Danh mục trong bảng danh sách.
 
 ---
 
-### 4.2. FRONTEND (React 19 + Vite + Tailwind CSS)
+## 3. CHỮ KÝ HÀM VÀ INTERFACE CHI TIẾT
 
-#### A. Tầng API Services (`FE/src/api/`)
-- **File sửa**:
-  1. `FE/src/api/axios.js`: Đính kèm `Authorization: Bearer <token>` từ `localStorage` vào header request; bắt 401 tự động logout & chuyển hướng.
-- **File tạo mới**:
-  2. `FE/src/api/authApi.js`: `login`, `register`, `getMe`.
-  3. `FE/src/api/userApi.js`: `getUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser`.
-  4. `FE/src/api/templateApi.js`: `getTemplates`, `getTemplateById`, `getTemplateBySlug`, `createTemplate`, `updateTemplate`, `deleteTemplate`.
-  5. `FE/src/api/customizationApi.js`: `saveCustomization`, `getCustomizationById`, `getCustomizationBySlug`, `getMyCustomizations`, `updateCustomization`, `deleteCustomization`.
-  6. `FE/src/api/interactionApi.js`: `submitRsvp`, `getRsvps`, `submitGuestbook`, `getGuestbook`.
+### 3.1. Backend Entities & Interfaces
 
-#### B. Contexts & Hooks (`FE/src/contexts/`, `FE/src/hooks/`)
-- **File tạo mới**:
-  1. `FE/src/contexts/AuthContext.jsx`: Quản lý state đăng nhập, user profile, token, `login()`, `register()`, `logout()`, `isAdmin`.
-  2. `FE/src/hooks/useAuth.js`: Hook tiện ích truy xuất AuthContext.
-
-#### C. Components Dùng Chung & Layout (`FE/src/components/`)
-- **File sửa**:
-  1. `FE/src/components/Navbar.jsx`: Bổ sung điều hướng Templates, Dashboard Admin (nếu Role Admin), User Menu (Avatar, My Sites, Đăng xuất), Đăng nhập/Đăng ký.
-  2. `FE/src/components/Footer.jsx`: Cập nhật UI hiện đại phong cách motionsites.ai.
-- **File tạo mới**:
-  3. `FE/src/components/ProtectedRoute.jsx`: Bảo vệ route theo authentication và phân quyền role (`requireAdmin`).
-  4. `FE/src/components/templates/TemplateCard.jsx`: Card hiển thị template kèm thumbnail, badge danh mục, hiệu ứng hover, nút Preview và Tùy biến.
-  5. `FE/src/components/templates/QuickPreviewModal.jsx`: Modal popup Live Preview có toggle chuyển đổi linh hoạt Desktop (100%) và Mobile Frame (375px).
-  6. `FE/src/components/templates/LandingPageRenderer.jsx`: Engine trung tâm nhận bất kỳ `config` JSON nào và render trọn vẹn Landing Page thực tế:
-     - Hero Section (Badge, đếm ngược Countdown đến ngày cưới/sinh nhật, nút CTA cuộn nhanh đến RSVP).
-     - Couple/Celebrant Section (Avatar, tiểu sử, thông tin cha mẹ, câu nói ý nghĩa).
-     - Event Details Section (Thời gian, địa điểm The Adora Center / Sky Lounge, bản đồ chỉ đường, dress code).
-     - Interactive Timeline (Các mốc thời gian kèm icon Lucide).
-     - Photo Gallery (Lưới ảnh kỷ niệm kèm xem phóng to Lightbox).
-     - RSVP Section (Form gửi xác nhận tham dự, số lượng khách, chế độ ăn).
-     - Sổ Lưu Bút / Guestbook Wall (Form để lại lời chúc và hiển thị danh sách lời chúc).
-  7. `FE/src/components/templates/FloatingMusicPlayer.jsx`: Nút phát nhạc nổi góc màn hình kèm sóng âm chuyển động, play/pause, tắt mở âm thanh.
-  8. `FE/src/components/templates/MotionParticles.jsx`: Canvas hiệu ứng chuyển động cánh hoa rơi (Wedding) hoặc pháo hoa giấy confetti bay lơ lửng (Birthday).
-  9. `FE/src/components/customizer/CustomizerSidebar.jsx`: Bảng điều khiển tùy biến chia tab trực quan:
-     - Tab Giao diện (Theme): Chọn bảng màu preset, color picker, đổi font chữ, hiệu ứng hạt.
-     - Tab Hero: Đổi tiêu đề, phụ đề, ngày giờ, ảnh bìa, badge.
-     - Tab Nhân vật chính (Couple/Celebrant): Đổi tên, ảnh đại diện, tiểu sử, cha mẹ.
-     - Tab Sự kiện: Đổi địa điểm, thời gian, bản đồ, dress code.
-     - Tab Lịch trình (Timeline): Thêm/sửa/xóa mốc thời gian, icon, mô tả.
-     - Tab Album ảnh (Gallery): Thêm/xóa ảnh, caption.
-     - Tab RSVP: Bật/tắt, hạn chót phản hồi, ghi chú.
-     - Tab Nhạc nền (Music): Bật/tắt, đổi link MP3, tiêu đề bài hát.
-     - Tab Lời chúc (Wishes): Bật/tắt sổ lưu bút.
-  10. `FE/src/components/customizer/CustomizerToolbar.jsx`: Thanh công cụ trên đầu Customizer: Toggle Preview Desktop / Mobile, Nút Lưu cấu hình, Tải JSON cấu hình, Xuất Standalone HTML, Xem toàn màn hình.
-  11. `FE/src/components/admin/AdminLayout.jsx`: Layout quản trị với Sidebar điều hướng (Thống kê, Quản lý Master Templates, Quản lý Users), Topbar chứa thông tin Admin.
-
-#### D. Tiện Ích (`FE/src/utils/`)
-- **File tạo mới**:
-  1. `FE/src/utils/defaultTemplates.js`: Chứa mẫu JSON cấu hình mặc định phong phú cho Wedding ("Elegance Blossom") và Birthday ("Golden Glamour").
-  2. `FE/src/utils/htmlExporter.js`: Hàm xuất trọn vẹn file HTML độc lập (`standalone-template.html`) chứa:
-     - Toàn bộ cấu trúc HTML5 sạch.
-     - Google Fonts nạp đúng font chữ đã chọn.
-     - Tailwind CSS inline/CDN.
-     - Dữ liệu JSON cấu hình nhúng trực tiếp.
-     - Script JS cho Countdown, Music player, Form tương tác RSVP/Wishes, và hiệu ứng cánh hoa/confetti chuyển động mượt mà.
-     - Người dùng tải về có thể double click mở ngay offline hoặc upload lên static host.
-
-#### E. Pages (`FE/src/pages/`)
-- **File sửa**:
-  1. `FE/src/pages/HomePage.jsx`: Thiết kế lại mang tinh thần motionsites.ai: Hero chuyển động, Floating Badges, Giới thiệu tính năng, Showcase các template cưới & sinh nhật đẹp nhất, Các bước tùy biến chỉ với 3 phút, CTA kêu gọi sử dụng.
-- **File tạo mới**:
-  2. `FE/src/pages/TemplatesPage.jsx`: Bộ sưu tập templates với tab phân loại (Tất cả, Đám cưới, Sinh nhật), thanh tìm kiếm, grid card template, nút Live Preview và nút Tùy biến.
-  3. `FE/src/pages/CustomizerPage.jsx`: Không gian Customizer thời gian thực: Bên trái là Form tùy biến (Sidebar), Bên phải là Live Canvas hiển thị thay đổi ngay tức thì, hỗ trợ chuyển khung Desktop/Mobile.
-  4. `FE/src/pages/LivePreviewPage.jsx`: Trang xem toàn màn hình Live Landing Page (hỗ trợ cả template gốc `/preview/:templateId` và bản tùy biến đã xuất bản `/view/:slug`).
-  5. `FE/src/pages/MyCustomizationsPage.jsx`: Trang danh sách thiệp đã tạo của người dùng, xem lại link chia sẻ, tiếp tục sửa hoặc tải file.
-  6. `FE/src/pages/auth/LoginPage.jsx`: Trang đăng nhập giao diện sang trọng.
-  7. `FE/src/pages/auth/RegisterPage.jsx`: Trang đăng ký tài khoản mới.
-  8. `FE/src/pages/admin/AdminDashboardPage.jsx`: Bảng điều khiển thống kê (Tổng templates, tổng người dùng, tổng phản hồi RSVP, tổng lời chúc).
-  9. `FE/src/pages/admin/AdminTemplatesPage.jsx`: Quản lý danh sách Master Templates (Tạo mới, chỉnh sửa thông tin & JSON config với syntax highlighter/trình biên tập JSON, xóa, đổi trạng thái).
-  10. `FE/src/pages/admin/AdminUsersPage.jsx`: Quản lý danh sách Users (Thêm user, cập nhật phân quyền Admin/User, khóa tài khoản, đổi mật khẩu).
-
-#### F. Routes & Styling (`FE/src/routes/`, `FE/src/`)
-- **File sửa**:
-  1. `FE/src/routes/index.jsx`: Thiết lập toàn bộ định tuyến:
-     - Public: `/`, `/templates`, `/preview/:templateId`, `/view/:slug`, `/login`, `/register`.
-     - Protected: `/customize/:templateId`, `/my-sites`.
-     - Admin Protected: `/admin`, `/admin/templates`, `/admin/users`.
-  2. `FE/src/App.jsx`: Bọc `AuthProvider`, cấu hình Header/Footer hiển thị thông minh (ẩn Navbar/Footer khi ở chế độ Full Preview hoặc Customizer chia đôi màn hình).
-  3. `FE/src/index.css`: Thêm nạp font Google Fonts ("Playfair Display", "Cinzel", "Montserrat", "Great Vibes"), hiệu ứng animation hạt chuyển động (`@keyframes float`, `@keyframes pulse-slow`).
-
----
-
-## 5. CHỮ KÝ HÀM, INTERFACES, DTOS & CQRS
-
-### 5.1. Domain Entities & Repositories
-
-#### `User.cs`
+#### Entity `NavigationMenu` (`BE/src/Domain/Entities/NavigationMenu.cs`)
 ```csharp
 namespace TemplateLandingPage.Domain.Entities;
 
-public sealed class User : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
+using TemplateLandingPage.Domain.Abstractions;
+
+public sealed class NavigationMenu : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
 {
-    public string Email { get; private set; } = string.Empty;
-    public string PasswordHash { get; private set; } = string.Empty;
-    public string FullName { get; private set; } = string.Empty;
-    public string Role { get; private set; } = "User"; // "Admin", "User"
+    public string Title { get; private set; } = string.Empty;
+    public string Url { get; private set; } = string.Empty;
+    public Guid? ParentId { get; private set; }
+    public int OrderIndex { get; private set; }
+    public string Target { get; private set; } = "_self";
+    public string? Badge { get; private set; }
+    public string? BadgeColor { get; private set; }
+    public string? Icon { get; private set; }
     public bool IsActive { get; private set; } = true;
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? ModifiedAtUtc { get; set; }
 
-    public static User Create(string email, string passwordHash, string fullName, string role);
-    public void UpdateProfile(string fullName, string role, bool isActive);
-    public void ChangePassword(string newPasswordHash);
+    public NavigationMenu? Parent { get; private set; }
+    public ICollection<NavigationMenu> SubMenus { get; private set; } = new List<NavigationMenu>();
+
+    public static NavigationMenu Create(
+        string title,
+        string url,
+        Guid? parentId,
+        int orderIndex,
+        string? target = "_self",
+        string? badge = null,
+        string? badgeColor = null,
+        string? icon = null,
+        bool isActive = true);
+
+    public void Update(
+        string title,
+        string url,
+        Guid? parentId,
+        int orderIndex,
+        string? target,
+        string? badge,
+        string? badgeColor,
+        string? icon,
+        bool isActive);
+
     public void Delete();
 }
 ```
 
-#### `Template.cs`
+#### Entity `Category` (`BE/src/Domain/Entities/Category.cs`)
 ```csharp
 namespace TemplateLandingPage.Domain.Entities;
 
-public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
+using TemplateLandingPage.Domain.Abstractions;
+
+public sealed class Category : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
 {
     public string Name { get; private set; } = string.Empty;
     public string Slug { get; private set; } = string.Empty;
     public string? Description { get; private set; }
-    public string Category { get; private set; } = "Wedding"; // "Wedding", "Birthday"
-    public string ThumbnailUrl { get; private set; } = string.Empty;
-    public string? PreviewUrl { get; private set; }
-    public string DefaultConfigJson { get; private set; } = string.Empty;
+    public string? Icon { get; private set; }
+    public int OrderIndex { get; private set; }
     public bool IsActive { get; private set; } = true;
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? ModifiedAtUtc { get; set; }
 
-    public static Template Create(string name, string slug, string? description, string category, string thumbnailUrl, string? previewUrl, string defaultConfigJson);
-    public void Update(string name, string slug, string? description, string category, string thumbnailUrl, string? previewUrl, string defaultConfigJson, bool isActive);
+    public ICollection<Template> Templates { get; private set; } = new List<Template>();
+
+    public static Category Create(
+        string name,
+        string slug,
+        string? description,
+        string? icon,
+        int orderIndex,
+        bool isActive = true);
+
+    public void Update(
+        string name,
+        string slug,
+        string? description,
+        string? icon,
+        int orderIndex,
+        bool isActive);
+
     public void Delete();
 }
 ```
 
-#### `UserCustomization.cs`
+#### Cập nhật Entity `Template` (`BE/src/Domain/Entities/Template.cs`)
 ```csharp
-namespace TemplateLandingPage.Domain.Entities;
+// Thêm các thuộc tính mới:
+public Guid? CategoryId { get; private set; }
+public Category? CategoryRef { get; private set; }
+public string? Badge { get; private set; }           // "Free", "Basic", "Premium", "Hot", "New"
+public string? AudioUrl { get; private set; }        // URL file audio mp3 preview
+public string? MusicTitle { get; private set; }      // Tên bài hát nhạc nền
+public string? LongPreviewUrl { get; private set; }  // Ảnh mockup dài dọc cuộn animation
 
-public sealed class UserCustomization : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
-{
-    public Guid? UserId { get; private set; }
-    public Guid TemplateId { get; private set; }
-    public string Title { get; private set; } = string.Empty;
-    public string Slug { get; private set; } = string.Empty;
-    public string ConfigJson { get; private set; } = string.Empty;
-    public bool IsPublished { get; private set; } = true;
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAtUtc { get; set; }
-    public DateTime CreatedAtUtc { get; set; }
-    public DateTime? ModifiedAtUtc { get; set; }
+public static Template Create(
+    string name,
+    string slug,
+    string? description,
+    Guid? categoryId,
+    string category,
+    string thumbnailUrl,
+    string? previewUrl,
+    string? longPreviewUrl,
+    string? badge,
+    string? audioUrl,
+    string? musicTitle,
+    string defaultConfigJson);
 
-    public static UserCustomization Create(Guid? userId, Guid templateId, string title, string slug, string configJson, bool isPublished);
-    public void Update(string title, string slug, string configJson, bool isPublished);
-    public void Delete();
-}
+public void Update(
+    string name,
+    string slug,
+    string? description,
+    Guid? categoryId,
+    string category,
+    string thumbnailUrl,
+    string? previewUrl,
+    string? longPreviewUrl,
+    string? badge,
+    string? audioUrl,
+    string? musicTitle,
+    string defaultConfigJson,
+    bool isActive);
 ```
 
-#### `RsvpEntry.cs` & `GuestbookEntry.cs`
+#### Repositories Interfaces
+- `BE/src/Domain/Repositories/INavigationMenuRepository.cs`:
 ```csharp
-namespace TemplateLandingPage.Domain.Entities;
-
-public sealed class RsvpEntry : Entity<Guid>
+public interface INavigationMenuRepository : IRepositoryBase<NavigationMenu, Guid>
 {
-    public Guid? CustomizationId { get; private set; }
-    public string GuestName { get; private set; } = string.Empty;
-    public string? Email { get; private set; }
-    public string? Phone { get; private set; }
-    public string AttendingStatus { get; private set; } = "attending"; // "attending", "declined"
-    public int NumberOfGuests { get; private set; } = 1;
-    public string? DietaryNotes { get; private set; }
-    public string? Wishes { get; private set; }
-    public DateTime CreatedAtUtc { get; private set; }
-
-    public static RsvpEntry Create(Guid? customizationId, string guestName, string? email, string? phone, string attendingStatus, int numberOfGuests, string? dietaryNotes, string? wishes);
-}
-
-public sealed class GuestbookEntry : Entity<Guid>
-{
-    public Guid? CustomizationId { get; private set; }
-    public string SenderName { get; private set; } = string.Empty;
-    public string Message { get; private set; } = string.Empty;
-    public DateTime CreatedAtUtc { get; private set; }
-
-    public static GuestbookEntry Create(Guid? customizationId, string senderName, string message);
+    Task<List<NavigationMenu>> GetTreeAsync(bool? isActiveOnly = null, CancellationToken cancellationToken = default);
+    Task<bool> HasChildrenAsync(Guid id, CancellationToken cancellationToken = default);
 }
 ```
-
-#### Repository Interfaces
+- `BE/src/Domain/Repositories/ICategoryRepository.cs`:
 ```csharp
-namespace TemplateLandingPage.Domain.Repositories;
-
-public interface IUserRepository : IRepositoryBase<User, Guid>
+public interface ICategoryRepository : IRepositoryBase<Category, Guid>
 {
-    Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
-    Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
+    Task<Category?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
+    Task<bool> ExistsBySlugAsync(string slug, CancellationToken cancellationToken = default);
+    Task<List<Category>> GetAllOrderedAsync(bool? isActiveOnly = null, CancellationToken cancellationToken = default);
+    Task<bool> HasAssociatedTemplatesAsync(Guid categoryId, CancellationToken cancellationToken = default);
 }
-
+```
+- `BE/src/Domain/Repositories/ITemplateRepository.cs`:
+```csharp
 public interface ITemplateRepository : IRepositoryBase<Template, Guid>
 {
     Task<Template?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
     Task<bool> ExistsBySlugAsync(string slug, CancellationToken cancellationToken = default);
-}
-
-public interface ICustomizationRepository : IRepositoryBase<UserCustomization, Guid>
-{
-    Task<UserCustomization?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
-    Task<List<UserCustomization>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
-    Task<bool> ExistsBySlugAsync(string slug, CancellationToken cancellationToken = default);
-}
-
-public interface IRsvpRepository : IRepositoryBase<RsvpEntry, Guid>
-{
-    Task<List<RsvpEntry>> GetByCustomizationIdAsync(Guid customizationId, CancellationToken cancellationToken = default);
-}
-
-public interface IGuestbookRepository : IRepositoryBase<GuestbookEntry, Guid>
-{
-    Task<List<GuestbookEntry>> GetByCustomizationIdAsync(Guid customizationId, CancellationToken cancellationToken = default);
+    Task<List<Template>> GetListAsync(
+        string? category = null,
+        Guid? categoryId = null,
+        string? badge = null,
+        string? search = null,
+        bool? isActiveOnly = null,
+        CancellationToken cancellationToken = default);
 }
 ```
 
 ---
 
-### 5.2. Contract Commands, Queries & Responses
+### 3.2. CQRS Commands & Queries (Contract)
 
-#### Feature Auth
+#### NavigationMenus (`BE/src/Contract/Services/V1/NavigationMenus/`)
+- `Command.cs`:
 ```csharp
-namespace TemplateLandingPage.Contract.Services.V1.Auth;
+public record CreateNavigationMenuCommand(
+    string Title,
+    string Url,
+    Guid? ParentId,
+    int OrderIndex,
+    string? Target = "_self",
+    string? Badge = null,
+    string? BadgeColor = null,
+    string? Icon = null,
+    bool IsActive = true) : ICommand<Guid>;
 
-public record RegisterCommand(string Email, string Password, string FullName) : ICommand<Guid>;
-public record LoginCommand(string Email, string Password) : ICommand<LoginResponse>;
-public record GetCurrentUserQuery(Guid UserId) : IQuery<UserResponse>;
+public record UpdateNavigationMenuCommand(
+    Guid Id,
+    string Title,
+    string Url,
+    Guid? ParentId,
+    int OrderIndex,
+    string? Target,
+    string? Badge,
+    string? BadgeColor,
+    string? Icon,
+    bool IsActive) : ICommand;
 
-public record LoginResponse(string Token, UserResponse User);
-public record UserResponse(Guid Id, string Email, string FullName, string Role, bool IsActive, DateTime CreatedAtUtc);
+public record DeleteNavigationMenuCommand(Guid Id) : ICommand;
+```
+- `Query.cs`:
+```csharp
+public record GetNavigationMenusQuery(bool? IsActiveOnly = null) : IQuery<List<NavigationMenuResponse>>;
+public record GetNavigationMenuByIdQuery(Guid Id) : IQuery<NavigationMenuResponse>;
+```
+- `Response.cs`:
+```csharp
+public record NavigationMenuResponse(
+    Guid Id,
+    string Title,
+    string Url,
+    Guid? ParentId,
+    int OrderIndex,
+    string Target,
+    string? Badge,
+    string? BadgeColor,
+    string? Icon,
+    bool IsActive,
+    DateTime CreatedAtUtc,
+    List<NavigationMenuResponse> SubMenus);
 
-public static class AuthErrors
+public static class NavigationMenuErrors
 {
-    public static readonly Error DuplicateEmail = new("Auth.DuplicateEmail", "Email đã tồn tại trong hệ thống.");
-    public static readonly Error InvalidCredentials = new("Auth.InvalidCredentials", "Email hoặc mật khẩu không chính xác.");
-    public static readonly Error UserInactive = new("Auth.UserInactive", "Tài khoản của bạn đã bị khóa.");
+    public static readonly Error NotFound = new("Menu.NotFound", "Không tìm thấy menu.");
+    public static readonly Error ParentNotFound = new("Menu.ParentNotFound", "Menu cha không tồn tại.");
+    public static readonly Error CannotBeSelfParent = new("Menu.CannotBeSelfParent", "Menu không thể làm cha của chính mình.");
+    public static readonly Error HasChildMenus = new("Menu.HasChildMenus", "Không thể xóa menu đang có menu con. Hãy xóa hoặc di chuyển menu con trước.");
 }
 ```
 
-#### Feature Users
+#### Categories (`BE/src/Contract/Services/V1/Categories/`)
+- `Command.cs`:
 ```csharp
-namespace TemplateLandingPage.Contract.Services.V1.Users;
+public record CreateCategoryCommand(
+    string Name,
+    string Slug,
+    string? Description,
+    string? Icon,
+    int OrderIndex,
+    bool IsActive = true) : ICommand<Guid>;
 
-public record GetUsersQuery() : IQuery<List<UserResponse>>;
-public record GetUserByIdQuery(Guid Id) : IQuery<UserResponse>;
-public record CreateUserCommand(string Email, string Password, string FullName, string Role) : ICommand<Guid>;
-public record UpdateUserCommand(Guid Id, string FullName, string Role, bool IsActive) : ICommand;
-public record DeleteUserCommand(Guid Id) : ICommand;
+public record UpdateCategoryCommand(
+    Guid Id,
+    string Name,
+    string Slug,
+    string? Description,
+    string? Icon,
+    int OrderIndex,
+    bool IsActive) : ICommand;
 
-public static class UserErrors
+public record DeleteCategoryCommand(Guid Id) : ICommand;
+```
+- `Query.cs`:
+```csharp
+public record GetCategoriesQuery(bool? IsActiveOnly = null) : IQuery<List<CategoryResponse>>;
+public record GetCategoryByIdQuery(Guid Id) : IQuery<CategoryResponse>;
+public record GetCategoryBySlugQuery(string Slug) : IQuery<CategoryResponse>;
+```
+- `Response.cs`:
+```csharp
+public record CategoryResponse(
+    Guid Id,
+    string Name,
+    string Slug,
+    string? Description,
+    string? Icon,
+    int OrderIndex,
+    bool IsActive,
+    int TemplateCount,
+    DateTime CreatedAtUtc);
+
+public static class CategoryErrors
 {
-    public static readonly Error NotFound = new("User.NotFound", "Không tìm thấy người dùng.");
-    public static readonly Error CannotDeleteSelf = new("User.CannotDeleteSelf", "Không thể xóa tài khoản hiện tại đang đăng nhập.");
+    public static readonly Error NotFound = new("Category.NotFound", "Không tìm thấy danh mục.");
+    public static readonly Error DuplicateSlug = new("Category.DuplicateSlug", "Slug danh mục đã tồn tại.");
+    public static readonly Error HasAssociatedTemplates = new("Category.HasAssociatedTemplates", "Không thể xóa danh mục đang có mẫu thiệp liên kết.");
 }
 ```
 
-#### Feature Templates
+#### Cập nhật Templates (`BE/src/Contract/Services/V1/Templates/`)
+- `Command.cs`:
 ```csharp
-namespace TemplateLandingPage.Contract.Services.V1.Templates;
+public record CreateTemplateCommand(
+    string Name,
+    string Slug,
+    string? Description,
+    Guid? CategoryId,
+    string Category,
+    string ThumbnailUrl,
+    string? PreviewUrl,
+    string? LongPreviewUrl,
+    string? Badge,
+    string? AudioUrl,
+    string? MusicTitle,
+    string DefaultConfigJson) : ICommand<Guid>;
 
-public record GetTemplatesQuery(string? Category, bool? IsActiveOnly) : IQuery<List<TemplateResponse>>;
-public record GetTemplateByIdQuery(Guid Id) : IQuery<TemplateResponse>;
-public record GetTemplateBySlugQuery(string Slug) : IQuery<TemplateResponse>;
-public record CreateTemplateCommand(string Name, string Slug, string? Description, string Category, string ThumbnailUrl, string? PreviewUrl, string DefaultConfigJson) : ICommand<Guid>;
-public record UpdateTemplateCommand(Guid Id, string Name, string Slug, string? Description, string Category, string ThumbnailUrl, string? PreviewUrl, string DefaultConfigJson, bool IsActive) : ICommand;
-public record DeleteTemplateCommand(Guid Id) : ICommand;
-
-public record TemplateResponse(Guid Id, string Name, string Slug, string? Description, string Category, string ThumbnailUrl, string? PreviewUrl, string DefaultConfigJson, bool IsActive, DateTime CreatedAtUtc);
-
-public static class TemplateErrors
-{
-    public static readonly Error NotFound = new("Template.NotFound", "Không tìm thấy template.");
-    public static readonly Error DuplicateSlug = new("Template.DuplicateSlug", "Slug đã tồn tại, vui lòng chọn slug khác.");
-    public static readonly Error InvalidConfigJson = new("Template.InvalidConfigJson", "Cấu hình JSON không hợp lệ.");
-}
+public record UpdateTemplateCommand(
+    Guid Id,
+    string Name,
+    string Slug,
+    string? Description,
+    Guid? CategoryId,
+    string Category,
+    string ThumbnailUrl,
+    string? PreviewUrl,
+    string? LongPreviewUrl,
+    string? Badge,
+    string? AudioUrl,
+    string? MusicTitle,
+    string DefaultConfigJson,
+    bool IsActive) : ICommand;
 ```
-
-#### Feature Customizations
+- `Query.cs`:
 ```csharp
-namespace TemplateLandingPage.Contract.Services.V1.Customizations;
-
-public record GetCustomizationByIdQuery(Guid Id) : IQuery<CustomizationResponse>;
-public record GetCustomizationBySlugQuery(string Slug) : IQuery<CustomizationResponse>;
-public record GetMyCustomizationsQuery(Guid UserId) : IQuery<List<CustomizationResponse>>;
-public record CreateCustomizationCommand(Guid? UserId, Guid TemplateId, string Title, string Slug, string ConfigJson, bool IsPublished) : ICommand<Guid>;
-public record UpdateCustomizationCommand(Guid Id, string Title, string Slug, string ConfigJson, bool IsPublished) : ICommand;
-public record DeleteCustomizationCommand(Guid Id) : ICommand;
-
-public record CustomizationResponse(Guid Id, Guid? UserId, Guid TemplateId, string TemplateName, string Title, string Slug, string ConfigJson, bool IsPublished, DateTime CreatedAtUtc);
-
-public static class CustomizationErrors
-{
-    public static readonly Error NotFound = new("Customization.NotFound", "Không tìm thấy bản tùy biến.");
-    public static readonly Error DuplicateSlug = new("Customization.DuplicateSlug", "Đường dẫn (slug) này đã được sử dụng.");
-}
+public record GetTemplatesQuery(
+    string? Category = null,
+    Guid? CategoryId = null,
+    string? Badge = null,
+    string? Search = null,
+    bool? IsActiveOnly = null) : IQuery<List<TemplateResponse>>;
 ```
-
-#### Feature Interactions
+- `Response.cs`:
 ```csharp
-namespace TemplateLandingPage.Contract.Services.V1.Interactions;
-
-public record SubmitRsvpCommand(Guid? CustomizationId, string GuestName, string? Email, string? Phone, string AttendingStatus, int NumberOfGuests, string? DietaryNotes, string? Wishes) : ICommand<Guid>;
-public record GetRsvpsByCustomizationIdQuery(Guid CustomizationId) : IQuery<List<RsvpResponse>>;
-
-public record SubmitGuestbookCommand(Guid? CustomizationId, string SenderName, string Message) : ICommand<Guid>;
-public record GetGuestbookByCustomizationIdQuery(Guid CustomizationId) : IQuery<List<GuestbookResponse>>;
-
-public record RsvpResponse(Guid Id, Guid? CustomizationId, string GuestName, string? Email, string? Phone, string AttendingStatus, int NumberOfGuests, string? DietaryNotes, string? Wishes, DateTime CreatedAtUtc);
-public record GuestbookResponse(Guid Id, Guid? CustomizationId, string SenderName, string Message, DateTime CreatedAtUtc);
+public record TemplateResponse(
+    Guid Id,
+    string Name,
+    string Slug,
+    string? Description,
+    Guid? CategoryId,
+    string Category,
+    string ThumbnailUrl,
+    string? PreviewUrl,
+    string? LongPreviewUrl,
+    string? Badge,
+    string? AudioUrl,
+    string? MusicTitle,
+    string DefaultConfigJson,
+    bool IsActive,
+    DateTime CreatedAtUtc);
 ```
 
 ---
 
-### 5.3. Infrastructure Services
-```csharp
-namespace TemplateLandingPage.Infrastructure.Abstractions;
+### 3.3. Presentation Minimal APIs
 
-public interface IPasswordHasher
-{
-    string HashPassword(string password);
-    bool VerifyPassword(string password, string passwordHash);
-}
+#### `NavigationMenuApi` (`BE/src/Presentation/APIs/NavigationMenus/NavigationMenuApi.cs`)
+- `GET /api/v1/menus?isActiveOnly={bool}` -> `Result<List<NavigationMenuResponse>>` (public)
+- `GET /api/v1/menus/{id:guid}` -> `Result<NavigationMenuResponse>` (public)
+- `POST /api/v1/menus` -> `Result<Guid>` (Admin authorization)
+- `PUT /api/v1/menus/{id:guid}` -> `Result` (Admin authorization)
+- `DELETE /api/v1/menus/{id:guid}` -> `Result` (Admin authorization)
 
-public interface IJwtTokenGenerator
-{
-    string GenerateToken(User user);
-}
+#### `CategoryApi` (`BE/src/Presentation/APIs/Categories/CategoryApi.cs`)
+- `GET /api/v1/categories?isActiveOnly={bool}` -> `Result<List<CategoryResponse>>` (public)
+- `GET /api/v1/categories/{id:guid}` -> `Result<CategoryResponse>` (public)
+- `GET /api/v1/categories/slug/{slug}` -> `Result<CategoryResponse>` (public)
+- `POST /api/v1/categories` -> `Result<Guid>` (Admin authorization)
+- `PUT /api/v1/categories/{id:guid}` -> `Result` (Admin authorization)
+- `DELETE /api/v1/categories/{id:guid}` -> `Result` (Admin authorization)
+
+#### `TemplateApi` (`BE/src/Presentation/APIs/Templates/TemplateApi.cs`)
+- `GET /api/v1/templates?category={string}&categoryId={guid}&badge={string}&search={string}&isActiveOnly={bool}` -> `Result<List<TemplateResponse>>` (public)
+
+---
+
+### 3.4. Frontend Services & Components
+
+#### `navigationMenuApi.js` (`FE/src/api/navigationMenuApi.js`)
+```javascript
+export const navigationMenuApi = {
+  getMenus: async (params = {}) => {
+    const res = await axiosInstance.get('/menus', { params });
+    return res.data?.value ?? res.data;
+  },
+  getMenuById: async (id) => {
+    const res = await axiosInstance.get(`/menus/${id}`);
+    return res.data?.value ?? res.data;
+  },
+  createMenu: async (data) => {
+    const res = await axiosInstance.post('/menus', data);
+    return res.data?.value ?? res.data;
+  },
+  updateMenu: async (id, data) => {
+    const res = await axiosInstance.put(`/menus/${id}`, data);
+    return res.data?.value ?? res.data;
+  },
+  deleteMenu: async (id) => {
+    const res = await axiosInstance.delete(`/menus/${id}`);
+    return res.data?.value ?? res.data;
+  },
+};
+```
+
+#### `categoryApi.js` (`FE/src/api/categoryApi.js`)
+```javascript
+export const categoryApi = {
+  getCategories: async (params = {}) => {
+    const res = await axiosInstance.get('/categories', { params });
+    return res.data?.value ?? res.data;
+  },
+  getCategoryById: async (id) => {
+    const res = await axiosInstance.get(`/categories/${id}`);
+    return res.data?.value ?? res.data;
+  },
+  getCategoryBySlug: async (slug) => {
+    const res = await axiosInstance.get(`/categories/slug/${slug}`);
+    return res.data?.value ?? res.data;
+  },
+  createCategory: async (data) => {
+    const res = await axiosInstance.post('/categories', data);
+    return res.data?.value ?? res.data;
+  },
+  updateCategory: async (id, data) => {
+    const res = await axiosInstance.put(`/categories/${id}`, data);
+    return res.data?.value ?? res.data;
+  },
+  deleteCategory: async (id) => {
+    const res = await axiosInstance.delete(`/categories/${id}`);
+    return res.data?.value ?? res.data;
+  },
+};
+```
+
+#### Component `TemplateCard.jsx` (`FE/src/components/templates/TemplateCard.jsx`)
+```javascript
+/**
+ * @param {Object} props
+ * @param {TemplateResponse} props.template
+ * @param {boolean} props.isPlaying - Trạng thái bài hát này có đang phát hay không
+ * @param {Function} props.onToggleAudio - (template) => void (Bật/tắt phát nhạc)
+ * @param {Function} props.onQuickPreview - (template) => void (Mở modal xem demo nhanh)
+ */
+export default function TemplateCard({ template, isPlaying, onToggleAudio, onQuickPreview }) { ... }
 ```
 
 ---
 
-### 5.4. Minimal API Endpoints (Presentation Layer)
-Tất cả endpoint kế thừa `IEndpoint` và tự động gom nhóm:
-1. `AuthApi`:
-   - `POST /api/v1/auth/register` (Anonymous)
-   - `POST /api/v1/auth/login` (Anonymous)
-   - `GET /api/v1/auth/me` (Authenticated)
-2. `UserApi`:
-   - `GET /api/v1/users` (Admin)
-   - `GET /api/v1/users/{id:guid}` (Admin)
-   - `POST /api/v1/users` (Admin)
-   - `PUT /api/v1/users/{id:guid}` (Admin)
-   - `DELETE /api/v1/users/{id:guid}` (Admin)
-3. `TemplateApi`:
-   - `GET /api/v1/templates` (Public)
-   - `GET /api/v1/templates/{id:guid}` (Public)
-   - `GET /api/v1/templates/slug/{slug}` (Public)
-   - `POST /api/v1/templates` (Admin)
-   - `PUT /api/v1/templates/{id:guid}` (Admin)
-   - `DELETE /api/v1/templates/{id:guid}` (Admin)
-4. `CustomizationApi`:
-   - `GET /api/v1/customizations/{id:guid}` (Public)
-   - `GET /api/v1/customizations/slug/{slug}` (Public)
-   - `GET /api/v1/customizations/my` (Authenticated)
-   - `POST /api/v1/customizations` (Allow Authenticated or Guest)
-   - `PUT /api/v1/customizations/{id:guid}` (Owner/Admin)
-   - `DELETE /api/v1/customizations/{id:guid}` (Owner/Admin)
-5. `InteractionApi`:
-   - `POST /api/v1/rsvp` (Public)
-   - `GET /api/v1/rsvp/{customizationId:guid}` (Owner/Admin)
-   - `POST /api/v1/guestbook` (Public)
-   - `GET /api/v1/guestbook/{customizationId:guid}` (Public)
+## 4. CÁC TRƯỜNG HỢP BIÊN BẮT BUỘC PHẢI XỬ LÝ (EDGE CASES)
 
----
-
-## 6. CÁC TRƯỜNG HỢP BIÊN BẮT BUỘC PHẢI XỬ LÝ (EDGE CASES)
-
-1. **Bảo mật & Phân quyền Admin**:
-   - Khi token hết hạn hoặc không hợp lệ: Interceptor phía frontend phải lập tức hủy session trong `localStorage`, cập nhật `AuthContext`, và redirect về trang `/login`.
-   - Người dùng thường cố tình gõ link `/admin/*`: `ProtectedRoute` chặn lại ngay lập tức và redirect về trang chủ hoặc báo không có quyền hạn.
-2. **Cấu hình JSON hỏng hoặc thiếu trường (Corrupted JSON / Null Schema)**:
-   - Trong `LandingPageRenderer.jsx`: Luôn sử dụng optional chaining (`config?.timeline ?? []`, `config?.gallery ?? []`) và có đối tượng fallback mặc định để trang không bao giờ bị trắng màn hình (White Screen of Death).
-   - Trong Admin Template Form: Bắt buộc parse `JSON.parse(configJson)` để kiểm tra tính hợp lệ trước khi cho phép gửi API lưu Master Template.
-3. **Trùng lặp Slug (Slug Collision)**:
-   - Khi tạo Customization hoặc Master Template: Nếu người dùng nhập slug đã tồn tại, Handler kiểm tra qua `ExistsBySlugAsync`. Nếu trùng lặp, trả về `Result.Failure(DuplicateSlug)`. Phía UI tự động gợi ý thêm hậu tố ngẫu nhiên (ví dụ `minh-linh-2026`).
-4. **Trình duyệt chặn phát âm thanh tự động (Browser Autoplay Policy)**:
-   - Trình duyệt hiện đại (Chrome/Edge/Safari) chặn phát nhạc trước khi có tương tác người dùng.
-   - `FloatingMusicPlayer` bắt lỗi `.catch(e => ...)` khi gọi `audio.play()`, chuyển trạng thái sang tạm dừng và hiển thị icon mời người dùng click một chạm để bật nhạc.
-5. **Ảnh bị lỗi hoặc không tải được (Broken Image URLs)**:
-   - Áp dụng `onError` fallback về ảnh placeholder (Unsplash avatar/wedding mockup) để giao diện luôn hoàn mỹ, không bị vỡ bố cục.
-6. **Xuất Standalone HTML không cần Internet**:
-   - File HTML xuất ra sử dụng cấu trúc độc lập kèm các script xử lý Countdown, audio player, và hiệu ứng cánh hoa/confetti viết thuần JS nhúng trực tiếp trong `<script>`. Dữ liệu cấu hình được serialize an toàn dạng JSON, không bị lỗi escape ký tự đặc biệt (`<`, `>`, `&`).
-7. **Responsive & Mobile Viewport trong Customizer**:
-   - Khi chuyển sang chế độ Mobile trong Customizer: Canvas bao bọc bên trong khung mô phỏng điện thoại rộng 375px có viền mỏng và thanh cuộn ẩn tinh tế. Đảm bảo toàn bộ hiệu ứng chuyển động và nội dung co giãn trơn tru không bị giật lag hay vỡ layout ngang (`overflow-x-hidden`).
-
----
-
-## 7. CHIẾN LƯỢC KIỂM THỬ (TEST PLAN)
-
-1. **Kiểm tra kiến trúc (.NET NetArchTest)**:
-   - Tiếp tục bảo đảm 5 quy tắc kiến trúc trong `ArchitectureTests.cs`:
-     - Domain không reference tầng khác.
-     - Contract không reference tầng lõi.
-     - Application không reference tầng ngoài.
-     - Tất cả Handler kết thúc bằng chữ `Handler`.
-     - Presentation không phụ thuộc trực tiếp `ApplicationDbContext`.
-2. **Unit Tests Backend**:
-   - `RegisterCommandHandlerTests`: Test đăng ký thành công, test thất bại khi trùng email.
-   - `LoginCommandHandlerTests`: Test đăng nhập đúng mật khẩu, test thất bại khi sai mật khẩu hoặc tài khoản bị khóa.
-   - `CreateTemplateCommandHandlerTests`: Test tạo master template thành công, test lỗi khi trùng slug.
-   - `CreateCustomizationCommandHandlerTests`: Test lưu cấu hình cá nhân hóa thành công.
-3. **Build Frontend**:
-   - Chạy `npm run build` kiểm tra không có lỗi cú pháp, không có import thừa, module bundle thành công.
+1. **Đệ quy vòng trong cấu hình Menu cha - con (Circular Hierarchy)**:
+   - Một menu không bao giờ được phép chọn chính nó làm `ParentId` (`CannotBeSelfParent`).
+   - Cấm chọn con cháu cấp dưới làm menu cha của chính mình khi cập nhật.
+2. **Xóa Menu cha khi còn Submenus con**:
+   - Nếu menu có các menu con (`SubMenus.Any()`), từ chối xóa và trả về lỗi nghiệp vụ rõ ràng (`NavigationMenuErrors.HasChildMenus`).
+3. **Xóa Danh mục đang có Mẫu thiệp liên kết**:
+   - Nếu danh mục có template liên kết (`HasAssociatedTemplatesAsync`), từ chối xóa (`CategoryErrors.HasAssociatedTemplates`) để tránh mồ côi dữ liệu thiệp.
+4. **Xử lý Template thiếu ảnh dài `longPreviewUrl`**:
+   - Trường hợp template chưa cập nhật `longPreviewUrl`, card phải tự động fallback dùng `thumbnailUrl` và vô hiệu hóa chuyển vị cuộn để tránh layout bị méo hoặc vỡ ảnh.
+5. **Xử lý Template thiếu file nhạc `audioUrl`**:
+   - Nếu `audioUrl` null hoặc rỗng, không hiển thị nút nghe thử nhạc hoặc hiển thị ở trạng thái mờ (disabled) có tooltip báo "Mẫu chưa kèm nhạc preview".
+6. **Xung đột nhiều thẻ cùng phát nhạc (Audio Concurrency)**:
+   - Chỉ duy nhất 1 thẻ được phát âm thanh tại một thời điểm trên toàn trang. Khi bấm nghe thử thẻ B, thẻ A phải lập tức dừng phát và biểu tượng sóng nhạc chuyển về nút Play.
+   - Khi người dùng rời khỏi trang `/templates` hoặc đóng trình duyệt/modal, audio phải tự động pause giải phóng tài nguyên.
+7. **Phân giải Icon động từ Database (Lucide Icon Fallback)**:
+   - Admin có thể nhập tên Icon tùy ý ("Heart", "Cake", "Sparkles", "Flame", "Home"...).
+   - Trên Frontend, xây dựng hàm `resolveIcon(iconName, defaultIcon = Sparkles)`. Nếu `iconName` không tồn tại trong Lucide icons, an toàn trả về icon mặc định thay vì làm crash giao diện React.
+8. **Điều hướng Link nội bộ vs Link ngoại vi trong Dynamic Navbar**:
+   - Nếu URL menu bắt đầu bằng `http://` hoặc `https://`, render thẻ `<a>` với `target={item.target}` và `rel="noopener noreferrer"`.
+   - Nếu URL nội bộ (ví dụ `/templates`, `/my-sites`), render component `<Link to={item.url}>` của `react-router-dom` để giữ SPA navigation mượt mà.
+9. **Dữ liệu Database rỗng khi khởi động**:
+   - Trong `DataSeeder.cs`, thêm `await context.Database.EnsureCreatedAsync()` và nạp sẵn 5 Category chuẩn, 5 Navigation Menu với các submenu mẫu, 6-8 Templates phong phú để hệ thống sẵn sàng hoạt động ngay lập tức mà không cần gõ tay.
+10. **Tương thích ngược dữ liệu Template cũ**:
+   - Giữ nguyên cột `Category` (string) bên cạnh `CategoryId` (Guid? nullable) để các code cũ (hoặc bản ghi cũ chưa có CategoryId) vẫn hiển thị đúng danh mục mà không bị null reference exception.

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "6XNx8tlrZI0=",
+  "dgSpecHash": "B0+F55Wqipk=",
   "success": true,
-  "projectFilePath": "e:\\Code\\TemplateLandingPage\\BE\\src\\Infrastructure\\TemplateLandingPage.Infrastructure.csproj",
+  "projectFilePath": "E:\\Code\\TemplateLandingPage\\BE\\src\\Infrastructure\\TemplateLandingPage.Infrastructure.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\trung\\.nuget\\packages\\fluentvalidation\\11.11.0\\fluentvalidation.11.11.0.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\fluentvalidation.dependencyinjectionextensions\\11.11.0\\fluentvalidation.dependencyinjectionextensions.11.11.0.nupkg.sha512",
@@ -19,10 +19,7 @@
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.jsonwebtokens\\8.5.0\\microsoft.identitymodel.jsonwebtokens.8.5.0.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.logging\\8.5.0\\microsoft.identitymodel.logging.8.5.0.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.5.0\\microsoft.identitymodel.tokens.8.5.0.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.5.0\\system.identitymodel.tokens.jwt.8.5.0.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.netcore.app.ref\\10.0.12\\microsoft.netcore.app.ref.10.0.12.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\10.0.12\\microsoft.windowsdesktop.app.ref.10.0.12.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\10.0.12\\microsoft.aspnetcore.app.ref.10.0.12.nupkg.sha512"
+    "C:\\Users\\trung\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.5.0\\system.identitymodel.tokens.jwt.8.5.0.nupkg.sha512"
   ],
   "logs": []
 }

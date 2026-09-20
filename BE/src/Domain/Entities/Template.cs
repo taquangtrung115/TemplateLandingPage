@@ -7,9 +7,15 @@ public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelet
     public string Name { get; private set; } = string.Empty;
     public string Slug { get; private set; } = string.Empty;
     public string? Description { get; private set; }
-    public string Category { get; private set; } = "Wedding"; // "Wedding", "Birthday"
+    public Guid? CategoryId { get; private set; }
+    public Category? CategoryRef { get; private set; }
+    public string Category { get; private set; } = "Wedding"; // "Wedding", "Birthday" or custom category name
     public string ThumbnailUrl { get; private set; } = string.Empty;
     public string? PreviewUrl { get; private set; }
+    public string? LongPreviewUrl { get; private set; }
+    public string? Badge { get; private set; }
+    public string? AudioUrl { get; private set; }
+    public string? MusicTitle { get; private set; }
     public string DefaultConfigJson { get; private set; } = string.Empty;
     public bool IsActive { get; private set; } = true;
     public bool IsDeleted { get; set; }
@@ -26,9 +32,14 @@ public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelet
         string name,
         string slug,
         string? description,
+        Guid? categoryId,
         string category,
         string thumbnailUrl,
         string? previewUrl,
+        string? longPreviewUrl,
+        string? badge,
+        string? audioUrl,
+        string? musicTitle,
         string defaultConfigJson,
         bool isActive)
     {
@@ -36,9 +47,14 @@ public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelet
         Name = name;
         Slug = slug;
         Description = description;
+        CategoryId = categoryId;
         Category = category;
         ThumbnailUrl = thumbnailUrl;
         PreviewUrl = previewUrl;
+        LongPreviewUrl = longPreviewUrl;
+        Badge = badge;
+        AudioUrl = audioUrl;
+        MusicTitle = musicTitle;
         DefaultConfigJson = defaultConfigJson;
         IsActive = isActive;
         IsDeleted = false;
@@ -49,9 +65,14 @@ public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelet
         string name,
         string slug,
         string? description,
+        Guid? categoryId,
         string category,
         string thumbnailUrl,
         string? previewUrl,
+        string? longPreviewUrl,
+        string? badge,
+        string? audioUrl,
+        string? musicTitle,
         string defaultConfigJson)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -68,20 +89,54 @@ public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelet
             name.Trim(),
             slug.Trim().ToLowerInvariant(),
             description?.Trim(),
+            categoryId,
             category.Trim(),
             thumbnailUrl.Trim(),
             previewUrl?.Trim(),
+            longPreviewUrl?.Trim(),
+            badge?.Trim(),
+            audioUrl?.Trim(),
+            musicTitle?.Trim(),
             defaultConfigJson,
             true);
     }
 
-    public void Update(
+    public static Template Create(
         string name,
         string slug,
         string? description,
         string category,
         string thumbnailUrl,
         string? previewUrl,
+        string defaultConfigJson)
+    {
+        return Create(
+            name,
+            slug,
+            description,
+            null,
+            category,
+            thumbnailUrl,
+            previewUrl,
+            null,
+            null,
+            null,
+            null,
+            defaultConfigJson);
+    }
+
+    public void Update(
+        string name,
+        string slug,
+        string? description,
+        Guid? categoryId,
+        string category,
+        string thumbnailUrl,
+        string? previewUrl,
+        string? longPreviewUrl,
+        string? badge,
+        string? audioUrl,
+        string? musicTitle,
         string defaultConfigJson,
         bool isActive)
     {
@@ -97,12 +152,43 @@ public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelet
         Name = name.Trim();
         Slug = slug.Trim().ToLowerInvariant();
         Description = description?.Trim();
+        CategoryId = categoryId;
         Category = category.Trim();
         ThumbnailUrl = thumbnailUrl.Trim();
         PreviewUrl = previewUrl?.Trim();
+        LongPreviewUrl = longPreviewUrl?.Trim();
+        Badge = badge?.Trim();
+        AudioUrl = audioUrl?.Trim();
+        MusicTitle = musicTitle?.Trim();
         DefaultConfigJson = defaultConfigJson;
         IsActive = isActive;
         ModifiedAtUtc = DateTime.UtcNow;
+    }
+
+    public void Update(
+        string name,
+        string slug,
+        string? description,
+        string category,
+        string thumbnailUrl,
+        string? previewUrl,
+        string defaultConfigJson,
+        bool isActive)
+    {
+        Update(
+            name,
+            slug,
+            description,
+            CategoryId,
+            category,
+            thumbnailUrl,
+            previewUrl,
+            LongPreviewUrl,
+            Badge,
+            AudioUrl,
+            MusicTitle,
+            defaultConfigJson,
+            isActive);
     }
 
     public void Delete()

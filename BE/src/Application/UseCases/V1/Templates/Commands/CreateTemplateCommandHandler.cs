@@ -31,9 +31,14 @@ public sealed class CreateTemplateCommandHandler : ICommandHandler<CreateTemplat
             request.Name,
             request.Slug,
             request.Description,
+            request.CategoryId,
             request.Category,
             request.ThumbnailUrl,
             request.PreviewUrl,
+            request.LongPreviewUrl,
+            request.Badge,
+            request.AudioUrl,
+            request.MusicTitle,
             request.DefaultConfigJson);
 
         _templateRepository.Add(template);

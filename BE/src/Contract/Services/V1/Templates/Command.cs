@@ -6,9 +6,14 @@ public record CreateTemplateCommand(
     string Name,
     string Slug,
     string? Description,
+    Guid? CategoryId,
     string Category,
     string ThumbnailUrl,
     string? PreviewUrl,
+    string? LongPreviewUrl,
+    string? Badge,
+    string? AudioUrl,
+    string? MusicTitle,
     string DefaultConfigJson) : ICommand<Guid>;
 
 public record UpdateTemplateCommand(
@@ -16,9 +21,14 @@ public record UpdateTemplateCommand(
     string Name,
     string Slug,
     string? Description,
+    Guid? CategoryId,
     string Category,
     string ThumbnailUrl,
     string? PreviewUrl,
+    string? LongPreviewUrl,
+    string? Badge,
+    string? AudioUrl,
+    string? MusicTitle,
     string DefaultConfigJson,
     bool IsActive) : ICommand;
 

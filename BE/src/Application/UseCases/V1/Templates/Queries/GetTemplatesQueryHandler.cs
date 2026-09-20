@@ -3,6 +3,7 @@ namespace TemplateLandingPage.Application.UseCases.V1.Templates.Queries;
 using TemplateLandingPage.Application.Abstractions;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Templates;
+using TemplateLandingPage.Domain.Entities;
 using TemplateLandingPage.Domain.Repositories;
 
 public sealed class GetTemplatesQueryHandler : IQueryHandler<GetTemplatesQuery, List<TemplateResponse>>
@@ -16,26 +17,27 @@ public sealed class GetTemplatesQueryHandler : IQueryHandler<GetTemplatesQuery, 
 
     public async Task<Result<List<TemplateResponse>>> Handle(GetTemplatesQuery request, CancellationToken cancellationToken)
     {
-        var templates = await _templateRepository.GetAllAsync(cancellationToken);
+        var templates = await _templateRepository.GetListAsync(
+            request.Category,
+            request.CategoryId,
+            request.Badge,
+            request.Search,
+            request.IsActiveOnly,
+            cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(request.Category))
-        {
-            templates = templates.Where(t => t.Category.Equals(request.Category, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        if (request.IsActiveOnly.HasValue && request.IsActiveOnly.Value)
-        {
-            templates = templates.Where(t => t.IsActive).ToList();
-        }
-
-        var response = templates.Select(t => new TemplateResponse(
+        var response = (templates ?? new List<Template>()).Select(t => new TemplateResponse(
             t.Id,
             t.Name,
             t.Slug,
             t.Description,
+            t.CategoryId,
             t.Category,
             t.ThumbnailUrl,
             t.PreviewUrl,
+            t.LongPreviewUrl,
+            t.Badge,
+            t.AudioUrl,
+            t.MusicTitle,
             t.DefaultConfigJson,
             t.IsActive,
             t.CreatedAtUtc)).ToList();
