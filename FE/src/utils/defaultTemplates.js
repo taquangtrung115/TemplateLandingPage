@@ -7,7 +7,8 @@ export const DEFAULT_WEDDING_CONFIG = {
     textColor: "#1e293b",
     fontFamily: "Playfair Display",
     stylePreset: "romantic",
-    particlesEffect: "petals"
+    particlesEffect: "petals",
+    defaultAnimation: "fade-up",
   },
   hero: {
     badge: "SAVE THE DATE",
@@ -15,25 +16,29 @@ export const DEFAULT_WEDDING_CONFIG = {
     subtitle: "Hân hoan thông báo ngày chung đôi hạnh phúc",
     eventDate: "2026-10-25T18:00:00",
     coverImageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=1600&q=80",
-    callToActionText: "Xác nhận tham dự"
+    callToActionText: "Xác nhận tham dự",
+    animation: "fade-up",
   },
   coupleOrCelebrant: {
     type: "wedding",
+    animation: "fade-up",
+    storyQuote: "Tình yêu không phải là nhìn nhau, mà là cùng nhau nhìn về một hướng hạnh phúc.",
     person1: {
       name: "Nguyễn Văn Minh",
       title: "Chú Rể",
       avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80",
       bio: "Kỹ sư phần mềm, yêu âm nhạc và nhiếp ảnh. Luôn tràn đầy năng lượng tích cực.",
-      parents: "Ông Nguyễn Văn A & Bà Trần Thị B"
+      parents: "Ông Nguyễn Văn A & Bà Trần Thị B",
+      animation: "fade-right",
     },
     person2: {
       name: "Lê Thùy Linh",
       title: "Cô Dâu",
       avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80",
       bio: "Nhà thiết kế đồ họa, yêu thiên nhiên, thích cắm hoa và nấu những bữa cơm ấm áp.",
-      parents: "Ông Lê Văn C & Bà Phạm Thị D"
+      parents: "Ông Lê Văn C & Bà Phạm Thị D",
+      animation: "fade-left",
     },
-    storyQuote: "Tình yêu không phải là nhìn nhau, mà là cùng nhau nhìn về một hướng hạnh phúc."
   },
   eventDetails: {
     ceremonyName: "Lễ Thành Hôn & Tiệc Cưới",
@@ -42,38 +47,79 @@ export const DEFAULT_WEDDING_CONFIG = {
     address: "431 Hoàng Văn Thụ, Phường 4, Quận Tân Bình, TP. Hồ Chí Minh",
     mapEmbedUrl: "https://maps.google.com",
     mapDirectLink: "https://maps.google.com",
-    dressCode: "Trắng / Pastel / Be thanh lịch"
+    dressCode: "Trắng / Pastel / Be thanh lịch",
+    animation: "fade-up",
   },
   timeline: [
-    { id: "1", time: "17:00", title: "Đón khách & Chụp ảnh", description: "Chào đón quý quan khách và lưu giữ những bức hình kỷ niệm", icon: "Camera" },
-    { id: "2", time: "18:00", title: "Làm lễ Thành hôn", description: "Nghi thức thề nguyện, trao nhẫn và cắt bánh hạnh phúc", icon: "Heart" },
-    { id: "3", time: "19:00", title: "Khai tiệc mừng", description: "Nâng ly chúc mừng và thưởng thức dạ tiệc ấm cúng", icon: "Utensils" },
-    { id: "4", time: "20:30", title: "Âm nhạc & Khiêu vũ", description: "Giao lưu văn nghệ và tung hoa cưới may mắn", icon: "Music" }
+    { id: "1", time: "17:00", title: "Đón khách & Chụp ảnh", description: "Chào đón quý quan khách và lưu giữ những bức hình kỷ niệm", icon: "Camera", animation: "fade-up" },
+    { id: "2", time: "18:00", title: "Làm lễ Thành hôn", description: "Nghi thức thề nguyện, trao nhẫn và cắt bánh hạnh phúc", icon: "Heart", animation: "fade-up" },
+    { id: "3", time: "19:00", title: "Khai tiệc mừng", description: "Nâng ly chúc mừng và thưởng thức dạ tiệc ấm cúng", icon: "Utensils", animation: "fade-up" },
+    { id: "4", time: "20:30", title: "Âm nhạc & Khiêu vũ", description: "Giao lưu văn nghệ và tung hoa cưới may mắn", icon: "Music", animation: "fade-up" },
   ],
   gallery: [
-    { id: "1", url: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80", caption: "Khoảnh khắc hẹn thề" },
-    { id: "2", url: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80", caption: "Nụ cười rạng rỡ ngày chung đôi" },
-    { id: "3", url: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80", caption: "Nắm tay qua năm tháng" },
-    { id: "4", url: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80", caption: "Nguyện ước trăm năm" }
+    { id: "1", url: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80", caption: "Khoảnh khắc hẹn thề", animation: "zoom-in" },
+    { id: "2", url: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80", caption: "Nụ cười rạng rỡ ngày chung đôi", animation: "zoom-in" },
+    { id: "3", url: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80", caption: "Nắm tay qua năm tháng", animation: "zoom-in" },
+    { id: "4", url: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80", caption: "Nguyện ước trăm năm", animation: "zoom-in" },
   ],
   rsvp: {
     enabled: true,
     deadline: "2026-10-15",
     note: "Sự hiện diện của quý vị là niềm vinh hạnh to lớn cho gia đình chúng mình!",
     allowDietaryNotes: true,
-    allowPlusOnes: true
+    allowPlusOnes: true,
+    animation: "fade-up",
   },
   music: {
     enabled: true,
     audioUrl: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
     title: "A Thousand Years - Instrumental Piano",
-    autoPlay: true
+    autoPlay: true,
   },
   wishes: {
     enabled: true,
     title: "Sổ Lưu Bút & Lời Chúc Mừng",
-    subtitle: "Hãy để lại những lời chúc yêu thương nhất cho đôi tân lang tân nương"
-  }
+    subtitle: "Hãy để lại những lời chúc yêu thương nhất cho đôi tân lang tân nương",
+    animation: "fade-up",
+  },
+  extraSections: [
+    {
+      id: "extra-wedding-1",
+      type: "thankYou",
+      enabled: true,
+      title: "Lời Cảm Ơn Chân Thành",
+      subtitle: "Từ tận đáy lòng của chúng mình",
+      content: "Cảm ơn gia đình, bạn bè và những người thương yêu đã luôn đồng hành, chia sẻ và gửi những lời chúc phúc ấm áp nhất đến chúng mình trong ngày trọng đại này.",
+      imageUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
+      animation: "fade-up",
+    },
+    {
+      id: "extra-wedding-2",
+      type: "giftQr",
+      enabled: true,
+      title: "Hộp Mừng Cưới & Gửi Quà Chúc Phúc",
+      subtitle: "Dành cho những người bạn ở xa muốn gửi lời chúc phúc",
+      qrBank: {
+        bankName: "MB",
+        accountNumber: "0987654321",
+        accountHolder: "NGUYEN VAN MINH",
+        qrImageUrl: "",
+      },
+      animation: "zoom-in",
+    },
+    {
+      id: "extra-wedding-3",
+      type: "qa",
+      enabled: true,
+      title: "Câu Hỏi Thường Gặp (Q&A)",
+      subtitle: "Một số thông tin giúp bạn có trải nghiệm trọn vẹn nhất",
+      items: [
+        { question: "Địa điểm có bãi giữ xe ô tô không?", answer: "Có, The Adora Center có hầm giữ xe ô tô và xe máy rộng rãi, bảo vệ chu đáo và hoàn toàn miễn phí." },
+        { question: "Thời gian đón khách bắt đầu từ lúc nào?", answer: "Sảnh tiệc bắt đầu đón khách từ 17:30 và nghi lễ chính thức diễn ra lúc 18:30." },
+      ],
+      animation: "fade-up",
+    },
+  ],
 };
 
 export const DEFAULT_BIRTHDAY_CONFIG = {
@@ -85,7 +131,8 @@ export const DEFAULT_BIRTHDAY_CONFIG = {
     textColor: "#f8fafc",
     fontFamily: "Cinzel",
     stylePreset: "luxury",
-    particlesEffect: "confetti"
+    particlesEffect: "confetti",
+    defaultAnimation: "zoom-in",
   },
   hero: {
     badge: "HAPPY 30TH BIRTHDAY",
@@ -93,18 +140,21 @@ export const DEFAULT_BIRTHDAY_CONFIG = {
     subtitle: "Đêm tiệc kỷ niệm cột mốc tuổi 30 đáng nhớ và rực rỡ",
     eventDate: "2026-11-12T19:00:00",
     coverImageUrl: "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1600&q=80",
-    callToActionText: "Đăng ký tham dự"
+    callToActionText: "Đăng ký tham dự",
+    animation: "zoom-in",
   },
   coupleOrCelebrant: {
     type: "birthday",
+    animation: "fade-up",
+    storyQuote: "Tuổi 30 không phải là già đi, mà là bắt đầu chương huy hoàng nhất của cuộc đời!",
     person1: {
       name: "Trần Hoàng Nam",
       title: "Chủ Nhân Buổi Tiệc",
       avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&q=80",
       bio: "Tech Founder & Creator, chào đón tuổi 30 thăng hoa cùng những người bạn trân quý nhất.",
-      parents: "Gia đình họ Trần"
+      parents: "Gia đình họ Trần",
+      animation: "zoom-in",
     },
-    storyQuote: "Tuổi 30 không phải là già đi, mà là bắt đầu chương huy hoàng nhất của cuộc đời!"
   },
   eventDetails: {
     ceremonyName: "Gala Dinner & Rooftop Night Party",
@@ -113,36 +163,77 @@ export const DEFAULT_BIRTHDAY_CONFIG = {
     address: "Tầng 36, Tòa nhà Landmark, Quận 1, TP. Hồ Chí Minh",
     mapEmbedUrl: "https://maps.google.com",
     mapDirectLink: "https://maps.google.com",
-    dressCode: "Black Tie / Ánh Kim Sang Trọng"
+    dressCode: "Black Tie / Ánh Kim Sang Trọng",
+    animation: "fade-up",
   },
   timeline: [
-    { id: "1", time: "18:30", title: "Check-in & Welcome Cocktail", description: "Đón khách và thưởng thức ly cocktail signature", icon: "GlassWater" },
-    { id: "2", time: "19:30", title: "Thổi nến & Khai tiệc", description: "Nghi thức thổi nến chúc mừng tuổi mới bùng nổ", icon: "Cake" },
-    { id: "3", time: "20:30", title: "DJ Live Set & Chill Night", description: "Âm nhạc sôi động và nâng ly thâu đêm", icon: "Music" }
+    { id: "1", time: "18:30", title: "Check-in & Welcome Cocktail", description: "Đón khách và thưởng thức ly cocktail signature", icon: "GlassWater", animation: "fade-up" },
+    { id: "2", time: "19:30", title: "Thổi nến & Khai tiệc", description: "Nghi thức thổi nến chúc mừng tuổi mới bùng nổ", icon: "Cake", animation: "bounce" },
+    { id: "3", time: "20:30", title: "DJ Live Set & Chill Night", description: "Âm nhạc sôi động và nâng ly thâu đêm", icon: "Music", animation: "fade-up" },
   ],
   gallery: [
-    { id: "1", url: "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80", caption: "Ánh sáng lễ hội lung linh" },
-    { id: "2", url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80", caption: "Khoảnh khắc tiệc tùng đáng nhớ" },
-    { id: "3", url: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=800&q=80", caption: "Nâng ly cùng bạn bè" }
+    { id: "1", url: "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80", caption: "Ánh sáng lễ hội lung linh", animation: "zoom-in" },
+    { id: "2", url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80", caption: "Khoảnh khắc tiệc tùng đáng nhớ", animation: "zoom-in" },
+    { id: "3", url: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=800&q=80", caption: "Nâng ly cùng bạn bè", animation: "zoom-in" },
   ],
   rsvp: {
     enabled: true,
     deadline: "2026-11-05",
     note: "Vui lòng xác nhận trước 05/11 để ban tổ chức sắp xếp chỗ ngồi chu đáo nhất!",
     allowDietaryNotes: false,
-    allowPlusOnes: true
+    allowPlusOnes: true,
+    animation: "fade-up",
   },
   music: {
     enabled: true,
     audioUrl: "https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77c30.mp3",
     title: "Celebration Night - Acoustic Vibe",
-    autoPlay: false
+    autoPlay: false,
   },
   wishes: {
     enabled: true,
     title: "Sổ Lưu Bút & Chúc Mừng Tuổi Mới",
-    subtitle: "Gửi những lời chúc mừng sinh nhật ý nghĩa nhất đến Hoàng Nam"
-  }
+    subtitle: "Gửi những lời chúc mừng sinh nhật ý nghĩa nhất đến Hoàng Nam",
+    animation: "fade-up",
+  },
+  extraSections: [
+    {
+      id: "extra-birthday-1",
+      type: "thankYou",
+      enabled: true,
+      title: "Lời Cảm Ơn",
+      subtitle: "Gửi đến những người bạn thân thương",
+      content: "Cảm ơn tất cả mọi người đã bớt chút thời gian quý báu để cùng Nam đón mừng tuổi mới. Sự hiện diện của các bạn là món quà vô giá nhất!",
+      imageUrl: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80",
+      animation: "fade-up",
+    },
+    {
+      id: "extra-birthday-2",
+      type: "giftQr",
+      enabled: true,
+      title: "Quà Tặng Sinh Nhật (VietQR)",
+      subtitle: "Gửi quà mừng tinh thần & tình cảm từ phương xa",
+      qrBank: {
+        bankName: "Techcombank",
+        accountNumber: "1903668899",
+        accountHolder: "TRAN HOANG NAM",
+        qrImageUrl: "",
+      },
+      animation: "zoom-in",
+    },
+    {
+      id: "extra-birthday-3",
+      type: "qa",
+      enabled: true,
+      title: "Thông Tin Buổi Tiệc (Q&A)",
+      subtitle: "Một vài lưu ý nhỏ cho đêm tiệc quẩy hết mình",
+      items: [
+        { question: "Dress Code của buổi tiệc là gì?", answer: "Trang phục thanh lịch tông màu Đen / Ánh kim (Black Tie / Metallic Glamour)." },
+        { question: "Có thể dẫn theo bạn bè (+1) không?", answer: "Bạn hoàn toàn có thể dẫn thêm 1 người bạn đi cùng, vui lòng chọn số lượng khi RSVP nhé!" },
+      ],
+      animation: "fade-up",
+    },
+  ],
 };
 
 export const getDefaultConfigByCategory = (category = 'Wedding') => {

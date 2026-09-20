@@ -1,150 +1,116 @@
-# BÁO CÁO KẾT QUẢ KIỂM THỬ (TEST RESULT)
+# BÁO CÁO KIỂM THỬ CHẤT LƯỢNG (TEST REPORT)
 
-## 1. Tổng quan kiểm thử (Test Overview)
-
-- **Trạng thái**: ✅ **ALL TESTS PASSED** (100% Xanh, không có lỗi rớt hay hồi quy)
-- **Thời gian thực hiện**: 2026-09-20 19:16:35
-- **Phạm vi kiểm tra**: Toàn bộ các thay đổi sửa đổi API Unwrapping, AuthContext State Management, Defensive Programming trên LoginPage và hồi quy Backend.
-
-| Thành phần | Công cụ kiểm thử | Số lượng test | Kết quả | Ghi chú |
-|---|---|:---:|:---:|---|
-| **Frontend Unit & Integration Tests** | Vitest 5.0.1 (JSDOM) | **35 / 35** | ✅ PASS | 3 test suites độc lập bao quát đủ 3 nhóm ca kiểm thử |
-| **Frontend Production Build** | Vite v6.4.3 | **1696 modules** | ✅ PASS | Exit code 0, không lỗi bundle, không cảnh báo cú pháp |
-| **Backend Unit Tests** | xUnit + FluentAssertions + Moq | **313 / 313** | ✅ PASS | Đã bổ sung ca kiểm thử `LoginCommand` với vai trò Admin |
-| **Backend Architecture Tests** | NetArchTest (Rules) | **7 / 7** | ✅ PASS | Tuân thủ nghiêm ngặt Clean Architecture |
-| **TỔNG CỘNG** | | **355 / 355** | ✅ PASS | **100% ĐẠT YÊU CẦU** |
+**Chặng**: 3 - Tester  
+**Trạng thái tổng thể**: **PASS 100% (TẤT CẢ TEST CASES VÀ BUILD ĐỀU XANH)**  
+**Kỷ luật kiểm thử**: Tuân thủ tuyệt đối quy định chỉ tạo/sửa file trong `BE/test/` và `FE/test/`, không can thiệp code sản phẩm trong `BE/src/` hay `FE/src/`.
 
 ---
 
-## 2. Chi tiết kết quả kiểm định theo 3 nhóm kịch bản
+## 1. TỔNG HỢP KẾT QUẢ THỰC THI KIỂM THỬ
 
-### 2.1. Nhóm 1: Đường chạy thuận lợi (Happy Paths)
+### A. Backend (.NET 10 Clean Architecture)
+- **Lệnh thực thi**: `dotnet test BE/TemplateLandingPage.sln /p:AllowMissingPrunePackageData=true`
+- **Kết quả tổng thể**: **330 / 330 tests PASS (0 Failed, 0 Skipped)**
+  - `TemplateLandingPage.UnitTests.dll`: **323 passed** (tăng thêm 3 tests cho luồng Guest Create, Template NotFound, Duplicate Slug)
+  - `TemplateLandingPage.Architecture.Tests.dll`: **7 passed**
+- **Thời gian chạy**: ~3.2 giây
 
-- **Đăng nhập Admin thành công**:
-  - `FE/test/authContext.test.jsx`: Tài khoản Admin (`admin@template.com`) gửi yêu cầu đăng nhập, nhận về `jwtToken` và `userProfile` có `role: 'Admin'`.
-  - Kiểm tra `localStorage`: Key `token` lưu đúng chuỗi JWT hợp lệ, key `user` lưu đúng JSON object của Admin.
-  - Kiểm tra Auth State: `isAuthenticated = true`, `isAdmin = true`.
-  - `FE/test/loginPage.test.jsx`: Kiểm tra điều hướng, `navigate('/admin', { replace: true })` được gọi chính xác khi `user.role === 'Admin'`.
-  - `BE/test/UnitTests/Application/Auth/LoginCommandHandlerTests.cs`: `Handle_Should_ReturnLoginResponse_WithAdminRole_WhenAdminCredentialsAreValid` xác nhận Backend tạo đúng token và trả về profile Admin.
+### B. Frontend (React 19 + Vite + Vitest)
+- **Lệnh thực thi**: `npm test` trong thư mục `FE/`
+- **Kết quả tổng thể**: **5 / 5 test suites PASS, 67 / 67 tests PASS (0 Failed)**
+  - `test/apiUnwrap.test.js`: **16 tests PASS**
+  - `test/authContext.test.jsx`: **11 tests PASS**
+  - `test/loginPage.test.jsx`: **8 tests PASS**
+  - `test/customizerDynamic.test.jsx`: **26 tests PASS** (mở rộng từ 14 lên 26 tests)
+  - `test/customizerGuestFlow.test.jsx`: **6 tests PASS** (bộ test mới cho luồng khách vãng lai)
+- **Thời gian chạy**: ~15.8 giây
 
-- **Đăng nhập User thông thường**:
-  - `FE/test/authContext.test.jsx`: Tài khoản User (`user@template.com`) đăng nhập, nhận profile với `role: 'User'`.
-  - Kiểm tra Auth State: `isAuthenticated = true`, `isAdmin = false`.
-  - `FE/test/loginPage.test.jsx`: Điều hướng về trang trước đó (`from`) hoặc fallback về `/`.
-
-- **Đăng xuất (Logout)**:
-  - `FE/test/authContext.test.jsx`: Khi gọi `logout()`, cả `token` và `user` đều bị xóa sạch khỏi `localStorage`, Auth State quay về `isAuthenticated = false`.
-
----
-
-### 2.2. Nhóm 2: Trường hợp biên (Edge Cases)
-
-- **LocalStorage bị nhiễm chuỗi rác (`'undefined'` hoặc `'null'`)**:
-  - `FE/test/authContext.test.jsx`:
-    * Cố tình nạp `localStorage.setItem('token', 'undefined')` và `localStorage.setItem('user', 'undefined')`.
-    * State khởi tạo không bắn ra ngoại lệ `SyntaxError: Unexpected token u in JSON at position 0`.
-    * `initAuth` phát hiện token bẩn, tự động dọn dẹp sạch sẽ `localStorage` và đặt state về `null`.
-    * Tương tự với chuỗi `"null"`.
-
-- **Khả năng tương thích Unwrap dữ liệu kép (`Result<T>` vs Raw Object)**:
-  - `FE/test/apiUnwrap.test.js`:
-    * Kiểm thử toàn bộ 16 API endpoints thuộc 4 module: `authApi`, `userApi`, `customizationApi`, `interactionApi`.
-    * Phản hồi dạng Wrapper `Result { isSuccess: true, value: ... }` được bóc tách chính xác lấy `.value`.
-    * Phản hồi dạng Raw Object (không bọc `.value`) được trả về nguyên vẹn qua toán tử `??`.
-    * Các endpoint trả về `Result` rỗng (như `updateUser` void Result) hoạt động an toàn.
-
-- **Đăng ký tài khoản mới tự động kích hoạt phiên làm việc (Auto-Login Session)**:
-  - `FE/test/authContext.test.jsx`: Backend `RegisterCommand` chỉ trả về `Guid` (chưa kèm JWT token).
-  - Hàm `register(email, password, fullName)` tự động nhận biết và kích hoạt `login(email, password)`, thiết lập `token` và `user` trong `localStorage` ngay lập tức, trả về `userProfile` để trang đăng ký chuyển hướng mượt sang `/templates`.
-  - Trường hợp Backend trả về sẵn token & user cũng được xử lý lưu trữ trực tiếp mà không cần gọi lại login.
-
-- **Tải lại trang (F5 Refresh) & Đồng bộ Profile**:
-  - `FE/test/authContext.test.jsx`:
-    * Khi `localStorage` có token hợp lệ, `initAuth` gọi `authApi.getMe()`. Kết quả được unwrap sạch và cập nhật vào React state lẫn `localStorage.setItem('user', ...)`.
-    * Nếu token đã hết hạn hoặc không hợp lệ (`authApi.getMe()` trả về lỗi 401), hệ thống tự động xóa sạch `token` và `user` khỏi `localStorage`, đưa người dùng về trạng thái chưa xác thực một cách an toàn.
+### C. Frontend Production Build
+- **Lệnh thực thi**: `npm run build` trong thư mục `FE/`
+- **Kết quả**: **Build thành công sạch sẽ (Built in 9.22s, 0 lỗi cú pháp/import)**
 
 ---
 
-### 2.3. Nhóm 3: Trường hợp thất bại & Phòng vệ lỗi (Failure Paths)
+## 2. MA TRẬN BAO PHỦ 3 NHÓM KIỂM THỬ THEO YÊU CẦU
 
-- **Đăng nhập thất bại / Sai credentials**:
-  - `FE/test/authContext.test.jsx`: Khi `authApi.login` ném lỗi (400 / 401 / Network Error), `login` rethrow lỗi ra ngoài một cách minh bạch, tuyệt đối **KHÔNG** ghi chuỗi `"undefined"` vào `localStorage`. State giữ nguyên `unauthenticated`.
-  - `FE/test/loginPage.test.jsx`: Bắt lỗi và hiển thị thông báo lỗi thân thiện trên giao diện (`Tài khoản hoặc mật khẩu không chính xác`), tắt trạng thái `loading`, không thực hiện bất kỳ lệnh điều hướng nào (`navigate` không bị gọi).
+### NHÓM 1: ĐƯỜNG CHẠY THUẬN LỢI (HAPPY PATHS)
 
-- **Phòng thủ Optional Chaining trên `LoginPage`**:
-  - `FE/test/loginPage.test.jsx`:
-    * Giả lập tình huống hàm `login` trả về `undefined` hoặc `null`: Biểu thức `user?.role === 'Admin'` không gây ra lỗi Runtime `TypeError: Cannot read properties of undefined (reading 'role')`.
-    * Giao diện không bị sập (white screen), xử lý êm đẹp và chuyển hướng theo nhánh fallback `/`.
-    * Giả lập user object thiếu thuộc tính `role`: Xử lý an toàn không phát sinh lỗi.
-
----
-
-## 3. Danh sách các file test đã bổ sung
-
-| STT | File test | Framework | Số ca kiểm thử | Trạng thái |
-|:---:|---|:---:|:---:|:---:|
-| 1 | `FE/test/apiUnwrap.test.js` | Vitest | 16 | ✅ 16 Passed |
-| 2 | `FE/test/authContext.test.jsx` | Vitest + React Testing Library | 11 | ✅ 11 Passed |
-| 3 | `FE/test/loginPage.test.jsx` | Vitest + React Testing Library | 8 | ✅ 8 Passed |
-| 4 | `FE/test/setup.js` | Vitest Setup | - | Thiết lập môi trường JSDOM & dọn dẹp localStorage |
-| 5 | `BE/test/UnitTests/Application/Auth/LoginCommandHandlerTests.cs` | xUnit + FluentAssertions | 3 (bổ sung 1) | ✅ 3 Passed |
+| Mã kiểm thử | Đối tượng & Kịch bản kiểm thử | File thực thi | Kết quả |
+| :--- | :--- | :--- | :---: |
+| **HP-BE-01** | Khách vãng lai tạo mới thiệp với `UserId == null` lưu thành công vào cơ sở dữ liệu | `CreateCustomizationCommandHandlerTests.cs` | **PASS** |
+| **HP-BE-02** | Khách vãng lai cập nhật tiếp thiệp vừa tạo (`UserId == null`) thành công qua `UpdateCustomizationCommand` | `UpdateCustomizationCommandHandlerTests.cs` | **PASS** |
+| **HP-BE-03** | Chủ sở hữu đã đăng nhập cập nhật thiệp của chính mình thành công | `UpdateCustomizationCommandHandlerTests.cs` | **PASS** |
+| **HP-BE-04** | Quản trị viên (Admin) cập nhật bất kỳ thiệp nào thành công | `UpdateCustomizationCommandHandlerTests.cs` | **PASS** |
+| **HP-FE-01** | Khách vãng lai truy cập `/customize/:templateId` mà không bị chuyển hướng sang `/login` | `customizerGuestFlow.test.jsx` | **PASS** |
+| **HP-FE-02** | Khách vãng lai tùy biến và bấm "Lưu", gọi API tạo mới thiệp với `userId = null` và tự động cập nhật URL sang route chỉnh sửa | `customizerGuestFlow.test.jsx` | **PASS** |
+| **HP-FE-03** | Khách vãng lai tiếp tục sửa và lưu thiệp thành công qua `PUT /api/v1/customizations/:id` | `customizerGuestFlow.test.jsx` | **PASS** |
+| **HP-FE-04** | Thêm nhân vật mới (`person3`, `person4`...) tăng tuần tự index, hiển thị đầy đủ tên, danh xưng, avatar, bio, bố mẹ và animation | `customizerDynamic.test.jsx` | **PASS** |
+| **HP-FE-05** | Render linh hoạt bố cục Dynamic Persons: 1 người (căn giữa), 2 người (2 cột), 3 người (3 cột), 4+ người (4 cột responsive) | `customizerDynamic.test.jsx` | **PASS** |
+| **HP-FE-06** | Thêm khối mở rộng Lời cảm ơn (`thankYou`): render tiêu đề, phụ đề, ảnh minh họa và văn bản nhiều dòng | `customizerDynamic.test.jsx` | **PASS** |
+| **HP-FE-07** | Thêm khối mở rộng VietQR (`giftQr`): tự động sinh mã QR chuẩn VietQR từ Tên NH + STK, hiển thị chủ tài khoản, nút sao chép STK | `customizerDynamic.test.jsx` | **PASS** |
+| **HP-FE-08** | Thêm khối mở rộng Hỏi đáp (`qa`): hiển thị danh sách accordion, bấm vào câu hỏi để mở/đóng câu trả lời mượt mà | `customizerDynamic.test.jsx` | **PASS** |
+| **HP-FE-09** | Thêm khối mở rộng Tùy biến (`custom`): hiển thị tiêu đề và nội dung tùy ý | `customizerDynamic.test.jsx` | **PASS** |
+| **HP-FE-10** | Xuất Standalone HTML (`exportStandaloneHtml`): tạo tài liệu HTML độc lập hoàn chỉnh chứa CSS keyframes, offline `IntersectionObserver` script, dynamic persons và extra sections | `customizerDynamic.test.jsx` | **PASS** |
 
 ---
 
-## 4. Log thực thi chi tiết (Execution Logs)
+### NHÓM 2: TRƯỜNG HỢP BIÊN (EDGE CASES)
 
-### 4.1. Frontend Unit Tests (`npm test`)
-```text
-> template-landing-page-fe@1.0.0 test
-> vitest run
-
- RUN  v5.0.1 E:/Code/TemplateLandingPage/FE
-
- ✓ test/apiUnwrap.test.js (16 tests) 17ms
- ✓ test/authContext.test.jsx (11 tests) 238ms
- ✓ test/loginPage.test.jsx (8 tests) 497ms
-
- Test Files  3 passed (3)
-      Tests  35 passed (35)
-   Start at  19:15:46
-   Duration  8.47s (environment 66%, import 18%, setup 8%, tests 4%, transform 3%, worker 1%)
-```
-
-### 4.2. Frontend Build (`npm run build`)
-```text
-> template-landing-page-fe@1.0.0 build
-> vite build
-
-vite v6.4.3 building for production...
-transforming...
-✓ 1696 modules transformed.
-rendering chunks...
-computing gzip size...
-dist/index.html                     0.51 kB │ gzip:   0.34 kB
-dist/assets/index-CaI28D5N.css     51.34 kB │ gzip:   8.70 kB
-dist/assets/index-BEyhq_ZB.js   1,314.91 kB │ gzip: 292.78 kB
-✓ built in 7.90s
-```
-
-### 4.3. Backend Tests (`dotnet test BE/TemplateLandingPage.sln`)
-```text
-Test run for E:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.UnitTests.dll (.NETCoreApp,Version=v10.0)
-A total of 1 test files matched the specified pattern.
-
-Passed!  - Failed:     0, Passed:   313, Skipped:     0, Total:   313, Duration: 2 s - TemplateLandingPage.UnitTests.dll (net10.0)
-
-Test run for E:\Code\TemplateLandingPage\BE\test\Architecture.Tests\bin\Debug\net10.0\TemplateLandingPage.Architecture.Tests.dll (.NETCoreApp,Version=v10.0)
-A total of 1 test files matched the specified pattern.
-
-Passed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 298 ms - TemplateLandingPage.Architecture.Tests.dll (net10.0)
-```
+| Mã kiểm thử | Đối tượng & Kịch bản kiểm thử | File thực thi | Kết quả |
+| :--- | :--- | :--- | :---: |
+| **EC-01** | **Re-indexing person khi xóa ở giữa**: Xóa `person2` trong danh sách 4 người -> danh sách tự động dồn lại thành `person1`, `person2`, `person3` mới, không bị đứt quãng index hay mất dữ liệu | `customizerDynamic.test.jsx` | **PASS** |
+| **EC-02** | **Chặn xóa khi chỉ còn 1 person**: Nút xóa nhân vật trong Sidebar bị vô hiệu hóa (`disabled`) khi danh sách chỉ còn 1 người; helper `removePersonHelper` bảo vệ giữ tối thiểu 1 người | `customizerDynamic.test.jsx` | **PASS** |
+| **EC-03** | **Cấu hình cũ (Legacy Config Compatibility)**: Config rỗng `{}` hoặc thiếu các trường mới (`accentColor`, `textColor`, `stylePreset`, `extraSections`, `animation`) render an toàn với fallback, không bị crash trắng trang | `customizerDynamic.test.jsx` | **PASS** |
+| **EC-04** | **Cuộn trong preview container**: Component `ScrollReveal` tích hợp fallback timer (500ms), tự động chuyển class `revealed` và kích hoạt CSS animation ngay cả khi observer bị trễ trong khung preview | `customizerDynamic.test.jsx` | **PASS** |
+| **EC-05** | **Khối mở rộng bị tắt (`enabled: false`)**: Ẩn hoàn toàn khỏi giao diện Landing Page khi người dùng toggle tắt | `customizerDynamic.test.jsx` | **PASS** |
+| **EC-06** | **Tự động sao lưu và khôi phục LocalStorage**: Khi khách vãng lai tùy biến, bản nháp được sao lưu vào `guest_draft_{templateId}` và khôi phục đầy đủ config khi mở lại | `customizerGuestFlow.test.jsx` | **PASS** |
 
 ---
 
-## 5. Kết luận
-Toàn bộ mã nguồn mới cập nhật đã được thẩm định chặt chẽ, đạt chất lượng cao:
-- Triệt tiêu hoàn toàn lỗi crash runtime `Cannot read properties of undefined (reading 'role')`.
-- Đảm bảo các luồng xác thực Admin/User hoạt động trơn tru từ frontend API unwrapping đến lưu trữ và điều hướng.
-- Hệ thống phòng thủ bảo vệ localStorage khỏi chuỗi rác đã được chứng minh hiệu quả qua các bài test tự động.
-- Không có bất kỳ hồi quy (regression) nào trên toàn bộ Backend và Frontend.
-- Sẵn sàng bàn giao cho Chặng 4: Reviewer kiểm tra cuối cùng.
+### NHÓM 3: TRƯỜNG HỢP THẤT BẠI & KIỂM SOÁT QUYỀN (FAILURE PATHS)
+
+| Mã kiểm thử | Đối tượng & Kịch bản kiểm thử | File thực thi | Kết quả |
+| :--- | :--- | :--- | :---: |
+| **FP-BE-01** | User B cố tình gửi `PUT` sửa thiệp thuộc sở hữu của User A -> Bị từ chối với mã lỗi `CustomizationErrors.Unauthorized` (HTTP 403 Forbidden) | `UpdateCustomizationCommandHandlerTests.cs` | **PASS** |
+| **FP-BE-02** | Guest cố tình gửi `PUT` sửa thiệp thuộc sở hữu của một User đã đăng ký -> Bị từ chối với mã lỗi `CustomizationErrors.Unauthorized` | `UpdateCustomizationCommandHandlerTests.cs` | **PASS** |
+| **FP-BE-03** | Cập nhật thiệp với Slug đã tồn tại ở bản ghi khác -> Trả về lỗi `CustomizationErrors.DuplicateSlug` | `UpdateCustomizationCommandHandlerTests.cs` | **PASS** |
+| **FP-BE-04** | Tạo mới thiệp với Slug đã có trong hệ thống -> Trả về lỗi `CustomizationErrors.DuplicateSlug` | `CreateCustomizationCommandHandlerTests.cs` | **PASS** |
+| **FP-BE-05** | Cập nhật thiệp với Guid không tồn tại -> Trả về lỗi `CustomizationErrors.NotFound` | `UpdateCustomizationCommandHandlerTests.cs` | **PASS** |
+| **FP-BE-06** | Tạo mới thiệp với TemplateId không tồn tại -> Trả về lỗi `TemplateErrors.NotFound` | `CreateCustomizationCommandHandlerTests.cs` | **PASS** |
+| **FP-BE-07** | Validation Command: Kiểm tra dữ liệu rỗng (Id, Title, Slug, ConfigJson) -> FluentValidation bắt lỗi chính xác từng thuộc tính | `UpdateCustomizationCommandValidatorTests.cs`, `CreateCustomizationCommandValidatorTests.cs` | **PASS** |
+| **FP-FE-01** | API lưu thiệp gặp lỗi (mất mạng / lỗi máy chủ) -> Giao diện hiển thị thông báo alert an toàn và bảo toàn bản nháp trên trình duyệt | `customizerGuestFlow.test.jsx` | **PASS** |
+
+---
+
+## 3. DANH SÁCH CHI TIẾT FILE TEST ĐÃ TẠO VÀ MỞ RỘNG
+
+1. `BE/test/UnitTests/Application/Customizations/CreateCustomizationCommandHandlerTests.cs` (MỞ RỘNG):
+   - Bổ sung `Handle_Should_Succeed_WhenGuestCreatesCustomization_WithNullUserId`: Kiểm tra lưu thiệp của khách vãng lai (`UserId == null`).
+   - Bổ sung `Handle_Should_ReturnNotFound_WhenTemplateDoesNotExist`: Kiểm tra bắt lỗi khi templateId không có trong kho mẫu.
+   - Bổ sung `Handle_Should_ReturnDuplicateSlug_WhenSlugAlreadyExists`: Kiểm tra bắt lỗi trùng slug khi tạo mới.
+
+2. `FE/test/customizerDynamic.test.jsx` (MỞ RỘNG):
+   - Mở rộng từ 14 lên 26 tests bao gồm:
+     + Bố cục Dynamic Persons (1, 2, 3, 4 người) với các class CSS responsive tương ứng.
+     + Các khối Extra Sections: Lời cảm ơn, VietQR, Q&A accordion với thao tác click mở/đóng, Custom block.
+     + Kiểm tra cờ `enabled: false` không render.
+     + ScrollReveal fallback timer (500ms) kích hoạt class animation.
+     + Standalone HTML Exporter: kiểm tra HTML chứa đầy đủ DOCTYPE, CSS keyframes, script offline, dynamic persons và extra sections.
+     + CustomizerSidebar: Thao tác thêm/xóa nhân vật (disabled khi còn 1 người) và thêm các extra sections từ sidebar.
+
+3. `FE/test/customizerGuestFlow.test.jsx` (TẠO MỚI):
+   - Bộ 6 unit/integration tests bao quát luồng khách vãng lai:
+     + Truy cập `/customize/:templateId` không cần đăng nhập.
+     + Lưu thiệp mới không cần token đăng nhập và chuyển hướng sang route sửa thiệp.
+     + Cập nhật thiệp đã tạo bằng phương thức PUT.
+     + Xử lý lỗi API và thông báo bản nháp an toàn.
+     + Khôi phục cấu hình từ LocalStorage.
+     + Kích hoạt nút xuất Standalone HTML.
+
+---
+
+## 4. KẾT LUẬN & ĐÁNH GIÁ CHẤT LƯỢNG
+
+1. **Độ tin cậy nghiệp vụ**: Cả 3 nhóm kiểm thử (Đường chạy thuận lợi, Trường hợp biên, Trường hợp thất bại & Kiểm soát quyền) đều được thiết kế chặt chẽ và đạt kết quả kiểm thử **100% XANH**.
+2. **Tính độc lập & Kỷ luật kiến trúc**: Toàn bộ mã nguồn sản phẩm trong `BE/src/` và `FE/src/` được giữ nguyên vẹn. Không có bất kỳ thay đổi nào vi phạm ranh giới Clean Architecture hay cấu trúc dự án.
+3. **Sẵn sàng chuyển giao**: Dây chuyền đủ điều kiện chuyển giao sang chặng **Reviewer** để thẩm định và nghiệm thu cuối cùng.

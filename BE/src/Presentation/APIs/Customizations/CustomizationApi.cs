@@ -102,11 +102,11 @@ public sealed class CustomizationApi : IEndpoint
             var result = await sender.Send(command);
             return HandleResult(result, () => Results.Ok(result));
         })
-        .RequireAuthorization()
         .WithName("UpdateCustomization")
         .Produces<Result>(StatusCodes.Status200OK)
         .Produces<ValidationResult>(StatusCodes.Status400BadRequest)
-        .Produces<Error>(StatusCodes.Status404NotFound);
+        .Produces<Error>(StatusCodes.Status404NotFound)
+        .Produces<Error>(StatusCodes.Status403Forbidden);
 
         group.MapDelete("{id:guid}", async (Guid id, ClaimsPrincipal user, ISender sender) =>
         {
@@ -156,6 +156,16 @@ public sealed class CustomizationApi : IEndpoint
                 Status = StatusCodes.Status404NotFound,
                 Error = result.Error
             });
+        }
+
+        if (result.Error == CustomizationErrors.Unauthorized)
+        {
+            return Results.Json(new
+            {
+                Title = "Forbidden",
+                Status = StatusCodes.Status403Forbidden,
+                Error = result.Error
+            }, statusCode: StatusCodes.Status403Forbidden);
         }
 
         return Results.BadRequest(new

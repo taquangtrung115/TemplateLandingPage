@@ -27,23 +27,11 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
+      {/* Customizer Pages (Public to allow Guest customization) */}
+      <Route path="/customize/:templateId" element={<CustomizerPage />} />
+      <Route path="/customize/:templateId/:customizationId" element={<CustomizerPage />} />
+
       {/* User Protected Pages */}
-      <Route
-        path="/customize/:templateId"
-        element={
-          <ProtectedRoute>
-            <CustomizerPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/customize/:templateId/:customizationId"
-        element={
-          <ProtectedRoute>
-            <CustomizerPage />
-          </ProtectedRoute>
-        }
-      />
       <Route
         path="/my-sites"
         element={

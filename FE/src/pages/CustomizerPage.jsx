@@ -56,21 +56,50 @@ export default function CustomizerPage() {
 
           let initialConfig;
           try {
-            initialConfig = typeof tmpl.defaultConfigJson === 'string'
-              ? JSON.parse(tmpl.defaultConfigJson)
-              : (tmpl.defaultConfigJson || getDefaultConfigByCategory(tmpl.category));
-          } catch {
-            initialConfig = getDefaultConfigByCategory(tmpl.category);
+            const localDraftStr = localStorage.getItem(`guest_draft_${templateId}`);
+            if (localDraftStr) {
+              const localDraft = JSON.parse(localDraftStr);
+              if (localDraft?.config) {
+                initialConfig = localDraft.config;
+                if (localDraft?.metadata) {
+                  setMetadata(localDraft.metadata);
+                }
+              }
+            }
+          } catch {}
+
+          if (!initialConfig) {
+            try {
+              initialConfig = typeof tmpl.defaultConfigJson === 'string'
+                ? JSON.parse(tmpl.defaultConfigJson)
+                : (tmpl.defaultConfigJson || getDefaultConfigByCategory(tmpl.category));
+            } catch {
+              initialConfig = getDefaultConfigByCategory(tmpl.category);
+            }
           }
           setConfig(initialConfig);
-          setMetadata({
-            title: `${tmpl.name} - ${user?.fullName || 'Thiệp Mời'}`,
-            slug: `${tmpl.slug}-${Date.now().toString().slice(-6)}`,
-            isPublished: true,
-          });
+          if (!metadata?.title || metadata.title === 'Thiệp Mời Của Tôi') {
+            setMetadata({
+              title: `${tmpl.name} - ${user?.fullName || 'Thiệp Mời'}`,
+              slug: `${tmpl.slug}-${Date.now().toString().slice(-6)}`,
+              isPublished: true,
+            });
+          }
         }
       } catch (err) {
         console.error('Failed to load customizer data:', err);
+        // Check local storage draft fallback
+        try {
+          const localDraftStr = localStorage.getItem(`guest_draft_${templateId}`);
+          if (localDraftStr) {
+            const localDraft = JSON.parse(localDraftStr);
+            if (localDraft?.config) {
+              setConfig(localDraft.config);
+              if (localDraft?.metadata) setMetadata(localDraft.metadata);
+              return;
+            }
+          }
+        } catch {}
         // Fallback default
         setConfig(getDefaultConfigByCategory('Wedding'));
       } finally {
@@ -83,9 +112,20 @@ export default function CustomizerPage() {
 
   const handleSave = async () => {
     setSaving(true);
+    const targetTemplateId = template?.id || templateId;
+
+    // Backup to local storage draft immediately
+    try {
+      localStorage.setItem(`guest_draft_${targetTemplateId}`, JSON.stringify({
+        metadata,
+        config,
+        savedAt: new Date().toISOString(),
+      }));
+    } catch {}
+
     try {
       const payload = {
-        templateId: template?.id || templateId,
+        templateId: targetTemplateId,
         title: metadata.title,
         slug: metadata.slug,
         configJson: JSON.stringify(config),
@@ -94,7 +134,7 @@ export default function CustomizerPage() {
 
       if (currentCustomizationId) {
         await customizationApi.updateCustomization(currentCustomizationId, payload);
-        alert('Cập nhật thiệp thành công!');
+        alert('Cập nhật thiệp thành công! Bạn có thể xem trước trực tiếp hoặc xuất HTML để lưu trữ.');
       } else {
         const newId = await customizationApi.saveCustomization(payload);
         setCurrentCustomizationId(newId);
@@ -102,7 +142,7 @@ export default function CustomizerPage() {
         navigate(`/customize/${templateId}/${newId}`, { replace: true });
       }
     } catch (err) {
-      alert(err.message || 'Lỗi khi lưu thiệp. Vui lòng kiểm tra lại slug!');
+      alert(err.message || 'Không thể lưu lên máy chủ. Bản nháp đã được tự động lưu an toàn trong trình duyệt của bạn!');
     } finally {
       setSaving(false);
     }

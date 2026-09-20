@@ -1,194 +1,319 @@
-# KẾ HOẠCH TRIỂN KHAI (PLAN)
+# BẢN KẾ HOẠCH TRIỂN KHAI: NÂNG CẤP TRANG CUSTOMIZER VÀ RENDERER
 
-## CÂU HỎI CÒN BỎ NGỎ
-Không có
-
----
-
-## 1. Mục tiêu
-Khắc phục triệt để lỗi JavaScript crash: `Cannot read properties of undefined (reading 'role')` khi người dùng đăng nhập bằng tài khoản Admin (hoặc User) do Frontend nhận cấu trúc `Result<LoginResponse>` từ Backend Minimal API nhưng chưa unwrap thuộc tính `.value`. Đồng thời chuẩn hóa toàn bộ các API client trong `FE/src/api/` và áp dụng defensive programming cho `AuthContext.jsx` và `LoginPage.jsx`.
+## 1. CÂU HỎI CÒN BỎ NGỎ
+Không có.
 
 ---
 
-## 2. Những file cần sửa hoặc tạo mới
-Tất cả các file đều thuộc Frontend (`FE/`):
+## 2. DANH SÁCH FILE CẦN TẠO MỚI HOẶC CẦN SỬA
 
-1. **`FE/src/api/authApi.js`** (Sửa)
-   - Unwrap thuộc tính `.value` cho các hàm: `login`, `register`, `getMe`.
-   - Trả về: `response.data?.value ?? response.data`.
+### A. Backend (.NET Clean Architecture)
+1. `BE/src/Presentation/APIs/Customizations/CustomizationApi.cs` (SỬA)
+   - Bỏ `.RequireAuthorization()` khỏi endpoint `group.MapPut("{id:guid}", ...)` để cho phép khách vãng lai (Guest) cập nhật các customization do chính họ tạo (các bản ghi có `UserId == null`).
+2. `BE/src/Application/UseCases/V1/Customizations/Commands/UpdateCustomizationCommandHandler.cs` (SỬA)
+   - Điều chỉnh logic kiểm tra quyền sở hữu:
+     - Nếu `customization.UserId.HasValue` (thiệp thuộc về User đã đăng ký): Bắt buộc `request.CurrentUserRole == "Admin"` hoặc `(request.CurrentUserId.HasValue && request.CurrentUserId.Value == customization.UserId.Value)`. Nếu không khớp thì trả về `Result.Failure(CustomizationErrors.Unauthorized)`.
+     - Nếu `customization.UserId == null` (thiệp do khách vãng lai Guest tạo): Cho phép cập nhật mà không bắt buộc quyền đăng nhập.
+3. `BE/test/UnitTests/Application/Customizations/UpdateCustomizationCommandHandlerTests.cs` (TẠO MỚI / BỔ SUNG)
+   - Thêm unit tests kiểm tra: Guest cập nhật customization `UserId == null` thành công; Guest hoặc user khác cập nhật customization có `UserId` của người khác bị chặn Unauthorized; Chủ sở hữu hoặc Admin cập nhật thành công.
 
-2. **`FE/src/api/userApi.js`** (Sửa)
-   - Đồng bộ chuẩn hóa unwrap `.value` cho các hàm: `getUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser`.
-   - Trả về: `response.data?.value ?? response.data`.
-
-3. **`FE/src/api/customizationApi.js`** (Sửa)
-   - Đồng bộ chuẩn hóa unwrap `.value` cho các hàm: `saveCustomization`, `updateCustomization`, `getCustomizationById`, `getCustomizationBySlug`, `getMyCustomizations`, `deleteCustomization`.
-   - Trả về: `response.data?.value ?? response.data`.
-
-4. **`FE/src/api/interactionApi.js`** (Sửa)
-   - Đồng bộ chuẩn hóa unwrap `.value` cho các hàm: `submitRsvp`, `getRsvps`, `submitGuestbook`, `getGuestbook`.
-   - Trả về: `response.data?.value ?? response.data`.
-
-5. **`FE/src/contexts/AuthContext.jsx`** (Sửa)
-   - Khởi tạo state an toàn: lọc bỏ các giá trị rác trong `localStorage` (như chuỗi `'undefined'`, `'null'`).
-   - `initAuth` (useEffect): kiểm tra token hợp lệ trước khi gọi `authApi.getMe()`, unwrap phòng vệ `profile?.value ?? profile`, lưu profile hợp lệ vào `localStorage`.
-   - `login`: trích xuất an toàn `{ token, user }` từ `data?.value ?? data`, chỉ lưu `localStorage` khi `token` và `user` tồn tại, trả về `userProfile`.
-   - `register`: sau khi gọi `authApi.register`, nếu kết quả trả về không có token/user (do Backend trả về `Guid`), tự động gọi `login(email, password)` để hoàn tất phiên đăng nhập và trả về `userProfile`.
-
-6. **`FE/src/pages/auth/LoginPage.jsx`** (Sửa)
-   - Sử dụng optional chaining `user?.role === 'Admin'` tại dòng kiểm tra quyền điều hướng.
-   - Fallback an toàn: nếu không phải Admin, điều hướng về `from` (fallback `/`).
-
-*(Lưu ý: Backend `BE` đã có sẵn kiến trúc trả về `Result<T>` chuẩn và 312 unit test đều PASS, không cần sửa đổi backend).*
+### B. Frontend (React 19 + Tailwind CSS + Vite)
+1. `FE/src/routes/index.jsx` (SỬA)
+   - Bỏ component `<ProtectedRoute>` bọc quanh hai tuyến đường:
+     - `/customize/:templateId`
+     - `/customize/:templateId/:customizationId`
+   - Đảm bảo bất kỳ ai (kể cả Guest chưa đăng nhập) đều truy cập được trang Customizer.
+2. `FE/src/utils/animationConstants.js` (TẠO MỚI)
+   - Định nghĩa danh sách các kiểu animation: `none`, `fade-up`, `fade-down`, `fade-left`, `fade-right`, `zoom-in`, `zoom-out`, `flip-up`, `bounce`, `float`, `pulse`.
+   - Định nghĩa mapping class CSS và helper lấy class tương ứng cho từng hiệu ứng.
+3. `FE/src/index.css` (SỬA)
+   - Bổ sung các animation keyframes và CSS utility classes: `.animate-fade-up`, `.animate-fade-down`, `.animate-fade-left`, `.animate-fade-right`, `.animate-zoom-in`, `.animate-zoom-out`, `.animate-flip-up`, `.animate-bounce-subtle`, `.animate-float-slow`, `.animate-pulse-glow`, và trạng thái ban đầu (`.reveal-init`, `.revealed`).
+4. `FE/src/components/common/ScrollReveal.jsx` (TẠO MỚI)
+   - Component bọc animation dựa trên `IntersectionObserver` kích hoạt hiệu ứng khi phần tử cuộn vào khung nhìn (scroll-triggered). Hỗ trợ `animation`, `delay`, `duration`, `threshold`, `className`.
+5. `FE/src/components/customizer/AnimationSelector.jsx` (TẠO MỚI)
+   - Component UI dropdown dùng chung trong sidebar để chọn hiệu ứng animation trực quan cho từng section và từng object.
+6. `FE/src/components/customizer/CustomizerSidebar.jsx` (SỬA)
+   - Mở rộng toàn bộ các trường cấu hình theo schema chuẩn:
+     + `theme`: thêm `accentColor`, `textColor`, `stylePreset`, `defaultAnimation`.
+     + `hero`: thêm `animation`.
+     + `coupleOrCelebrant`: quản lý danh sách Dynamic Persons (`person1`, `person2`, `person3`, ...). Cho phép bấm "+ Thêm nhân vật / Người đại diện", sửa tên, danh xưng, avatar, bio, bố mẹ, và `animation` cho từng person. Cho phép xóa person bất kỳ (giữ tối thiểu 1). Thêm trường `animation` cho section.
+     + `eventDetails`: thêm `mapEmbedUrl` và `animation`.
+     + `timeline`: thêm `animation` cho từng item và section.
+     + `gallery`: thêm `animation` cho từng ảnh và section.
+     + `rsvp`: thêm `allowPlusOnes` (toggle) và `animation`.
+     + `music`: thêm `autoPlay` (toggle).
+     + `wishes`: thêm `animation`.
+     + Tab mới `extraSections`: Quản lý danh sách các section mở rộng (Lời cảm ơn, Quà mừng QR, Q&A, Custom text). Cho phép thêm section, toggle bật/tắt, sửa nội dung, chọn animation, và xóa.
+7. `FE/src/components/templates/LandingPageRenderer.jsx` (SỬA)
+   - Layout dàn trang cực kỳ động theo số lượng nhân vật:
+     + 1 người: Căn giữa sang trọng (`max-w-md mx-auto grid grid-cols-1`).
+     + 2 người: Hai bên cân đối (`max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8`).
+     + 3 người: Ba cột (`max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6`).
+     + 4+ người: Grid linh hoạt responsive (`max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6`).
+   - Tích hợp `ScrollReveal` vào từng object và section (Hero, Person Card, Event Details, Timeline Item, Gallery Image, RSVP, Wishes, Extra Sections).
+   - Render các `extraSections` (Lời cảm ơn, Quà cưới QR với thông tin STK & QR code VietQR, Q&A accordion, Custom block).
+8. `FE/src/pages/CustomizerPage.jsx` (SỬA)
+   - Cập nhật logic lưu dành cho khách vãng lai:
+     + Khi chưa đăng nhập (`!user`), vẫn gọi `customizationApi.saveCustomization` (backend lưu `userId = null`).
+     + Lưu backup vào `localStorage` (`guest_customizations`) để tránh mất dữ liệu khi đóng tab.
+     + Thông báo lưu thành công rõ ràng, hướng dẫn xuất HTML hoặc JSON offline.
+9. `FE/src/utils/defaultTemplates.js` (SỬA)
+   - Bổ sung cấu trúc đầy đủ các trường mới (`accentColor`, `textColor`, `stylePreset`, `defaultAnimation`, `animation` cho từng object, `allowPlusOnes`, `autoPlay`, `extraSections` mẫu) vào `DEFAULT_WEDDING_CONFIG` và `DEFAULT_BIRTHDAY_CONFIG`.
+10. `FE/src/utils/htmlExporter.js` (SỬA)
+    - Cập nhật hàm xuất HTML độc lập:
+      + Render động danh sách persons (1, 2, 3, 4+ người).
+      + Render các `extraSections`.
+      + Nhúng CSS keyframes cho toàn bộ animation engine và đoạn JavaScript `IntersectionObserver` tự động kích hoạt animation khi cuộn trang offline.
+11. `FE/test/customizerDynamic.test.jsx` (TẠO MỚI)
+    - Unit tests cho helper xử lý persons, animation constants, và khả năng render động không bị lỗi runtime.
 
 ---
 
-## 3. Chữ ký hàm & Interface cần có
+## 3. CHỮ KÝ HÀM HOẶC INTERFACE CẦN CÓ
 
-### 3.1. `FE/src/api/authApi.js`
-```javascript
-export const authApi = {
-  login: async (credentials: { email: string, password: string }): Promise<LoginResponse>
-  register: async (userData: { email: string, password: string, fullName: string }): Promise<any>
-  getMe: async (): Promise<UserResponse>
-};
+### A. Backend Interface & Command Handlers
+```csharp
+// BE/src/Contract/Services/V1/Customizations/Command.cs
+public record UpdateCustomizationCommand(
+    Guid Id,
+    string Title,
+    string Slug,
+    string ConfigJson,
+    bool IsPublished,
+    Guid? CurrentUserId,
+    string CurrentUserRole) : ICommand;
+
+// BE/src/Application/UseCases/V1/Customizations/Commands/UpdateCustomizationCommandHandler.cs
+public sealed class UpdateCustomizationCommandHandler : ICommandHandler<UpdateCustomizationCommand>
+{
+    public async Task<Result> Handle(UpdateCustomizationCommand request, CancellationToken cancellationToken);
+}
 ```
-*Chi tiết implement:*
-- `login`: `const response = await axiosInstance.post('/auth/login', credentials); return response.data?.value ?? response.data;`
-- `register`: `const response = await axiosInstance.post('/auth/register', userData); return response.data?.value ?? response.data;`
-- `getMe`: `const response = await axiosInstance.get('/auth/me'); return response.data?.value ?? response.data;`
-
-### 3.2. `FE/src/api/userApi.js`
-```javascript
-export const userApi = {
-  getUsers: async (): Promise<UserResponse[]>
-  getUserById: async (id: string): Promise<UserResponse>
-  createUser: async (userData: object): Promise<string>
-  updateUser: async (id: string, userData: object): Promise<any>
-  deleteUser: async (id: string): Promise<any>
-};
-```
-*Tất cả method đều unwrap:* `return response.data?.value ?? response.data;`
-
-### 3.3. `FE/src/api/customizationApi.js`
-```javascript
-export const customizationApi = {
-  saveCustomization: async (data: object): Promise<string>
-  updateCustomization: async (id: string, data: object): Promise<any>
-  getCustomizationById: async (id: string): Promise<CustomizationResponse>
-  getCustomizationBySlug: async (slug: string): Promise<CustomizationResponse>
-  getMyCustomizations: async (): Promise<CustomizationResponse[]>
-  deleteCustomization: async (id: string): Promise<any>
-};
-```
-*Tất cả method đều unwrap:* `return response.data?.value ?? response.data;`
-
-### 3.4. `FE/src/api/interactionApi.js`
-```javascript
-export const interactionApi = {
-  submitRsvp: async (rsvpData: object): Promise<string>
-  getRsvps: async (customizationId: string): Promise<RsvpResponse[]>
-  submitGuestbook: async (guestbookData: object): Promise<string>
-  getGuestbook: async (customizationId: string): Promise<GuestbookResponse[]>
-};
-```
-*Tất cả method đều unwrap:* `return response.data?.value ?? response.data;`
-
-### 3.5. `FE/src/contexts/AuthContext.jsx`
-```javascript
-// State initializers
-const [user, setUser] = useState(() => {
-  const savedUser = localStorage.getItem('user');
-  if (!savedUser || savedUser === 'undefined' || savedUser === 'null') return null;
-  try { return JSON.parse(savedUser); } catch { return null; }
-});
-const [token, setToken] = useState(() => {
-  const savedToken = localStorage.getItem('token');
-  if (!savedToken || savedToken === 'undefined' || savedToken === 'null') return null;
-  return savedToken;
-});
-
-// login
-const login = useCallback(async (email, password) => {
-  const data = await authApi.login({ email, password });
-  const payload = data?.value ?? data;
-  const jwtToken = payload?.token;
-  const userProfile = payload?.user;
-
-  if (jwtToken) {
-    localStorage.setItem('token', jwtToken);
-    setToken(jwtToken);
-  }
-  if (userProfile) {
-    localStorage.setItem('user', JSON.stringify(userProfile));
-    setUser(userProfile);
-  }
-  return userProfile;
-}, []);
-
-// register
-const register = useCallback(async (email, password, fullName) => {
-  const data = await authApi.register({ email, password, fullName });
-  const payload = data?.value ?? data;
-  if (payload?.token && payload?.user) {
-    localStorage.setItem('token', payload.token);
-    localStorage.setItem('user', JSON.stringify(payload.user));
-    setToken(payload.token);
-    setUser(payload.user);
-    return payload.user;
-  }
-  // Backend RegisterCommand trả về Guid, tự động gọi login để thiết lập phiên đăng nhập
-  return await login(email, password);
-}, [login]);
-```
-
-### 3.6. `FE/src/pages/auth/LoginPage.jsx`
-```javascript
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError(null);
-  setLoading(true);
-
-  try {
-    const user = await login(email, password);
-    if (user?.role === 'Admin') {
-      navigate('/admin', { replace: true });
-    } else {
-      navigate(from, { replace: true });
+**Logic kiểm tra quyền trong Handler:**
+```csharp
+if (request.CurrentUserRole != "Admin")
+{
+    // Nếu thiệp thuộc về một user xác định mà request không phải user đó -> chặn
+    if (customization.UserId.HasValue)
+    {
+        if (!request.CurrentUserId.HasValue || customization.UserId.Value != request.CurrentUserId.Value)
+        {
+            return Result.Failure(CustomizationErrors.Unauthorized);
+        }
     }
-  } catch (err) {
-    setError(err.message || 'Đăng nhập không thành công. Vui lòng kiểm tra email và mật khẩu!');
-  } finally {
-    setLoading(false);
-  }
-};
+    // Nếu customization.UserId == null: Cho phép Guest cập nhật tự do
+}
 ```
 
 ---
 
-## 4. Các trường hợp biên bắt buộc phải xử lý
-1. **Dữ liệu trả về có hoặc không có bọc `value`**:
-   - Xử lý kép: `response.data?.value ?? response.data` đảm bảo tương thích kể cả khi API trả về raw object hoặc Result wrapper.
-2. **`localStorage` bị nhiễm giá trị rác từ lần lỗi trước**:
-   - Nếu `localStorage.getItem('token')` hoặc `'user'` là chuỗi `"undefined"` hoặc `"null"`, phải coi như `null`, xóa bỏ hoặc bỏ qua, không để `JSON.parse` bắn Exception hoặc token rác gửi lên header Bearer.
-3. **`token` hoặc `user` bị null/undefined khi login thất bại hoặc thành công một phần**:
-   - Kiểm tra `if (jwtToken)` và `if (userProfile)` trước khi ghi vào `localStorage` và cập nhật state. Tuyệt đối không ghi `"undefined"` vào `localStorage`.
-4. **`user` null/undefined tại `LoginPage.jsx`**:
-   - Sử dụng optional chaining `user?.role === 'Admin'`. Nếu `user` là undefined/null, biểu thức trả về `false`, ứng dụng chuyển sang nhánh else `navigate(from, { replace: true })` mà không bị crash Runtime error.
-5. **Đăng ký tài khoản mới (`RegisterPage.jsx`)**:
-   - Backend chỉ trả `Guid` (userId), `AuthContext.register` tự động login để người dùng có ngay token và session, sau đó chuyển hướng an toàn tới `/templates`.
-6. **Phiên làm việc khi refresh trang (F5)**:
-   - `useEffect` trong `AuthContext` gọi `authApi.getMe()`. Giá trị trả về được unwrap sạch sẽ thành `UserResponse`, cập nhật đúng `user` state và `localStorage`, giúp `isAdmin` và `ProtectedRoute` hoạt động chính xác.
+### B. Frontend Schema, Constants & Components
+
+#### 1. Cấu trúc JSON Schema hoàn chỉnh
+```typescript
+interface TemplateConfig {
+  theme: {
+    primaryColor: string;
+    secondaryColor: string;
+    accentColor: string;
+    backgroundColor: string;
+    textColor: string;
+    fontFamily: string; // 'Playfair Display' | 'Cinzel' | 'Montserrat' | 'Great Vibes'
+    stylePreset: string; // 'romantic' | 'luxury' | 'minimal' | 'modern'
+    particlesEffect: string; // 'petals' | 'confetti' | 'none'
+    defaultAnimation: string; // 'fade-up' | 'zoom-in' ...
+  };
+  hero: {
+    badge: string;
+    title: string;
+    subtitle: string;
+    eventDate: string;
+    coverImageUrl: string;
+    callToActionText: string;
+    animation: string;
+  };
+  coupleOrCelebrant: {
+    type: 'wedding' | 'birthday' | 'event';
+    // Hỗ trợ dynamic persons: person1, person2, person3... hoặc persons array
+    [key: `person${number}`]: {
+      name: string;
+      title: string;
+      avatarUrl: string;
+      bio: string;
+      parents: string;
+      animation: string;
+    };
+    storyQuote: string;
+    animation: string;
+  };
+  eventDetails: {
+    ceremonyName: string;
+    time: string;
+    venueName: string;
+    address: string;
+    mapEmbedUrl?: string;
+    mapDirectLink?: string;
+    dressCode?: string;
+    animation: string;
+  };
+  timeline: Array<{
+    id: string;
+    time: string;
+    title: string;
+    description: string;
+    icon: string;
+    animation: string;
+  }>;
+  gallery: Array<{
+    id: string;
+    url: string;
+    caption: string;
+    animation: string;
+  }>;
+  rsvp: {
+    enabled: boolean;
+    deadline: string;
+    note: string;
+    allowDietaryNotes: boolean;
+    allowPlusOnes: boolean;
+    animation: string;
+  };
+  music: {
+    enabled: boolean;
+    audioUrl: string;
+    title: string;
+    autoPlay: boolean;
+  };
+  wishes: {
+    enabled: boolean;
+    title: string;
+    subtitle: string;
+    animation: string;
+  };
+  extraSections?: Array<{
+    id: string;
+    type: 'thankYou' | 'giftQr' | 'qa' | 'custom';
+    enabled: boolean;
+    title: string;
+    subtitle?: string;
+    content?: string;
+    imageUrl?: string;
+    qrBank?: {
+      bankName: string;
+      accountNumber: string;
+      accountHolder: string;
+      qrImageUrl?: string;
+    };
+    items?: Array<{ question: string; answer: string }>;
+    animation: string;
+  }>;
+}
+```
+
+#### 2. Animation Constants & Helper (`FE/src/utils/animationConstants.js`)
+```javascript
+export const ANIMATION_OPTIONS = [
+  { value: 'none', label: 'Không hiệu ứng (None)' },
+  { value: 'fade-up', label: 'Mờ dần từ dưới lên (Fade Up)' },
+  { value: 'fade-down', label: 'Mờ dần từ trên xuống (Fade Down)' },
+  { value: 'fade-left', label: 'Mờ dần từ trái sang (Fade Left)' },
+  { value: 'fade-right', label: 'Mờ dần từ phải sang (Fade Right)' },
+  { value: 'zoom-in', label: 'Phóng to xuất hiện (Zoom In)' },
+  { value: 'zoom-out', label: 'Thu nhỏ xuất hiện (Zoom Out)' },
+  { value: 'flip-up', label: 'Lật 3D từ dưới lên (Flip Up)' },
+  { value: 'bounce', label: 'Nảy vui nhộn (Bounce)' },
+  { value: 'float', label: 'Bồng bềnh lơ lửng (Float)' },
+  { value: 'pulse', label: 'Nhịp đập phát sáng (Pulse)' },
+];
+
+export const getAnimationClass = (animationType, isVisible) => { ... };
+```
+
+#### 3. Component `ScrollReveal` (`FE/src/components/common/ScrollReveal.jsx`)
+```javascript
+export const ScrollReveal = ({
+  animation = 'fade-up',
+  delay = 0,
+  duration = 700,
+  className = '',
+  children,
+  style = {},
+}) => { ... };
+```
+
+#### 4. Component `AnimationSelector` (`FE/src/components/customizer/AnimationSelector.jsx`)
+```javascript
+export const AnimationSelector = ({
+  label = 'Hiệu ứng xuất hiện',
+  value = 'fade-up',
+  onChange,
+  className = '',
+}) => { ... };
+```
+
+#### 5. Dynamic Persons Helpers
+```javascript
+// Trích xuất danh sách nhân vật từ coupleOrCelebrant
+export const extractPersonsList = (coupleOrCelebrant = {}) => {
+  // Quét các key có dạng person1, person2, person3... sắp xếp theo index
+  const keys = Object.keys(coupleOrCelebrant)
+    .filter(k => /^person\d+$/.test(k))
+    .sort((a, b) => parseInt(a.replace('person', ''), 10) - parseInt(b.replace('person', ''), 10));
+  
+  if (keys.length === 0) {
+    return [{ key: 'person1', name: 'Nhân vật chính', title: 'Chủ Tiệc', avatarUrl: '', bio: '', parents: '', animation: 'fade-up' }];
+  }
+  return keys.map(key => ({ key, ...coupleOrCelebrant[key] }));
+};
+
+// Thêm nhân vật mới: tự sinh key person tiếp theo (ví dụ: person3, person4...)
+export const addPersonHelper = (currentConfig) => { ... };
+
+// Xóa nhân vật: xóa key chỉ định và re-index các key còn lại (person1, person2...) để giữ tính liên tục
+export const removePersonHelper = (currentConfig, personKey) => { ... };
+```
 
 ---
 
-## 5. Quy ước cần bám theo
-1. **Quy ước unwrap API response**:
-   - File mẫu: `FE/src/api/templateApi.js` (dòng 6, 11, 16, 21, 26, 31) và `FE/src/api/categoryApi.js`.
-   - Cú pháp chuẩn: `response.data?.value ?? response.data`.
-2. **Quy ước Auth Context & Storage**:
-   - File mẫu: `FE/src/contexts/AuthContext.jsx`.
-   - Khóa lưu trữ: `'token'` và `'user'`.
-   - Đảm bảo tính nhất quán của các hook tiêu thụ: `useAuth` (`user`, `token`, `isAuthenticated`, `isAdmin`, `loading`, `login`, `register`, `logout`).
-3. **Quy tắc thực thi dành cho Coder**:
-   - Tuân thủ nghiêm ngặt `PromtAI/.gemini/agents/coder.md`: Không sửa code ngoài phạm vi kế hoạch, chỉ chỉnh sửa đúng 6 file được chỉ định, kiểm tra build FE (`npm run build`) và unit test BE sau khi hoàn thành.
+## 4. CÁC TRƯỜNG HỢP BIÊN BẮT BUỘC PHẢI XỬ LÝ (EDGE CASES)
+
+1. **Số lượng nhân vật tối thiểu**:
+   - Khi chỉ còn duy nhất 1 person (`person1`), nút Xóa nhân vật phải bị vô hiệu hóa (`disabled`) để đảm bảo landing page luôn có ít nhất 1 nhân vật đại diện.
+2. **Re-indexing danh sách person khi xóa giữa chừng**:
+   - Nếu có 4 person (`person1`, `person2`, `person3`, `person4`) và người dùng xóa `person2`, hàm helper phải tự động sắp xếp lại thành `person1`, `person2`, `person3` mới, tránh tình trạng bị khuyết index gây lỗi render hoặc sót dữ liệu.
+3. **Khách vãng lai (Guest) thao tác liên tục mà không có Token**:
+   - Lần 1: Bấm Lưu -> Gửi `POST /api/v1/customizations` với `UserId = null` -> Server trả về Guid mới -> Client chuyển route sang `/customize/:templateId/:newId`.
+   - Lần 2: Sửa tiếp và bấm Lưu -> Gửi `PUT /api/v1/customizations/:newId` -> Nhờ backend bỏ `.RequireAuthorization()` và Handler chấp nhận `customization.UserId == null`, request được thực thi mượt mà không bị lỗi 401.
+   - Trường hợp mất kết nối mạng: Frontend lưu bản nháp vào `localStorage.setItem('guest_draft_' + templateId, ...)` kèm thông báo để khách hàng không bị mất công sức chỉnh sửa.
+4. **Hiệu ứng Scroll Animation bên trong Preview Container**:
+   - Trong Customizer, vùng preview là một container có `overflow-y-auto` (không phải `window` scroll toàn trang). `ScrollReveal` phải sử dụng `IntersectionObserver` linh hoạt với tùy chọn fallback tự động hiển thị sau 300ms nếu observer không kích hoạt trong chế độ preview, đảm bảo trải nghiệm trực quan không bị giật hay mất chữ.
+5. **Dữ liệu cấu hình cũ (Legacy Config Compatibility)**:
+   - Các template hoặc customization cũ chưa có các field mới (`accentColor`, `textColor`, `stylePreset`, `extraSections`, `animation` trong từng item): Tất cả các component đều phải sử dụng toán tử fallback an toàn (`config?.theme?.primaryColor || '#e11d48'`, `item.animation || 'fade-up'`), tuyệt đối không được gây lỗi trắng trang (`undefined reading property`).
+6. **Mã độc XSS khi render Standalone HTML hoặc Q&A Content**:
+   - Khi nhúng config vào file standalone HTML (`exportStandaloneHtml`), toàn bộ JSON phải được escape chuỗi chuẩn (`replace(/</g, '\\u003c')`).
+7. **Trường hợp URL QR Ngân hàng (VietQR)**:
+   - Nếu người dùng nhập thông tin ngân hàng và số tài khoản, hệ thống tự động sinh link ảnh VietQR chuẩn: `https://img.vietqr.io/image/{bankId}-{accountNumber}-compact2.jpg?accountName={accountHolder}&amount=0`. Nếu có ảnh QR tải lên riêng thì ưu tiên dùng ảnh người dùng cung cấp.
+
+---
+
+## 5. QUY ƯỚC CẦN BÁM THEO (KÈM TÊN FILE)
+
+Tất cả các thay đổi phải tuân thủ nghiêm ngặt các quy tắc đã được định nghĩa trong:
+`PromtAI/.gemini/agents/coder.md`
+
+Cụ thể:
+1. **Phần A --- Quy chuẩn Backend (.NET Clean Architecture + CQRS + MediatR)**:
+   - Command và Query định nghĩa trong project Contract (`TemplateLandingPage.Contract/Services/V1/Customizations`).
+   - Handler nằm trong Application (`TemplateLandingPage.Application/UseCases/V1/Customizations/Commands`).
+   - Presentation API dùng Minimal API (`TemplateLandingPage.Presentation/APIs/Customizations/CustomizationApi.cs`).
+   - Luôn trả về `Result` hoặc `Result<T>`, không ném exception cho các lỗi nghiệp vụ hoặc phân quyền.
+2. **Phần B --- Quy chuẩn Frontend (React 19 + Tailwind CSS + Lucide Icons + Vite)**:
+   - Toàn bộ gọi API phải thông qua file trong thư mục `src/api/` (cụ thể `customizationApi.js`), không dùng axios trực tiếp trong component.
+   - Đặt tên file component theo `PascalCase.jsx` (`ScrollReveal.jsx`, `AnimationSelector.jsx`).
+   - Đặt tên file util/helper theo `camelCase.js` (`animationConstants.js`).
+   - Trạng thái loading, saving, error phải được quản lý chặt chẽ để tránh double-submit và treo giao diện.
+   - Tuân thủ palette màu và kiểu dáng thiết kế hiện đại của hệ thống (Tailwind classes, Lucide icons, bo góc tròn 2xl/3xl, backdrop blur).
+3. **Phần C --- Nguyên tắc chung & Build sạch**:
+   - Không để lại code chết (`console.log`, comment cũ không cần thiết).
+   - Frontend chạy sạch `npm run build` và `npm run test`.
+   - Backend `dotnet build` sạch và các unit tests pass 100%.
