@@ -9,3 +9,4 @@ e:\Code\TemplateLandingPage\BE\src\Domain\obj\Debug\net10.0\TemplateLandingPage.
 e:\Code\TemplateLandingPage\BE\src\Domain\obj\Debug\net10.0\refint\TemplateLandingPage.Domain.dll
 e:\Code\TemplateLandingPage\BE\src\Domain\obj\Debug\net10.0\TemplateLandingPage.Domain.pdb
 e:\Code\TemplateLandingPage\BE\src\Domain\obj\Debug\net10.0\ref\TemplateLandingPage.Domain.dll
+E:\Code\TemplateLandingPage\BE\src\Domain\obj\Debug\net10.0\TemplateLandingPage.Domain.sourcelink.json

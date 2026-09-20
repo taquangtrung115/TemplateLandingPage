@@ -136,3 +136,4 @@ e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\Microsoft.Identi
 e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
 e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.Infrastructure.dll
 e:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.Infrastructure.pdb
+E:\Code\TemplateLandingPage\BE\test\UnitTests\obj\Debug\net10.0\TemplateLandingPage.UnitTests.sourcelink.json

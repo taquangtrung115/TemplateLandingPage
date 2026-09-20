@@ -15,3 +15,4 @@ e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\TemplateLanding
 e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\refint\TemplateLandingPage.Application.dll
 e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\TemplateLandingPage.Application.pdb
 e:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\ref\TemplateLandingPage.Application.dll
+E:\Code\TemplateLandingPage\BE\src\Application\obj\Debug\net10.0\TemplateLandingPage.Application.sourcelink.json

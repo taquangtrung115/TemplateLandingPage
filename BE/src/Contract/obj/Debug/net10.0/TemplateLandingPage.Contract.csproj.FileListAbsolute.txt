@@ -10,3 +10,4 @@ e:\Code\TemplateLandingPage\BE\src\Contract\obj\Debug\net10.0\TemplateLandingPag
 e:\Code\TemplateLandingPage\BE\src\Contract\obj\Debug\net10.0\refint\TemplateLandingPage.Contract.dll
 e:\Code\TemplateLandingPage\BE\src\Contract\obj\Debug\net10.0\TemplateLandingPage.Contract.pdb
 e:\Code\TemplateLandingPage\BE\src\Contract\obj\Debug\net10.0\ref\TemplateLandingPage.Contract.dll
+E:\Code\TemplateLandingPage\BE\src\Contract\obj\Debug\net10.0\TemplateLandingPage.Contract.sourcelink.json

@@ -172,3 +172,4 @@ e:\Code\TemplateLandingPage\BE\test\Architecture.Tests\obj\Debug\net10.0\Templat
 e:\Code\TemplateLandingPage\BE\test\Architecture.Tests\obj\Debug\net10.0\TemplateLandingPage.Architecture.Tests.genruntimeconfig.cache
 e:\Code\TemplateLandingPage\BE\test\Architecture.Tests\obj\Debug\net10.0\ref\TemplateLandingPage.Architecture.Tests.dll
 E:\Code\TemplateLandingPage\BE\test\Architecture.Tests\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+E:\Code\TemplateLandingPage\BE\test\Architecture.Tests\obj\Debug\net10.0\TemplateLandingPage.Architecture.Tests.sourcelink.json

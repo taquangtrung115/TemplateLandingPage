@@ -17,3 +17,4 @@ e:\Code\TemplateLandingPage\BE\src\Infrastructure\obj\Debug\net10.0\TemplateLand
 e:\Code\TemplateLandingPage\BE\src\Infrastructure\obj\Debug\net10.0\refint\TemplateLandingPage.Infrastructure.dll
 e:\Code\TemplateLandingPage\BE\src\Infrastructure\obj\Debug\net10.0\TemplateLandingPage.Infrastructure.pdb
 e:\Code\TemplateLandingPage\BE\src\Infrastructure\obj\Debug\net10.0\ref\TemplateLandingPage.Infrastructure.dll
+E:\Code\TemplateLandingPage\BE\src\Infrastructure\obj\Debug\net10.0\TemplateLandingPage.Infrastructure.sourcelink.json

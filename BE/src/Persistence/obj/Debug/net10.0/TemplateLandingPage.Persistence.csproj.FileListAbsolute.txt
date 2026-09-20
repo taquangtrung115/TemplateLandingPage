@@ -19,3 +19,4 @@ e:\Code\TemplateLandingPage\BE\src\Persistence\obj\Debug\net10.0\refint\Template
 e:\Code\TemplateLandingPage\BE\src\Persistence\obj\Debug\net10.0\TemplateLandingPage.Persistence.pdb
 e:\Code\TemplateLandingPage\BE\src\Persistence\obj\Debug\net10.0\TemplateLandingPage.Persistence.genruntimeconfig.cache
 e:\Code\TemplateLandingPage\BE\src\Persistence\obj\Debug\net10.0\ref\TemplateLandingPage.Persistence.dll
+E:\Code\TemplateLandingPage\BE\src\Persistence\obj\Debug\net10.0\TemplateLandingPage.Persistence.sourcelink.json

@@ -92,3 +92,4 @@ e:\Code\TemplateLandingPage\BE\src\API\obj\Debug\net10.0\TemplateLandingPage.API
 e:\Code\TemplateLandingPage\BE\src\API\obj\Debug\net10.0\TemplateLandingPage.API.genruntimeconfig.cache
 e:\Code\TemplateLandingPage\BE\src\API\obj\Debug\net10.0\ref\TemplateLandingPage.API.dll
 E:\Code\TemplateLandingPage\BE\src\API\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+E:\Code\TemplateLandingPage\BE\src\API\obj\Debug\net10.0\TemplateLandingPage.API.sourcelink.json
