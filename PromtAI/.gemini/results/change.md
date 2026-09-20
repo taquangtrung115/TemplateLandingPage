@@ -1,31 +1,94 @@
-# Báo cáo thay đổi (Change Handover) - Chặng 2: Coder
+# BẢN TỔNG KỢT THAY ĐỔI (CHANGE LOG)
 
-## 1. Danh sách file đã thay đổi / tạo mới
-- [`.gitignore`](file:///e:/Code/TemplateLandingPage/.gitignore) (Sửa đổi): Bổ sung quy tắc loại trừ đệ quy cho .NET (`**/bin/`, `**/obj/`, `**/.vs/`) và Frontend build outputs (`**/node_modules/`, `dist/`, `**/dist/`, `dist-ssr/`, `**/dist-ssr/`, `*.local`, `.env.local`, `.env.*.local`).
-- **Git Index Cache**: Gỡ bỏ theo dõi (untracked khỏi index bằng `git rm -r --cached`) toàn bộ 584 file build artifacts trong các thư mục `bin/` và `obj/` thuộc 9 project backend. Giữ nguyên toàn bộ file vật lý trên ổ đĩa.
-- [`PromtAI/.gemini/results/change.md`](file:///e:/Code/TemplateLandingPage/PromtAI/.gemini/results/change.md) (Tạo mới): Báo cáo bàn giao kết quả triển khai của Coder.
+## 1. DANH SÁCH FILE THAY ĐỔI VÀ TẠO MỚI
 
----
-
-## 2. Chi tiết mỗi chỗ sửa để làm gì
-1. **[`.gitignore`](file:///e:/Code/TemplateLandingPage/.gitignore)**:
-   - Thêm `**/bin/`, `**/obj/` vào khối Build results & Binaries để đảm bảo mọi thư mục `bin` và `obj` ở bất kỳ cấp thư mục con nào trong repository đều được tự động bỏ qua.
-   - Thêm `**/.vs/` để bỏ qua các thư mục cache của Visual Studio ở mọi cấp.
-   - Thêm cụm Frontend & Node artifacts: `**/node_modules/`, `dist/`, `**/dist/`, `dist-ssr/`, `**/dist-ssr/`, `*.local`, `.env.local`, `.env.*.local` để ngăn chặn các tệp build và biến môi trường local của Vite/React bị commit nhầm.
-2. **Git Index (`git rm -r --cached`)**:
-   - Gỡ bỏ 584 file `.dll`, `.pdb`, `.cache`, `.json`, build scripts đang bị track từ các commit cũ trong 9 project (`BE/src/API`, `BE/src/Application`, `BE/src/Contract`, `BE/src/Domain`, `BE/src/Infrastructure`, `BE/src/Persistence`, `BE/src/Presentation`, `BE/test/Architecture.Tests`, `BE/test/UnitTests`).
-   - Đưa toàn bộ các file này sang trạng thái `staged for deletion` trong Git index mà không làm mất file build trên máy lập trình viên.
+1. `BE/src/API/appsettings.json` (Sửa)
+2. `BE/src/API/appsettings.Development.json` (Sửa)
+3. `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs` (Sửa)
+4. `BE/src/API/Program.cs` (Sửa)
+5. `BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs` (Tạo mới)
 
 ---
 
-## 3. Vị trí trọng yếu mà Tester nên soi kỹ
-1. **Trạng thái Git status và Git untracked**:
-   - Xác nhận bằng lệnh `git status`:
-     - 584 file `bin/` và `obj/` nằm trong mục `Changes to be committed: deleted: ...`.
-     - File `.gitignore` ở trạng thái staged/modified.
-     - Mục `Untracked files:` hoàn toàn trống, không có bất kỳ file binary hay `dist/` nào bị Git nhận diện lại là untracked.
-2. **Kết quả build và kiểm thử tự động**:
-   - Backend: Lệnh `dotnet test BE/TemplateLandingPage.sln /p:AllowMissingPrunePackageData=true` phải pass toàn bộ 239/239 tests (232 UnitTests + 7 Architecture.Tests).
-   - Frontend: Lệnh `npm run build` trong thư mục `FE/` phải hoàn thành thành công (Exit code 0, tạo `dist/` sạch sẽ).
-3. **Tính toàn vẹn của mã nguồn**:
-   - Không có bất kỳ file mã nguồn logic C# (`*.cs`), cấu hình dự án (`*.csproj`, `*.sln`), hay frontend code (`*.jsx`, `*.js`, `*.json`) nào bị sửa đổi ngoài file `.gitignore`.
+## 2. CHI TIẾT CÁC THAY ĐỔI VÀ MỤC ĐÍCH
+
+### 2.1. `BE/src/API/appsettings.json`
+- **Mục đích**: Cập nhật chuỗi kết nối `ConnectionStrings:DefaultConnection` sang MSSQLLocalDB:
+  ```json
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;"
+  }
+  ```
+- **Ý nghĩa**: Giúp backend kết nối chuẩn xác vào instance LocalDB mặc định trên môi trường Windows (`(localdb)\mssqllocaldb`), bật `MultipleActiveResultSets=true` hỗ trợ các truy vấn đồng thời qua EF Core.
+
+### 2.2. `BE/src/API/appsettings.Development.json`
+- **Mục đích**: Bổ sung override cấu hình `ConnectionStrings:DefaultConnection` với cùng chuỗi kết nối LocalDB:
+  ```json
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;"
+  }
+  ```
+- **Ý nghĩa**: Đảm bảo môi trường Development luôn luôn ưu tiên LocalDB dù chạy độc lập hay ghi đè cấu hình cơ sở.
+
+### 2.3. `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`
+- **Mục đích**: Cấu hình Connection Resilience và Timeout cho SQL Server trong `AddPersistence`:
+  ```csharp
+  options.UseSqlServer(connectionString, sqlOptions =>
+  {
+      sqlOptions.EnableRetryOnFailure(
+          maxRetryCount: 5,
+          maxRetryDelay: TimeSpan.FromSeconds(30),
+          errorNumbersToAdd: null);
+      sqlOptions.CommandTimeout(60);
+  })
+  .AddInterceptors(interceptor);
+  ```
+- **Ý nghĩa**: Tự động thử lại khi gặp lỗi kết nối tạm thời (transient faults) hoặc hiện tượng LocalDB đang khởi động / thức dậy trễ (wake-up delay); tăng thời gian chờ lệnh truy vấn lên 60s; giữ nguyên `AuditableEntityInterceptor`.
+
+### 2.4. `BE/src/API/Program.cs`
+- **Mục đích**: 
+  - Bổ sung `using Microsoft.Data.SqlClient;`.
+  - Phân tách khối `catch (SqlException sqlEx)` trước `catch (Exception ex)` trong quá trình thực thi `DataSeeder.SeedAsync`:
+  ```csharp
+  catch (SqlException sqlEx)
+  {
+      var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+      logger.LogError(sqlEx,
+          "Lỗi kết nối cơ sở dữ liệu SQL Server (Error {Number}): {Message}. " +
+          "Hướng dẫn khắc phục: " +
+          "1. Nếu dùng LocalDB, kiểm tra/khởi động instance: 'sqllocaldb info mssqllocaldb' hoặc 'sqllocaldb start mssqllocaldb'. " +
+          "2. Nếu dùng SQL Server service, kiểm tra service MSSQLSERVER hoặc MSSQL$SQLEXPRESS trong Services. " +
+          "3. Kiểm tra chuỗi kết nối 'DefaultConnection' trong appsettings.json / appsettings.Development.json.",
+          sqlEx.Number,
+          sqlEx.Message);
+  }
+  catch (Exception ex)
+  {
+      var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+      logger.LogError(ex, "Không thể khởi tạo hoặc seed dữ liệu: {Message}", ex.Message);
+  }
+  ```
+- **Ý nghĩa**: Giúp developer và tester chẩn đoán tức thì nguyên nhân kết nối database thất bại (sai connection string, chưa start LocalDB instance, hoặc service SQL tắt) kèm giải pháp từng bước trên Windows.
+
+### 2.5. `BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs`
+- **Mục đích**: Tạo test suite kiểm thử phương thức mở rộng `AddPersistence`:
+  - Kiểm tra `ApplicationDbContext` được đăng ký và khởi tạo thành công qua scope service provider.
+  - Kiểm tra tất cả repository interfaces (`IUnitOfWork`, `IUserRepository`, `ITemplateRepository`, `ICategoryRepository`, `IProductRepository`, `INavigationMenuRepository`, `ICustomizationRepository`, `IRsvpRepository`, `IGuestbookRepository`) được đăng ký dạng Scoped và resolve không bị null.
+- **Ý nghĩa**: Đảm bảo cấu hình Dependency Injection của tầng Persistence luôn toàn vẹn và không thiếu sót repository nào khi ứng dụng khởi chạy.
+
+---
+
+## 3. VỊ TRÍ TRỌNG YẾU TESTER NÊN SOI KỸ
+
+1. **Khối bắt ngoại lệ `SqlException` trong [Program.cs](file:///e:/Code/TemplateLandingPage/BE/src/API/Program.cs#L108-L120)**:
+   - Thử cấu hình `DefaultConnection` sai tên instance (ví dụ: `Server=(localdb)\\not_exist;...`) để kích hoạt ngoại lệ.
+   - Kiểm tra xem log console có xuất hiện thông điệp hướng dẫn rõ ràng kèm mã lỗi `sqlEx.Number` hay không.
+2. **Cấu hình Connection Resilience trong [ServiceCollectionExtensions.cs](file:///e:/Code/TemplateLandingPage/BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs#L22-L30)**:
+   - Kiểm tra xem `EnableRetryOnFailure` và `CommandTimeout(60)` có hoạt động tương thích với `AuditableEntityInterceptor` và các transaction của `IUnitOfWork` hay không.
+3. **Tính nhất quán cấu hình ConnectionStrings**:
+   - Soi kỹ 2 file [appsettings.json](file:///e:/Code/TemplateLandingPage/BE/src/API/appsettings.json#L10-L12) và [appsettings.Development.json](file:///e:/Code/TemplateLandingPage/BE/src/API/appsettings.Development.json#L9-L11), xác nhận chuỗi kết nối LocalDB khớp nhau.
+4. **Kiểm thử toàn bộ hệ thống (Regression Testing)**:
+   - Tất cả 299 Unit Tests trong `TemplateLandingPage.UnitTests.csproj` phải pass 100%.
+   - Tất cả 7 Architecture Tests trong `TemplateLandingPage.Architecture.Tests.csproj` phải pass 100%.
+   - Toàn bộ solution `BE/TemplateLandingPage.sln` build thành công với 0 cảnh báo (warnings) và 0 lỗi (errors).
+   - Frontend `npm run build` trong thư mục `FE` biên dịch thành công 0 lỗi.

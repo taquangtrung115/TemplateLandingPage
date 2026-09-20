@@ -1,129 +1,201 @@
-# Kế hoạch triển khai: Cập nhật .gitignore và loại trừ các file bin, obj đang bị Git theo dõi
+# BẢN KẾ HOẠCH TRIỂN KHAI (PLAN)
 
-## 1. CÂU HỎI CÒN BỎ NGỎ
+## CÂU HỎI CÒN BỎ NGỎ
 Không có.
 
 ---
 
-## 2. Phân tích nguyên nhân gốc rễ (Root Cause Analysis)
-1. **Trạng thái hiện tại của Git Index**:
-   - Hiện tại có **584 file** nằm trong các thư mục `bin/` và `obj/` thuộc 9 project của Backend (`BE/src/API`, `BE/src/Application`, `BE/src/Contract`, `BE/src/Domain`, `BE/src/Infrastructure`, `BE/src/Persistence`, `BE/src/Presentation`, `BE/test/Architecture.Tests`, `BE/test/UnitTests`) đã bị theo dõi (tracked) trong Git index từ các commit trước đó.
-2. **Cơ chế hoạt động của Gitignore**:
-   - `.gitignore` chỉ áp dụng cho các **untracked files** (tập tin chưa từng được add/commit vào git index).
-   - Đối với các file đã được Git theo dõi (`tracked`), Git tiếp tục theo dõi mọi thay đổi nội dung/metadata của chúng kể cả khi mẫu đường dẫn đã khớp với quy tắc trong `.gitignore`.
-3. **Thiếu sót trong cấu hình `.gitignore` gốc**:
-   - File [`.gitignore`](file:///e:/Code/TemplateLandingPage/.gitignore) ở thư mục gốc chưa bao quát đầy đủ các quy tắc đệ quy cho cả .NET (`**/bin/`, `**/obj/`, `**/.vs/`) và các build artifact / env file của Frontend Vite/Node (`dist/`, `**/dist/`, `dist-ssr/`, `.env.local`, `.env.*.local`).
+## 1. DANH SÁCH FILE CẦN THAY ĐỔI VÀ TẠO MỚI
+
+### A. Backend (BE)
+1. `BE/src/API/appsettings.json` (Sửa):
+   - Cập nhật giá trị `ConnectionStrings:DefaultConnection` sang MSSQLLocalDB:
+     `Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;`
+
+2. `BE/src/API/appsettings.Development.json` (Sửa):
+   - Bổ sung cấu hình `ConnectionStrings:DefaultConnection` với cùng chuỗi kết nối MSSQLLocalDB để môi trường Development ưu tiên kết nối trực tiếp đến LocalDB:
+     `Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;`
+
+3. `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs` (Sửa):
+   - Tinh chỉnh `options.UseSqlServer(...)` trong cấu hình `AddDbContext<ApplicationDbContext>`:
+     - Thêm lambda `sqlOptions` cấu hình Connection Resilience thông qua `EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)`.
+     - Cấu hình `CommandTimeout(60)`.
+     - Đảm bảo interceptor `AuditableEntityInterceptor` vẫn được đăng ký đúng chuẩn.
+
+4. `BE/src/API/Program.cs` (Sửa):
+   - Bổ sung `using Microsoft.Data.SqlClient;`.
+   - Trong khối `using (var scope = app.Services.CreateScope())` thực thi `DataSeeder.SeedAsync`, phân tách khối `catch`:
+     - Bắt riêng `SqlException sqlEx`: Ghi `logger.LogError` chi tiết mã lỗi `sqlEx.Number`, thông điệp lỗi và in thông điệp hướng dẫn dev kiểm tra instance LocalDB (`sqllocaldb info mssqllocaldb` / `sqllocaldb start mssqllocaldb`) hoặc Windows service (`MSSQLSERVER` / `MSSQL$SQLEXPRESS`).
+     - Bắt chung `Exception ex`: Ghi `logger.LogError` cho các lỗi khác khi seed dữ liệu.
+
+5. `BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs` (Tạo mới):
+   - Thêm unit test kiểm thử phương thức mở rộng `AddPersistence`:
+     - Kiểm tra `ApplicationDbContext` được đăng ký trong `IServiceCollection` và có thể khởi tạo scope hợp lệ.
+     - Kiểm tra các repository interfaces (`IUserRepository`, `ITemplateRepository`, `IUnitOfWork`,...) được đăng ký dạng `Scoped`.
+
+### B. Frontend (FE)
+- Không cần thay đổi mã nguồn FE (FE giao tiếp qua API proxy/baseURL `http://localhost:54611` sẵn có).
+- Cần chạy kiểm thử build FE: `npm run build` trong thư mục `FE` để đảm bảo không có lỗi biên dịch.
 
 ---
 
-## 3. Danh sách file cần tạo mới hoặc cần sửa
-- [`.gitignore`](file:///e:/Code/TemplateLandingPage/.gitignore) (Sửa đổi): Bổ sung và chuẩn hóa các quy tắc loại trừ cho Backend (.NET) và Frontend (Vite/React).
-- Không có file mã nguồn logic C# (.NET) hay Javascript/React nào cần tạo mới hoặc sửa đổi.
+## 2. CHỮ KÝ HÀM, INTERFACE & CẤU HÌNH CHI TIẾT
 
----
-
-## 4. Chữ ký hàm hoặc interface cần có
-Không có (Tác vụ thuộc phạm vi cấu hình Git repository, dọn dẹp Git cache index và kiểm thử build hệ thống).
-
----
-
-## 5. Quy ước cần bám theo (Coding & Operational Conventions)
-- Bám sát quy chuẩn tại file [`PromtAI/.gemini/agents/coder.md`](file:///e:/Code/TemplateLandingPage/PromtAI/.gemini/agents/coder.md):
-  - **Phần C1 - Nguyên tắc chung bắt buộc**: Build sạch trước khi bàn giao (`dotnet test` pass toàn bộ, `npm run build` không lỗi).
-  - Không xóa hoặc làm ảnh hưởng mã nguồn và file cấu hình ngoài phạm vi yêu cầu.
-  - Sau khi hoàn thành, tạo file kết quả bàn giao tại `PromtAI/.gemini/results/change.md`.
-- Bám sát quy trình tại [`PromtAI/.gemini/agents/planner.md`](file:///e:/Code/TemplateLandingPage/PromtAI/.gemini/agents/planner.md).
-
----
-
-## 6. Các trường hợp biên bắt buộc phải xử lý (Edge Cases)
-1. **Nguy cơ mất file vật lý trên ổ đĩa**:
-   - Bắt buộc phải sử dụng cờ `--cached` trong lệnh `git rm` (tức `git rm -r --cached ...`).
-   - Tuyệt đối không chạy `git rm -r` thông thường vì sẽ xóa sạch các file build binary vật lý của lập trình viên trên ổ cứng.
-2. **Hiện tượng file xuất hiện lại dưới dạng Untracked sau khi xóa cache**:
-   - Nếu `.gitignore` chưa bao quát đúng mẫu pattern trước khi dọn cache, sau khi `git rm --cached`, các file vật lý tồn tại trên đĩa sẽ ngay lập tức bị Git nhận diện thành `Untracked files` trong `git status`.
-   - Do đó, cần đảm bảo `.gitignore` được cập nhật và lưu trước khi thực hiện dọn index hoặc đồng thời được stage cùng lúc.
-3. **Độ bao phủ của tất cả các dự án con trong BE**:
-   - Thư mục `BE/` gồm 9 project con. Phải đảm bảo toàn bộ `bin/` và `obj/` của cả 9 project đều được untrack sạch sẽ:
-     - `BE/src/API`
-     - `BE/src/Application`
-     - `BE/src/Contract`
-     - `BE/src/Domain`
-     - `BE/src/Infrastructure`
-     - `BE/src/Persistence`
-     - `BE/src/Presentation`
-     - `BE/test/Architecture.Tests`
-     - `BE/test/UnitTests`
-4. **Không làm ảnh hưởng môi trường build**:
-   - Sau khi loại bỏ tracking, chạy lại kiểm thử tự động `dotnet test` và `npm run build` để xác nhận việc loại trừ không gây lỗi biên dịch hay thiếu hụt file cần thiết.
-
----
-
-## 7. Các bước triển khai chi tiết cho Coder
-
-### Bước 1: Cập nhật file `.gitignore` tại root
-Chỉnh sửa [`.gitignore`](file:///e:/Code/TemplateLandingPage/.gitignore) ở thư mục gốc:
-- Đảm bảo cụm quy tắc .NET build outputs:
-  ```gitignore
-  # Build results & Binaries
-  [Dd]ebug/
-  [Dd]ebugPublic/
-  [Rr]elease/
-  [Rr]eleases/
-  [Bb]in/
-  [Oo]bj/
-  **/bin/
-  **/obj/
-  [Oo]ut/
-  .vs/
-  **/.vs/
-  *.user
-  *.suo
-  *.userosscache
-  *.sln.docstates
-  ```
-- Bổ sung/chuẩn hóa cụm quy tắc Frontend (Vite / React / Node):
-  ```gitignore
-  # Node & Frontend Build outputs
-  node_modules/
-  **/node_modules/
-  dist/
-  **/dist/
-  dist-ssr/
-  **/dist-ssr/
-  *.local
-  .env.local
-  .env.*.local
-  ```
-
-### Bước 2: Loại bỏ toàn bộ `bin/` và `obj/` đang bị track khỏi Git index
-Thực hiện lệnh gỡ theo dõi nhưng giữ nguyên file vật lý:
-```powershell
-git rm -r --cached BE/src/API/bin BE/src/API/obj BE/src/Application/bin BE/src/Application/obj BE/src/Contract/bin BE/src/Contract/obj BE/src/Domain/bin BE/src/Domain/obj BE/src/Infrastructure/bin BE/src/Infrastructure/obj BE/src/Persistence/bin BE/src/Persistence/obj BE/src/Presentation/bin BE/src/Presentation/obj BE/test/Architecture.Tests/bin BE/test/Architecture.Tests/obj BE/test/UnitTests/bin BE/test/UnitTests/obj
+### 2.1. Cấu hình Connection String
+Đường dẫn: `BE/src/API/appsettings.json` & `BE/src/API/appsettings.Development.json`
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;"
+}
 ```
-*(Hoặc dùng lệnh ngắn gọn: `git rm -r --cached "**/bin" "**/obj"`)*
 
-### Bước 3: Kiểm tra trạng thái Git index
-Chạy:
-```powershell
-git status
+### 2.2. ServiceCollectionExtensions
+Đường dẫn: `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`
+```csharp
+public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
+{
+    services.AddSingleton<AuditableEntityInterceptor>();
+
+    services.AddDbContext<ApplicationDbContext>((sp, options) =>
+    {
+        var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+        options.UseSqlServer(connectionString, sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null);
+            sqlOptions.CommandTimeout(60);
+        })
+        .AddInterceptors(interceptor);
+    });
+
+    services.AddScoped<IUnitOfWork, UnitOfWork>();
+    services.AddScoped<IProductRepository, ProductRepository>();
+    services.AddScoped<IUserRepository, UserRepository>();
+    services.AddScoped<ICategoryRepository, CategoryRepository>();
+    services.AddScoped<INavigationMenuRepository, NavigationMenuRepository>();
+    services.AddScoped<ITemplateRepository, TemplateRepository>();
+    services.AddScoped<ICustomizationRepository, CustomizationRepository>();
+    services.AddScoped<IRsvpRepository, RsvpRepository>();
+    services.AddScoped<IGuestbookRepository, GuestbookRepository>();
+
+    return services;
+}
 ```
-**Tiêu chí nghiệm thu**:
-- 584 file `bin/` và `obj/` chuyển sang danh sách staged: `Changes to be committed: deleted: ...`.
-- File `.gitignore` ở trạng thái modified (hoặc staged).
-- Mục `Untracked files:` **không được chứa** bất kỳ file/thư mục nào thuộc `bin/` hoặc `obj/`.
 
-### Bước 4: Kiểm tra tính toàn vẹn của mã nguồn (Verification)
-1. Chạy unit test backend:
-   ```powershell
-   dotnet test BE/test/UnitTests/TemplateLandingPage.UnitTests.csproj
-   ```
-   Kết quả yêu cầu: Toàn bộ 232 test đều **Passed** (0 Failed).
-2. Chạy build frontend:
-   ```powershell
-   cd FE; npm run build
-   ```
-   Kết quả yêu cầu: `vite build` hoàn tất thành công (Exit code 0).
+### 2.3. Seeder & Diagnostic Error Logging trong Program.cs
+Đường dẫn: `BE/src/API/Program.cs`
+```csharp
+using Microsoft.Data.SqlClient;
 
-### Bước 5: Bàn giao kết quả
-Tạo file `PromtAI/.gemini/results/change.md` tóm tắt chi tiết các nội dung đã thực hiện theo đúng định dạng được quy định trong [`coder.md`](file:///e:/Code/TemplateLandingPage/PromtAI/.gemini/agents/coder.md).
+// Seed initial data in Development
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        await DataSeeder.SeedAsync(dbContext, passwordHasher);
+    }
+    catch (SqlException sqlEx)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(sqlEx,
+            "Lỗi kết nối cơ sở dữ liệu SQL Server (Error {Number}): {Message}. " +
+            "Hướng dẫn khắc phục: " +
+            "1. Nếu dùng LocalDB, kiểm tra/khởi động instance: 'sqllocaldb info mssqllocaldb' hoặc 'sqllocaldb start mssqllocaldb'. " +
+            "2. Nếu dùng SQL Server service, kiểm tra service MSSQLSERVER hoặc MSSQL$SQLEXPRESS trong Services. " +
+            "3. Kiểm tra chuỗi kết nối 'DefaultConnection' trong appsettings.json / appsettings.Development.json.",
+            sqlEx.Number,
+            sqlEx.Message);
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Không thể khởi tạo hoặc seed dữ liệu: {Message}", ex.Message);
+    }
+}
+```
+
+### 2.4. Unit Test cho AddPersistence
+Đường dẫn: `BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs`
+```csharp
+namespace TemplateLandingPage.UnitTests.Persistence;
+
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using TemplateLandingPage.Domain.Abstractions.Repositories;
+using TemplateLandingPage.Domain.Repositories;
+using TemplateLandingPage.Persistence;
+using TemplateLandingPage.Persistence.DependencyInjection.Extensions;
+using Xunit;
+
+public class ServiceCollectionExtensionsTests
+{
+    [Fact]
+    public void AddPersistence_Should_RegisterAllRequiredPersistenceServices()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:DefaultConnection"] = "Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;"
+            })
+            .Build();
+
+        // Act
+        services.AddPersistence(configuration);
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Assert
+        serviceProvider.GetService<ApplicationDbContext>().Should().NotBeNull();
+        serviceProvider.GetService<IUnitOfWork>().Should().NotBeNull();
+        serviceProvider.GetService<IUserRepository>().Should().NotBeNull();
+        serviceProvider.GetService<ITemplateRepository>().Should().NotBeNull();
+        serviceProvider.GetService<ICategoryRepository>().Should().NotBeNull();
+    }
+}
+```
+
+---
+
+## 3. CÁC TRƯỜNG HỢP BIÊN BẮT BUỘC PHẢI XỬ LÝ (EDGE CASES)
+
+1. **LocalDB mới khởi động hoặc đang ở trạng thái ngủ (Cold Start / Wake-up delay)**:
+   - *Rủi ro*: Khi gọi request đầu tiên sau khi máy khởi động hoặc instance LocalDB chưa bật, kết nối có thể timeout hoặc trả lỗi tạm thời (transient connection fault).
+   - *Xử lý*: `EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30))` cho phép EF Core tự động retry với exponential backoff, kết hợp `CommandTimeout(60)`.
+
+2. **Chuỗi kết nối bị null hoặc sai định dạng**:
+   - *Rủi ro*: Khi cấu hình thiếu `DefaultConnection`, `options.UseSqlServer(connectionString)` nhận chuỗi rỗng/null.
+   - *Xử lý*: Đảm bảo cả hai file cấu hình `appsettings.json` và `appsettings.Development.json` đều có `DefaultConnection` hợp lệ.
+
+3. **Tiến trình API cũ đang chạy khóa file PDB/DLL khi build**:
+   - *Rủi ro*: Nếu tiến trình `TemplateLandingPage.API.exe` đang chạy trên cổng 54611, lệnh `dotnet build` hoặc `dotnet test` toàn solution có thể bị lỗi khóa file `MSB3021 / MSB3027`.
+   - *Xử lý*: Coder/Tester cần chạy kiểm thử từng project (`dotnet test test/UnitTests/TemplateLandingPage.UnitTests.csproj` và `dotnet test test/Architecture.Tests/TemplateLandingPage.Architecture.Tests.csproj --no-build`), hoặc tắt process API cũ trước khi build lại API.
+
+4. **Tính Idempotent của DataSeeder**:
+   - *Rủi ro*: Nếu kết nối bị ngắt quãng giữa chừng trong lúc seed và retry lại, dữ liệu có thể bị trùng lặp nếu không kiểm tra chặt chẽ.
+   - *Xử lý*: Giữ nguyên cơ chế `await context.Database.EnsureCreatedAsync()` và `!await context.{Table}.AnyAsync()` trong `DataSeeder.cs`, đảm bảo việc chạy nhiều lần không gây duplicate dữ liệu (đã được bao phủ bởi test `SeedAsync_Should_BeIdempotent_WhenExecutedMultipleTimes`).
+
+5. **Phân biệt rành mạch giữa lỗi kết nối SQL (SqlException) và các lỗi khởi tạo khác**:
+   - *Rủi ro*: Người dùng chỉ thấy lỗi chung chung 500 hoặc log `Could not run DataSeeder` mà không biết vì sao DB không kết nối được.
+   - *Xử lý*: Bắt riêng `SqlException`, trích xuất `sqlEx.Number` (ví dụ error 40, error 2 - cannot find file/server), ghi log mức `LogError` kèm giải pháp khắc phục cụ thể cho môi trường Windows.
+
+---
+
+## 4. QUY ƯỚC CẦN BÁM THEO
+
+Sao chép và tuân thủ chặt chẽ các quy ước từ file:
+**`PromtAI/.gemini/agents/coder.md`**
+- **Phần A: Quy chuẩn Backend (.NET Clean Architecture + CQRS + MediatR)**
+  - Mục A1: Giữ vững ranh giới giữa các layer (Domain, Contract, Application, Persistence, Presentation, API).
+  - Mục A8: Cấu hình Dependency Injection tập trung trong các `DependencyInjection/Extensions`.
+- **Phần C: Nguyên tắc chung & Checklist review**
+  - Mục C1: Không commit credentials/secret nhạy cảm; build sạch trước khi bàn giao (`dotnet test` và `npm run build` không lỗi).
+  - Mục C2: Hoàn thành đầy đủ checklist Backend và Frontend.

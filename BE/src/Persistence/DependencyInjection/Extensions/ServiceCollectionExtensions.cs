@@ -19,8 +19,15 @@ public static class ServiceCollectionExtensions
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            options.UseSqlServer(connectionString)
-                   .AddInterceptors(interceptor);
+            options.UseSqlServer(connectionString, sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null);
+                sqlOptions.CommandTimeout(60);
+            })
+            .AddInterceptors(interceptor);
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
