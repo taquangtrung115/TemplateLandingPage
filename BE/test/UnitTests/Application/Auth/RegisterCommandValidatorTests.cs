@@ -1,7 +1,7 @@
 namespace TemplateLandingPage.UnitTests.Application.Auth;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Auth.Commands;
+using TemplateLandingPage.Application.UseCases.V1.Auth.Validators;
 using TemplateLandingPage.Contract.Services.V1.Auth;
 using Xunit;
 

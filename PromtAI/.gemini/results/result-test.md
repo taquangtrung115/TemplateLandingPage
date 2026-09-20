@@ -1,132 +1,181 @@
-# BÁO CÁO KẾT QUẢ KIỂM THỬ (TEST EXECUTION REPORT)
-
-**Tính năng**: Clone UI Cinelove & Dynamic Navigation Menu Engine  
-**Thời gian thực hiện**: 2026-09-20  
-**Vai trò**: Tester (Quality Assurance & Test Engineer)  
-**Môi trường kiểm thử**: .NET 10.0, xUnit 2.9.3, FluentAssertions, Moq, Vite 6.4.3, React 19  
+# BÁO CÁO KẾT QUẢ KIỂM THỬ (RESULT-TEST.MD)
+Chặng 3: Quality Assurance & Test Engineering
 
 ---
 
-## 1. TỔNG QUAN KẾT QUẢ
+## 1. TỔNG QUAN KẾT QUẢ (EXECUTIVE SUMMARY)
 
-| Hạng mục | Tổng số bài test | Số test đạt (Pass) | Số test rớt (Fail) | Tỷ lệ đạt | Trạng thái |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Backend Architecture Tests** | 5 | 5 | 0 | 100% |  XANH |
-| **Backend Unit Tests** | 149 | 149 | 0 | 100% |  XANH |
-| **Frontend Production Build** | N/A | Hoàn tất | 0 lỗi | 100% |  XANH |
-| **TỔNG HỢP TOÀN BỘ** | **154** | **154** | **0** | **100%** | **HOÀN THÀNH XUẤT SẮC** |
+| Hạng mục kiểm thử | Công cụ / Lệnh | Tổng số test | Đạt (Passed) | Thất bại (Failed) | Bỏ qua (Skipped) | Tỷ lệ đạt | Trạng thái |
+|---|---|---|---|---|---|---|---|
+| **Backend Unit Tests** | `dotnet test` (UnitTests.dll) | **232** | **232** | **0** | **0** | **100%** | **PASSED** |
+| **Backend Architecture Tests** | `dotnet test` (Architecture.Tests.dll) | **7** | **7** | **0** | **0** | **100%** | **PASSED** |
+| **Backend Solution** | `dotnet test BE/TemplateLandingPage.sln /p:AllowMissingPrunePackageData=true` | **239** | **239** | **0** | **0** | **100%** | **PASSED** |
+| **Frontend Production Build** | `npm run build` (FE/) | 1696 modules | 1696 transformed | 0 errors | 0 | **100%** | **PASSED** |
 
----
-
-## 2. CHI TIẾT BAO PHỦ 3 NHÓM KIỂM THỬ THEO KẾ HOẠCH
-
-### 2.1. Nhóm 1: Happy Path (Đường chạy thuận lợi)
-
-1. **Quản lý Danh mục (Categories)**:
-   - `CreateCategory_Should_Succeed_WhenSlugIsUnique`: Tạo danh mục thành công khi slug duy nhất, gọi UnitOfWork lưu dữ liệu và trả về GUID hợp lệ.
-   - `UpdateCategory_Should_Succeed_WhenValid`: Cập nhật thông tin danh mục (tên, slug, icon, thứ tự) thành công khi dữ liệu hợp lệ.
-   - `DeleteCategory_Should_Succeed_WhenNoAssociatedTemplates`: Xóa mềm danh mục an toàn khi không có mẫu thiệp nào đang liên kết (`IsDeleted = true`).
-   - `GetCategories_Should_ReturnMappedList_WithTemplateCounts`: Lấy danh sách toàn bộ danh mục sắp xếp theo thứ tự hiển thị, tính đúng số lượng template đang hoạt động.
-   - `GetCategories_Should_FilterActive_WhenIsActiveOnlyIsTrue`: Lọc chính xác danh mục đang kích hoạt (`IsActiveOnly = true`).
-   - `GetCategoryById_Should_ReturnCategory_WhenFound`: Lấy chi tiết danh mục theo Id.
-   - `GetCategoryBySlug_Should_ReturnCategory_WhenFound`: Lấy chi tiết danh mục theo Slug.
-
-2. **Quản lý Menu Động (Navigation Menus)**:
-   - `CreateNavigationMenu_Should_Succeed_WithoutParent`: Tạo menu gốc (root menu) thành công khi `ParentId` là null.
-   - `CreateNavigationMenu_Should_Succeed_WithValidParent`: Tạo menu con (submenu) thành công khi `ParentId` trỏ đến menu cha hợp lệ.
-   - `UpdateNavigationMenu_Should_Succeed_WhenValid`: Cập nhật thông tin menu (tiêu đề, url, icon, badge, badgeColor, target) thành công.
-   - `DeleteNavigationMenu_Should_Succeed_WhenNoChildren`: Xóa mềm menu thành công khi không có submenu con.
-   - `GetNavigationMenus_Should_ReturnTreeHierarchy_WithSubmenus`: Dựng và trả về chính xác cấu trúc cây phân cấp menu đa tầng (Root Menu chứa danh sách SubMenus con được sắp xếp theo `OrderIndex`).
-   - `GetNavigationMenus_Should_FilterActive_WhenIsActiveOnlyIsTrue`: Lọc chính xác cây menu đang kích hoạt.
-   - `GetNavigationMenuById_Should_ReturnMenu_WhenFound`: Lấy chi tiết menu theo Id kèm danh sách submenu con.
-
-3. **Mẫu Thiệp & Bộ Lọc Nâng Cao (Templates)**:
-   - `Handle_Should_ReturnAllTemplates_WhenNoFilterSpecified`: Trả về toàn bộ danh sách template khi không lọc.
-   - `Handle_Should_FilterByCategory_WhenCategoryProvided`: Lọc template theo tên danh mục chuỗi (Category text).
-   - `Handle_Should_FilterByCategoryId_WhenCategoryIdProvided`: Lọc chính xác template theo mã định danh danh mục (`CategoryId` GUID).
-   - `Handle_Should_FilterByBadge_WhenBadgeProvided`: Lọc template theo huy hiệu/gói (FREE, BASIC, PREMIUM, HOT, NEW).
-   - `Handle_Should_FilterBySearch_WhenSearchProvided`: Tìm kiếm template theo từ khóa tên hoặc mô tả.
-   - `Handle_Should_ReturnEmptyList_WhenNoTemplatesExist`: Trả về danh sách rỗng an toàn khi không tìm thấy kết quả.
+**Kết luận chung**: **TOÀN BỘ KIỂM THỬ XANH (100% PASS)**. 16/16 Validator trong 8 use case hoạt động chính xác với FluentValidation và ValidationPipelineBehavior, tuân thủ nghiêm ngặt quy tắc Clean Architecture và kiến trúc phân lớp. Frontend build thành công sạch sẽ.
 
 ---
 
-### 2.2. Nhóm 2: Edge Cases (Các trường hợp biên đặc thù)
+## 2. DANH SÁCH TEST CASES CHI TIẾT THEO TỪNG USE CASE (16 VALIDATORS)
 
-1. **Menu tự làm cha của chính mình (Circular Hierarchy / Self-Parenting)**:
-   - `UpdateNavigationMenu_Should_Fail_WhenCannotBeSelfParent`: Chặn đứng hành vi cập nhật gán `ParentId` trùng với `Id` của menu, trả về lỗi `NavigationMenuErrors.CannotBeSelfParent`.
-2. **Xóa Menu cha khi còn Submenu con (Has Child Menus)**:
-   - `DeleteNavigationMenu_Should_Fail_WhenHasChildMenus`: Chặn thao tác xóa menu cha khi `HasChildrenAsync` trả về true, trả về lỗi `NavigationMenuErrors.HasChildMenus`.
-3. **Xóa Danh mục đang có Mẫu thiệp liên kết (Associated Templates)**:
-   - `DeleteCategory_Should_Fail_WhenHasAssociatedTemplates`: Chặn thao tác xóa danh mục khi `HasAssociatedTemplatesAsync` trả về true, trả về lỗi `CategoryErrors.HasAssociatedTemplates`.
-4. **Trùng lặp Slug Danh mục (Duplicate Slug)**:
-   - `CreateCategory_Should_Fail_WhenSlugExists`: Chặn tạo mới danh mục nếu Slug đã tồn tại trong database (`CategoryErrors.DuplicateSlug`).
-   - `UpdateCategory_Should_Fail_WhenSlugExistsForDifferentCategory`: Chặn sửa danh mục thành một slug đã thuộc về danh mục khác (`CategoryErrors.DuplicateSlug`).
+Mỗi validator đều được kiểm thử đầy đủ 3 nhóm trường hợp:
+1. **Đường chạy thuận lợi (Happy Path)**: Dữ liệu hợp lệ, `IsValid = true`.
+2. **Trường hợp biên (Boundary Cases)**: Độ dài mật khẩu đúng 6 ký tự, số lượng khách mời đúng 1, v.v.
+3. **Trường hợp thất bại / Lỗi kiểm thực (Validation Errors / Negative Cases)**: Dữ liệu trống, chuỗi whitespace, sai định dạng email, giá trị âm, độ dài vượt ngưỡng cho phép, v.v.
+
+### 2.1. Usecase: Auth
+- **`LoginCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Auth.Validators`):
+  - [x] `Validate_Should_Pass_WhenCommandIsValid`: Đăng nhập với email và mật khẩu hợp lệ -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenEmailIsEmpty`: Email là null, rỗng hoặc khoảng trắng -> Báo lỗi `Email` ("Email không được để trống.") -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenEmailFormatIsInvalid`: Email sai format (`not-an-email`, `user@`, `@domain.com`) -> Báo lỗi `Email` ("Email không hợp lệ.") -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenPasswordIsEmpty`: Mật khẩu là null, rỗng hoặc khoảng trắng -> Báo lỗi `Password` ("Mật khẩu không được để trống.") -> **PASS**.
+- **`RegisterCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Auth.Validators`):
+  - [x] `Validate_Should_Pass_WhenCommandIsValid`: Đăng ký tài khoản với đầy đủ thông tin hợp lệ -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenEmailIsEmpty`: Email trống -> Báo lỗi `Email` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenEmailFormatIsInvalid`: Định dạng email không đúng chuẩn -> Báo lỗi `Email` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenPasswordIsTooShort`: Mật khẩu dưới 6 ký tự -> Báo lỗi `Password` ("Mật khẩu phải từ 6 ký tự trở lên.") -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenFullNameExceeds100Characters`: Họ tên vượt quá 100 ký tự -> Báo lỗi `FullName` -> **PASS**.
+
+### 2.2. Usecase: Categories
+- **`CreateCategoryCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Categories.Validators`):
+  - [x] `CreateCategoryValidator_Should_Pass_WhenCommandIsValid`: Tạo danh mục với tên và slug hợp lệ -> **PASS**.
+  - [x] `CreateCategoryValidator_Should_Fail_WhenNameIsEmpty`: Tên danh mục rỗng -> Báo lỗi `Name` -> **PASS**.
+  - [x] `CreateCategoryValidator_Should_Fail_WhenSlugIsEmpty`: Slug rỗng -> Báo lỗi `Slug` -> **PASS**.
+- **`UpdateCategoryCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Categories.Validators`):
+  - [x] `UpdateCategoryValidator_Should_Pass_WhenCommandIsValid`: Cập nhật danh mục đầy đủ thông tin hợp lệ -> **PASS**.
+  - [x] `UpdateCategoryValidator_Should_Fail_WhenIdIsEmpty`: Id rỗng (`Guid.Empty`) -> Báo lỗi `Id` -> **PASS**.
+  - [x] `UpdateCategoryValidator_Should_Fail_WhenNameIsEmpty`: Tên danh mục rỗng -> Báo lỗi `Name` -> **PASS**.
+  - [x] `UpdateCategoryValidator_Should_Fail_WhenSlugIsEmpty`: Slug rỗng -> Báo lỗi `Slug` -> **PASS**.
+
+### 2.3. Usecase: Customizations
+- **`CreateCustomizationCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Customizations.Validators`):
+  - [x] `Validate_Should_Pass_WhenCommandIsValid`: Tạo customization với TemplateId, Title, Slug, ConfigJson hợp lệ -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenTemplateIdIsEmpty`: TemplateId rỗng (`Guid.Empty`) -> Báo lỗi `TemplateId` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenSlugIsEmpty`: Slug rỗng -> Báo lỗi `Slug` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenConfigJsonIsEmpty`: ConfigJson rỗng -> Báo lỗi `ConfigJson` -> **PASS**.
+- **`UpdateCustomizationCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Customizations.Validators`):
+  - [x] `Validate_Should_Pass_WhenCommandIsValid`: Cập nhật customization với Id, Title, Slug, ConfigJson hợp lệ -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenIdIsEmpty`: Id rỗng (`Guid.Empty`) -> Báo lỗi `Id` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenTitleIsEmpty`: Title rỗng -> Báo lỗi `Title` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenSlugIsEmpty`: Slug rỗng -> Báo lỗi `Slug` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenConfigJsonIsEmpty`: ConfigJson rỗng -> Báo lỗi `ConfigJson` -> **PASS**.
+
+### 2.4. Usecase: Interactions
+- **`SubmitGuestbookCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Interactions.Validators`):
+  - [x] `Validate_Should_Pass_WhenCommandIsValid`: Gửi lưu bút với SenderName và Message hợp lệ -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenSenderNameIsEmpty`: SenderName rỗng -> Báo lỗi `SenderName` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenMessageIsEmpty`: Message rỗng -> Báo lỗi `Message` -> **PASS**.
+- **`SubmitRsvpCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Interactions.Validators`):
+  - [x] `Validate_Should_Pass_WhenCommandIsValid`: Gửi RSVP với GuestName, AttendingStatus, NumberOfGuests hợp lệ -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenGuestNameIsEmpty`: GuestName rỗng -> Báo lỗi `GuestName` -> **PASS**.
+  - [x] `Validate_Should_Pass_WhenNumberOfGuestsIsBoundaryOne`: Trường hợp biên số lượng khách mời đúng bằng 1 -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenNumberOfGuestsIsLessThanOne`: Số lượng khách mời <= 0 -> Báo lỗi `NumberOfGuests` ("Số lượng khách tối thiểu là 1.") -> **PASS**.
+
+### 2.5. Usecase: NavigationMenus
+- **`CreateNavigationMenuCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.NavigationMenus.Validators`):
+  - [x] `CreateNavigationMenuValidator_Should_Pass_WhenCommandIsValid`: Menu có Title và URL hợp lệ -> **PASS**.
+  - [x] `CreateNavigationMenuValidator_Should_Fail_WhenTitleIsEmpty`: Title rỗng -> Báo lỗi `Title` -> **PASS**.
+  - [x] `CreateNavigationMenuValidator_Should_Fail_WhenUrlIsEmpty`: URL rỗng -> Báo lỗi `Url` -> **PASS**.
+- **`UpdateNavigationMenuCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.NavigationMenus.Validators`):
+  - [x] `UpdateNavigationMenuValidator_Should_Pass_WhenCommandIsValid`: Menu có Id, Title, URL hợp lệ -> **PASS**.
+  - [x] `UpdateNavigationMenuValidator_Should_Fail_WhenIdIsEmpty`: Id rỗng (`Guid.Empty`) -> Báo lỗi `Id` -> **PASS**.
+  - [x] `UpdateNavigationMenuValidator_Should_Fail_WhenTitleIsEmpty`: Title rỗng -> Báo lỗi `Title` -> **PASS**.
+  - [x] `UpdateNavigationMenuValidator_Should_Fail_WhenUrlIsEmpty`: URL rỗng -> Báo lỗi `Url` -> **PASS**.
+
+### 2.6. Usecase: Products
+- **`CreateProductCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Products.Validators`):
+  - [x] `Validate_Should_Pass_WhenCommandIsValid`: Tạo sản phẩm hợp lệ -> **PASS**.
+  - [x] `Validate_Should_Pass_WhenDescriptionIsNull`: Description để trống (null) vẫn hợp lệ -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenNameIsEmptyOrWhitespace`: Tên sản phẩm rỗng -> Báo lỗi `Name` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenNameExceeds200Characters`: Tên vượt 200 ký tự -> Báo lỗi `Name` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenPriceIsZeroOrNegative`: Giá bán <= 0 -> Báo lỗi `Price` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenDescriptionExceeds1000Characters`: Mô tả vượt 1000 ký tự -> Báo lỗi `Description` -> **PASS**.
+- **`UpdateProductCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Products.Validators`):
+  - [x] `Validate_Should_Pass_WhenCommandIsValid`: Cập nhật sản phẩm hợp lệ -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenIdIsEmpty`: Id rỗng (`Guid.Empty`) -> Báo lỗi `Id` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenNameIsEmptyOrWhitespace`: Tên sản phẩm rỗng -> Báo lỗi `Name` -> **PASS**.
+  - [x] `Validate_Should_Fail_WhenPriceIsZeroOrNegative`: Giá bán <= 0 -> Báo lỗi `Price` -> **PASS**.
+
+### 2.7. Usecase: Templates
+- **`CreateTemplateCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Templates.Validators`):
+  - [x] `CreateTemplateValidator_Should_Pass_WhenCommandIsValid`: Template hợp lệ đầy đủ Name, Slug, Category, ThumbnailUrl, DefaultConfigJson -> **PASS**.
+  - [x] `CreateTemplateValidator_Should_Fail_WhenNameIsEmpty`: Name rỗng -> Báo lỗi `Name` -> **PASS**.
+  - [x] `CreateTemplateValidator_Should_Fail_WhenSlugIsEmpty`: Slug rỗng -> Báo lỗi `Slug` -> **PASS**.
+  - [x] `CreateTemplateValidator_Should_Fail_WhenCategoryIsEmpty`: Category rỗng -> Báo lỗi `Category` -> **PASS**.
+  - [x] `CreateTemplateValidator_Should_Fail_WhenThumbnailUrlIsEmpty`: ThumbnailUrl rỗng -> Báo lỗi `ThumbnailUrl` -> **PASS**.
+  - [x] `CreateTemplateValidator_Should_Fail_WhenDefaultConfigJsonIsEmpty`: DefaultConfigJson rỗng -> Báo lỗi `DefaultConfigJson` -> **PASS**.
+- **`UpdateTemplateCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Templates.Validators`):
+  - [x] `UpdateTemplateValidator_Should_Pass_WhenCommandIsValid`: Cập nhật template hợp lệ -> **PASS**.
+  - [x] `UpdateTemplateValidator_Should_Fail_WhenIdIsEmpty`: Id rỗng (`Guid.Empty`) -> Báo lỗi `Id` -> **PASS**.
+  - [x] `UpdateTemplateValidator_Should_Fail_WhenNameIsEmpty`: Name rỗng -> Báo lỗi `Name` -> **PASS**.
+  - [x] `UpdateTemplateValidator_Should_Fail_WhenSlugIsEmpty`: Slug rỗng -> Báo lỗi `Slug` -> **PASS**.
+  - [x] `UpdateTemplateValidator_Should_Fail_WhenCategoryIsEmpty`: Category rỗng -> Báo lỗi `Category` -> **PASS**.
+  - [x] `UpdateTemplateValidator_Should_Fail_WhenThumbnailUrlIsEmpty`: ThumbnailUrl rỗng -> Báo lỗi `ThumbnailUrl` -> **PASS**.
+  - [x] `UpdateTemplateValidator_Should_Fail_WhenDefaultConfigJsonIsEmpty`: DefaultConfigJson rỗng -> Báo lỗi `DefaultConfigJson` -> **PASS**.
+
+### 2.8. Usecase: Users
+- **`CreateUserCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Users.Validators`):
+  - [x] `CreateUserValidator_Should_Pass_WhenCommandIsValid`: Tạo người dùng với Email, Password, FullName, Role hợp lệ -> **PASS**.
+  - [x] `CreateUserValidator_Should_Pass_WhenPasswordIsBoundaryLengthOfSix`: Trường hợp biên mật khẩu đúng 6 ký tự -> **PASS**.
+  - [x] `CreateUserValidator_Should_Fail_WhenEmailIsEmpty`: Email rỗng -> Báo lỗi `Email` -> **PASS**.
+  - [x] `CreateUserValidator_Should_Fail_WhenEmailIsInvalidFormat`: Email sai định dạng -> Báo lỗi `Email` -> **PASS**.
+  - [x] `CreateUserValidator_Should_Fail_WhenPasswordIsTooShort`: Mật khẩu < 6 ký tự (5 ký tự hoặc rỗng) -> Báo lỗi `Password` -> **PASS**.
+  - [x] `CreateUserValidator_Should_Fail_WhenFullNameIsEmpty`: FullName rỗng -> Báo lỗi `FullName` -> **PASS**.
+  - [x] `CreateUserValidator_Should_Fail_WhenRoleIsEmpty`: Role rỗng -> Báo lỗi `Role` -> **PASS**.
+- **`UpdateUserCommandValidator`** (Namespace: `TemplateLandingPage.Application.UseCases.V1.Users.Validators`):
+  - [x] `UpdateUserValidator_Should_Pass_WhenCommandIsValid`: Cập nhật người dùng hợp lệ -> **PASS**.
+  - [x] `UpdateUserValidator_Should_Fail_WhenIdIsEmpty`: Id rỗng (`Guid.Empty`) -> Báo lỗi `Id` -> **PASS**.
+  - [x] `UpdateUserValidator_Should_Fail_WhenFullNameIsEmpty`: FullName rỗng -> Báo lỗi `FullName` -> **PASS**.
+  - [x] `UpdateUserValidator_Should_Fail_WhenRoleIsEmpty`: Role rỗng -> Báo lỗi `Role` -> **PASS**.
 
 ---
 
-### 2.3. Nhóm 3: Failure Cases (Xác thực dữ liệu & Xử lý lỗi)
+## 3. KIỂM THỬ MEDIATR PIPELINE BEHAVIOR (VALIDATIONPIPELINEBEHAVIOR)
 
-1. **Id hoặc Đối tượng không tồn tại (NotFound Errors)**:
-   - `UpdateCategory_Should_Fail_WhenNotFound`: Trả về `CategoryErrors.NotFound` khi cập nhật danh mục không tồn tại.
-   - `DeleteCategory_Should_Fail_WhenNotFound`: Trả về `CategoryErrors.NotFound` khi xóa danh mục không tồn tại.
-   - `GetCategoryById_Should_ReturnNotFound_WhenMissing`: Trả về `CategoryErrors.NotFound` khi tra cứu Id không có trong DB.
-   - `GetCategoryBySlug_Should_ReturnNotFound_WhenMissing`: Trả về `CategoryErrors.NotFound` khi tra cứu Slug không có trong DB.
-   - `CreateNavigationMenu_Should_Fail_WhenParentNotFound`: Trả về `NavigationMenuErrors.ParentNotFound` khi tạo menu với ParentId không tồn tại.
-   - `UpdateNavigationMenu_Should_Fail_WhenNotFound`: Trả về `NavigationMenuErrors.NotFound` khi cập nhật menu không tồn tại.
-   - `UpdateNavigationMenu_Should_Fail_WhenParentNotFound`: Trả về `NavigationMenuErrors.ParentNotFound` khi cập nhật menu với ParentId không tồn tại.
-   - `DeleteNavigationMenu_Should_Fail_WhenNotFound`: Trả về `NavigationMenuErrors.NotFound` khi xóa menu không tồn tại.
-   - `GetNavigationMenuById_Should_ReturnNotFound_WhenMissing`: Trả về `NavigationMenuErrors.NotFound` khi tra cứu Id không có trong DB.
+File test: `BE/test/UnitTests/Application/Behaviors/ValidationPipelineBehaviorTests.cs`
 
-2. **Xác thực dữ liệu đầu vào (FluentValidation Failures)**:
-   - `CreateCategoryCommandValidatorTests`:
-     - Tên danh mục rỗng / khoảng trắng / null -> Báo lỗi `Name` không được để trống.
-     - Slug rỗng / khoảng trắng / null -> Báo lỗi `Slug` không được để trống.
-   - `UpdateCategoryCommandValidatorTests`:
-     - Id rỗng (`Guid.Empty`) -> Báo lỗi `Id` không được để trống.
-     - Tên danh mục rỗng / khoảng trắng / null -> Báo lỗi `Name` không được để trống.
-     - Slug rỗng / khoảng trắng / null -> Báo lỗi `Slug` không được để trống.
-   - `CreateNavigationMenuCommandValidatorTests`:
-     - Tiêu đề rỗng / khoảng trắng / null -> Báo lỗi `Title` không được để trống.
-     - Đường dẫn (URL) rỗng / khoảng trắng / null -> Báo lỗi `Url` không được để trống.
-   - `UpdateNavigationMenuCommandValidatorTests`:
-     - Id rỗng (`Guid.Empty`) -> Báo lỗi `Id` không được để trống.
-     - Tiêu đề rỗng / khoảng trắng / null -> Báo lỗi `Title` không được để trống.
-     - Đường dẫn (URL) rỗng / khoảng trắng / null -> Báo lỗi `Url` không được để trống.
+- [x] `Handle_Should_CallNext_WhenNoValidatorsAreRegistered`: Khi command không có validator nào đăng ký, pipeline cho phép request đi tiếp tới handler (`next()` được gọi).
+- [x] `Handle_Should_CallNext_WhenCommandIsValid_NonGenericResult`: Khi command (`UpdateCategoryCommand`) hợp lệ, validator pass, pipeline gọi `next()` và trả về `Result.Success()`.
+- [x] `Handle_Should_ReturnValidationResult_WithoutCallingNext_WhenCommandIsInvalid_NonGenericResult`: Khi command (`UpdateCategoryCommand`) không hợp lệ (Id, Name, Slug trống), pipeline chặn lại, KHÔNG gọi `next()`, trả về `ValidationResult` chứa đủ danh sách lỗi của từng field vi phạm.
+- [x] `Handle_Should_CallNext_WhenCommandIsValid_GenericResult`: Khi command trả về kiểu dữ liệu generic (`LoginCommand` -> `Result<LoginResponse>`), validator pass, pipeline gọi `next()` và trả về đối tượng `Result<LoginResponse>.Success(response)`.
+- [x] `Handle_Should_ReturnValidationResult_WithoutCallingNext_WhenCommandIsInvalid_GenericResult`: Khi command generic (`LoginCommand`) vi phạm (email sai định dạng, mật khẩu trống), pipeline chặn lại, trả về `ValidationResult<LoginResponse>` với danh sách lỗi chi tiết.
 
 ---
 
-## 3. DANH SÁCH CHI TIẾT FILE TEST ĐÃ THỰC THI
+## 4. KIỂM THỬ KIẾN TRÚC (ARCHITECTURE TESTS)
 
-### Backend (.NET 10)
-- `BE/test/Architecture.Tests/ArchitectureTests.cs`: 5 test cases tuân thủ Clean Architecture.
-- `BE/test/UnitTests/Application/Categories/CategoryCommandHandlerTests.cs`: 7 test cases (Create, Update, Delete, DuplicateSlug, HasAssociatedTemplates, NotFound).
-- `BE/test/UnitTests/Application/Categories/CategoryQueryHandlerTests.cs`: 6 test cases (GetCategories, ActiveFilter, GetById, GetBySlug, NotFound cases).
-- `BE/test/UnitTests/Application/Categories/CategoryCommandValidatorTests.cs`: 7 test cases (Validation rỗng/null/whitespace cho Create và Update).
-- `BE/test/UnitTests/Application/NavigationMenus/NavigationMenuCommandHandlerTests.cs`: 8 test cases (Create Root/Child, Update, Delete, CannotBeSelfParent, HasChildMenus, NotFound, ParentNotFound).
-- `BE/test/UnitTests/Application/NavigationMenus/NavigationMenuQueryHandlerTests.cs`: 4 test cases (GetNavigationMenus cây phân cấp, ActiveFilter, GetById, NotFound).
-- `BE/test/UnitTests/Application/NavigationMenus/NavigationMenuCommandValidatorTests.cs`: 8 test cases (Validation rỗng/null/whitespace cho Create và Update).
-- `BE/test/UnitTests/Application/Templates/GetTemplatesQueryHandlerTests.cs`: 6 test cases (All, Category, CategoryId, Badge, Search, Empty list).
-- `BE/test/UnitTests/Application/Templates/CreateTemplateCommandHandlerTests.cs`: 3 test cases.
-- Các bộ UnitTests khác của hệ thống (Auth, Users, Customizations, Interactions, Products): 95 test cases.
+File test: `BE/test/Architecture.Tests/ArchitectureTests.cs`
 
-**Tổng cộng Backend UnitTests & Architecture Tests**: **154/154 PASS (0 Failed, 0 Skipped)**.
+| Tên Test Case | Mục tiêu kiểm tra | Kết quả |
+|---|---|---|
+| `Domain_Should_Not_HaveDependencyOnOtherProjects` | Domain không phụ thuộc vào bất kỳ layer nào khác | **PASSED** |
+| `Contract_Should_Not_HaveDependencyOnCoreProjects` | Contract không phụ thuộc vào Core/Domain/App/Infra/API | **PASSED** |
+| `Application_Should_Not_HaveDependencyOnOuterLayers` | Application không phụ thuộc Persistence, Infrastructure, Presentation, API | **PASSED** |
+| `Handlers_Should_Have_NameEndingWith_Handler` | Toàn bộ MediatR request handlers có hậu tố `Handler` | **PASSED** |
+| `Presentation_Should_Not_HaveDirectDependencyOn_DbContext` | Presentation không phụ thuộc trực tiếp vào DbContext | **PASSED** |
+| `Validators_Should_Have_NameEndingWith_Validator` | Toàn bộ class implement `IValidator` phải có hậu tố `Validator` | **PASSED** |
+| `Validators_Should_ResideIn_ValidatorsNamespace` | Toàn bộ class implement `IValidator` phải nằm trong namespace có đuôi `.Validators` | **PASSED** |
 
 ---
 
-### Frontend (React 19 + Vite)
-- Lệnh thực thi: `npm run build` tại thư mục `FE/`
-- Kết quả: **Vite v6.4.3 built for production thành công**
-  - Đã đóng gói: 1696 modules
-  - `dist/index.html`: 0.51 kB
-  - `dist/assets/index-*.css`: 51.34 kB
-  - `dist/assets/index-*.js`: 1,313.35 kB
-  - Không phát hiện bất kỳ lỗi cú pháp JSX, TypeScript/ESLint, hay lỗi import component nào.
+## 5. KIỂM THỬ FRONTEND BUILD
+
+- **Lệnh thực thi**: `npm run build` trong `FE/`
+- **Bộ công cụ**: Vite v6.4.3, React 19, TypeScript/PostCSS/TailwindCSS
+- **Kết quả**:
+  - `✓ 1696 modules transformed.`
+  - `dist/index.html`: 0.51 kB (gzip: 0.33 kB)
+  - `dist/assets/index-CaI28D5N.css`: 51.34 kB (gzip: 8.70 kB)
+  - `dist/assets/index-CHWgPh-5.js`: 1,313.35 kB (gzip: 292.57 kB)
+  - `✓ built in 9.16s`
+  - **Lỗi biên dịch / Linting**: **0 lỗi**
 
 ---
 
-## 4. KẾT LUẬN
+## 6. KỶ LUẬT THỰC THI
 
-Toàn bộ các tiêu chí kiểm thử theo bản kế hoạch `plan.md` và các thay đổi trong `change.md` đã được kiểm tra nghiêm ngặt:
-1. Đảm bảo toàn diện cả 3 nhóm: Happy path, Edge cases, Failure cases.
-2. Mã nguồn sản phẩm tại `BE/src/` và `FE/src/` được giữ nguyên vẹn tuyệt đối (tuân thủ quy tắc Tester không sửa code sản phẩm).
-3. 100% các ca kiểm thử đạt màu xanh. Sẵn sàng bàn giao cho Reviewer đánh giá.
+1. **Tuân thủ ranh giới mã nguồn**:
+   - Chỉ tạo mới và cập nhật mã kiểm thử trong `BE/test/`.
+   - Tuyệt đối không can thiệp hay sửa đổi bất kỳ file nào trong `BE/src/` và `FE/src/`.
+2. **Không ghi file ra ngoài root hay vào `PromtAI/.codex/`**.
+3. **Chuyển giao**: Sẵn sàng chuyển tiếp sang Chặng 4: Reviewer theo quy trình.

@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.UseCases.V1.NavigationMenus.Commands;
+namespace TemplateLandingPage.Application.UseCases.V1.NavigationMenus.Validators;
 
 using FluentValidation;
 using TemplateLandingPage.Contract.Services.V1.NavigationMenus;

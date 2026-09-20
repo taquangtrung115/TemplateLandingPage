@@ -126,4 +126,47 @@ public class ArchitectureTests
         // Assert
         result.IsSuccessful.Should().BeTrue();
     }
+
+    [Fact]
+    public void Validators_Should_Have_NameEndingWith_Validator()
+    {
+        // Arrange
+        var assembly = typeof(TemplateLandingPage.Application.Abstractions.ICommandHandler<>).Assembly;
+
+        // Act
+        var result = Types.InAssembly(assembly)
+            .That()
+            .AreClasses()
+            .And()
+            .ImplementInterface(typeof(FluentValidation.IValidator))
+            .Should()
+            .HaveNameEndingWith("Validator")
+            .GetResult();
+
+        // Assert
+        var failing = result.FailingTypeNames != null ? string.Join(", ", result.FailingTypeNames) : string.Empty;
+        result.IsSuccessful.Should().BeTrue(because: failing);
+    }
+
+    [Fact]
+    public void Validators_Should_ResideIn_ValidatorsNamespace()
+    {
+        // Arrange
+        var assembly = typeof(TemplateLandingPage.Application.Abstractions.ICommandHandler<>).Assembly;
+
+        // Act
+        var result = Types.InAssembly(assembly)
+            .That()
+            .AreClasses()
+            .And()
+            .ImplementInterface(typeof(FluentValidation.IValidator))
+            .Should()
+            .ResideInNamespaceMatching(@".*\.Validators$")
+            .GetResult();
+
+        // Assert
+        var failing = result.FailingTypeNames != null ? string.Join(", ", result.FailingTypeNames) : string.Empty;
+        result.IsSuccessful.Should().BeTrue(because: failing);
+    }
 }
+

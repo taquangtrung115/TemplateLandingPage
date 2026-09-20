@@ -1,7 +1,7 @@
 namespace TemplateLandingPage.UnitTests.Application.Products;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Products.Commands;
+using TemplateLandingPage.Application.UseCases.V1.Products.Validators;
 using TemplateLandingPage.Contract.Services.V1.Products;
 using Xunit;
 

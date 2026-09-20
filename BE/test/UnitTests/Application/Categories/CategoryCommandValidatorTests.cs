@@ -1,7 +1,7 @@
 namespace TemplateLandingPage.UnitTests.Application.Categories;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Categories.Commands;
+using TemplateLandingPage.Application.UseCases.V1.Categories.Validators;
 using TemplateLandingPage.Contract.Services.V1.Categories;
 using Xunit;
 

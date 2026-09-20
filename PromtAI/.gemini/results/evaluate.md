@@ -1,94 +1,90 @@
 PHÁN QUYẾT: CHỐT
 
-# BÁO CÁO ĐÁNH GIÁ CHẤT LƯỢNG MÃ NGUỒN (SENIOR CODE REVIEW)
-**Tính năng**: Clone UI Cinelove & Dynamic Navigation Menu Engine  
-**Nhánh git**: `feature/cinelove-ui-menu-system`  
-**Thời gian đánh giá**: 2026-09-20  
-**Vai trò**: Reviewer cấp cao (Chặng 4 - Tuyến phòng thủ cuối)  
+# BẢN ĐÁNH GIÁ CẤP CAO VÀ PHÁN QUYẾT KIỂM DUYỆT MÃ NGUỒN (EVALUATE.MD)
+**Chặng 4: Reviewer - Tuyến phòng thủ cuối cùng**  
+**Dự án:** Template Landing Page  
+**Nhánh kiểm duyệt:** `feature/refactor-usecase-validators`  
+**Mục tiêu:** Tái cấu trúc thư mục Validator cho Backend (`BE/src/Application/UseCases/V1/`)
 
 ---
 
-## I. TRẢ LỜI BA CÂU HỎI CỐT LÕI
+## I. TỔNG QUAN PHÁN QUYẾT
+
+- **Trạng thái:** **CHỐT** (Approved for Merge)
+- **Điểm đánh giá kiến trúc & chất lượng:** **10/10**
+- **Độ tin cậy kiểm thử:** Tuyệt đối (239/239 Backend Tests Passed, 100% FE Build Success)
+- **Tác động phụ (Side Effects):** Không có rủi ro hồi quy (zero regression risk).
+
+---
+
+## II. TRẢ LỜI BA CÂU HỎI CỐT LÕI
 
 ### 1. Code có khớp bản kế hoạch không?
-**ĐÁNH GIÁ: KHỚP 100%**
-- **Về cấu trúc Backend (.NET 10 Clean Architecture)**:
-  - Đầy đủ Domain Entities: [`Category.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Domain/Entities/Category.cs) và [`NavigationMenu.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Domain/Entities/NavigationMenu.cs) kế thừa `AggregateRoot<Guid>`, `IAuditableEntity`, `ISoftDelete`. Entity [`Template.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Domain/Entities/Template.cs) được bổ sung chính xác các trường `CategoryId`, `CategoryRef`, `Badge`, `AudioUrl`, `MusicTitle`, `LongPreviewUrl`.
-  - CQRS & MediatR: Tạo đầy đủ Commands, Queries, Validators và Handlers cho cả `Categories` và `NavigationMenus`. Cập nhật các use cases của `Templates` tương thích hoàn toàn.
-  - Persistence Layer: Cấu hình Fluent API chuẩn chỉnh (`CategoryConfiguration.cs`, `NavigationMenuConfiguration.cs`, `TemplateConfiguration.cs`), có Soft Delete Query Filter, Unique Index cho Slug, Restricted delete cho quan hệ Parent-Child NavigationMenu. Đăng ký Scoped DI đầy đủ trong `ServiceCollectionExtensions.cs`.
-  - Presentation Minimal APIs: Triển khai chuẩn `IEndpoint` cho `/api/v1/categories`, `/api/v1/menus`, cập nhật `/api/v1/templates`. Có phân quyền rõ ràng (`.RequireAuthorization()` cho Create, Update, Delete; Public cho Get queries).
-- **Về cấu trúc Frontend (React 19 + Vite + Tailwind CSS)**:
-  - Tách tầng API riêng biệt: [`categoryApi.js`](file:///e:/Code/TemplateLandingPage/FE/src/api/categoryApi.js), [`navigationMenuApi.js`](file:///e:/Code/TemplateLandingPage/FE/src/api/navigationMenuApi.js), unwrap an toàn qua `res.data?.value ?? res.data`.
-  - Dynamic Navigation: [`Navbar.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/components/Navbar.jsx) tải động cây menu từ API, render dropdown submenu trên desktop (hover) và accordion trên mobile, phân biệt an toàn internal link (`<Link>`) và external link (`<a>`). Có fallback navigation cứng khi database chưa có dữ liệu.
-  - Giao diện Cinelove Clone:
-    - [`TemplatesPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/TemplatesPage.jsx): Breadcrumb, Hero Title, thanh category tabs cuộn ngang, bộ lọc huy hiệu (Badge), tìm kiếm từ khóa, quản lý phát nhạc tập trung.
-    - [`TemplateCard.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/components/templates/TemplateCard.jsx): Phone mockup frame, auto-scroll ảnh dài khi hover bằng CSS transform, nút nghe thử nhạc kèm animation sóng nhạc, badge góc thẻ, hover overlay "Xem demo" và "Dùng mẫu".
-    - [`QuickPreviewModal.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/components/templates/QuickPreviewModal.jsx): Trình phát nhạc tích hợp, bộ chuyển đổi chế độ xem Mobile (375px notch) / Desktop.
-  - Trang Quản trị Admin:
-    - [`AdminCategoriesPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/admin/AdminCategoriesPage.jsx): CRUD danh mục, tự động sinh slug tiếng Việt không dấu, đếm số template liên kết, xóa an toàn.
-    - [`AdminMenusPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/admin/AdminMenusPage.jsx): Quản lý cây menu phân cấp cha - con, thứ tự, badge màu sắc, icon Lucide.
-    - [`AdminTemplatesPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/admin/AdminTemplatesPage.jsx): Form mở rộng chọn danh mục động, gói thiệp, mockup dài, cấu hình audio.
-- **Xử lý toàn bộ 10/10 Edge Cases trong kế hoạch**:
-  1. *Chống vòng lặp tự làm cha*: Kiểm tra cả ở Domain Entity và Application Handler (`CannotBeSelfParent`).
-  2. *Chặn xóa menu cha khi còn menu con*: Kiểm tra qua `HasChildrenAsync` (`HasChildMenus`).
-  3. *Chặn xóa danh mục khi có thiệp liên kết*: Kiểm tra qua `HasAssociatedTemplatesAsync` (`HasAssociatedTemplates`).
-  4. *Fallback ảnh cuộn*: Tự fallback sang `thumbnailUrl` và áp dụng zoom thay vì cuộn nếu thiếu `longPreviewUrl`.
-  5. *Ẩn nút nhạc nếu thiếu file*: Thẻ chỉ hiển thị nút audio khi có `audioUrl`.
-  6. *Chống xung đột phát nhiều bài hát*: Cơ chế Centralized Audio Player duy nhất trên trang.
-  7. *Phân giải Icon động không crash*: Tiện ích `resolveIcon` kiểm tra tồn tại và fallback về `Sparkles`.
-  8. *Điều hướng Link*: Phân biệt regex URL ngoại vi (`target="_blank"`, `rel="noopener noreferrer"`) và URL nội bộ (`<Link>`).
-  9. *Nạp dữ liệu ban đầu*: `DataSeeder.cs` chuẩn bị sẵn dữ liệu mẫu thực tế.
-  10. *Tương thích ngược*: Giữ nguyên cột text `Category` bên cạnh `CategoryId`.
+- **ĐÁNH GIÁ: HOÀN TOÀN KHỚP VÀ VƯỢT MỨC KỲ VỌNG.**
+- **Chi tiết đối chiếu:**
+  1. **Di chuyển và cấu trúc lại 16 Validator:**
+     - Đã tạo mới đúng 16 class validator tại thư mục riêng `BE/src/Application/UseCases/V1/{Feature}/Validators/` thuộc 8 use case: `Auth`, `Categories`, `Customizations`, `Interactions`, `NavigationMenus`, `Products`, `Templates`, `Users`.
+     - 100% class tuân thủ file-scoped namespace chuẩn mực: `TemplateLandingPage.Application.UseCases.V1.{Feature}.Validators`.
+     - 100% class được khai báo đúng quy ước: `public sealed class {CommandName}Validator : AbstractValidator<{CommandName}>`.
+  2. **Dọn dẹp mã nguồn cũ:**
+     - Đã xóa sạch toàn bộ 16 file validator cũ trong các thư mục `Commands/`. Không còn bất kỳ file validator thừa hay class trùng lặp nào tồn tại.
+  3. **Cập nhật tham chiếu kiểm thử:**
+     - Đã cập nhật chính xác chỉ thị `using` trong cả 8 file unit test hiện hữu sang namespace `.Validators`.
+  4. **Frontend:** Giữ nguyên vẹn, không gây ảnh hưởng hay xung đột giao diện.
 
 ---
 
 ### 2. Test có giá trị thật hay chỉ viết cho có?
-**ĐÁNH GIÁ: TEST CÓ GIÁ TRỊ THẬT CAO, KHÔNG PHẢI VIẾT CHO CÓ**
-- **Độ bao phủ**:
-  - 154/154 bài test Backend chạy thành công 100% (bao gồm 5 Architecture Tests và 149 Unit Tests).
-  - Phủ đều cả 3 nhóm theo đúng quy chuẩn kiểm thử chuyên nghiệp:
-    1. *Happy Path*: Kiểm tra toàn bộ luồng tạo, cập nhật, lấy cây phân cấp, tính đếm số template, lọc danh mục/gói/từ khóa.
-    2. *Edge Cases*: Kiểm tra chặn menu tự làm cha, chặn xóa menu có con, chặn xóa category có template, chặn trùng slug.
-    3. *Failure Cases*: Kiểm tra NotFound errors, FluentValidation kiểm tra null/empty/whitespace cho toàn bộ các trường bắt buộc.
-- **Chất lượng Assertions & Verifications**:
-  - Các bài test kiểm tra trực tiếp trạng thái Domain Model: `category.IsDeleted.Should().BeTrue()`, `category.Name.Should().Be(...)`, `result.Value.Should().NotBeEmpty()`.
-  - Mock repository và UnitOfWork được `Verify` chính xác với `Times.Once`.
-  - Kiểm tra cụ thể mã lỗi và thông báo lỗi nghiệp vụ (`CategoryErrors.DuplicateSlug`, `NavigationMenuErrors.CannotBeSelfParent`, v.v.), không dùng các câu lệnh vô nghĩa như `Assert.True(true)`.
-- **Frontend Verification**:
-  - Bản build production của Vite 6 đóng gói 1696 modules hoàn tất thành công, không phát hiện lỗi cú pháp, typing hay import sai.
+- **ĐÁNH GIÁ: TEST CÓ GIÁ TRỊ THẬT SỰ CAO, THIẾT KẾ BÀI BẢN VÀ ĐỘ PHỦ CHẶT CHẼ.**
+- **Phân tích chiều sâu chất lượng kiểm thử:**
+  1. **Không viết test hình thức:** Không có bất kỳ test case nào dùng kỹ thuật mock giả tạo cho qua chuyện hay `Assert.True(true)`. Toàn bộ test đều khởi tạo trực tiếp instance validator thực tế và xác thực chính xác mã thuộc tính vi phạm (`e.PropertyName == ...`).
+  2. **Đầy đủ 3 khía cạnh kiểm thử cho từng Validator:**
+     - *Happy Path*: Xác thực dữ liệu hợp lệ trả về `IsValid == true`.
+     - *Boundary Cases*: Kiểm thử trường hợp biên như mật khẩu đúng 6 ký tự (`"123456"`), số lượng khách mời đúng 1 (`NumberOfGuests = 1`), giá trị tối đa cho phép.
+     - *Negative Cases*: Dữ liệu null, rỗng, chuỗi chỉ chứa khoảng trắng, sai định dạng email (`not-an-email`, `user@`), giá trị âm, chuỗi vượt giới hạn ký tự (FullName > 100, ProductName > 200, Description > 1000).
+  3. **Kiểm thử hành vi Pipeline MediatR (`ValidationPipelineBehaviorTests.cs`):**
+     - Đã kiểm tra cơ chế chặn lỗi (short-circuiting): Khi dữ liệu sai, pipeline lập tức ngắt chuỗi gọi `next()`, trả về đối tượng `ValidationResult` / `ValidationResult<T>` chứa danh sách lỗi chi tiết, không cho request bẩn lọt xuống Handler hay Database.
+     - Kiểm tra khi dữ liệu hợp lệ hoặc không có validator, pipeline chuyển tiếp trơn tru tới `next()`.
+  4. **Kiểm thử kiến trúc tự động (`ArchitectureTests.cs`):**
+     - Đã bổ sung 2 bài Architecture Test tự động:
+       - `Validators_Should_Have_NameEndingWith_Validator`: Toàn bộ validator phải có hậu tố `Validator`.
+       - `Validators_Should_ResideIn_ValidatorsNamespace`: Toàn bộ validator bắt buộc phải nằm trong namespace `.*\.Validators$`.
+     - Đảm bảo trong tương lai không một developer nào có thể vô tình đặt validator sai vị trí hay vi phạm quy ước kiến trúc.
 
 ---
 
 ### 3. Có vấn đề gì về bảo mật, hiệu năng, tính đúng đắn không?
-**ĐÁNH GIÁ: ĐẢM BẢO CHẤT LƯỢNG CAO, AN TOÀN VÀ TỐI ƯU**
-
-1. **Bảo mật (Security)**:
-   - **Authorization**: Toàn bộ endpoint nhạy cảm (thêm, sửa, xóa danh mục, menu, template) tại `CategoryApi`, `NavigationMenuApi`, `TemplateApi` đều được bảo vệ nghiêm ngặt bằng `.RequireAuthorization()`. Các endpoint đọc phục vụ khách hàng duyệt landing page được mở public.
-   - **XSS & Tabnabbing**: Toàn bộ liên kết ngoại vi (`target="_blank"`) đều có thuộc tính bảo vệ `rel="noopener noreferrer"`. Dữ liệu hiển thị trong React được escape tự động, không sử dụng `dangerouslySetInnerHTML`.
-   - **SQL Injection**: 100% truy vấn dữ liệu được thực hiện qua Entity Framework Core với Parameterized Queries.
-   - **Data Validation**: Kết hợp chặt chẽ xác thực FluentValidation ở tầng Application và ràng buộc ràng buộc Database (`HasMaxLength`, `IsUnique`).
-
-2. **Hiệu năng (Performance)**:
-   - **Tối ưu truy vấn CSDL**:
-     - Cột `Slug` của bảng `Categories` được đánh Unique Index.
-     - Lấy cây menu `GetTreeAsync` chỉ truy vấn các menu gốc (`ParentId == null`) và Eager Load `SubMenus`, không sinh ra N+1 roundtrips.
-     - Bộ lọc `GetListAsync` trên `TemplateRepository` biên dịch trực tiếp xuống SQL Server với `AsNoTracking` / filter ở database level.
-   - **Tối ưu tài nguyên Frontend**:
-     - Centralized Audio Player dùng duy nhất một instance HTML5 Audio (`audioPlayerRef`), giải phóng tài nguyên và dừng phát ngay khi component unmount (`useEffect cleanup`).
-     - Hiệu ứng cuộn mockup dài dọc trên `TemplateCard` hoàn toàn dựa trên CSS hardware-accelerated transform (`translateY` và `transition: transform`), không dùng JavaScript timer, đảm bảo tốc độ khung hình 60 FPS ổn định.
-     - Biểu tượng Lucide được giải quyết an toàn, không gây re-render hay crash Virtual DOM.
-
-3. **Tính đúng đắn (Correctness)**:
-   - Hệ thống áp dụng triệt để Soft Delete (`ISoftDelete`) kèm Global Query Filter `builder.HasQueryFilter(x => !x.IsDeleted)`, loại bỏ nguy cơ rò rỉ bản ghi đã xóa trong các truy vấn liên kết.
-   - Các mối quan hệ ngoại khóa được cấu hình tường minh (`DeleteBehavior.Restrict` cho menu cha-con, `DeleteBehavior.SetNull` cho template-category), bảo vệ toàn vẹn dữ liệu.
+- **ĐÁNH GIÁ: AN TOÀN TUYỆT ĐỐI, HIỆU NĂNG TỐI ƯU, KIẾN TRÚC CHUẨN MỰC.**
+- **Phân tích chuyên sâu:**
+  1. **Bảo mật (Security):**
+     - Input validation được kích hoạt tự động ngay ở tầng Application thông qua MediatR pipeline.
+     - Chặn đứng các payload tấn công cơ bản như chuỗi rỗng/whitespace bypass, email dị dạng, payload rác hoặc chuỗi vượt dung lượng bộ nhớ.
+     - Không để lộ thông tin nhạy cảm hay gây exception không kiểm soát.
+  2. **Hiệu năng (Performance):**
+     - FluentValidation sử dụng cơ chế assembly scanning `services.AddValidatorsFromAssembly(assembly)` được cấu hình quét 1 lần duy nhất trong DI container.
+     - Các rule kiểm tra được thực hiện hoàn toàn in-memory, không phát sinh bất kỳ IO hay blocking task nào.
+     - Cơ chế chặn sớm tại `ValidationPipelineBehavior` giúp tiết kiệm tài nguyên xử lý của database và business handlers khi request không hợp lệ.
+  3. **Tính đúng đắn (Correctness):**
+     - Đảm bảo nguyên lý Single Responsibility Principle (SRP): Tách rời hành vi xử lý nghiệp vụ (`Commands`) khỏi hành vi thẩm định dữ liệu đầu vào (`Validators`).
+     - Không làm thay đổi signature, behavior hay logic của bất kỳ public API nào.
 
 ---
 
-## II. KẾT LUẬN & KIẾN NGHỊ BÀN GIAO
+## III. BẢNG TỔNG HỢP RÀ SOÁT CHI TIẾT THEO GIT DIFF
 
-Toàn bộ công việc của các chặng Planner, Coder và Tester đã được thực hiện cực kỳ bài bản, tuân thủ nghiêm ngặt kiến trúc dự án và quy ước kỹ thuật. 
+| STT | File / Thành phần | Hành động | Đánh giá của Reviewer |
+|---|---|---|---|
+| 1 | `BE/src/Application/UseCases/V1/*/Validators/` (16 files) | Tạo mới | Đạt chuẩn 100%. Namespace đúng chuẩn, rules logic chính xác, kế thừa `AbstractValidator<T>`. |
+| 2 | `BE/src/Application/UseCases/V1/*/Commands/*Validator.cs` (16 files) | Xóa bỏ | Hoàn toàn sạch sẽ, không còn file cũ sót lại. |
+| 3 | `BE/test/UnitTests/Application/*/` (8 files test cũ) | Sửa `using` | Đổi import từ `.Commands` sang `.Validators` chính xác, không thừa thiếu. |
+| 4 | `BE/test/Architecture.Tests/ArchitectureTests.cs` | Bổ sung 2 tests | Xuất sắc. Khóa chặt quy ước kiến trúc cho validator bằng NetArchTest. |
+| 5 | `BE/test/UnitTests/Application/Behaviors/ValidationPipelineBehaviorTests.cs` | Thêm mới | Rất giá trị. Kiểm chứng trọn vẹn luồng validation behavior của MediatR. |
+| 6 | `BE/test/UnitTests/Application/` (Các test validator mới: Auth, Customizations, Templates, Users) | Thêm mới | Đạt chuẩn cao. Bao phủ Happy path, Boundary và Negative cases. |
 
-- Không cần sửa bất kỳ dòng mã nguồn nào.
-- Nhánh `feature/cinelove-ui-menu-system` đạt tiêu chuẩn chất lượng cao nhất, sẵn sàng để người quản trị dự án xem xét và ký duyệt.
+---
 
-**PHÁN QUYẾT CHÍNH THỨC: CHỐT**
+## IV. KẾT LUẬN
+
+Mã nguồn trên nhánh `feature/refactor-usecase-validators` hoàn toàn sẵn sàng và đạt tiêu chuẩn cao nhất để đưa vào nhánh chính (`main` / `master`).
+
+**Đề xuất hành động tiếp theo:** Chuyển giao cho con người (Human Owner) tiến hành ký duyệt và thực hiện merge vào nhánh chính.

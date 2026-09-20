@@ -1,7 +1,7 @@
 namespace TemplateLandingPage.UnitTests.Application.Customizations;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Commands;
+using TemplateLandingPage.Application.UseCases.V1.Customizations.Validators;
 using TemplateLandingPage.Contract.Services.V1.Customizations;
 using Xunit;
 
