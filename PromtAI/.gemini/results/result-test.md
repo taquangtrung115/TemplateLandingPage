@@ -1,125 +1,150 @@
-# BÁO CÁO KẾT QUẢ KIỂM THỬ (TEST REPORT)
+# BÁO CÁO KẾT QUẢ KIỂM THỬ (TEST RESULT)
 
-- **Người thực hiện**: Chuyên gia kiểm thử (Quality Assurance & Test Engineer - Chặng 3)
-- **Thời gian thực hiện**: 2026-09-20
-- **Trạng thái tổng thể**: **TẤT CẢ TEST CASES ĐÃ PASS 100% (XANH HẾT - READY FOR REVIEW)**
+## 1. Tổng quan kiểm thử (Test Overview)
 
----
+- **Trạng thái**: ✅ **ALL TESTS PASSED** (100% Xanh, không có lỗi rớt hay hồi quy)
+- **Thời gian thực hiện**: 2026-09-20 19:16:35
+- **Phạm vi kiểm tra**: Toàn bộ các thay đổi sửa đổi API Unwrapping, AuthContext State Management, Defensive Programming trên LoginPage và hồi quy Backend.
 
-## 1. TỔNG QUAN KẾT QUẢ KIỂM THỬ
-
-| Hạng mục kiểm thử | Công cụ / Framework | Số lượng Test Cases | Trạng thái | Ghi chú |
-| :--- | :--- | :---: | :---: | :--- |
-| **Backend Unit Tests** | xUnit, Moq, FluentAssertions | 312 / 312 | **PASS (100%)** | Bao phủ Domain, Application, Infrastructure, Persistence |
-| **Backend Architecture Tests** | NetArchTest.Rules | 7 / 7 | **PASS (100%)** | Clean Architecture rules, dependency directions |
-| **Persistence DI Test Suite** | xUnit, Moq, FluentAssertions | 13 / 13 | **PASS (100%)** | Happy Path, Edge Cases, Failure Paths cho `AddPersistence` |
-| **Frontend Production Build** | Vite v6.4.3, React 19, TypeScript/PostCSS | 1696 modules | **PASS (100%)** | 0 errors, build thành công bundle production |
-
----
-
-## 2. CHI TIẾT KIỂM THỬ CÁC THAY ĐỔI MỚI (CHẶNG 2 -> CHẶNG 3)
-
-### 2.1. File mã nguồn kiểm thử được bổ sung
-File test: [`BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs)
-
-File test đã được mở rộng và cấu trúc thành **3 nhóm kiểm thử trọng yếu** theo đúng kế hoạch:
-
-#### Nhóm 1: Đường chạy thuận lợi (Happy Path)
-1. **`AddPersistence_Should_RegisterAllRequiredPersistenceServices`**:
-   - Xác minh `AddPersistence` đăng ký và resolve thành công đầy đủ `ApplicationDbContext` cùng 9 repository interfaces (`IUnitOfWork`, `IUserRepository`, `ITemplateRepository`, `ICategoryRepository`, `IProductRepository`, `INavigationMenuRepository`, `ICustomizationRepository`, `IRsvpRepository`, `IGuestbookRepository`).
-2. **`AddPersistence_Should_RegisterConcreteRepositoryTypesCorrectly`**:
-   - Xác minh các interface được gắn kết chính xác với các class triển khai tương ứng (`UnitOfWork`, `UserRepository`, `TemplateRepository`, `CategoryRepository`, `ProductRepository`, `NavigationMenuRepository`, `CustomizationRepository`, `RsvpRepository`, `GuestbookRepository`).
-3. **`AddPersistence_Should_ConfigureAuditableEntityInterceptorAsSingleton`**:
-   - Xác minh interceptor `AuditableEntityInterceptor` được đăng ký dạng `Singleton` và giữ nguyên cùng một thể hiện (same instance) giữa các scope dịch vụ khác nhau.
-4. **`AddPersistence_Should_RegisterRepositoriesAndDbContextAsScoped`**:
-   - Xác minh `ApplicationDbContext`, `IUnitOfWork` và các repository tuân thủ đúng vòng đời `Scoped` (trả về các thể hiện khác nhau ở các scope khác nhau, giải phóng đúng lúc).
-5. **`AddPersistence_Should_ConfigureSqlServerProviderForDbContext`**:
-   - Xác minh `ApplicationDbContext` được cấu hình chính xác với Database Provider `"Microsoft.EntityFrameworkCore.SqlServer"`.
-
-#### Nhóm 2: Trường hợp biên (Edge Cases)
-1. **`AddPersistence_WhenConnectionStringHasCustomOptions_ShouldResolveSuccessfully` (Theory - 3 test cases)**:
-   - Case A: Chuỗi kết nối chứa tham số mở rộng cho LocalDB: `Connection Timeout=45;MultipleActiveResultSets=true;Encrypt=False;Application Name=LandingPageTestApp;`.
-   - Case B: Chuỗi kết nối SQL Server độc lập với cổng IP tĩnh và timeout dài: `Server=127.0.0.1,1433;Database=TestDb;User Id=sa;Password=P@ssw0rd123;TrustServerCertificate=True;Command Timeout=120;`.
-   - Case C: Chuỗi kết nối Windows Integrated Security: `Server=localhost;Database=CustomDb;Integrated Security=SSPI;Persist Security Info=False;`.
-   - **Kết quả**: Tất cả các trường hợp đều resolve thành công, connection string được EF Core tiếp nhận trọn vẹn, không xảy ra xung đột với cấu hình `EnableRetryOnFailure(5, 30s)` và `CommandTimeout(60)`.
-2. **`AddPersistence_WhenConfigurationMockSectionHasDifferentValues_ShouldUseConfiguredConnection`**:
-   - Kiểm thử cấu hình động qua mock section với instance tùy biến `(localdb)\\specialInstance`. Xác minh chuỗi kết nối nhận được đúng giá trị đã cung cấp.
-
-#### Nhóm 3: Trường hợp thất bại & Kiểm tra dữ liệu (Failure Paths / Validation Errors)
-1. **`AddPersistence_WhenConfigurationIsNull_ShouldResolveDbContextWithEmptyConnectionString`**:
-   - Kiểm tra hành vi khi `IConfiguration` là `null`: Phương thức mở rộng `ConfigurationExtensions.GetConnectionString` xử lý null-safe, DbContext khởi tạo với connection string rỗng.
-2. **`AddPersistence_WhenConnectionStringsSectionIsMissing_ShouldProduceEmptyConnectionString`**:
-   - Kiểm tra khi file cấu hình thiếu hoàn toàn section `ConnectionStrings` hoặc key `DefaultConnection`: Xác minh `ApplicationDbContext` nhận chuỗi rỗng và không gây crash đột ngột trong pha DI registration.
-3. **`AddPersistence_WhenConnectionStringIsEmptyOrWhitespace_ShouldStoreValueAsConfigured` (Theory - 2 test cases)**:
-   - Kiểm tra chuỗi kết nối là rỗng `""` hoặc chỉ chứa khoảng trắng `"   "`: EF Core tiếp nhận và giữ nguyên giá trị chuỗi rỗng/khoảng trắng.
-4. **`AddPersistence_WhenConnectionStringIsEmpty_OpeningConnectionShouldFail`**:
-   - Xác minh hành vi thực thi: Khi connection string rỗng, mọi nỗ lực mở kết nối cơ sở dữ liệu (`dbContext.Database.OpenConnection()`) lập tức ném ra ngoại lệ `InvalidOperationException` ngăn chặn thao tác không hợp lệ.
+| Thành phần | Công cụ kiểm thử | Số lượng test | Kết quả | Ghi chú |
+|---|---|:---:|:---:|---|
+| **Frontend Unit & Integration Tests** | Vitest 5.0.1 (JSDOM) | **35 / 35** | ✅ PASS | 3 test suites độc lập bao quát đủ 3 nhóm ca kiểm thử |
+| **Frontend Production Build** | Vite v6.4.3 | **1696 modules** | ✅ PASS | Exit code 0, không lỗi bundle, không cảnh báo cú pháp |
+| **Backend Unit Tests** | xUnit + FluentAssertions + Moq | **313 / 313** | ✅ PASS | Đã bổ sung ca kiểm thử `LoginCommand` với vai trò Admin |
+| **Backend Architecture Tests** | NetArchTest (Rules) | **7 / 7** | ✅ PASS | Tuân thủ nghiêm ngặt Clean Architecture |
+| **TỔNG CỘNG** | | **355 / 355** | ✅ PASS | **100% ĐẠT YÊU CẦU** |
 
 ---
 
-## 3. KIỂM THỬ HỒI QUY TOÀN HỆ THỐNG (REGRESSION TESTING)
+## 2. Chi tiết kết quả kiểm định theo 3 nhóm kịch bản
 
-### 3.1. Backend Unit Tests
-- **Lệnh thực thi**: `dotnet test BE/test/UnitTests/TemplateLandingPage.UnitTests.csproj`
-- **Kết quả**:
-  ```text
-  Test run for E:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.UnitTests.dll (.NETCoreApp,Version=v10.0)
-  A total of 1 test files matched the specified pattern.
+### 2.1. Nhóm 1: Đường chạy thuận lợi (Happy Paths)
 
-  Passed!  - Failed:     0, Passed:   312, Skipped:     0, Total:   312, Duration: 2 s
-  ```
-- **Chi tiết**: Toàn bộ 312 tests bao gồm các unit test của Domain, Application CQRS (Commands, Queries, Validators, Behaviors), Infrastructure (JwtTokenGenerator, PasswordHasher), và Persistence (DataSeeder, ServiceCollectionExtensions) đều hoàn thành với kết quả 100% Pass.
+- **Đăng nhập Admin thành công**:
+  - `FE/test/authContext.test.jsx`: Tài khoản Admin (`admin@template.com`) gửi yêu cầu đăng nhập, nhận về `jwtToken` và `userProfile` có `role: 'Admin'`.
+  - Kiểm tra `localStorage`: Key `token` lưu đúng chuỗi JWT hợp lệ, key `user` lưu đúng JSON object của Admin.
+  - Kiểm tra Auth State: `isAuthenticated = true`, `isAdmin = true`.
+  - `FE/test/loginPage.test.jsx`: Kiểm tra điều hướng, `navigate('/admin', { replace: true })` được gọi chính xác khi `user.role === 'Admin'`.
+  - `BE/test/UnitTests/Application/Auth/LoginCommandHandlerTests.cs`: `Handle_Should_ReturnLoginResponse_WithAdminRole_WhenAdminCredentialsAreValid` xác nhận Backend tạo đúng token và trả về profile Admin.
 
-### 3.2. Backend Architecture Tests
-- **Lệnh thực thi**: `dotnet test BE/test/Architecture.Tests/TemplateLandingPage.Architecture.Tests.csproj`
-- **Kết quả**:
-  ```text
-  Test run for E:\Code\TemplateLandingPage\BE\test\Architecture.Tests\bin\Debug\net10.0\TemplateLandingPage.Architecture.Tests.dll (.NETCoreApp,Version=v10.0)
-  A total of 1 test files matched the specified pattern.
+- **Đăng nhập User thông thường**:
+  - `FE/test/authContext.test.jsx`: Tài khoản User (`user@template.com`) đăng nhập, nhận profile với `role: 'User'`.
+  - Kiểm tra Auth State: `isAuthenticated = true`, `isAdmin = false`.
+  - `FE/test/loginPage.test.jsx`: Điều hướng về trang trước đó (`from`) hoặc fallback về `/`.
 
-  Passed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 260 ms
-  ```
-- **Chi tiết**: Đảm bảo toàn bộ quy chuẩn Clean Architecture không bị vi phạm (Domain không phụ thuộc bên ngoài, Application chỉ phụ thuộc Domain & Contract, v.v.).
-
-### 3.3. Toàn bộ Backend Solution
-- **Lệnh thực thi**: `dotnet test BE/TemplateLandingPage.sln`
-- **Kết quả**: **Passed! - Failed: 0, Passed: 319, Skipped: 0, Total: 319** (0 warnings, 0 errors).
-
-### 3.4. Frontend Build
-- **Thư mục**: `FE`
-- **Lệnh thực thi**: `npm run build`
-- **Kết quả**:
-  ```text
-  > vite build
-  vite v6.4.3 building for production...
-  transforming...
-  ✓ 1696 modules transformed.
-  rendering chunks...
-  computing gzip size...
-  dist/index.html                   0.51 kB │ gzip:   0.34 kB
-  dist/assets/index-CaI28D5N.css   51.34 kB │ gzip:   8.70 kB
-  dist/assets/index-DdAfyZjh.js 1,313.45 kB │ gzip: 292.62 kB
-  ✓ built in 8.28s
-  Exit code: 0
-  ```
-- **Chi tiết**: Quá trình biên dịch TypeScript và đóng gói tài nguyên frontend thành công tuyệt đối, không có lỗi runtime/build time syntax.
+- **Đăng xuất (Logout)**:
+  - `FE/test/authContext.test.jsx`: Khi gọi `logout()`, cả `token` và `user` đều bị xóa sạch khỏi `localStorage`, Auth State quay về `isAuthenticated = false`.
 
 ---
 
-## 4. XÁC NHẬN CÁC THAY ĐỔI CẤU HÌNH VÀ DIAGNOSTICS
+### 2.2. Nhóm 2: Trường hợp biên (Edge Cases)
 
-1. **Chuỗi kết nối LocalDB**:
-   - File [`BE/src/API/appsettings.json`](file:///e:/Code/TemplateLandingPage/BE/src/API/appsettings.json#L10-L12) và [`BE/src/API/appsettings.Development.json`](file:///e:/Code/TemplateLandingPage/BE/src/API/appsettings.Development.json#L9-L11) đều đồng nhất sử dụng:
-     `Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;`
-2. **Connection Resilience & Timeout**:
-   - [`BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs#L22-L30) đã cấu hình `EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30))` và `CommandTimeout(60)` tương thích hoàn toàn với EF Core và interceptors.
-3. **Bắt ngoại lệ SqlException trong Program.cs**:
-   - [`BE/src/API/Program.cs`](file:///e:/Code/TemplateLandingPage/BE/src/API/Program.cs#L108-L125) đã phân tách rạch ròi khối `catch (SqlException sqlEx)` ghi log mã lỗi `sqlEx.Number` kèm 3 bước hướng dẫn xử lý LocalDB / SQL Server service trực quan cho nhà phát triển.
+- **LocalStorage bị nhiễm chuỗi rác (`'undefined'` hoặc `'null'`)**:
+  - `FE/test/authContext.test.jsx`:
+    * Cố tình nạp `localStorage.setItem('token', 'undefined')` và `localStorage.setItem('user', 'undefined')`.
+    * State khởi tạo không bắn ra ngoại lệ `SyntaxError: Unexpected token u in JSON at position 0`.
+    * `initAuth` phát hiện token bẩn, tự động dọn dẹp sạch sẽ `localStorage` và đặt state về `null`.
+    * Tương tự với chuỗi `"null"`.
+
+- **Khả năng tương thích Unwrap dữ liệu kép (`Result<T>` vs Raw Object)**:
+  - `FE/test/apiUnwrap.test.js`:
+    * Kiểm thử toàn bộ 16 API endpoints thuộc 4 module: `authApi`, `userApi`, `customizationApi`, `interactionApi`.
+    * Phản hồi dạng Wrapper `Result { isSuccess: true, value: ... }` được bóc tách chính xác lấy `.value`.
+    * Phản hồi dạng Raw Object (không bọc `.value`) được trả về nguyên vẹn qua toán tử `??`.
+    * Các endpoint trả về `Result` rỗng (như `updateUser` void Result) hoạt động an toàn.
+
+- **Đăng ký tài khoản mới tự động kích hoạt phiên làm việc (Auto-Login Session)**:
+  - `FE/test/authContext.test.jsx`: Backend `RegisterCommand` chỉ trả về `Guid` (chưa kèm JWT token).
+  - Hàm `register(email, password, fullName)` tự động nhận biết và kích hoạt `login(email, password)`, thiết lập `token` và `user` trong `localStorage` ngay lập tức, trả về `userProfile` để trang đăng ký chuyển hướng mượt sang `/templates`.
+  - Trường hợp Backend trả về sẵn token & user cũng được xử lý lưu trữ trực tiếp mà không cần gọi lại login.
+
+- **Tải lại trang (F5 Refresh) & Đồng bộ Profile**:
+  - `FE/test/authContext.test.jsx`:
+    * Khi `localStorage` có token hợp lệ, `initAuth` gọi `authApi.getMe()`. Kết quả được unwrap sạch và cập nhật vào React state lẫn `localStorage.setItem('user', ...)`.
+    * Nếu token đã hết hạn hoặc không hợp lệ (`authApi.getMe()` trả về lỗi 401), hệ thống tự động xóa sạch `token` và `user` khỏi `localStorage`, đưa người dùng về trạng thái chưa xác thực một cách an toàn.
 
 ---
 
-## 5. KẾT LUẬN & BÀN GIAO
+### 2.3. Nhóm 3: Trường hợp thất bại & Phòng vệ lỗi (Failure Paths)
 
-- **Kết luận**: Tất cả các yêu cầu kiểm thử của Chặng 3 đã được hoàn thành trọn vẹn và chuẩn xác. Không phát hiện bất kỳ lỗi hồi quy nào trên cả Backend và Frontend.
-- **Tính kỷ luật**: Không có bất kỳ dòng code sản phẩm nào (`BE/src/` hoặc `FE/src/`) bị sửa đổi trong chặng kiểm thử này. Chỉ tạo và cập nhật test suite trong `BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs`.
-- **Trạng thái bàn giao**: **Sẵn sàng chuyển giao sang Chặng 4 (Reviewer)**.
+- **Đăng nhập thất bại / Sai credentials**:
+  - `FE/test/authContext.test.jsx`: Khi `authApi.login` ném lỗi (400 / 401 / Network Error), `login` rethrow lỗi ra ngoài một cách minh bạch, tuyệt đối **KHÔNG** ghi chuỗi `"undefined"` vào `localStorage`. State giữ nguyên `unauthenticated`.
+  - `FE/test/loginPage.test.jsx`: Bắt lỗi và hiển thị thông báo lỗi thân thiện trên giao diện (`Tài khoản hoặc mật khẩu không chính xác`), tắt trạng thái `loading`, không thực hiện bất kỳ lệnh điều hướng nào (`navigate` không bị gọi).
+
+- **Phòng thủ Optional Chaining trên `LoginPage`**:
+  - `FE/test/loginPage.test.jsx`:
+    * Giả lập tình huống hàm `login` trả về `undefined` hoặc `null`: Biểu thức `user?.role === 'Admin'` không gây ra lỗi Runtime `TypeError: Cannot read properties of undefined (reading 'role')`.
+    * Giao diện không bị sập (white screen), xử lý êm đẹp và chuyển hướng theo nhánh fallback `/`.
+    * Giả lập user object thiếu thuộc tính `role`: Xử lý an toàn không phát sinh lỗi.
+
+---
+
+## 3. Danh sách các file test đã bổ sung
+
+| STT | File test | Framework | Số ca kiểm thử | Trạng thái |
+|:---:|---|:---:|:---:|:---:|
+| 1 | `FE/test/apiUnwrap.test.js` | Vitest | 16 | ✅ 16 Passed |
+| 2 | `FE/test/authContext.test.jsx` | Vitest + React Testing Library | 11 | ✅ 11 Passed |
+| 3 | `FE/test/loginPage.test.jsx` | Vitest + React Testing Library | 8 | ✅ 8 Passed |
+| 4 | `FE/test/setup.js` | Vitest Setup | - | Thiết lập môi trường JSDOM & dọn dẹp localStorage |
+| 5 | `BE/test/UnitTests/Application/Auth/LoginCommandHandlerTests.cs` | xUnit + FluentAssertions | 3 (bổ sung 1) | ✅ 3 Passed |
+
+---
+
+## 4. Log thực thi chi tiết (Execution Logs)
+
+### 4.1. Frontend Unit Tests (`npm test`)
+```text
+> template-landing-page-fe@1.0.0 test
+> vitest run
+
+ RUN  v5.0.1 E:/Code/TemplateLandingPage/FE
+
+ ✓ test/apiUnwrap.test.js (16 tests) 17ms
+ ✓ test/authContext.test.jsx (11 tests) 238ms
+ ✓ test/loginPage.test.jsx (8 tests) 497ms
+
+ Test Files  3 passed (3)
+      Tests  35 passed (35)
+   Start at  19:15:46
+   Duration  8.47s (environment 66%, import 18%, setup 8%, tests 4%, transform 3%, worker 1%)
+```
+
+### 4.2. Frontend Build (`npm run build`)
+```text
+> template-landing-page-fe@1.0.0 build
+> vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 1696 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.51 kB │ gzip:   0.34 kB
+dist/assets/index-CaI28D5N.css     51.34 kB │ gzip:   8.70 kB
+dist/assets/index-BEyhq_ZB.js   1,314.91 kB │ gzip: 292.78 kB
+✓ built in 7.90s
+```
+
+### 4.3. Backend Tests (`dotnet test BE/TemplateLandingPage.sln`)
+```text
+Test run for E:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.UnitTests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:   313, Skipped:     0, Total:   313, Duration: 2 s - TemplateLandingPage.UnitTests.dll (net10.0)
+
+Test run for E:\Code\TemplateLandingPage\BE\test\Architecture.Tests\bin\Debug\net10.0\TemplateLandingPage.Architecture.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 298 ms - TemplateLandingPage.Architecture.Tests.dll (net10.0)
+```
+
+---
+
+## 5. Kết luận
+Toàn bộ mã nguồn mới cập nhật đã được thẩm định chặt chẽ, đạt chất lượng cao:
+- Triệt tiêu hoàn toàn lỗi crash runtime `Cannot read properties of undefined (reading 'role')`.
+- Đảm bảo các luồng xác thực Admin/User hoạt động trơn tru từ frontend API unwrapping đến lưu trữ và điều hướng.
+- Hệ thống phòng thủ bảo vệ localStorage khỏi chuỗi rác đã được chứng minh hiệu quả qua các bài test tự động.
+- Không có bất kỳ hồi quy (regression) nào trên toàn bộ Backend và Frontend.
+- Sẵn sàng bàn giao cho Chặng 4: Reviewer kiểm tra cuối cùng.

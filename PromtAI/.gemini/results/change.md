@@ -1,94 +1,88 @@
-# BẢN TỔNG KỢT THAY ĐỔI (CHANGE LOG)
+# BÁO CÁO THAY ĐỔI MÃ NGUỒN (CHANGE LOG)
 
-## 1. DANH SÁCH FILE THAY ĐỔI VÀ TẠO MỚI
+## 1. Danh sách file đã thay đổi
 
-1. `BE/src/API/appsettings.json` (Sửa)
-2. `BE/src/API/appsettings.Development.json` (Sửa)
-3. `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs` (Sửa)
-4. `BE/src/API/Program.cs` (Sửa)
-5. `BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs` (Tạo mới)
-
----
-
-## 2. CHI TIẾT CÁC THAY ĐỔI VÀ MỤC ĐÍCH
-
-### 2.1. `BE/src/API/appsettings.json`
-- **Mục đích**: Cập nhật chuỗi kết nối `ConnectionStrings:DefaultConnection` sang MSSQLLocalDB:
-  ```json
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;"
-  }
-  ```
-- **Ý nghĩa**: Giúp backend kết nối chuẩn xác vào instance LocalDB mặc định trên môi trường Windows (`(localdb)\mssqllocaldb`), bật `MultipleActiveResultSets=true` hỗ trợ các truy vấn đồng thời qua EF Core.
-
-### 2.2. `BE/src/API/appsettings.Development.json`
-- **Mục đích**: Bổ sung override cấu hình `ConnectionStrings:DefaultConnection` với cùng chuỗi kết nối LocalDB:
-  ```json
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;"
-  }
-  ```
-- **Ý nghĩa**: Đảm bảo môi trường Development luôn luôn ưu tiên LocalDB dù chạy độc lập hay ghi đè cấu hình cơ sở.
-
-### 2.3. `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`
-- **Mục đích**: Cấu hình Connection Resilience và Timeout cho SQL Server trong `AddPersistence`:
-  ```csharp
-  options.UseSqlServer(connectionString, sqlOptions =>
-  {
-      sqlOptions.EnableRetryOnFailure(
-          maxRetryCount: 5,
-          maxRetryDelay: TimeSpan.FromSeconds(30),
-          errorNumbersToAdd: null);
-      sqlOptions.CommandTimeout(60);
-  })
-  .AddInterceptors(interceptor);
-  ```
-- **Ý nghĩa**: Tự động thử lại khi gặp lỗi kết nối tạm thời (transient faults) hoặc hiện tượng LocalDB đang khởi động / thức dậy trễ (wake-up delay); tăng thời gian chờ lệnh truy vấn lên 60s; giữ nguyên `AuditableEntityInterceptor`.
-
-### 2.4. `BE/src/API/Program.cs`
-- **Mục đích**: 
-  - Bổ sung `using Microsoft.Data.SqlClient;`.
-  - Phân tách khối `catch (SqlException sqlEx)` trước `catch (Exception ex)` trong quá trình thực thi `DataSeeder.SeedAsync`:
-  ```csharp
-  catch (SqlException sqlEx)
-  {
-      var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-      logger.LogError(sqlEx,
-          "Lỗi kết nối cơ sở dữ liệu SQL Server (Error {Number}): {Message}. " +
-          "Hướng dẫn khắc phục: " +
-          "1. Nếu dùng LocalDB, kiểm tra/khởi động instance: 'sqllocaldb info mssqllocaldb' hoặc 'sqllocaldb start mssqllocaldb'. " +
-          "2. Nếu dùng SQL Server service, kiểm tra service MSSQLSERVER hoặc MSSQL$SQLEXPRESS trong Services. " +
-          "3. Kiểm tra chuỗi kết nối 'DefaultConnection' trong appsettings.json / appsettings.Development.json.",
-          sqlEx.Number,
-          sqlEx.Message);
-  }
-  catch (Exception ex)
-  {
-      var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-      logger.LogError(ex, "Không thể khởi tạo hoặc seed dữ liệu: {Message}", ex.Message);
-  }
-  ```
-- **Ý nghĩa**: Giúp developer và tester chẩn đoán tức thì nguyên nhân kết nối database thất bại (sai connection string, chưa start LocalDB instance, hoặc service SQL tắt) kèm giải pháp từng bước trên Windows.
-
-### 2.5. `BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs`
-- **Mục đích**: Tạo test suite kiểm thử phương thức mở rộng `AddPersistence`:
-  - Kiểm tra `ApplicationDbContext` được đăng ký và khởi tạo thành công qua scope service provider.
-  - Kiểm tra tất cả repository interfaces (`IUnitOfWork`, `IUserRepository`, `ITemplateRepository`, `ICategoryRepository`, `IProductRepository`, `INavigationMenuRepository`, `ICustomizationRepository`, `IRsvpRepository`, `IGuestbookRepository`) được đăng ký dạng Scoped và resolve không bị null.
-- **Ý nghĩa**: Đảm bảo cấu hình Dependency Injection của tầng Persistence luôn toàn vẹn và không thiếu sót repository nào khi ứng dụng khởi chạy.
+| STT | File thay đổi | Loại thay đổi |
+|:---:|---|:---:|
+| 1 | `FE/src/api/authApi.js` | Sửa (Modified) |
+| 2 | `FE/src/api/userApi.js` | Sửa (Modified) |
+| 3 | `FE/src/api/customizationApi.js` | Sửa (Modified) |
+| 4 | `FE/src/api/interactionApi.js` | Sửa (Modified) |
+| 5 | `FE/src/contexts/AuthContext.jsx` | Sửa (Modified) |
+| 6 | `FE/src/pages/auth/LoginPage.jsx` | Sửa (Modified) |
 
 ---
 
-## 3. VỊ TRÍ TRỌNG YẾU TESTER NÊN SOI KỸ
+## 2. Chi tiết từng vị trí sửa và mục đích
 
-1. **Khối bắt ngoại lệ `SqlException` trong [Program.cs](file:///e:/Code/TemplateLandingPage/BE/src/API/Program.cs#L108-L120)**:
-   - Thử cấu hình `DefaultConnection` sai tên instance (ví dụ: `Server=(localdb)\\not_exist;...`) để kích hoạt ngoại lệ.
-   - Kiểm tra xem log console có xuất hiện thông điệp hướng dẫn rõ ràng kèm mã lỗi `sqlEx.Number` hay không.
-2. **Cấu hình Connection Resilience trong [ServiceCollectionExtensions.cs](file:///e:/Code/TemplateLandingPage/BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs#L22-L30)**:
-   - Kiểm tra xem `EnableRetryOnFailure` và `CommandTimeout(60)` có hoạt động tương thích với `AuditableEntityInterceptor` và các transaction của `IUnitOfWork` hay không.
-3. **Tính nhất quán cấu hình ConnectionStrings**:
-   - Soi kỹ 2 file [appsettings.json](file:///e:/Code/TemplateLandingPage/BE/src/API/appsettings.json#L10-L12) và [appsettings.Development.json](file:///e:/Code/TemplateLandingPage/BE/src/API/appsettings.Development.json#L9-L11), xác nhận chuỗi kết nối LocalDB khớp nhau.
-4. **Kiểm thử toàn bộ hệ thống (Regression Testing)**:
-   - Tất cả 299 Unit Tests trong `TemplateLandingPage.UnitTests.csproj` phải pass 100%.
-   - Tất cả 7 Architecture Tests trong `TemplateLandingPage.Architecture.Tests.csproj` phải pass 100%.
-   - Toàn bộ solution `BE/TemplateLandingPage.sln` build thành công với 0 cảnh báo (warnings) và 0 lỗi (errors).
-   - Frontend `npm run build` trong thư mục `FE` biên dịch thành công 0 lỗi.
+### 2.1. `FE/src/api/authApi.js`
+- **Mục đích**: Chuẩn hóa unwrapping dữ liệu từ response của Backend API theo cú pháp `response.data?.value ?? response.data`.
+- **Hàm thay đổi**:
+  - `login`: Thay `return response.data;` thành `return response.data?.value ?? response.data;`.
+  - `register`: Thay `return response.data;` thành `return response.data?.value ?? response.data;`.
+  - `getMe`: Thay `return response.data;` thành `return response.data?.value ?? response.data;`.
+
+### 2.2. `FE/src/api/userApi.js`
+- **Mục đích**: Đồng bộ unwrap `response.data?.value ?? response.data` cho tất cả các endpoint quản lý người dùng.
+- **Hàm thay đổi**:
+  - `getUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser`.
+
+### 2.3. `FE/src/api/customizationApi.js`
+- **Mục đích**: Đồng bộ unwrap `response.data?.value ?? response.data` cho các endpoint tùy biến thiệp/landing page.
+- **Hàm thay đổi**:
+  - `saveCustomization`, `updateCustomization`, `getCustomizationById`, `getCustomizationBySlug`, `getMyCustomizations`, `deleteCustomization`.
+
+### 2.4. `FE/src/api/interactionApi.js`
+- **Mục đích**: Đồng bộ unwrap `response.data?.value ?? response.data` cho các endpoint tương tác (RSVP, Sổ lưu bút).
+- **Hàm thay đổi**:
+  - `submitRsvp`, `getRsvps`, `submitGuestbook`, `getGuestbook`.
+
+### 2.5. `FE/src/contexts/AuthContext.jsx`
+- **Mục đích**: Áp dụng defensive programming để bảo vệ trạng thái xác thực và phiên đăng nhập.
+- **Chi tiết thay đổi**:
+  - Khởi tạo state `user` & `token`: Kiểm tra và loại bỏ các chuỗi rác trong localStorage (`'undefined'`, `'null'`), chỉ parse JSON khi dữ liệu thực sự hợp lệ.
+  - `initAuth` (useEffect): Chỉ gọi `authApi.getMe()` khi token hợp lệ khác rác; unwrap phòng vệ `profile = res?.value ?? res` và chỉ lưu khi profile tồn tại; nếu token không hợp lệ hoặc lỗi xác thực thì xóa sạch localStorage và reset state.
+  - `login`: Trích xuất an toàn `const payload = data?.value ?? data;`, bóc tách `jwtToken` và `userProfile`; chỉ ghi vào localStorage và cập nhật state khi các giá trị này tồn tại; trả về `userProfile`.
+  - `register`: Hỗ trợ trường hợp Backend `RegisterCommand` trả về `Guid` (chưa kèm JWT token) bằng cách tự động gọi hàm `login(email, password)` để thiết lập phiên đăng nhập đầy đủ và chuyển hướng an toàn.
+
+### 2.6. `FE/src/pages/auth/LoginPage.jsx`
+- **Mục đích**: Ngăn chặn Runtime TypeError `Cannot read properties of undefined (reading 'role')`.
+- **Chi tiết thay đổi**:
+  - Sử dụng optional chaining: `if (user?.role === 'Admin')`.
+  - Giữ fallback an toàn: điều hướng sang `from` (mặc định `/`) nếu không phải Admin.
+
+---
+
+## 3. Vị trí trọng yếu Tester nên soi kỹ
+
+1. **Luồng Đăng nhập Admin (`FE/src/pages/auth/LoginPage.jsx` & `FE/src/contexts/AuthContext.jsx`)**:
+   - Thử đăng nhập với tài khoản Admin (`admin@template.com` / `Admin@123456`).
+   - Kiểm tra console xem có còn xuất hiện lỗi TypeError `Cannot read properties of undefined (reading 'role')` hay không.
+   - Kiểm tra xem người dùng có được điều hướng chính xác vào trang `/admin` hay không.
+   - Kiểm tra localStorage xem key `token` có lưu chuỗi JWT hợp lệ (không phải `'undefined'`) và `user` có lưu đúng JSON object của Admin hay không.
+
+2. **Luồng Đăng nhập User thường**:
+   - Thử đăng nhập với `user@template.com` / `User@123456`.
+   - Kiểm tra xem người dùng có được điều hướng đúng về trang trước đó hoặc `/` hay không.
+
+3. **Luồng Đăng ký tài khoản mới (`FE/src/pages/auth/RegisterPage.jsx`)**:
+   - Thử tạo tài khoản mới.
+   - Kiểm tra sau khi đăng ký, session có được tự động thiết lập (token + user có trong localStorage) và người dùng có chuyển thẳng đến `/templates` mà không cần phải tự đăng nhập lại hay không.
+
+4. **F5 Refresh trang (Phiên làm việc & Auth State)**:
+   - Đăng nhập xong, nhấn F5 tải lại trang bất kỳ.
+   - Kiểm tra `initAuth` có đồng bộ profile mượt mà từ `/auth/me` mà không bị logout oan hay crash trang.
+   - Thử cố tình chèn chuỗi `"undefined"` vào `localStorage.setItem('token', 'undefined')` và reload trang: AuthContext phải xóa sạch rác và reset state về unauthenticated một cách an toàn.
+
+5. **Trang Quản trị Người dùng (`FE/src/pages/admin/AdminUsersPage.jsx`)**:
+   - Sau khi login Admin, vào `/admin/users`. Kiểm tra danh sách người dùng hiển thị đầy đủ (do `userApi.getUsers()` đã unwrap đúng mảng thay vì bọc Result).
+
+---
+
+## 4. Kết quả kiểm thử tự động
+
+- **Frontend build (`FE/`)**: `npm run build` thành công 100% (exit code 0, 1696 modules transformed).
+- **Backend tests (`BE/`)**:
+  - `TemplateLandingPage.UnitTests`: 312/312 tests Passed.
+  - `TemplateLandingPage.Architecture.Tests`: 7/7 tests Passed.
+  - Tổng cộng: **319/319 tests Passed**.

@@ -1,201 +1,194 @@
-# BẢN KẾ HOẠCH TRIỂN KHAI (PLAN)
+# KẾ HOẠCH TRIỂN KHAI (PLAN)
 
 ## CÂU HỎI CÒN BỎ NGỎ
-Không có.
+Không có
 
 ---
 
-## 1. DANH SÁCH FILE CẦN THAY ĐỔI VÀ TẠO MỚI
-
-### A. Backend (BE)
-1. `BE/src/API/appsettings.json` (Sửa):
-   - Cập nhật giá trị `ConnectionStrings:DefaultConnection` sang MSSQLLocalDB:
-     `Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;`
-
-2. `BE/src/API/appsettings.Development.json` (Sửa):
-   - Bổ sung cấu hình `ConnectionStrings:DefaultConnection` với cùng chuỗi kết nối MSSQLLocalDB để môi trường Development ưu tiên kết nối trực tiếp đến LocalDB:
-     `Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;`
-
-3. `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs` (Sửa):
-   - Tinh chỉnh `options.UseSqlServer(...)` trong cấu hình `AddDbContext<ApplicationDbContext>`:
-     - Thêm lambda `sqlOptions` cấu hình Connection Resilience thông qua `EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)`.
-     - Cấu hình `CommandTimeout(60)`.
-     - Đảm bảo interceptor `AuditableEntityInterceptor` vẫn được đăng ký đúng chuẩn.
-
-4. `BE/src/API/Program.cs` (Sửa):
-   - Bổ sung `using Microsoft.Data.SqlClient;`.
-   - Trong khối `using (var scope = app.Services.CreateScope())` thực thi `DataSeeder.SeedAsync`, phân tách khối `catch`:
-     - Bắt riêng `SqlException sqlEx`: Ghi `logger.LogError` chi tiết mã lỗi `sqlEx.Number`, thông điệp lỗi và in thông điệp hướng dẫn dev kiểm tra instance LocalDB (`sqllocaldb info mssqllocaldb` / `sqllocaldb start mssqllocaldb`) hoặc Windows service (`MSSQLSERVER` / `MSSQL$SQLEXPRESS`).
-     - Bắt chung `Exception ex`: Ghi `logger.LogError` cho các lỗi khác khi seed dữ liệu.
-
-5. `BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs` (Tạo mới):
-   - Thêm unit test kiểm thử phương thức mở rộng `AddPersistence`:
-     - Kiểm tra `ApplicationDbContext` được đăng ký trong `IServiceCollection` và có thể khởi tạo scope hợp lệ.
-     - Kiểm tra các repository interfaces (`IUserRepository`, `ITemplateRepository`, `IUnitOfWork`,...) được đăng ký dạng `Scoped`.
-
-### B. Frontend (FE)
-- Không cần thay đổi mã nguồn FE (FE giao tiếp qua API proxy/baseURL `http://localhost:54611` sẵn có).
-- Cần chạy kiểm thử build FE: `npm run build` trong thư mục `FE` để đảm bảo không có lỗi biên dịch.
+## 1. Mục tiêu
+Khắc phục triệt để lỗi JavaScript crash: `Cannot read properties of undefined (reading 'role')` khi người dùng đăng nhập bằng tài khoản Admin (hoặc User) do Frontend nhận cấu trúc `Result<LoginResponse>` từ Backend Minimal API nhưng chưa unwrap thuộc tính `.value`. Đồng thời chuẩn hóa toàn bộ các API client trong `FE/src/api/` và áp dụng defensive programming cho `AuthContext.jsx` và `LoginPage.jsx`.
 
 ---
 
-## 2. CHỮ KÝ HÀM, INTERFACE & CẤU HÌNH CHI TIẾT
+## 2. Những file cần sửa hoặc tạo mới
+Tất cả các file đều thuộc Frontend (`FE/`):
 
-### 2.1. Cấu hình Connection String
-Đường dẫn: `BE/src/API/appsettings.json` & `BE/src/API/appsettings.Development.json`
-```json
-"ConnectionStrings": {
-  "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;"
-}
+1. **`FE/src/api/authApi.js`** (Sửa)
+   - Unwrap thuộc tính `.value` cho các hàm: `login`, `register`, `getMe`.
+   - Trả về: `response.data?.value ?? response.data`.
+
+2. **`FE/src/api/userApi.js`** (Sửa)
+   - Đồng bộ chuẩn hóa unwrap `.value` cho các hàm: `getUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser`.
+   - Trả về: `response.data?.value ?? response.data`.
+
+3. **`FE/src/api/customizationApi.js`** (Sửa)
+   - Đồng bộ chuẩn hóa unwrap `.value` cho các hàm: `saveCustomization`, `updateCustomization`, `getCustomizationById`, `getCustomizationBySlug`, `getMyCustomizations`, `deleteCustomization`.
+   - Trả về: `response.data?.value ?? response.data`.
+
+4. **`FE/src/api/interactionApi.js`** (Sửa)
+   - Đồng bộ chuẩn hóa unwrap `.value` cho các hàm: `submitRsvp`, `getRsvps`, `submitGuestbook`, `getGuestbook`.
+   - Trả về: `response.data?.value ?? response.data`.
+
+5. **`FE/src/contexts/AuthContext.jsx`** (Sửa)
+   - Khởi tạo state an toàn: lọc bỏ các giá trị rác trong `localStorage` (như chuỗi `'undefined'`, `'null'`).
+   - `initAuth` (useEffect): kiểm tra token hợp lệ trước khi gọi `authApi.getMe()`, unwrap phòng vệ `profile?.value ?? profile`, lưu profile hợp lệ vào `localStorage`.
+   - `login`: trích xuất an toàn `{ token, user }` từ `data?.value ?? data`, chỉ lưu `localStorage` khi `token` và `user` tồn tại, trả về `userProfile`.
+   - `register`: sau khi gọi `authApi.register`, nếu kết quả trả về không có token/user (do Backend trả về `Guid`), tự động gọi `login(email, password)` để hoàn tất phiên đăng nhập và trả về `userProfile`.
+
+6. **`FE/src/pages/auth/LoginPage.jsx`** (Sửa)
+   - Sử dụng optional chaining `user?.role === 'Admin'` tại dòng kiểm tra quyền điều hướng.
+   - Fallback an toàn: nếu không phải Admin, điều hướng về `from` (fallback `/`).
+
+*(Lưu ý: Backend `BE` đã có sẵn kiến trúc trả về `Result<T>` chuẩn và 312 unit test đều PASS, không cần sửa đổi backend).*
+
+---
+
+## 3. Chữ ký hàm & Interface cần có
+
+### 3.1. `FE/src/api/authApi.js`
+```javascript
+export const authApi = {
+  login: async (credentials: { email: string, password: string }): Promise<LoginResponse>
+  register: async (userData: { email: string, password: string, fullName: string }): Promise<any>
+  getMe: async (): Promise<UserResponse>
+};
+```
+*Chi tiết implement:*
+- `login`: `const response = await axiosInstance.post('/auth/login', credentials); return response.data?.value ?? response.data;`
+- `register`: `const response = await axiosInstance.post('/auth/register', userData); return response.data?.value ?? response.data;`
+- `getMe`: `const response = await axiosInstance.get('/auth/me'); return response.data?.value ?? response.data;`
+
+### 3.2. `FE/src/api/userApi.js`
+```javascript
+export const userApi = {
+  getUsers: async (): Promise<UserResponse[]>
+  getUserById: async (id: string): Promise<UserResponse>
+  createUser: async (userData: object): Promise<string>
+  updateUser: async (id: string, userData: object): Promise<any>
+  deleteUser: async (id: string): Promise<any>
+};
+```
+*Tất cả method đều unwrap:* `return response.data?.value ?? response.data;`
+
+### 3.3. `FE/src/api/customizationApi.js`
+```javascript
+export const customizationApi = {
+  saveCustomization: async (data: object): Promise<string>
+  updateCustomization: async (id: string, data: object): Promise<any>
+  getCustomizationById: async (id: string): Promise<CustomizationResponse>
+  getCustomizationBySlug: async (slug: string): Promise<CustomizationResponse>
+  getMyCustomizations: async (): Promise<CustomizationResponse[]>
+  deleteCustomization: async (id: string): Promise<any>
+};
+```
+*Tất cả method đều unwrap:* `return response.data?.value ?? response.data;`
+
+### 3.4. `FE/src/api/interactionApi.js`
+```javascript
+export const interactionApi = {
+  submitRsvp: async (rsvpData: object): Promise<string>
+  getRsvps: async (customizationId: string): Promise<RsvpResponse[]>
+  submitGuestbook: async (guestbookData: object): Promise<string>
+  getGuestbook: async (customizationId: string): Promise<GuestbookResponse[]>
+};
+```
+*Tất cả method đều unwrap:* `return response.data?.value ?? response.data;`
+
+### 3.5. `FE/src/contexts/AuthContext.jsx`
+```javascript
+// State initializers
+const [user, setUser] = useState(() => {
+  const savedUser = localStorage.getItem('user');
+  if (!savedUser || savedUser === 'undefined' || savedUser === 'null') return null;
+  try { return JSON.parse(savedUser); } catch { return null; }
+});
+const [token, setToken] = useState(() => {
+  const savedToken = localStorage.getItem('token');
+  if (!savedToken || savedToken === 'undefined' || savedToken === 'null') return null;
+  return savedToken;
+});
+
+// login
+const login = useCallback(async (email, password) => {
+  const data = await authApi.login({ email, password });
+  const payload = data?.value ?? data;
+  const jwtToken = payload?.token;
+  const userProfile = payload?.user;
+
+  if (jwtToken) {
+    localStorage.setItem('token', jwtToken);
+    setToken(jwtToken);
+  }
+  if (userProfile) {
+    localStorage.setItem('user', JSON.stringify(userProfile));
+    setUser(userProfile);
+  }
+  return userProfile;
+}, []);
+
+// register
+const register = useCallback(async (email, password, fullName) => {
+  const data = await authApi.register({ email, password, fullName });
+  const payload = data?.value ?? data;
+  if (payload?.token && payload?.user) {
+    localStorage.setItem('token', payload.token);
+    localStorage.setItem('user', JSON.stringify(payload.user));
+    setToken(payload.token);
+    setUser(payload.user);
+    return payload.user;
+  }
+  // Backend RegisterCommand trả về Guid, tự động gọi login để thiết lập phiên đăng nhập
+  return await login(email, password);
+}, [login]);
 ```
 
-### 2.2. ServiceCollectionExtensions
-Đường dẫn: `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs`
-```csharp
-public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
-{
-    services.AddSingleton<AuditableEntityInterceptor>();
+### 3.6. `FE/src/pages/auth/LoginPage.jsx`
+```javascript
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError(null);
+  setLoading(true);
 
-    services.AddDbContext<ApplicationDbContext>((sp, options) =>
-    {
-        var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
-
-        options.UseSqlServer(connectionString, sqlOptions =>
-        {
-            sqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(30),
-                errorNumbersToAdd: null);
-            sqlOptions.CommandTimeout(60);
-        })
-        .AddInterceptors(interceptor);
-    });
-
-    services.AddScoped<IUnitOfWork, UnitOfWork>();
-    services.AddScoped<IProductRepository, ProductRepository>();
-    services.AddScoped<IUserRepository, UserRepository>();
-    services.AddScoped<ICategoryRepository, CategoryRepository>();
-    services.AddScoped<INavigationMenuRepository, NavigationMenuRepository>();
-    services.AddScoped<ITemplateRepository, TemplateRepository>();
-    services.AddScoped<ICustomizationRepository, CustomizationRepository>();
-    services.AddScoped<IRsvpRepository, RsvpRepository>();
-    services.AddScoped<IGuestbookRepository, GuestbookRepository>();
-
-    return services;
-}
-```
-
-### 2.3. Seeder & Diagnostic Error Logging trong Program.cs
-Đường dẫn: `BE/src/API/Program.cs`
-```csharp
-using Microsoft.Data.SqlClient;
-
-// Seed initial data in Development
-using (var scope = app.Services.CreateScope())
-{
-    try
-    {
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-        await DataSeeder.SeedAsync(dbContext, passwordHasher);
+  try {
+    const user = await login(email, password);
+    if (user?.role === 'Admin') {
+      navigate('/admin', { replace: true });
+    } else {
+      navigate(from, { replace: true });
     }
-    catch (SqlException sqlEx)
-    {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(sqlEx,
-            "Lỗi kết nối cơ sở dữ liệu SQL Server (Error {Number}): {Message}. " +
-            "Hướng dẫn khắc phục: " +
-            "1. Nếu dùng LocalDB, kiểm tra/khởi động instance: 'sqllocaldb info mssqllocaldb' hoặc 'sqllocaldb start mssqllocaldb'. " +
-            "2. Nếu dùng SQL Server service, kiểm tra service MSSQLSERVER hoặc MSSQL$SQLEXPRESS trong Services. " +
-            "3. Kiểm tra chuỗi kết nối 'DefaultConnection' trong appsettings.json / appsettings.Development.json.",
-            sqlEx.Number,
-            sqlEx.Message);
-    }
-    catch (Exception ex)
-    {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Không thể khởi tạo hoặc seed dữ liệu: {Message}", ex.Message);
-    }
-}
-```
-
-### 2.4. Unit Test cho AddPersistence
-Đường dẫn: `BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs`
-```csharp
-namespace TemplateLandingPage.UnitTests.Persistence;
-
-using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Repositories;
-using TemplateLandingPage.Persistence;
-using TemplateLandingPage.Persistence.DependencyInjection.Extensions;
-using Xunit;
-
-public class ServiceCollectionExtensionsTests
-{
-    [Fact]
-    public void AddPersistence_Should_RegisterAllRequiredPersistenceServices()
-    {
-        // Arrange
-        var services = new ServiceCollection();
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = "Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;"
-            })
-            .Build();
-
-        // Act
-        services.AddPersistence(configuration);
-        var serviceProvider = services.BuildServiceProvider();
-
-        // Assert
-        serviceProvider.GetService<ApplicationDbContext>().Should().NotBeNull();
-        serviceProvider.GetService<IUnitOfWork>().Should().NotBeNull();
-        serviceProvider.GetService<IUserRepository>().Should().NotBeNull();
-        serviceProvider.GetService<ITemplateRepository>().Should().NotBeNull();
-        serviceProvider.GetService<ICategoryRepository>().Should().NotBeNull();
-    }
-}
+  } catch (err) {
+    setError(err.message || 'Đăng nhập không thành công. Vui lòng kiểm tra email và mật khẩu!');
+  } finally {
+    setLoading(false);
+  }
+};
 ```
 
 ---
 
-## 3. CÁC TRƯỜNG HỢP BIÊN BẮT BUỘC PHẢI XỬ LÝ (EDGE CASES)
-
-1. **LocalDB mới khởi động hoặc đang ở trạng thái ngủ (Cold Start / Wake-up delay)**:
-   - *Rủi ro*: Khi gọi request đầu tiên sau khi máy khởi động hoặc instance LocalDB chưa bật, kết nối có thể timeout hoặc trả lỗi tạm thời (transient connection fault).
-   - *Xử lý*: `EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30))` cho phép EF Core tự động retry với exponential backoff, kết hợp `CommandTimeout(60)`.
-
-2. **Chuỗi kết nối bị null hoặc sai định dạng**:
-   - *Rủi ro*: Khi cấu hình thiếu `DefaultConnection`, `options.UseSqlServer(connectionString)` nhận chuỗi rỗng/null.
-   - *Xử lý*: Đảm bảo cả hai file cấu hình `appsettings.json` và `appsettings.Development.json` đều có `DefaultConnection` hợp lệ.
-
-3. **Tiến trình API cũ đang chạy khóa file PDB/DLL khi build**:
-   - *Rủi ro*: Nếu tiến trình `TemplateLandingPage.API.exe` đang chạy trên cổng 54611, lệnh `dotnet build` hoặc `dotnet test` toàn solution có thể bị lỗi khóa file `MSB3021 / MSB3027`.
-   - *Xử lý*: Coder/Tester cần chạy kiểm thử từng project (`dotnet test test/UnitTests/TemplateLandingPage.UnitTests.csproj` và `dotnet test test/Architecture.Tests/TemplateLandingPage.Architecture.Tests.csproj --no-build`), hoặc tắt process API cũ trước khi build lại API.
-
-4. **Tính Idempotent của DataSeeder**:
-   - *Rủi ro*: Nếu kết nối bị ngắt quãng giữa chừng trong lúc seed và retry lại, dữ liệu có thể bị trùng lặp nếu không kiểm tra chặt chẽ.
-   - *Xử lý*: Giữ nguyên cơ chế `await context.Database.EnsureCreatedAsync()` và `!await context.{Table}.AnyAsync()` trong `DataSeeder.cs`, đảm bảo việc chạy nhiều lần không gây duplicate dữ liệu (đã được bao phủ bởi test `SeedAsync_Should_BeIdempotent_WhenExecutedMultipleTimes`).
-
-5. **Phân biệt rành mạch giữa lỗi kết nối SQL (SqlException) và các lỗi khởi tạo khác**:
-   - *Rủi ro*: Người dùng chỉ thấy lỗi chung chung 500 hoặc log `Could not run DataSeeder` mà không biết vì sao DB không kết nối được.
-   - *Xử lý*: Bắt riêng `SqlException`, trích xuất `sqlEx.Number` (ví dụ error 40, error 2 - cannot find file/server), ghi log mức `LogError` kèm giải pháp khắc phục cụ thể cho môi trường Windows.
+## 4. Các trường hợp biên bắt buộc phải xử lý
+1. **Dữ liệu trả về có hoặc không có bọc `value`**:
+   - Xử lý kép: `response.data?.value ?? response.data` đảm bảo tương thích kể cả khi API trả về raw object hoặc Result wrapper.
+2. **`localStorage` bị nhiễm giá trị rác từ lần lỗi trước**:
+   - Nếu `localStorage.getItem('token')` hoặc `'user'` là chuỗi `"undefined"` hoặc `"null"`, phải coi như `null`, xóa bỏ hoặc bỏ qua, không để `JSON.parse` bắn Exception hoặc token rác gửi lên header Bearer.
+3. **`token` hoặc `user` bị null/undefined khi login thất bại hoặc thành công một phần**:
+   - Kiểm tra `if (jwtToken)` và `if (userProfile)` trước khi ghi vào `localStorage` và cập nhật state. Tuyệt đối không ghi `"undefined"` vào `localStorage`.
+4. **`user` null/undefined tại `LoginPage.jsx`**:
+   - Sử dụng optional chaining `user?.role === 'Admin'`. Nếu `user` là undefined/null, biểu thức trả về `false`, ứng dụng chuyển sang nhánh else `navigate(from, { replace: true })` mà không bị crash Runtime error.
+5. **Đăng ký tài khoản mới (`RegisterPage.jsx`)**:
+   - Backend chỉ trả `Guid` (userId), `AuthContext.register` tự động login để người dùng có ngay token và session, sau đó chuyển hướng an toàn tới `/templates`.
+6. **Phiên làm việc khi refresh trang (F5)**:
+   - `useEffect` trong `AuthContext` gọi `authApi.getMe()`. Giá trị trả về được unwrap sạch sẽ thành `UserResponse`, cập nhật đúng `user` state và `localStorage`, giúp `isAdmin` và `ProtectedRoute` hoạt động chính xác.
 
 ---
 
-## 4. QUY ƯỚC CẦN BÁM THEO
-
-Sao chép và tuân thủ chặt chẽ các quy ước từ file:
-**`PromtAI/.gemini/agents/coder.md`**
-- **Phần A: Quy chuẩn Backend (.NET Clean Architecture + CQRS + MediatR)**
-  - Mục A1: Giữ vững ranh giới giữa các layer (Domain, Contract, Application, Persistence, Presentation, API).
-  - Mục A8: Cấu hình Dependency Injection tập trung trong các `DependencyInjection/Extensions`.
-- **Phần C: Nguyên tắc chung & Checklist review**
-  - Mục C1: Không commit credentials/secret nhạy cảm; build sạch trước khi bàn giao (`dotnet test` và `npm run build` không lỗi).
-  - Mục C2: Hoàn thành đầy đủ checklist Backend và Frontend.
+## 5. Quy ước cần bám theo
+1. **Quy ước unwrap API response**:
+   - File mẫu: `FE/src/api/templateApi.js` (dòng 6, 11, 16, 21, 26, 31) và `FE/src/api/categoryApi.js`.
+   - Cú pháp chuẩn: `response.data?.value ?? response.data`.
+2. **Quy ước Auth Context & Storage**:
+   - File mẫu: `FE/src/contexts/AuthContext.jsx`.
+   - Khóa lưu trữ: `'token'` và `'user'`.
+   - Đảm bảo tính nhất quán của các hook tiêu thụ: `useAuth` (`user`, `token`, `isAuthenticated`, `isAdmin`, `loading`, `login`, `register`, `logout`).
+3. **Quy tắc thực thi dành cho Coder**:
+   - Tuân thủ nghiêm ngặt `PromtAI/.gemini/agents/coder.md`: Không sửa code ngoài phạm vi kế hoạch, chỉ chỉnh sửa đúng 6 file được chỉ định, kiểm tra build FE (`npm run build`) và unit test BE sau khi hoàn thành.

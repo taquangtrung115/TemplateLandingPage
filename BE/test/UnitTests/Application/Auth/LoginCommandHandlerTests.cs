@@ -52,6 +52,30 @@ public class LoginCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_Should_ReturnLoginResponse_WithAdminRole_WhenAdminCredentialsAreValid()
+    {
+        // Arrange
+        var admin = User.Create("admin@template.com", "hashed_admin_pwd", "Admin User", "Admin");
+        _userRepositoryMock.Setup(r => r.GetByEmailAsync("admin@template.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(admin);
+        _passwordHasherMock.Setup(h => h.VerifyPassword("Admin@123456", "hashed_admin_pwd"))
+            .Returns(true);
+        _jwtTokenGeneratorMock.Setup(g => g.GenerateToken(admin))
+            .Returns("admin_jwt_token");
+
+        var command = new LoginCommand("admin@template.com", "Admin@123456");
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Token.Should().Be("admin_jwt_token");
+        result.Value.User.Email.Should().Be("admin@template.com");
+        result.Value.User.Role.Should().Be("Admin");
+    }
+
+    [Fact]
     public async Task Handle_Should_ReturnFailure_WhenPasswordIsIncorrect()
     {
         // Arrange
