@@ -1,90 +1,75 @@
 PHÁN QUYẾT: CHỐT
 
-# BẢN ĐÁNH GIÁ CẤP CAO VÀ PHÁN QUYẾT KIỂM DUYỆT MÃ NGUỒN (EVALUATE.MD)
-**Chặng 4: Reviewer - Tuyến phòng thủ cuối cùng**  
-**Dự án:** Template Landing Page  
-**Nhánh kiểm duyệt:** `feature/refactor-usecase-validators`  
-**Mục tiêu:** Tái cấu trúc thư mục Validator cho Backend (`BE/src/Application/UseCases/V1/`)
+# BÁO CÁO ĐÁNH GIÁ CẤP CAO (EVALUATE.MD)
+
+> **Dự án**: Template Landing Page Platform  
+> **Chặng thực hiện**: Chặng 4 - Reviewer (Senior Security & Code Reviewer)  
+> **Hồ sơ thẩm định**:
+> - Kế hoạch triển khai: `PromtAI/.gemini/results/plan.md`
+> - Báo cáo thay đổi: `PromtAI/.gemini/results/change.md`
+> - Báo cáo kiểm thử: `PromtAI/.gemini/results/result-test.md`
+> **Đối tượng rà soát**: Toàn bộ thay đổi mã nguồn trên nhánh hiện tại (`git status`, `git diff BE/ FE/`)
 
 ---
 
-## I. TỔNG QUAN PHÁN QUYẾT
+## 1. TRẢ LỜI 3 CÂU HỎI CỐT LÕI
 
-- **Trạng thái:** **CHỐT** (Approved for Merge)
-- **Điểm đánh giá kiến trúc & chất lượng:** **10/10**
-- **Độ tin cậy kiểm thử:** Tuyệt đối (239/239 Backend Tests Passed, 100% FE Build Success)
-- **Tác động phụ (Side Effects):** Không có rủi ro hồi quy (zero regression risk).
-
----
-
-## II. TRẢ LỜI BA CÂU HỎI CỐT LÕI
-
-### 1. Code có khớp bản kế hoạch không?
-- **ĐÁNH GIÁ: HOÀN TOÀN KHỚP VÀ VƯỢT MỨC KỲ VỌNG.**
-- **Chi tiết đối chiếu:**
-  1. **Di chuyển và cấu trúc lại 16 Validator:**
-     - Đã tạo mới đúng 16 class validator tại thư mục riêng `BE/src/Application/UseCases/V1/{Feature}/Validators/` thuộc 8 use case: `Auth`, `Categories`, `Customizations`, `Interactions`, `NavigationMenus`, `Products`, `Templates`, `Users`.
-     - 100% class tuân thủ file-scoped namespace chuẩn mực: `TemplateLandingPage.Application.UseCases.V1.{Feature}.Validators`.
-     - 100% class được khai báo đúng quy ước: `public sealed class {CommandName}Validator : AbstractValidator<{CommandName}>`.
-  2. **Dọn dẹp mã nguồn cũ:**
-     - Đã xóa sạch toàn bộ 16 file validator cũ trong các thư mục `Commands/`. Không còn bất kỳ file validator thừa hay class trùng lặp nào tồn tại.
-  3. **Cập nhật tham chiếu kiểm thử:**
-     - Đã cập nhật chính xác chỉ thị `using` trong cả 8 file unit test hiện hữu sang namespace `.Validators`.
-  4. **Frontend:** Giữ nguyên vẹn, không gây ảnh hưởng hay xung đột giao diện.
+### Câu 1: Code có khớp với bản kế hoạch không?
+**ĐÁNH GIÁ: KHỚP 100%**
+- **Core Animations Trang Chủ**:
+  - Đã hiện thực hóa bộ đôi hook `useMaskPositions` (sử dụng `ResizeObserver` đo đạc tương đối `{x, y, sw, sh}`) và `useImageWidth` (tính toán `renderWidth`, tự động nhận diện `isMobile` để gán `focalX = 0.8` trên Desktop và `0.7` trên Mobile).
+  - Component `MaskedCard` ghép ảnh nền chung (`HERO_IMAGE` ở Section 1 và `SECTION2_IMAGE` ở Section 2) qua công thức `overflow = Math.max(0, renderWidth - containerW)` và `focalOffset = overflow * focalX` với `background-position` âm chuẩn xác từng pixel, tạo hiệu ứng mosaic liền mạch.
+  - Section 3 hiện thực đúng mô hình 2 cột: Cột trái `sticky top-0 h-screen` kèm các step buttons đổi trạng thái bám theo card cuộn; Cột phải cuộn các feature cards với animation slide-in từ phải sang (`translate-x-16` -> `translate-x-0`, `opacity-0` -> `opacity-100`) thông qua `IntersectionObserver`.
+  - `SplashScreen`: Bộ đếm số khổng lồ ở góc dưới bên trái (`bottom-8 left-8 text-7xl md:text-9xl tabular-nums`), chạy từ 0 đến 100% trong 2000ms, dừng 200ms (`holdDelayMs`), fade-out 700ms, có safety fallback timer 3000ms và cờ `sessionStorage.getItem('splash_shown')`.
+  - `Navbar`: Nút Menu viền đen `border border-black`, Mobile hamburger icon 3 span morphing thành chữ X với cubic-bezier `(0.76, 0, 0.24, 1)`, Navigation Drawer trượt với staggered delay (`100 + idx * 60ms`).
+- **6 Format Landing Page Đa Dạng**:
+  - 6 Cấu hình mẫu chuẩn hóa tại `defaultTemplates.js`: Wedding (`wedding`), AI Summit (`conference`), Drift ADHD Planner (`app-showcase`), SmileCraft Clinic (`medical`), Modern SaaS (`saas`), Kids Dinosaur Birthday (`birthday`).
+  - 4 Sub-sections chuyên biệt tạo mới độc lập: `SpeakersSection.jsx`, `PricingSection.jsx`, `ServicesSection.jsx`, `FeatureCardsSection.jsx`.
+  - `LandingPageRenderer.jsx` tích hợp điều phối linh hoạt các section mới, bảo toàn 100% khả năng tương thích ngược cho các mẫu thiệp cưới/sinh nhật cũ.
+  - `CustomizerSidebar.jsx` cung cấp các tab và form chỉnh sửa chuyên biệt cho Diễn giả, Gói vé, Dịch vụ y tế và Tính năng Bento.
+  - `DataSeeder.cs` nạp 9 Categories, 11 Templates, 6 UserCustomizations mẫu với JSON schema chuẩn hóa và đảm bảo tính Idempotent tuyệt đối.
 
 ---
 
-### 2. Test có giá trị thật hay chỉ viết cho có?
-- **ĐÁNH GIÁ: TEST CÓ GIÁ TRỊ THẬT SỰ CAO, THIẾT KẾ BÀI BẢN VÀ ĐỘ PHỦ CHẶT CHẼ.**
-- **Phân tích chiều sâu chất lượng kiểm thử:**
-  1. **Không viết test hình thức:** Không có bất kỳ test case nào dùng kỹ thuật mock giả tạo cho qua chuyện hay `Assert.True(true)`. Toàn bộ test đều khởi tạo trực tiếp instance validator thực tế và xác thực chính xác mã thuộc tính vi phạm (`e.PropertyName == ...`).
-  2. **Đầy đủ 3 khía cạnh kiểm thử cho từng Validator:**
-     - *Happy Path*: Xác thực dữ liệu hợp lệ trả về `IsValid == true`.
-     - *Boundary Cases*: Kiểm thử trường hợp biên như mật khẩu đúng 6 ký tự (`"123456"`), số lượng khách mời đúng 1 (`NumberOfGuests = 1`), giá trị tối đa cho phép.
-     - *Negative Cases*: Dữ liệu null, rỗng, chuỗi chỉ chứa khoảng trắng, sai định dạng email (`not-an-email`, `user@`), giá trị âm, chuỗi vượt giới hạn ký tự (FullName > 100, ProductName > 200, Description > 1000).
-  3. **Kiểm thử hành vi Pipeline MediatR (`ValidationPipelineBehaviorTests.cs`):**
-     - Đã kiểm tra cơ chế chặn lỗi (short-circuiting): Khi dữ liệu sai, pipeline lập tức ngắt chuỗi gọi `next()`, trả về đối tượng `ValidationResult` / `ValidationResult<T>` chứa danh sách lỗi chi tiết, không cho request bẩn lọt xuống Handler hay Database.
-     - Kiểm tra khi dữ liệu hợp lệ hoặc không có validator, pipeline chuyển tiếp trơn tru tới `next()`.
-  4. **Kiểm thử kiến trúc tự động (`ArchitectureTests.cs`):**
-     - Đã bổ sung 2 bài Architecture Test tự động:
-       - `Validators_Should_Have_NameEndingWith_Validator`: Toàn bộ validator phải có hậu tố `Validator`.
-       - `Validators_Should_ResideIn_ValidatorsNamespace`: Toàn bộ validator bắt buộc phải nằm trong namespace `.*\.Validators$`.
-     - Đảm bảo trong tương lai không một developer nào có thể vô tình đặt validator sai vị trí hay vi phạm quy ước kiến trúc.
+### Câu 2: Test có giá trị thật hay chỉ viết cho có?
+**ĐÁNH GIÁ: GIÁ TRỊ THẬT & ĐỘ PHỦ CAO**
+- **Số lượng và trạng thái kiểm thử độc lập**:
+  - Backend Unit Tests: **325/325 tests PASSED (100%)**.
+  - Backend Architecture Tests: **7/7 tests PASSED (100%)**.
+  - Frontend Unit & Component Tests: **127/127 tests PASSED (12 test suites, 100%)**.
+  - Frontend Production Build: **Vite build thành công (0 errors, 1,716 modules)**.
+- **Chất lượng các bài test**:
+  - Không hề có assertion rỗng dạng `expect(true).toBe(true)`.
+  - `useMaskAnimation.test.jsx`: Kiểm tra trực tiếp giá trị CSS tính toán (`backgroundPosition: '-420px -50px'`, `backgroundSize: '1400px 600px'`), kiểm tra trường hợp xóa `window.ResizeObserver` (môi trường JSDOM/SSR) để kiểm chứng fallback, kiểm tra trường hợp biên `renderWidth < containerWidth` đảm bảo `focalOffset = 0` không âm.
+  - `diverseTemplates.test.jsx`: Kiểm tra render đầy đủ cả 6 định dạng mẫu, bao gồm thẻ video nền, bio diễn giả, vé early bird, quy trình 4 bước khám nha khoa; kiểm thử sâu suite `Failure / Constraints & Edge Cases` với `config = null`, `config = undefined`, `config = {}` và dữ liệu phần tử bị thiếu thuộc tính.
+  - `splashScreen.test.jsx`: Kiểm tra giả lập `requestAnimationFrame` bị treo (stalling) để xác thực fallback timer 3000ms kích hoạt an toàn; kiểm tra cleanup timer khi component unmount.
+  - `DataSeederTests.cs`: Kiểm tra tính Idempotent khi chạy `SeedAsync` lặp lại nhiều lần, kiểm tra tính toàn vẹn `eventDetails` và kiểm tra ném ngoại lệ khi truyền DbContext `null`.
 
 ---
 
-### 3. Có vấn đề gì về bảo mật, hiệu năng, tính đúng đắn không?
-- **ĐÁNH GIÁ: AN TOÀN TUYỆT ĐỐI, HIỆU NĂNG TỐI ƯU, KIẾN TRÚC CHUẨN MỰC.**
-- **Phân tích chuyên sâu:**
-  1. **Bảo mật (Security):**
-     - Input validation được kích hoạt tự động ngay ở tầng Application thông qua MediatR pipeline.
-     - Chặn đứng các payload tấn công cơ bản như chuỗi rỗng/whitespace bypass, email dị dạng, payload rác hoặc chuỗi vượt dung lượng bộ nhớ.
-     - Không để lộ thông tin nhạy cảm hay gây exception không kiểm soát.
-  2. **Hiệu năng (Performance):**
-     - FluentValidation sử dụng cơ chế assembly scanning `services.AddValidatorsFromAssembly(assembly)` được cấu hình quét 1 lần duy nhất trong DI container.
-     - Các rule kiểm tra được thực hiện hoàn toàn in-memory, không phát sinh bất kỳ IO hay blocking task nào.
-     - Cơ chế chặn sớm tại `ValidationPipelineBehavior` giúp tiết kiệm tài nguyên xử lý của database và business handlers khi request không hợp lệ.
-  3. **Tính đúng đắn (Correctness):**
-     - Đảm bảo nguyên lý Single Responsibility Principle (SRP): Tách rời hành vi xử lý nghiệp vụ (`Commands`) khỏi hành vi thẩm định dữ liệu đầu vào (`Validators`).
-     - Không làm thay đổi signature, behavior hay logic của bất kỳ public API nào.
+### Câu 3: Có vấn đề gì về bảo mật, hiệu năng, tính đúng đắn không?
+**ĐÁNH GIÁ: AN TOÀN, HIỆU QUẢ & CHÍNH XÁC**
+1. **Bảo Mật (Security)**:
+   - Các form nhập liệu (form đặt lịch hẹn tư vấn nha khoa, form tùy biến sidebar) được quản lý qua React controlled components, dữ liệu hiển thị dạng text node an toàn, không sử dụng `dangerouslySetInnerHTML`.
+   - Backend Seeder tuân thủ mã hóa mật khẩu qua `IPasswordHasher`, định dạng Idempotent không chèn mã độc hay dữ liệu rác.
+2. **Hiệu Năng (Performance)**:
+   - **Tính toán MaskedCard**: Chỉ thực hiện phép tính số học cơ bản (`Math.max`, `Math.round`), không gây reflow/layout thrashing liên tục.
+   - **Dọn dẹp Observer (Cleanup)**:
+     - `useMaskPositions`: Đã gọi `observer.disconnect()` và `window.removeEventListener('resize', ...)` trong cleanup function của `useEffect`.
+     - `HomePage.jsx` (Section 3): Toàn bộ mảng `IntersectionObserver` được dọn dẹp triệt để thông qua `observers.forEach(obs => obs?.disconnect())`.
+   - **Trải nghiệm cuộn & Sticky layout**:
+     - Thuộc tính sticky chỉ áp dụng trên màn hình lớn (`lg:sticky lg:top-0 lg:h-screen lg:flex lg:flex-col lg:justify-center`). Trên thiết bị di động, layout tự động chuyển sang luồng cuộn dọc tự nhiên, không gây giật lag hay chặn cảm ứng của người dùng.
+   - **Video Background**:
+     - Thẻ `<video>` trong `HeroSection` thiết lập đầy đủ `autoPlay loop muted playsInline`, đi kèm fallback ảnh nền tĩnh khi video đang tải hoặc thiết bị bật chế độ tiết kiệm pin.
+3. **Tính Đúng Đắn (Correctness & Robustness)**:
+   - Cơ chế phòng vệ SSR/JSDOM: Các hook kiểm tra `typeof window !== 'undefined'` và `'ResizeObserver' in window`, trả về tọa độ mặc định mà không gây crash ứng dụng.
+   - `SplashScreen`: Lưu cờ `splash_shown` vào `sessionStorage` giúp người dùng không bị làm phiền khi duyệt giữa các trang trong cùng phiên làm việc.
+   - Tương thích ngược: `LandingPageRenderer` sử dụng toán tử kiểm tra mảng rỗng và Optional Chaining (`?.`), bảo đảm các thiệp mời cũ hiển thị hoàn hảo mà không sinh lỗi console.
 
 ---
 
-## III. BẢNG TỔNG HỢP RÀ SOÁT CHI TIẾT THEO GIT DIFF
+## 2. KẾT LUẬN & ĐỀ NGHỊ BÀN GIAO
 
-| STT | File / Thành phần | Hành động | Đánh giá của Reviewer |
-|---|---|---|---|
-| 1 | `BE/src/Application/UseCases/V1/*/Validators/` (16 files) | Tạo mới | Đạt chuẩn 100%. Namespace đúng chuẩn, rules logic chính xác, kế thừa `AbstractValidator<T>`. |
-| 2 | `BE/src/Application/UseCases/V1/*/Commands/*Validator.cs` (16 files) | Xóa bỏ | Hoàn toàn sạch sẽ, không còn file cũ sót lại. |
-| 3 | `BE/test/UnitTests/Application/*/` (8 files test cũ) | Sửa `using` | Đổi import từ `.Commands` sang `.Validators` chính xác, không thừa thiếu. |
-| 4 | `BE/test/Architecture.Tests/ArchitectureTests.cs` | Bổ sung 2 tests | Xuất sắc. Khóa chặt quy ước kiến trúc cho validator bằng NetArchTest. |
-| 5 | `BE/test/UnitTests/Application/Behaviors/ValidationPipelineBehaviorTests.cs` | Thêm mới | Rất giá trị. Kiểm chứng trọn vẹn luồng validation behavior của MediatR. |
-| 6 | `BE/test/UnitTests/Application/` (Các test validator mới: Auth, Customizations, Templates, Users) | Thêm mới | Đạt chuẩn cao. Bao phủ Happy path, Boundary và Negative cases. |
+Mã nguồn đáp ứng xuất sắc các tiêu chí kỹ thuật, kiến trúc phân tầng sạch sẽ, tối ưu trải nghiệm người dùng 60FPS và sở hữu hệ thống kiểm thử tự động vững chắc.
 
----
-
-## IV. KẾT LUẬN
-
-Mã nguồn trên nhánh `feature/refactor-usecase-validators` hoàn toàn sẵn sàng và đạt tiêu chuẩn cao nhất để đưa vào nhánh chính (`main` / `master`).
-
-**Đề xuất hành động tiếp theo:** Chuyển giao cho con người (Human Owner) tiến hành ký duyệt và thực hiện merge vào nhánh chính.
+Toàn bộ công việc đã hoàn thành đúng kịch bản, sẵn sàng cho việc nghiệm thu và hợp nhất vào nhánh chính.

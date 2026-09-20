@@ -22,7 +22,7 @@ export default function LoginPage() {
 
     try {
       const user = await login(email, password);
-      if (user.role === 'Admin') {
+      if (user?.role === 'Admin') {
         navigate('/admin', { replace: true });
       } else {
         navigate(from, { replace: true });

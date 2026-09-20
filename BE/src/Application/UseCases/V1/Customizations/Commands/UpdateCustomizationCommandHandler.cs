@@ -28,11 +28,14 @@ public sealed class UpdateCustomizationCommandHandler : ICommandHandler<UpdateCu
         }
 
         // Check ownership if user is not admin
-        if (request.CurrentUserRole != "Admin" && request.CurrentUserId.HasValue && customization.UserId.HasValue)
+        if (request.CurrentUserRole != "Admin")
         {
-            if (customization.UserId.Value != request.CurrentUserId.Value)
+            if (customization.UserId.HasValue)
             {
-                return Result.Failure(CustomizationErrors.Unauthorized);
+                if (!request.CurrentUserId.HasValue || customization.UserId.Value != request.CurrentUserId.Value)
+                {
+                    return Result.Failure(CustomizationErrors.Unauthorized);
+                }
             }
         }
 

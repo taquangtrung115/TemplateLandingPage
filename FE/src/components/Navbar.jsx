@@ -104,7 +104,7 @@ export default function Navbar() {
   const displayedMenus = menus.length > 0 ? menus : fallbackMenus;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all">
+    <header className="sticky top-0 z-40 backdrop-blur-md bg-white/80 border-b border-gray-100/60 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
@@ -291,6 +291,15 @@ export default function Navbar() {
                 <span>Quản Trị</span>
               </Link>
             )}
+
+            {/* Desktop Menu bordered black button */}
+            <Link
+              to="/templates"
+              aria-label="Menu"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black text-black text-xs font-bold hover:bg-black hover:text-white transition-all shadow-sm"
+            >
+              <span>Menu</span>
+            </Link>
           </nav>
 
           {/* User Profile / Auth buttons */}
@@ -361,29 +370,89 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile hamburger button */}
+          {/* Mobile hamburger button with 3 spans cubic-bezier X-morph */}
           <div className="flex md:hidden items-center">
             <button
+              type="button"
+              aria-label={mobileMenuOpen ? "Đóng menu" : "Mở menu"}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              className="relative w-10 h-10 flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl hover:bg-gray-100 focus:outline-none transition-colors"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <span
+                className={`w-6 h-0.5 bg-gray-900 rounded-full transition-all duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] transform ${
+                  mobileMenuOpen ? 'translate-y-2 rotate-45' : ''
+                }`}
+              />
+              <span
+                className={`w-6 h-0.5 bg-gray-900 rounded-full transition-all duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] transform ${
+                  mobileMenuOpen ? 'opacity-0 scale-x-0' : 'opacity-100 scale-x-100'
+                }`}
+              />
+              <span
+                className={`w-6 h-0.5 bg-gray-900 rounded-full transition-all duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] transform ${
+                  mobileMenuOpen ? '-translate-y-2 -rotate-45' : ''
+                }`}
+              />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Backdrop Overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-3 pb-6 space-y-2 shadow-xl max-h-[85vh] overflow-y-auto">
-          {displayedMenus.map((menu) => {
+        <div
+          className="fixed inset-0 bg-gray-950/50 backdrop-blur-sm z-50 md:hidden transition-opacity duration-300"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Slide-in Drawer */}
+      <div
+        className={`fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-white z-50 shadow-2xl flex flex-col justify-between transition-transform duration-300 ease-out md:hidden ${
+          mobileMenuOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
+        }`}
+      >
+        {/* Drawer Header */}
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <Link
+            to="/"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center space-x-2"
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <span className="font-extrabold text-base tracking-tight text-gray-900">
+              Motion<span className="text-rose-600">Sites</span>
+            </span>
+          </Link>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Drawer Menu Items */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 no-scrollbar">
+          {displayedMenus.map((menu, idx) => {
             const IconComp = resolveIcon(menu.icon, Sparkles);
             const hasChildren = menu.subMenus && menu.subMenus.length > 0;
             const isSubOpen = !!openSubmenus[menu.id];
+            const itemStyle = {
+              transitionDelay: `${100 + idx * 60}ms`,
+            };
 
             if (hasChildren) {
               return (
-                <div key={menu.id} className="border-b border-gray-50 pb-1">
+                <div
+                  key={menu.id}
+                  style={itemStyle}
+                  className={`border-b border-gray-50 pb-1 transition-all duration-300 transform ${
+                    mobileMenuOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                  }`}
+                >
                   <button
                     onClick={() => toggleMobileSubmenu(menu.id)}
                     className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-gray-800 hover:bg-gray-50"
@@ -471,7 +540,10 @@ export default function Navbar() {
                 target={menu.target || '_self'}
                 rel="noopener noreferrer"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
+                style={itemStyle}
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all duration-300 transform ${
+                  mobileMenuOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                }`}
               >
                 <div className="flex items-center gap-2">
                   <IconComp className="w-4 h-4 text-rose-500" />
@@ -492,7 +564,10 @@ export default function Navbar() {
                 key={menu.id}
                 to={menu.url}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
+                style={itemStyle}
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all duration-300 transform ${
+                  mobileMenuOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                }`}
               >
                 <div className="flex items-center gap-2">
                   <IconComp className="w-4 h-4 text-rose-500" />
@@ -531,40 +606,41 @@ export default function Navbar() {
               <span>Trang Quản Trị</span>
             </Link>
           )}
-
-          <div className="pt-3 border-t border-gray-100">
-            {isAuthenticated ? (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleLogout();
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Đăng xuất ({user?.fullName})</span>
-              </button>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <Link
-                  to="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-center px-4 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-700"
-                >
-                  Đăng nhập
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-center px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white shadow-md shadow-rose-500/20"
-                >
-                  Đăng ký
-                </Link>
-              </div>
-            )}
-          </div>
         </div>
-      )}
+
+        {/* Drawer Footer / Auth */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50/70">
+          {isAuthenticated ? (
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleLogout();
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Đăng xuất ({user?.fullName})</span>
+            </button>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-center px-4 py-2 rounded-xl text-xs font-bold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+              >
+                Đăng nhập
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-center px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white shadow-md shadow-rose-500/20 hover:bg-rose-700"
+              >
+                Đăng ký
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
     </header>
   );
 }

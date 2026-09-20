@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using TemplateLandingPage.API.Middlewares;
@@ -104,10 +105,22 @@ using (var scope = app.Services.CreateScope())
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         await DataSeeder.SeedAsync(dbContext, passwordHasher);
     }
+    catch (SqlException sqlEx)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(sqlEx,
+            "Lỗi kết nối cơ sở dữ liệu SQL Server (Error {Number}): {Message}. " +
+            "Hướng dẫn khắc phục: " +
+            "1. Nếu dùng LocalDB, kiểm tra/khởi động instance: 'sqllocaldb info mssqllocaldb' hoặc 'sqllocaldb start mssqllocaldb'. " +
+            "2. Nếu dùng SQL Server service, kiểm tra service MSSQLSERVER hoặc MSSQL$SQLEXPRESS trong Services. " +
+            "3. Kiểm tra chuỗi kết nối 'DefaultConnection' trong appsettings.json / appsettings.Development.json.",
+            sqlEx.Number,
+            sqlEx.Message);
+    }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning(ex, "Could not run DataSeeder: {Message}", ex.Message);
+        logger.LogError(ex, "Không thể khởi tạo hoặc seed dữ liệu: {Message}", ex.Message);
     }
 }
 
@@ -123,8 +136,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
 app.UseCors("DefaultCorsPolicy");
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
