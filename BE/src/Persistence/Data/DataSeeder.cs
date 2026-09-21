@@ -52,105 +52,44 @@ public static class DataSeeder
                 ?? adminUser;
         }
 
-        // 2. Seed 9 Standard Categories (Wedding & Diverse Formats)
-        Category weddingCat;
-        Category engagementCat;
-        Category birthdayCat;
-        Category anniversaryCat;
-        Category babyShowerCat;
-        Category conferenceCat;
-        Category appShowcaseCat;
-        Category medicalCat;
-        Category saasCat;
-
-        if (!await context.Categories.AnyAsync())
+        // 2. Seed 15 Standard Categories Idempotent (Wedding & Diverse Formats)
+        var allCategories = new[]
         {
-            weddingCat = Category.Create(
-                "Thiệp Cưới",
-                "wedding",
-                "Mẫu thiệp cưới online lãng mạn, hiện đại tích hợp album ảnh, âm nhạc và xác nhận RSVP.",
-                "Heart",
-                1,
-                true);
+            new { Name = "Thiệp Cưới", Slug = "wedding", Description = "Mẫu thiệp cưới online lãng mạn, hiện đại tích hợp album ảnh, âm nhạc và xác nhận RSVP.", Icon = "Heart", OrderIndex = 1 },
+            new { Name = "Lễ Đính Hôn", Slug = "engagement", Description = "Thiệp lễ ăn hỏi, đính hôn phong cách thanh lịch truyền thống kết hợp hiện đại.", Icon = "Ring", OrderIndex = 2 },
+            new { Name = "Sinh Nhật", Slug = "birthday", Description = "Mẫu thiệp sinh nhật dạ tiệc sôi động, pháo hoa giấy và âm thanh lôi cuốn.", Icon = "Cake", OrderIndex = 3 },
+            new { Name = "Kỷ Niệm Ngày Cưới", Slug = "anniversary", Description = "Ôn lại chặng đường tình yêu ngọt ngào với thiệp kỷ niệm ngày chung đôi.", Icon = "Sparkles", OrderIndex = 4 },
+            new { Name = "Thôi Nôi & Đầy Tháng", Slug = "baby-shower", Description = "Chào đón thiên thần nhỏ với những thiết kế dễ thương, ấm áp.", Icon = "Baby", OrderIndex = 5 },
+            new { Name = "Hội Nghị & Sự Kiện", Slug = "conference", Description = "Hội nghị cấp cao, công nghệ, diễn giả và hệ thống bán vé trực tuyến.", Icon = "Mic", OrderIndex = 6 },
+            new { Name = "Ứng Dụng & Năng Suất", Slug = "app-showcase", Description = "Landing page ứng dụng di động, video demo và triết lý sản phẩm.", Icon = "Layers", OrderIndex = 7 },
+            new { Name = "Y Tế & Nha Khoa", Slug = "medical", Description = "Phòng khám nha khoa cao cấp, danh mục dịch vụ và đặt lịch hẹn tư vấn.", Icon = "Stethoscope", OrderIndex = 8 },
+            new { Name = "Nền Tảng SaaS", Slug = "saas", Description = "Giải pháp phần mềm B2B, tự động hóa quy trình và bảng giá dịch vụ.", Icon = "Cpu", OrderIndex = 9 },
+            new { Name = "Ẩm Thực & Nhà Hàng", Slug = "restaurant", Description = "Khai trương nhà hàng ẩm thực, tiệc thưởng vị Fine Dining và đặt bàn trực tuyến.", Icon = "Utensils", OrderIndex = 10 },
+            new { Name = "Thể Thao & Fitness", Slug = "fitness", Description = "Câu lạc bộ thể hình cao cấp, huấn luyện viên cá nhân và gói tập chuyển hóa cơ thể.", Icon = "Dumbbell", OrderIndex = 11 },
+            new { Name = "Tiệc Tân Gia", Slug = "housewarming", Description = "Tiệc mừng nhà mới ấm cúng, sơ đồ chỉ đường và hộp quà mừng tân gia.", Icon = "Home", OrderIndex = 12 },
+            new { Name = "Giáo Dục & Khóa Học", Slug = "education", Description = "Khóa học chuyên sâu, workshop công nghệ và hội thảo trực tuyến.", Icon = "GraduationCap", OrderIndex = 13 },
+            new { Name = "Bất Động Sản & Nghỉ Dưỡng", Slug = "real-estate", Description = "Biệt thự nghỉ dưỡng cao cấp, căn hộ độc bản và đặt lịch trải nghiệm riêng tư.", Icon = "Building", OrderIndex = 14 },
+            new { Name = "Nghệ Thuật & Triển Lãm", Slug = "art-craft", Description = "Triển lãm mỹ thuật đương đại, gốm thủ công độc bản và đêm tiệc Vernissage.", Icon = "Palette", OrderIndex = 15 }
+        };
 
-            engagementCat = Category.Create(
-                "Lễ Đính Hôn",
-                "engagement",
-                "Thiệp lễ ăn hỏi, đính hôn phong cách thanh lịch truyền thống kết hợp hiện đại.",
-                "Ring",
-                2,
-                true);
+        var existingCategories = await context.Categories.ToListAsync();
+        var categoryDict = existingCategories.ToDictionary(c => c.Slug, c => c);
 
-            birthdayCat = Category.Create(
-                "Sinh Nhật",
-                "birthday",
-                "Mẫu thiệp sinh nhật dạ tiệc sôi động, pháo hoa giấy và âm thanh lôi cuốn.",
-                "Cake",
-                3,
-                true);
-
-            anniversaryCat = Category.Create(
-                "Kỷ Niệm Ngày Cưới",
-                "anniversary",
-                "Ôn lại chặng đường tình yêu ngọt ngào với thiệp kỷ niệm ngày chung đôi.",
-                "Sparkles",
-                4,
-                true);
-
-            babyShowerCat = Category.Create(
-                "Thôi Nôi & Đầy Tháng",
-                "baby-shower",
-                "Chào đón thiên thần nhỏ với những thiết kế dễ thương, ấm áp.",
-                "Baby",
-                5,
-                true);
-
-            conferenceCat = Category.Create(
-                "Hội Nghị & Sự Kiện",
-                "conference",
-                "Hội nghị cấp cao, công nghệ, diễn giả và hệ thống bán vé trực tuyến.",
-                "Mic",
-                6,
-                true);
-
-            appShowcaseCat = Category.Create(
-                "Ứng Dụng & Năng Suất",
-                "app-showcase",
-                "Landing page ứng dụng di động, video demo và triết lý sản phẩm.",
-                "Layers",
-                7,
-                true);
-
-            medicalCat = Category.Create(
-                "Y Tế & Nha Khoa",
-                "medical",
-                "Phòng khám nha khoa cao cấp, danh mục dịch vụ và đặt lịch hẹn tư vấn.",
-                "Stethoscope",
-                8,
-                true);
-
-            saasCat = Category.Create(
-                "Nền Tảng SaaS",
-                "saas",
-                "Giải pháp phần mềm B2B, tự động hóa quy trình và bảng giá dịch vụ.",
-                "Cpu",
-                9,
-                true);
-
-            context.Categories.AddRange(weddingCat, engagementCat, birthdayCat, anniversaryCat, babyShowerCat, conferenceCat, appShowcaseCat, medicalCat, saasCat);
-            await context.SaveChangesAsync();
+        var categoriesToAdd = new List<Category>();
+        foreach (var c in allCategories)
+        {
+            if (!categoryDict.ContainsKey(c.Slug))
+            {
+                var newCat = Category.Create(c.Name, c.Slug, c.Description, c.Icon, c.OrderIndex, true);
+                categoriesToAdd.Add(newCat);
+                categoryDict[c.Slug] = newCat;
+            }
         }
-        else
+
+        if (categoriesToAdd.Count > 0)
         {
-            weddingCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "wedding") ?? await context.Categories.FirstAsync();
-            engagementCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "engagement") ?? weddingCat;
-            birthdayCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "birthday") ?? weddingCat;
-            anniversaryCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "anniversary") ?? weddingCat;
-            babyShowerCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "baby-shower") ?? birthdayCat;
-            conferenceCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "conference") ?? weddingCat;
-            appShowcaseCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "app-showcase") ?? weddingCat;
-            medicalCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "medical") ?? weddingCat;
-            saasCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "saas") ?? weddingCat;
+            context.Categories.AddRange(categoriesToAdd);
+            await context.SaveChangesAsync();
         }
 
         // 3. Seed Dynamic Navigation Menus (Parent & Submenu Tree)
@@ -867,186 +806,1003 @@ public static class DataSeeder
         }
         """;
 
-        // 4. Seed Templates (Rich Mockup, Audio, LongPreview for all Categories)
-        Template t1;
-        Template t2;
-        Template t5;
-        Template t6;
-        Template tAiSummit;
-        Template tDriftPlanner;
-        Template tSmileCraft;
-        Template tCloudFlow;
-
-        if (!await context.Templates.AnyAsync())
+        var lauraBistroConfigJson = """
         {
-            t1 = Template.Create(
-                "Elegance Blossom",
-                "elegance-blossom",
-                "Mẫu thiệp cưới sang trọng phong cách Châu Âu, tone màu hồng pastel dịu dàng với hiệu ứng cánh hoa bay lãng mạn.",
-                weddingCat.Id,
-                "Wedding",
-                "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
-                "/preview/elegance-blossom",
-                "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
-                "Premium",
-                "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
-                "A Thousand Years - Piano Instrumental",
-                weddingConfigJson);
+          "format": "restaurant",
+          "theme": {
+            "primaryColor": "#c2410c",
+            "secondaryColor": "#ea580c",
+            "accentColor": "#fef08a",
+            "backgroundColor": "#0c0a09",
+            "textColor": "#f8fafc",
+            "fontFamily": "Playfair Display",
+            "particlesEffect": "none"
+          },
+          "hero": {
+            "badge": "GRAND OPENING & EXCLUSIVE TASTING",
+            "title": "L'Aura Gourmet Bistro",
+            "subtitle": "Bản hòa tấu ẩm thực tinh hoa Pháp giữa lòng Sài Gòn",
+            "eventDate": "2026-11-28T18:30:00",
+            "coverImageUrl": "https://images.unsplash.com/photo-1544025162-d76694265947?w=1600&q=80",
+            "callToActionText": "Đặt Bàn Trải Nghiệm"
+          },
+          "servicesGrid": [
+            { "id": "dish-1", "name": "Truffle Wagyu A5 Tartare", "description": "Bò Wagyu A5 thái tay kết hợp nấm Truffle đen Périgord và trứng chim cút chần chậm.", "priceFrom": "850.000 đ" },
+            { "id": "dish-2", "name": "Pan-Seared Foie Gras", "description": "Gan ngỗng áp chảo béo ngậy kèm sốt mận đỏ hữu cơ và bánh mì Brioche nướng bơ.", "priceFrom": "680.000 đ" },
+            { "id": "dish-3", "name": "Wild French Turbot", "description": "Cá bơn biển Pháp nướng bơ tỏi đen, rau bina non và sốt bơ trắng Beurre Blanc.", "priceFrom": "1.250.000 đ" },
+            { "id": "dish-4", "name": "Dark Chocolate Lava Sphere", "description": "Quả cầu chocolate Grand Cru 72% tan chảy cùng kem quả mâm xôi tuyết và vàng lá.", "priceFrom": "320.000 đ" }
+          ],
+          "treatmentProcess": [
+            { "step": "01", "title": "Khai vị Amuse-Bouche", "desc": "Đánh thức vị giác cùng canapé hải sản và vang sủi Champagne Brut Reserve." },
+            { "step": "02", "title": "Rượu vang Sommelier Pairing", "desc": "Bộ sưu tập vang Bordeaux & Burgundy tuyển chọn riêng cho từng món ăn." },
+            { "step": "03", "title": "Món chính Chef's Special", "desc": "Bò Wagyu mọng nước thượng hạng đượm khói gỗ sồi nướng than Binchotan." },
+            { "step": "04", "title": "Tráng miệng & Digestif", "desc": "Kết thúc dạ tiệc với ngọt ngào tinh tế và ly rượu mạnh Cognac ủ lâu năm." }
+          ],
+          "booking": {
+            "enabled": true,
+            "title": "Đặt Bàn Dạ Tiệc Khai Trương (VIP Reserve)"
+          },
+          "eventDetails": {
+            "ceremonyName": "Đêm Tiệc Thưởng Vị Khai Trương",
+            "time": "18:30 - Thứ Bảy, 28/11/2026",
+            "venueName": "L'Aura Bistro Mansion",
+            "address": "18 Phùng Khắc Khoan, Đa Kao, Quận 1, TP. Hồ Chí Minh",
+            "mapEmbedUrl": "https://maps.google.com",
+            "mapDirectLink": "https://maps.google.com",
+            "dressCode": "Cocktail Attire / Smart Elegance"
+          },
+          "timeline": [
+            { "id": "1", "time": "18:30", "title": "Đón khách & Champagne Thượng Hạng", "description": "Thưởng thức Champagne Welcome drink và canapé trong tiếng đàn harp du dương.", "icon": "GlassWater" },
+            { "id": "2", "time": "19:15", "title": "Triết Lý Bếp Trưởng & Khai Tiệc", "description": "Executive Chef Guillaume giới thiệu hành trình vị giác mùa thu 2026.", "icon": "Sparkles" },
+            { "id": "3", "time": "19:45", "title": "Dạ Tiệc Thưởng Vị 5 Khóa (5-Course Tasting)", "description": "Trải nghiệm ẩm thực Pháp đương đại kết hợp pairing vang hảo hạng.", "icon": "Utensils" },
+            { "id": "4", "time": "21:30", "title": "Live French Jazz & Giao Lưu", "description": "Hòa mình vào giai điệu Jazz acoustic và chia sẻ cảm xúc cùng sommelier.", "icon": "Music" }
+          ],
+          "gallery": [
+            { "id": "1", "url": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80", "caption": "Không gian kiến trúc cổ điển ấm cúng" },
+            { "id": "2", "url": "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=800&q=80", "caption": "Tỉ mỉ trong từng đĩa món nghệ thuật" },
+            { "id": "3", "url": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&q=80", "caption": "Hầm rượu vang lưu trữ hơn 500 nhãn vang quý" },
+            { "id": "4", "url": "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80", "caption": "Bàn tiệc VIP dưới ánh nến lung linh" }
+          ],
+          "music": {
+            "enabled": true,
+            "audioUrl": "https://cdn.pixabay.com/download/audio/2022/05/16/audio_c16e78cfbc.mp3",
+            "title": "French Cafe Jazz & Smooth Acoustic",
+            "autoPlay": true
+          },
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-11-20",
+            "note": "Số lượng bàn trải nghiệm giới hạn 40 khách VIP. Vui lòng xác nhận trước ngày 20/11.",
+            "allowDietaryNotes": true,
+            "allowPlusOnes": true
+          },
+          "extraSections": [
+            {
+              "id": "restaurant-qa",
+              "type": "qa",
+              "enabled": true,
+              "title": "Thông Tin Dành Cho Thực Khách",
+              "items": [
+                { "question": "Nhà hàng có chỗ đỗ xe ô tô không?", "answer": "L'Aura Bistro có dịch vụ Valet Parking đỗ xe miễn phí cho quý khách ngay cổng chính." },
+                { "question": "Nhà hàng có phục vụ thực đơn chay không?", "answer": "Có, quý khách vui lòng ghi chú chế độ ăn kiêng hoặc ăn chay khi xác nhận đặt bàn." }
+              ]
+            }
+          ]
+        }
+        """;
 
-            t2 = Template.Create(
-                "Golden Glamour",
-                "golden-glamour",
-                "Mẫu thiệp sinh nhật dạ tiệc sang trọng với tone vàng kim, hiệu ứng pháo hoa giấy confetti lung linh rực rỡ.",
-                birthdayCat.Id,
-                "Birthday",
-                "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80",
-                "/preview/golden-glamour",
-                "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80",
-                "Hot",
-                "https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77c30.mp3",
-                "Celebration Night - Acoustic Vibe",
-                birthdayConfigJson);
+        var apexFitnessConfigJson = """
+        {
+          "format": "fitness",
+          "theme": {
+            "primaryColor": "#eab308",
+            "secondaryColor": "#ca8a04",
+            "accentColor": "#fef08a",
+            "backgroundColor": "#09090b",
+            "textColor": "#fafafa",
+            "fontFamily": "Inter",
+            "particlesEffect": "none"
+          },
+          "hero": {
+            "badge": "THE ULTIMATE BODY TRANSFORMATION",
+            "title": "Apex Titanium Club",
+            "subtitle": "Phòng tập thể hình hybrid chuẩn 5 sao với thiết bị Technogym & phân tích sinh trắc học InBody 970.",
+            "eventDate": "2026-12-01T06:00:00",
+            "coverImageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&q=80",
+            "callToActionText": "Đăng Ký Tập Thử Miễn Phí"
+          },
+          "featureCardsGrid": [
+            { "id": "f-1", "title": "Công Nghệ AI Bio-Scan", "description": "Quét chỉ số cơ xương khớp 3D và lập lộ trình tập luyện thích ứng theo tuần." },
+            { "id": "f-2", "title": "Thiết Bị Technogym Pure", "description": "100% máy tập nhập khẩu từ Ý với quỹ đạo sinh học chuẩn xác, giảm tải chấn thương." },
+            { "id": "f-3", "title": "HLV Đạt Chuẩn NASM/IFBB", "description": "Master Coach giàu kinh nghiệm đồng hành 1-1, kiểm soát dinh dưỡng và nhịp tim từng buổi." },
+            { "id": "f-4", "title": "Phục Hồi Cryotherapy & Sauna", "description": "Khu thủy trị liệu xông hơi đá muối Himalaya và buồng lạnh hồi phục cơ bắp cấp tốc." }
+          ],
+          "metrics": [
+            { "value": "2,500+", "label": "Hội viên chuyển hóa thành công" },
+            { "value": "98.7%", "label": "Duy trì tập luyện sau 6 tháng" },
+            { "value": "15+", "label": "Master Trainer quốc tế" },
+            { "value": "24/7", "label": "Mở cửa liên tục phục vụ hội viên" }
+          ],
+          "pricingPackages": [
+            {
+              "id": "pkg-silver",
+              "name": "Silver Access",
+              "price": "$49",
+              "billingPeriod": "tháng",
+              "description": "Tự do tập luyện không giới hạn thời gian",
+              "perks": ["Sử dụng toàn bộ thiết bị gym & cardio", "Tủ locker cá nhân thông minh", "2 buổi đo InBody định kỳ"]
+            },
+            {
+              "id": "pkg-titanium",
+              "name": "Titanium Pro",
+              "price": "$129",
+              "billingPeriod": "tháng",
+              "badge": "POPULAR",
+              "description": "Lựa chọn toàn diện nhất cho người tập nghiêm túc",
+              "perks": ["Bao gồm toàn bộ quyền lợi Silver", "4 buổi PT 1 kèm 1 mỗi tháng", "Không giới hạn lớp Yoga, Boxing, HIIT", "Sử dụng Sauna & Jacuzzi thủy lực"]
+            },
+            {
+              "id": "pkg-vip",
+              "name": "VIP Elite Black",
+              "price": "$299",
+              "billingPeriod": "tháng",
+              "description": "Đẳng cấp không giới hạn dành riêng cho VIP",
+              "perks": ["HLV riêng toàn thời gian 1-1", "Phòng VIP Lounge riêng tư", "Trọn gói Cryotherapy hồi phục lạnh", "Được cấp phát đồ tập & khăn cao cấp mỗi ngày"]
+            }
+          ],
+          "eventDetails": {
+            "ceremonyName": "Tuần Lễ Khai Trương Apex Titanium Flagship",
+            "time": "06:00 - 22:00, Từ 01/12/2026",
+            "venueName": "Apex Titanium Tower",
+            "address": "88 Song Hành, Phường An Phú, TP. Thủ Đức, TP. Hồ Chí Minh",
+            "mapEmbedUrl": "https://maps.google.com",
+            "mapDirectLink": "https://maps.google.com",
+            "dressCode": "Sporty / Athletic Chic"
+          },
+          "timeline": [
+            { "id": "1", "time": "06:00", "title": "Mở cửa đón hội viên & Check-in FaceID", "description": "Khám phá không gian tập luyện 3,000 m² và quầy Bar Nutrition.", "icon": "Sparkles" },
+            { "id": "2", "time": "09:00", "title": "Workshops: Kỹ Thuật Nâng Tạ & Chống Chấn Thương", "description": "Chia sẻ trực tiếp từ IFBB Pro Coach về tối ưu cơ sinh học.", "icon": "Dumbbell" },
+            { "id": "3", "time": "16:00", "title": "Thử thách thể lực Titan Challenge", "description": "Tranh tài Deadlift & Burpees với giải thưởng gói tập 1 năm.", "icon": "Utensils" },
+            { "id": "4", "time": "19:00", "title": "DJ Energy Night & Giao Lưu Hội Viên", "description": "Tiệc âm nhạc EDM tràn đầy năng lượng cùng protein shake tươi.", "icon": "Music" }
+          ],
+          "gallery": [
+            { "id": "1", "url": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80", "caption": "Khu tạ tự do Free-Weights quy mô lớn" },
+            { "id": "2", "url": "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800&q=80", "caption": "Dàn máy chạy Technogym hướng view Panorama" },
+            { "id": "3", "url": "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80", "caption": "Phòng tập Boxing & Functional Training" },
+            { "id": "4", "url": "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80", "caption": "Khu vực giãn cơ và hồi phục cơ bắp" }
+          ],
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-12-05",
+            "note": "Đăng ký trước để nhận 7 ngày tập thử miễn phí và đo InBody 3D chuyên sâu."
+          }
+        }
+        """;
 
-            var t3 = Template.Create(
-                "Sweet Romance",
-                "sweet-romance",
-                "Mẫu thiệp cưới cổ điển phương Tây, font chữ thanh lịch cùng giai điệu vĩ cầm du dương.",
-                weddingCat.Id,
-                "Wedding",
-                "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
-                "/preview/sweet-romance",
-                "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
-                "Basic",
-                "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3",
-                "Can't Help Falling in Love - Violin Cover",
-                weddingConfigJson.Replace("Minh & Linh", "Tuấn & Trang"));
+        var warmNestConfigJson = """
+        {
+          "theme": {
+            "primaryColor": "#059669",
+            "secondaryColor": "#10b981",
+            "accentColor": "#fef08a",
+            "backgroundColor": "#f0fdf4",
+            "textColor": "#1e293b",
+            "fontFamily": "Playfair Display",
+            "particlesEffect": "confetti"
+          },
+          "hero": {
+            "badge": "LỄ MỪNG NHÀ MỚI (TÂN GIA)",
+            "title": "Gia Đình Tuấn & Mai",
+            "subtitle": "Tổ ấm mới ngập tràn yêu thương và bình yên đã sẵn sàng chào đón bạn",
+            "eventDate": "2026-11-08T11:00:00",
+            "coverImageUrl": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1600&q=80",
+            "callToActionText": "Xác Nhận Đến Chung Vui"
+          },
+          "coupleOrCelebrant": {
+            "type": "event",
+            "person1": {
+              "name": "Đức Tuấn & Quỳnh Mai",
+              "title": "Gia Chủ",
+              "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80",
+              "bio": "Sau 5 năm ấp ủ và vun vén, tổ ấm mơ ước đã hoàn thành. Rất mong được đón tiếp anh em bạn bè!",
+              "parents": ""
+            },
+            "storyQuote": "Nhà không chỉ là nơi để ở, nhà là nơi bão dừng sau cánh cửa."
+          },
+          "eventDetails": {
+            "ceremonyName": "Tiệc Tân Gia Mừng An Cư Lạc Nghiệp",
+            "time": "11:00 - Chủ Nhật, 08/11/2026",
+            "venueName": "Biệt Thự Vườn The Green Haven",
+            "address": "Lô B12 Khu Đô Thị Vạn Phúc, Quốc Lộ 13, Hiệp Bình Phước, TP. Thủ Đức",
+            "mapEmbedUrl": "https://maps.google.com",
+            "mapDirectLink": "https://maps.google.com",
+            "dressCode": "Xanh Lá / Trắng / Be Ấm Áp"
+          },
+          "timeline": [
+            { "id": "1", "time": "10:30", "title": "Đón khách & Tham quan tổ ấm", "description": "Chào đón khách quý, dẫn tour tham quan không gian kiến trúc căn nhà mới.", "icon": "Camera" },
+            { "id": "2", "time": "11:30", "title": "Khai rượu mừng tân gia", "description": "Khui champagne chúc mừng an cư lạc nghiệp, gia đạo bình an.", "icon": "Sparkles" },
+            { "id": "3", "time": "12:00", "title": "Tiệc BBQ sân vườn ấm cúng", "description": "Thưởng thức tiệc nướng ngoài trời, rượu vang cùng gia đình và bạn hữu.", "icon": "Utensils" },
+            { "id": "4", "time": "13:30", "title": "Hàn huyên, Trà chiều & Boardgame", "description": "Giao lưu, nghe nhạc acoustic sân vườn và chia sẻ kỷ niệm.", "icon": "Music" }
+          ],
+          "gallery": [
+            { "id": "1", "url": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80", "caption": "Phòng khách ngập tràn ánh sáng tự nhiên" },
+            { "id": "2", "url": "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80", "caption": "Góc bếp ấm cúng nơi giữ lửa gia đình" },
+            { "id": "3", "url": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80", "caption": "Khoảng sân vườn xanh mát nhiều hoa trái" },
+            { "id": "4", "url": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80", "caption": "Khu ban công ngắm hoàng hôn chill mỗi chiều" }
+          ],
+          "music": {
+            "enabled": true,
+            "audioUrl": "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3",
+            "title": "Home Sweet Home - Acoustic Guitar Melody",
+            "autoPlay": true
+          },
+          "extraSections": [
+            {
+              "id": "housewarming-gift",
+              "type": "giftQr",
+              "enabled": true,
+              "title": "Hộp Quà Mừng Tân Gia",
+              "subtitle": "Quà mừng tinh thần và chúc phúc an cư từ phương xa",
+              "qrBank": {
+                "bankName": "MBBank",
+                "accountNumber": "9876543210",
+                "accountHolder": "NGUYEN DUC TUAN",
+                "qrImageUrl": ""
+              }
+            }
+          ],
+          "wishes": {
+            "enabled": true,
+            "title": "Sổ Lưu Bút Mừng Nhà Mới",
+            "subtitle": "Gửi những lời chúc tài lộc, bình an và hạnh phúc đến tổ ấm mới của Tuấn & Mai"
+          },
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-11-01",
+            "note": "Xin quý bạn vui lòng xác nhận trước 01/11 để gia đình chuẩn bị phần tiệc chu đáo nhất!",
+            "allowDietaryNotes": true,
+            "allowPlusOnes": true
+          }
+        }
+        """;
 
-            var t4 = Template.Create(
-                "Eternal Love",
-                "eternal-love",
-                "Mẫu thiệp cưới tối giản hiện đại (Minimalist), tinh khôi và trường tồn cùng năm tháng.",
-                weddingCat.Id,
-                "Wedding",
-                "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
-                "/preview/eternal-love",
-                "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
-                "Free",
-                "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3",
-                "River Flows in You - Yiruma",
-                weddingConfigJson.Replace("Minh & Linh", "Bảo & Vy"));
+        var azureBreezeWeddingConfigJson = """
+        {
+          "theme": {
+            "primaryColor": "#0284c7",
+            "secondaryColor": "#0ea5e9",
+            "accentColor": "#fef08a",
+            "backgroundColor": "#f0fdfa",
+            "textColor": "#0f172a",
+            "fontFamily": "Playfair Display",
+            "particlesEffect": "petals"
+          },
+          "hero": {
+            "badge": "DESTINATION BEACH WEDDING",
+            "title": "Khánh & Vy",
+            "subtitle": "Cùng nhau trao lời thề ước dưới ánh hoàng hôn biển Phú Quốc",
+            "eventDate": "2026-12-18T16:30:00",
+            "coverImageUrl": "https://images.unsplash.com/photo-1510076857177-7470076d4098?w=1600&q=80",
+            "callToActionText": "Xác Nhận Tham Dự"
+          },
+          "coupleOrCelebrant": {
+            "type": "wedding",
+            "person1": {
+              "name": "Trần Nam Khánh",
+              "title": "Chú Rể",
+              "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80",
+              "bio": "Kiến trúc sư yêu biển cả, người luôn muốn dựng xây một bến đỗ bình yên.",
+              "parents": "Ông Trần Đình Long & Bà Vũ Kim Oanh"
+            },
+            "person2": {
+              "name": "Hoàng Thảo Vy",
+              "title": "Cô Dâu",
+              "avatarUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80",
+              "bio": "Nhiếp ảnh gia thiên nhiên, luôn tìm thấy thơ mộng trong từng con sóng biển.",
+              "parents": "Ông Hoàng Quốc Việt & Bà Nguyễn Bích Thủy"
+            },
+            "storyQuote": "Em là bờ cát trắng dịu êm, anh là ngọn sóng vỗ về ngàn năm."
+          },
+          "eventDetails": {
+            "ceremonyName": "Lễ Thành Hôn Hoàng Hôn Trên Biển",
+            "time": "16:30 - Thứ Sáu, 18/12/2026",
+            "venueName": "InterContinental Phu Quoc Long Beach Resort",
+            "address": "Bãi Trường, Dương Tơ, TP. Phú Quốc, Kiên Giang",
+            "mapEmbedUrl": "https://maps.google.com",
+            "mapDirectLink": "https://maps.google.com",
+            "dressCode": "Linen Trắng / Xanh Dương / Be Nhiệt Đới"
+          },
+          "timeline": [
+            { "id": "1", "time": "16:00", "title": "Đón khách & Nước dừa tươi nhiệt đới", "description": "Check-in bãi cát trắng và thưởng thức nước dừa mát lạnh cùng âm thanh sóng biển.", "icon": "GlassWater" },
+            { "id": "2", "time": "16:45", "title": "Thề ước dưới vòm hoa biển", "description": "Nghi thức trao nhẫn cưới dưới ánh hoàng hôn rực rỡ của biển Phú Quốc.", "icon": "Heart" },
+            { "id": "3", "time": "17:45", "title": "Chụp ảnh đón hoàng hôn (Golden Hour)", "description": "Lưu giữ những khoảnh khắc nhiệm màu cùng quan khách khi mặt trời lặn.", "icon": "Camera" },
+            { "id": "4", "time": "18:30", "title": "Dạ tiệc hải sản & Lửa trại trên biển", "description": "Tiệc tối ngoài trời, âm nhạc sống acoustic và khiêu vũ bên lửa trại.", "icon": "Music" }
+          ],
+          "gallery": [
+            { "id": "1", "url": "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=800&q=80", "caption": "Vòm hoa cưới hướng thẳng ra biển xanh" },
+            { "id": "2", "url": "https://images.unsplash.com/photo-1510076857177-7470076d4098?w=800&q=80", "caption": "Hoàng hôn phủ bóng đôi uyên ương" },
+            { "id": "3", "url": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80", "caption": "Bàn tiệc lãng mạn dưới bầu trời đầy sao" },
+            { "id": "4", "url": "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80", "caption": "Khoảnh khắc trao lời thề ước trọn đời" }
+          ],
+          "music": {
+            "enabled": true,
+            "audioUrl": "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3",
+            "title": "Ocean Waves & Acoustic Ukulele Romance",
+            "autoPlay": true
+          },
+          "extraSections": [
+            {
+              "id": "beach-faq",
+              "type": "qa",
+              "enabled": true,
+              "title": "Cẩm Nang Đi Tiệc Bãi Biển",
+              "items": [
+                { "question": "Resort có xe đón tiễn sân bay không?", "answer": "Có, resort bố trí shuttle bus đón khách từ sân bay Phú Quốc về resort miễn phí." },
+                { "question": "Nên mang giày gì khi đi tiệc trên cát?", "answer": "Quý khách nên mang sandal bệt hoặc giày đế xuồng để đi dạo êm ái trên bãi cát." }
+              ]
+            }
+          ],
+          "wishes": {
+            "enabled": true,
+            "title": "Sổ Lưu Bút Biển Xanh",
+            "subtitle": "Gửi những lời chúc phúc bình yên và ngọt ngào nhất tới Khánh & Vy"
+          },
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-11-25",
+            "note": "Để hỗ trợ gia đình đặt phòng và chuẩn bị vé chu đáo, quý khách vui lòng phản hồi trước 25/11.",
+            "allowDietaryNotes": true,
+            "allowPlusOnes": true
+          }
+        }
+        """;
 
-            t5 = Template.Create(
-                "Pastel Dream Baby",
-                "pastel-dream-baby",
-                "Mẫu thiệp thôi nôi đầy tháng ngọt ngào với gam màu baby pastel, hình vẽ ngộ nghĩnh và lời nhắn ấm áp.",
-                babyShowerCat.Id,
-                "BabyShower",
-                "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80",
-                "/preview/pastel-dream-baby",
-                "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80",
-                "New",
-                "https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3",
-                "Lullaby Goodnight - Music Box",
-                babyShowerConfigJson);
+        var genAiMasterclassConfigJson = """
+        {
+          "format": "summit",
+          "theme": {
+            "primaryColor": "#7c3aed",
+            "secondaryColor": "#8b5cf6",
+            "accentColor": "#c4b5fd",
+            "backgroundColor": "#0f0728",
+            "textColor": "#f8fafc",
+            "fontFamily": "Inter",
+            "particlesEffect": "none"
+          },
+          "hero": {
+            "badge": "INTENSIVE 4-WEEK COHORT",
+            "title": "Mastering Prompt Engineering & Autonomous AI Agents",
+            "subtitle": "Khóa huấn luyện thực chiến xây dựng hệ thống Multi-Agent và tự động hóa quy trình với LLMs.",
+            "eventDate": "2026-11-10T19:30:00",
+            "coverImageUrl": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1600&q=80",
+            "callToActionText": "Giữ Chỗ Lớp Khai Giảng"
+          },
+          "speakers": [
+            {
+              "id": "spk-1",
+              "name": "ThS. Đặng Hoàng Nam",
+              "role": "Head of AI Research",
+              "company": "NexusMind",
+              "bio": "Chuyên gia với 10 năm kinh nghiệm NLP & LLM, tác giả cuốn sách 'Kiến Tạo Tác Nhân AI Thông Minh'.",
+              "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80"
+            },
+            {
+              "id": "spk-2",
+              "name": "Dr. Sarah Nguyễn",
+              "role": "Lead Prompt Architect",
+              "company": "OpenSynth",
+              "bio": "Kiến trúc sư thiết kế hệ thống prompt tối ưu ngữ cảnh hàng đầu khu vực Đông Nam Á.",
+              "avatarUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80"
+            }
+          ],
+          "pricingTickets": [
+            {
+              "id": "ticket-standard",
+              "name": "Học Viên Tiêu Chuẩn",
+              "price": "2.890.000 đ",
+              "originalPrice": "4.500.000 đ",
+              "badge": "EARLY BIRD",
+              "perks": ["8 buổi học tương tác trực tuyến qua Zoom", "Kho prompt template bản quyền 500+ mẫu", "Mã nguồn thực hành GitHub riêng tư", "Chứng chỉ hoàn thành khóa học"],
+              "ctaText": "Đăng Ký Khóa Học"
+            },
+            {
+              "id": "ticket-pro",
+              "name": "Gói Pro Mentorship 1-1",
+              "price": "5.990.000 đ",
+              "badge": "POPULAR",
+              "perks": ["Toàn bộ quyền lợi gói Tiêu Chuẩn", "4 giờ Coaching 1-1 trực tiếp cùng Giảng viên", "Review đồ án capstone Multi-Agent thực tế", "Giới thiệu cơ hội việc làm tại đối tác AI"],
+              "ctaText": "Đăng Ký Gói Pro"
+            }
+          ],
+          "eventDetails": {
+            "ceremonyName": "Lịch Khai Giảng Khóa Học Cohort 8",
+            "time": "19:30 - 21:30, Thứ Ba & Thứ Năm hàng tuần",
+            "venueName": "Live Zoom HD & Discord Community",
+            "address": "Học trực tuyến có ghi hình xem lại trọn đời",
+            "dressCode": "Tự do / Máy tính cá nhân kết nối Internet"
+          },
+          "timeline": [
+            { "id": "1", "time": "Tuần 1", "title": "Nền Tảng Advanced Prompting", "description": "Kỹ thuật Chain-of-Thought, ReAct framework và cấu trúc hóa dữ liệu JSON đầu ra.", "icon": "Sparkles" },
+            { "id": "2", "time": "Tuần 2", "title": "Hệ Thống RAG & Vector Database", "description": "Xây dựng kho tri thức riêng biệt với Milvus, LangChain và Semantic Search.", "icon": "Cpu" },
+            { "id": "3", "time": "Tuần 3", "title": "Xây Dựng Autonomous Multi-Agents", "description": "Thiết kế bầy tác nhân phối hợp giải quyết bài toán nghiệp vụ phức tạp.", "icon": "Layers" },
+            { "id": "4", "time": "Tuần 4", "title": "Demo Day & Triển Khai Production", "description": "Tối ưu hóa độ trễ, chi phí token và đóng gói sản phẩm thương mại.", "icon": "Mic" }
+          ],
+          "extraSections": [
+            {
+              "id": "course-faq",
+              "type": "qa",
+              "enabled": true,
+              "title": "Câu Hỏi Thường Gặp Về Khóa Học",
+              "items": [
+                { "question": "Tôi chưa biết lập trình có học được không?", "answer": "Khóa học thiết kế từ cơ bản đến nâng cao, có module no-code/low-code dành cho non-tech." },
+                { "question": "Nếu tôi bận một buổi học có xem lại được không?", "answer": "Mỗi buổi học đều được ghi hình chất lượng 4K và tải lên portal trong vòng 2 giờ." }
+              ]
+            }
+          ],
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-11-08",
+            "note": "Lớp học giới hạn 30 học viên để đảm bảo chất lượng hướng dẫn 1-1 tốt nhất."
+          }
+        }
+        """;
 
-            t6 = Template.Create(
-                "Silver Jubilee",
-                "silver-jubilee",
-                "Mẫu thiệp kỷ niệm ngày cưới bạc và vàng, gắn kết những khoảnh khắc yêu thương suốt nhiều thập kỷ.",
-                anniversaryCat.Id,
-                "Anniversary",
-                "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80",
-                "/preview/silver-jubilee",
-                "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80",
-                "Premium",
-                "https://cdn.pixabay.com/download/audio/2022/11/06/audio_03d659ad76.mp3",
-                "Memories of Love - Orchestra",
-                anniversaryConfigJson);
+        var horizonVillasConfigJson = """
+        {
+          "format": "app-showcase",
+          "theme": {
+            "primaryColor": "#d97706",
+            "secondaryColor": "#b45309",
+            "accentColor": "#fef08a",
+            "backgroundColor": "#0c0a09",
+            "textColor": "#f8fafc",
+            "fontFamily": "Playfair Display",
+            "particlesEffect": "none"
+          },
+          "hero": {
+            "badge": "LIMITED EDITION VILLA COLLECTION",
+            "title": "The Horizon Ocean Sanctuary",
+            "subtitle": "Bộ sưu tập 18 căn biệt thự độc bản trên vách đá ngắm trọn vịnh biển thiên đường",
+            "eventDate": "2026-12-12T09:00:00",
+            "coverImageUrl": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80",
+            "callToActionText": "Đăng Ký Tham Quan Riêng Tư"
+          },
+          "featureCardsGrid": [
+            { "id": "f-1", "title": "Tầm Nhìn Biển Panorama 360°", "description": "100% vách kính Low-E tràn viền thu trọn vẻ đẹp hoang sơ của vịnh biển bình minh." },
+            { "id": "f-2", "title": "Bến Du Thuyền & Sân Đỗ Trực Thăng", "description": "Hạ tầng hàng hải và hàng không riêng biệt, sẵn sàng đón tiếp những chuyến du ngoạn siêu sang." },
+            { "id": "f-3", "title": "Hồ Bơi Vô Cực Nước Mặn Điện Phân", "description": "Bể bơi treo vách đá công nghệ khoáng mặn sinh học tốt cho sức khỏe và làn da." },
+            { "id": "f-4", "title": "Quản Gia Riêng Les Clefs d'Or", "description": "Đội ngũ phục vụ chuẩn mực quý tộc Châu Âu chăm sóc chu đáo 24/7." }
+          ],
+          "metrics": [
+            { "value": "18", "label": "Căn biệt thự độc bản giới hạn" },
+            { "value": "1,200 m²", "label": "Khuôn viên đất dinh thự" },
+            { "value": "100%", "label": "Trực diện biển không góc khuất" },
+            { "value": "Sở Hữu", "label": "Lâu dài với pháp lý hoàn chỉnh" }
+          ],
+          "eventDetails": {
+            "ceremonyName": "Sự Kiện Ra Mắt Giới Hạn The Horizon Private Showcase",
+            "time": "09:00 - Thứ Bảy, 12/12/2026",
+            "venueName": "The Horizon VIP Lounge & Marina Club",
+            "address": "Bán đảo Sơn Trà, Bãi Bụt, TP. Đà Nẵng",
+            "mapEmbedUrl": "https://maps.google.com",
+            "mapDirectLink": "https://maps.google.com",
+            "dressCode": "Elegance Resort / All White"
+          },
+          "timeline": [
+            { "id": "1", "time": "09:00", "title": "Đón khách bằng du thuyền tư nhân", "description": "Hành trình thưởng ngoạn vịnh biển và cập bến du thuyền The Horizon Marina.", "icon": "Camera" },
+            { "id": "2", "time": "10:00", "title": "Khám phá Biệt thự mẫu The Presidential Suite", "description": "Trải nghiệm nội thất hàng hiệu Minotti & Poliform độc bản chế tác riêng.", "icon": "Sparkles" },
+            { "id": "3", "time": "11:30", "title": "Dạ tiệc Champagne & Thưởng vị ẩm thực biển", "description": "Tiệc trưa do bếp trưởng Michelin thiết kế riêng bên bờ biển.", "icon": "Utensils" },
+            { "id": "4", "time": "14:00", "title": "Tư vấn đặc quyền đầu tư riêng tư", "description": "Buổi làm việc kín 1-1 cùng ban phát triển dự án và chuyên gia tài chính.", "icon": "Building" }
+          ],
+          "gallery": [
+            { "id": "1", "url": "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&q=80", "caption": "Kiến trúc hiện đại hòa quyện vào vách đá tự nhiên" },
+            { "id": "2", "url": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80", "caption": "Hồ bơi vô cực ngắm trọn hoàng hôn biển" },
+            { "id": "3", "url": "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=800&q=80", "caption": "Phòng khách mở thông tầng đón trọn gió trời" },
+            { "id": "4", "url": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80", "caption": "Phòng ngủ Master Suite hướng tầm nhìn triệu đô" }
+          ],
+          "music": {
+            "enabled": true,
+            "audioUrl": "https://cdn.pixabay.com/download/audio/2022/11/06/audio_03d659ad76.mp3",
+            "title": "Elegance Ambience - Soft Classical Piano",
+            "autoPlay": true
+          },
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-12-05",
+            "note": "Sự kiện riêng tư chỉ đón tiếp 20 khách mời VIP có thư mời xác nhận."
+          }
+        }
+        """;
 
-            var t7 = Template.Create(
-                "Traditional Grace",
-                "traditional-grace",
-                "Mẫu thiệp lễ đính hôn và lễ ăn hỏi truyền thống Á Đông kết hợp sự thanh lịch hiện đại.",
-                engagementCat.Id,
-                "Engagement",
-                "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
-                "/preview/traditional-grace",
-                "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
-                "New",
-                "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
-                "Beautiful In White - Acoustic Guitar",
-                engagementConfigJson);
+        var academicGloryConfigJson = """
+        {
+          "format": "graduation",
+          "theme": {
+            "primaryColor": "#1d4ed8",
+            "secondaryColor": "#2563eb",
+            "accentColor": "#facc15",
+            "backgroundColor": "#eff6ff",
+            "textColor": "#1e293b",
+            "fontFamily": "Playfair Display",
+            "particlesEffect": "confetti"
+          },
+          "hero": {
+            "badge": "COMMENCEMENT CEREMONY 2026",
+            "title": "Lễ Tốt Nghiệp — Hoàng Minh Triết",
+            "subtitle": "Đánh dấu cột mốc Cử nhân Xuất sắc ngành Kỹ nghệ Phần mềm",
+            "eventDate": "2026-11-22T08:30:00",
+            "coverImageUrl": "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1600&q=80",
+            "callToActionText": "Đến Tham Dự & Chụp Ảnh Cùng Triết"
+          },
+          "coupleOrCelebrant": {
+            "type": "birthday",
+            "person1": {
+              "name": "Hoàng Minh Triết",
+              "title": "Tân Cử Nhân Thủ Khoa",
+              "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80",
+              "bio": "4 năm thanh xuân rèn luyện dưới giảng đường Bách Khoa, khép lại một chương đáng nhớ để sẵn sàng vươn biển lớn.",
+              "parents": "Gia đình Bố Mẹ Hoàng Văn Sơn & Lê Thị Tuyết"
+            },
+            "storyQuote": "Học vấn là hạt giống của ngày hôm nay, thành quả là tương lai của ngày mai."
+          },
+          "eventDetails": {
+            "ceremonyName": "Lễ Bế Giảng & Trao Bằng Cử Nhân Đợt 2 - Năm 2026",
+            "time": "08:30 - Chủ Nhật, 22/11/2026",
+            "venueName": "Hội Trường Lớn A5 - Trường Đại Học Bách Khoa",
+            "address": "268 Lý Thường Kiệt, Phường 14, Quận 10, TP. Hồ Chí Minh",
+            "mapEmbedUrl": "https://maps.google.com",
+            "mapDirectLink": "https://maps.google.com",
+            "dressCode": "Lịch sự / Sơ mi trắng / Áo cử nhân"
+          },
+          "timeline": [
+            { "id": "1", "time": "07:30", "title": "Đón tiếp người thân & Tặng hoa lưu niệm", "description": "Chào đón gia đình, thầy cô và bạn bè tại sảnh khuôn viên A5.", "icon": "Camera" },
+            { "id": "2", "time": "08:30", "title": "Khai mạc Lễ Bế giảng chính thức", "description": "Chào cờ và phát biểu bế giảng của Hiệu trưởng nhà trường.", "icon": "GraduationCap" },
+            { "id": "3", "time": "09:30", "title": "Xướng tên & Trao bằng vinh danh", "description": "Khoảnh khắc nhận bằng Cử nhân Xuất sắc trên bục danh dự.", "icon": "Sparkles" },
+            { "id": "4", "time": "11:00", "title": "Tung nón cử nhân & Chụp ảnh kỷ yếu", "description": "Chụp ảnh cùng hội trường, gia đình và bạn bè trong sân trường rợp bóng cây.", "icon": "Heart" }
+          ],
+          "gallery": [
+            { "id": "1", "url": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80", "caption": "Mũ cử nhân bay cao cùng ước mơ thanh xuân" },
+            { "id": "2", "url": "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80", "caption": "Nụ cười rạng rỡ của tân cử nhân ngày nhận bằng" },
+            { "id": "3", "url": "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=800&q=80", "caption": "Khoảnh khắc xúc động bên gia đình và người thân" },
+            { "id": "4", "url": "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80", "caption": "Khuôn viên giảng đường Bách Khoa dấu yêu" }
+          ],
+          "music": {
+            "enabled": true,
+            "audioUrl": "https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77c30.mp3",
+            "title": "Celebration of Youth - Uplifting Acoustic",
+            "autoPlay": true
+          },
+          "wishes": {
+            "enabled": true,
+            "title": "Sổ Lưu Bút Kỷ Yếu Tốt Nghiệp",
+            "subtitle": "Gửi những lời chúc mừng tương lai rộng mở và thành công đến Minh Triết"
+          },
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-11-18",
+            "note": "Nhắn gửi Triết trước ngày 18/11 để mình chuẩn bị sẵn hoa và đón tiếp mọi người chu đáo nhé!",
+            "allowDietaryNotes": false,
+            "allowPlusOnes": true
+          }
+        }
+        """;
 
-            tAiSummit = Template.Create(
-                "Virtual AI Summit 2026",
-                "ai-summit-pro",
-                "Hội nghị thượng đỉnh quy tụ 50+ chuyên gia AI hàng đầu thế giới thảo luận về tương lai của Autonomous Agents.",
-                conferenceCat.Id,
-                "Conference",
-                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
-                "/preview/ai-summit-pro",
-                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
-                "Premium",
-                null,
-                null,
-                aiSummitConfigJson);
+        var terraSoulArtConfigJson = """
+        {
+          "format": "art-craft",
+          "theme": {
+            "primaryColor": "#92400e",
+            "secondaryColor": "#b45309",
+            "accentColor": "#fef08a",
+            "backgroundColor": "#fefce8",
+            "textColor": "#292524",
+            "fontFamily": "Playfair Display",
+            "particlesEffect": "none"
+          },
+          "hero": {
+            "badge": "CONTEMPORARY CERAMIC EXHIBITION",
+            "title": "Terra & Soul — Vết Đất & Hồn Gốm",
+            "subtitle": "Hành trình đối thoại giữa đất sét thô mộc, lửa đỏ và tâm thức nghệ nhân Wabi-sabi",
+            "eventDate": "2026-11-14T15:00:00",
+            "coverImageUrl": "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=1600&q=80",
+            "callToActionText": "Đăng Ký Tham Dự Khai Mạc"
+          },
+          "coupleOrCelebrant": {
+            "type": "event",
+            "person1": {
+              "name": "Nghệ nhân An Nhiên & Giám tuyển Minh Long",
+              "title": "Nghệ Nhân Gốm & Giám Tuyển Nghệ Thuật",
+              "avatarUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&q=80",
+              "bio": "20 năm theo đuổi kỹ thuật men tro củi cổ truyền kết hợp ngôn ngữ điêu khắc trừu tượng đương đại.",
+              "parents": ""
+            },
+            "storyQuote": "Đất và lửa không chỉ tạo nên hình hài, mà lưu giữ hơi thở của thời gian."
+          },
+          "eventDetails": {
+            "ceremonyName": "Đêm Khai Mạc Vernissage Triển Lãm Terra & Soul",
+            "time": "15:00 - Thứ Bảy, 14/11/2026",
+            "venueName": "The Factory Contemporary Arts Space",
+            "address": "15 Nguyễn Ư Dĩ, Thảo Điền, TP. Thủ Đức, TP. Hồ Chí Minh",
+            "mapEmbedUrl": "https://maps.google.com",
+            "mapDirectLink": "https://maps.google.com",
+            "dressCode": "Linen Mộc / Nâu Đất / Trắng Tự Nhiên"
+          },
+          "timeline": [
+            { "id": "1", "time": "15:00", "title": "Đón khách, Trà đạo & Thiền vị", "description": "Thưởng thức trà sen cổ thụ trong những chiếc chén gốm mộc nung củi độc bản.", "icon": "GlassWater" },
+            { "id": "2", "time": "15:45", "title": "Chia sẻ kỹ thuật men tro củi cổ truyền", "description": "Nghệ nhân chia sẻ về kỹ thuật đốt lò củi Anagama 72 giờ liên tục.", "icon": "Palette" },
+            { "id": "3", "time": "16:30", "title": "Tour Giám tuyển 60 tác phẩm độc bản", "description": "Giám tuyển Minh Long dẫn dắt câu chuyện qua từng không gian sắp đặt ánh sáng.", "icon": "Sparkles" },
+            { "id": "4", "time": "17:30", "title": "Workshop tự tay chuốt gốm trên bàn xoay", "description": "Khách mời tự do chạm tay vào đất sét thô và tạo hình tác phẩm lưu niệm của riêng mình.", "icon": "Heart" }
+          ],
+          "gallery": [
+            { "id": "1", "url": "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&q=80", "caption": "Bình hoa gốm men tro hỏa biến tự nhiên" },
+            { "id": "2", "url": "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&q=80", "caption": "Bộ chén trà Wabi-sabi nung lò củi Anagama" },
+            { "id": "3", "url": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=800&q=80", "caption": "Tác phẩm điêu khắc đất sét trừu tượng Dòng Thời Gian" },
+            { "id": "4", "url": "https://images.unsplash.com/photo-1590736969955-71cc94801759?w=800&q=80", "caption": "Nghệ nhân bên bàn xoay gốm truyền thống" }
+          ],
+          "music": {
+            "enabled": true,
+            "audioUrl": "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3",
+            "title": "Zen Pottery & Meditative Flute",
+            "autoPlay": true
+          },
+          "extraSections": [
+            {
+              "id": "art-faq",
+              "type": "qa",
+              "enabled": true,
+              "title": "Thông Tin Dành Cho Khách Thưởng Lãm",
+              "items": [
+                { "question": "Tôi có thể mua các tác phẩm trưng bày không?", "answer": "Có, 60 tác phẩm đều được đánh số sưu tập độc bản. Quý khách liên hệ quầy Giám tuyển để đặt mua." },
+                { "question": "Triển lãm mở cửa trong bao lâu?", "answer": "Triển lãm kéo dài từ ngày 14/11/2026 đến hết ngày 30/11/2026, mở cửa tự do các ngày trong tuần." }
+              ]
+            }
+          ],
+          "wishes": {
+            "enabled": true,
+            "title": "Sổ Ký Tên Triển Lãm Mỹ Thuật",
+            "subtitle": "Lưu lại cảm xúc và suy tưởng của bạn sau khi chiêm ngưỡng các tác phẩm gốm mộc"
+          },
+          "rsvp": {
+            "enabled": true,
+            "deadline": "2026-11-10",
+            "note": "Đăng ký tham dự đêm khai mạc giới hạn 50 người yêu nghệ thuật.",
+            "allowDietaryNotes": false,
+            "allowPlusOnes": true
+          }
+        }
+        """;
 
-            tDriftPlanner = Template.Create(
-                "Drift ADHD Planner",
-                "drift-planner-app",
-                "Ứng dụng quản lý thời gian và năng suất nhẹ nhàng dành riêng cho não bộ ADHD, không áp lực.",
-                appShowcaseCat.Id,
-                "AppShowcase",
-                "https://images.unsplash.com/photo-1517842645767-c639042777db?w=800&q=80",
-                "/preview/drift-planner-app",
-                "https://images.unsplash.com/photo-1517842645767-c639042777db?w=800&q=80",
-                "Hot",
-                null,
-                null,
-                driftPlannerConfigJson);
+        // 4. Seed Templates (19 Templates: 11 Classic/Formats + 8 New Diverse Themes)
+        var allTemplateDefinitions = new[]
+        {
+            new
+            {
+                Name = "Elegance Blossom",
+                Slug = "elegance-blossom",
+                Description = "Mẫu thiệp cưới sang trọng phong cách Châu Âu, tone màu hồng pastel dịu dàng với hiệu ứng cánh hoa bay lãng mạn.",
+                CategorySlug = "wedding",
+                CategoryName = "Wedding",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
+                PreviewUrl = "/preview/elegance-blossom",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
+                Badge = "Premium",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
+                MusicTitle = (string?)"A Thousand Years - Piano Instrumental",
+                ConfigJson = weddingConfigJson
+            },
+            new
+            {
+                Name = "Golden Glamour",
+                Slug = "golden-glamour",
+                Description = "Mẫu thiệp sinh nhật dạ tiệc sang trọng với tone vàng kim, hiệu ứng pháo hoa giấy confetti lung linh rực rỡ.",
+                CategorySlug = "birthday",
+                CategoryName = "Birthday",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80",
+                PreviewUrl = "/preview/golden-glamour",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80",
+                Badge = "Hot",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77c30.mp3",
+                MusicTitle = (string?)"Celebration Night - Acoustic Vibe",
+                ConfigJson = birthdayConfigJson
+            },
+            new
+            {
+                Name = "Sweet Romance",
+                Slug = "sweet-romance",
+                Description = "Mẫu thiệp cưới cổ điển phương Tây, font chữ thanh lịch cùng giai điệu vĩ cầm du dương.",
+                CategorySlug = "wedding",
+                CategoryName = "Wedding",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
+                PreviewUrl = "/preview/sweet-romance",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
+                Badge = "Basic",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3",
+                MusicTitle = (string?)"Can't Help Falling in Love - Violin Cover",
+                ConfigJson = weddingConfigJson.Replace("Minh & Linh", "Tuấn & Trang")
+            },
+            new
+            {
+                Name = "Eternal Love",
+                Slug = "eternal-love",
+                Description = "Mẫu thiệp cưới tối giản hiện đại (Minimalist), tinh khôi và trường tồn cùng năm tháng.",
+                CategorySlug = "wedding",
+                CategoryName = "Wedding",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
+                PreviewUrl = "/preview/eternal-love",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
+                Badge = "Free",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3",
+                MusicTitle = (string?)"River Flows in You - Yiruma",
+                ConfigJson = weddingConfigJson.Replace("Minh & Linh", "Bảo & Vy")
+            },
+            new
+            {
+                Name = "Pastel Dream Baby",
+                Slug = "pastel-dream-baby",
+                Description = "Mẫu thiệp thôi nôi đầy tháng ngọt ngào với gam màu baby pastel, hình vẽ ngộ nghĩnh và lời nhắn ấm áp.",
+                CategorySlug = "baby-shower",
+                CategoryName = "BabyShower",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80",
+                PreviewUrl = "/preview/pastel-dream-baby",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80",
+                Badge = "New",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3",
+                MusicTitle = (string?)"Lullaby Goodnight - Music Box",
+                ConfigJson = babyShowerConfigJson
+            },
+            new
+            {
+                Name = "Silver Jubilee",
+                Slug = "silver-jubilee",
+                Description = "Mẫu thiệp kỷ niệm ngày cưới bạc và vàng, gắn kết những khoảnh khắc yêu thương suốt nhiều thập kỷ.",
+                CategorySlug = "anniversary",
+                CategoryName = "Anniversary",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80",
+                PreviewUrl = "/preview/silver-jubilee",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80",
+                Badge = "Premium",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/11/06/audio_03d659ad76.mp3",
+                MusicTitle = (string?)"Memories of Love - Orchestra",
+                ConfigJson = anniversaryConfigJson
+            },
+            new
+            {
+                Name = "Traditional Grace",
+                Slug = "traditional-grace",
+                Description = "Mẫu thiệp lễ đính hôn và lễ ăn hỏi truyền thống Á Đông kết hợp sự thanh lịch hiện đại.",
+                CategorySlug = "engagement",
+                CategoryName = "Engagement",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
+                PreviewUrl = "/preview/traditional-grace",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
+                Badge = "New",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
+                MusicTitle = (string?)"Beautiful In White - Acoustic Guitar",
+                ConfigJson = engagementConfigJson
+            },
+            new
+            {
+                Name = "Virtual AI Summit 2026",
+                Slug = "ai-summit-pro",
+                Description = "Hội nghị thượng đỉnh quy tụ 50+ chuyên gia AI hàng đầu thế giới thảo luận về tương lai của Autonomous Agents.",
+                CategorySlug = "conference",
+                CategoryName = "Conference",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
+                PreviewUrl = "/preview/ai-summit-pro",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
+                Badge = "Premium",
+                AudioUrl = (string?)null,
+                MusicTitle = (string?)null,
+                ConfigJson = aiSummitConfigJson
+            },
+            new
+            {
+                Name = "Drift ADHD Planner",
+                Slug = "drift-planner-app",
+                Description = "Ứng dụng quản lý thời gian và năng suất nhẹ nhàng dành riêng cho não bộ ADHD, không áp lực.",
+                CategorySlug = "app-showcase",
+                CategoryName = "AppShowcase",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1517842645767-c639042777db?w=800&q=80",
+                PreviewUrl = "/preview/drift-planner-app",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1517842645767-c639042777db?w=800&q=80",
+                Badge = "Hot",
+                AudioUrl = (string?)null,
+                MusicTitle = (string?)null,
+                ConfigJson = driftPlannerConfigJson
+            },
+            new
+            {
+                Name = "SmileCraft Dental Clinic",
+                Slug = "smilecraft-dental",
+                Description = "Phòng khám nha khoa thẩm mỹ cao cấp chuẩn Thụy Sỹ với công nghệ Scan 3D không xâm lấn.",
+                CategorySlug = "medical",
+                CategoryName = "Medical",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&q=80",
+                PreviewUrl = "/preview/smilecraft-dental",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&q=80",
+                Badge = "Premium",
+                AudioUrl = (string?)null,
+                MusicTitle = (string?)null,
+                ConfigJson = dentalClinicConfigJson
+            },
+            new
+            {
+                Name = "CloudFlow Modern SaaS",
+                Slug = "cloudflow-saas",
+                Description = "Nền tảng tự động hóa luồng dữ liệu doanh nghiệp thời gian thực với độ trễ dưới 5ms.",
+                CategorySlug = "saas",
+                CategoryName = "SaaS",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+                PreviewUrl = "/preview/cloudflow-saas",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+                Badge = "New",
+                AudioUrl = (string?)null,
+                MusicTitle = (string?)null,
+                ConfigJson = modernSaasConfigJson
+            },
+            // 8 New Diverse Templates
+            new
+            {
+                Name = "L'Aura Fine Dining & Bistro",
+                Slug = "laura-bistro-gourmet",
+                Description = "Mẫu website nhà hàng ẩm thực Pháp Fine Dining thượng lưu với menu món ký danh, đặt bàn VIP và dạ tiệc thử vị.",
+                CategorySlug = "restaurant",
+                CategoryName = "Restaurant",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
+                PreviewUrl = "/preview/laura-bistro-gourmet",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
+                Badge = "Hot",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/05/16/audio_c16e78cfbc.mp3",
+                MusicTitle = (string?)"French Cafe Jazz & Smooth Acoustic",
+                ConfigJson = lauraBistroConfigJson
+            },
+            new
+            {
+                Name = "Apex Titanium Fitness Club",
+                Slug = "apex-titanium-fitness",
+                Description = "Mẫu landing page phòng tập thể hình công nghệ cao, bảng giá hội viên, chỉ số năng lực và đăng ký tập thử miễn phí.",
+                CategorySlug = "fitness",
+                CategoryName = "Fitness",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
+                PreviewUrl = "/preview/apex-titanium-fitness",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
+                Badge = "Premium",
+                AudioUrl = (string?)null,
+                MusicTitle = (string?)null,
+                ConfigJson = apexFitnessConfigJson
+            },
+            new
+            {
+                Name = "Warm Nest Modern Villa",
+                Slug = "warm-nest-housewarming",
+                Description = "Mẫu thiệp mời tân gia ấm áp, giới thiệu không gian tổ ấm mới, sơ đồ chỉ đường và hộp quà mừng VietQR.",
+                CategorySlug = "housewarming",
+                CategoryName = "Housewarming",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+                PreviewUrl = "/preview/warm-nest-housewarming",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+                Badge = "Hot",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3",
+                MusicTitle = (string?)"Home Sweet Home - Acoustic Guitar Melody",
+                ConfigJson = warmNestConfigJson
+            },
+            new
+            {
+                Name = "Azure Breeze Tropical Wedding",
+                Slug = "azure-breeze-beach-wedding",
+                Description = "Mẫu thiệp cưới bãi biển nhiệt đới lãng mạn phong cách Destination Wedding với tông xanh biển tươi mát, nhạc ukulele và hoàng hôn lộng lẫy.",
+                CategorySlug = "wedding",
+                CategoryName = "Wedding",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=800&q=80",
+                PreviewUrl = "/preview/azure-breeze-beach-wedding",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=800&q=80",
+                Badge = "Premium",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3",
+                MusicTitle = (string?)"Ocean Waves & Acoustic Ukulele Romance",
+                ConfigJson = azureBreezeWeddingConfigJson
+            },
+            new
+            {
+                Name = "Prompt Engineering & GenAI Masterclass",
+                Slug = "genai-prompt-masterclass",
+                Description = "Landing page tuyển sinh khóa học công nghệ AI chuyên sâu với lộ trình học, diễn giả quốc tế, bảng giá vé và FAQ giải đáp.",
+                CategorySlug = "education",
+                CategoryName = "Education",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&q=80",
+                PreviewUrl = "/preview/genai-prompt-masterclass",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&q=80",
+                Badge = "New",
+                AudioUrl = (string?)null,
+                MusicTitle = (string?)null,
+                ConfigJson = genAiMasterclassConfigJson
+            },
+            new
+            {
+                Name = "The Horizon Grand Luxury Villa",
+                Slug = "horizon-luxury-villas",
+                Description = "Mẫu giới thiệu dự án bất động sản nghỉ dưỡng siêu sang trên vách biển với kiến trúc độc bản, tiện ích 6 sao và đăng ký tham quan bảo mật.",
+                CategorySlug = "real-estate",
+                CategoryName = "RealEstate",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&q=80",
+                PreviewUrl = "/preview/horizon-luxury-villas",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&q=80",
+                Badge = "Premium",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/11/06/audio_03d659ad76.mp3",
+                MusicTitle = (string?)"Elegance Ambience - Soft Classical Piano",
+                ConfigJson = horizonVillasConfigJson
+            },
+            new
+            {
+                Name = "Academic Glory Graduation",
+                Slug = "academic-glory-graduation",
+                Description = "Mẫu thiệp mời lễ tốt nghiệp đại học trang trọng, lịch trình trao bằng vinh danh, album kỷ yếu và sổ lưu bút chúc mừng tương lai.",
+                CategorySlug = "education",
+                CategoryName = "Education",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80",
+                PreviewUrl = "/preview/academic-glory-graduation",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80",
+                Badge = "New",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77c30.mp3",
+                MusicTitle = (string?)"Celebration of Youth - Uplifting Acoustic",
+                ConfigJson = academicGloryConfigJson
+            },
+            new
+            {
+                Name = "Terra & Soul Ceramic Exhibition",
+                Slug = "terra-soul-art-exhibition",
+                Description = "Mẫu thiệp mời triển lãm mỹ thuật và gốm thủ công phong cách Wabi-sabi mộc mạc, giới thiệu tác phẩm nghệ thuật, workshop và đêm tiệc Vernissage.",
+                CategorySlug = "art-craft",
+                CategoryName = "ArtCraft",
+                ThumbnailUrl = "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&q=80",
+                PreviewUrl = "/preview/terra-soul-art-exhibition",
+                LongPreviewUrl = "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&q=80",
+                Badge = "Premium",
+                AudioUrl = (string?)"https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3",
+                MusicTitle = (string?)"Zen Pottery & Meditative Flute",
+                ConfigJson = terraSoulArtConfigJson
+            }
+        };
 
-            tSmileCraft = Template.Create(
-                "SmileCraft Dental Clinic",
-                "smilecraft-dental",
-                "Phòng khám nha khoa thẩm mỹ cao cấp chuẩn Thụy Sỹ với công nghệ Scan 3D không xâm lấn.",
-                medicalCat.Id,
-                "Medical",
-                "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&q=80",
-                "/preview/smilecraft-dental",
-                "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&q=80",
-                "Premium",
-                null,
-                null,
-                dentalClinicConfigJson);
+        var existingTemplates = await context.Templates.ToListAsync();
+        var templateDict = existingTemplates.ToDictionary(t => t.Slug, t => t);
 
-            tCloudFlow = Template.Create(
-                "CloudFlow Modern SaaS",
-                "cloudflow-saas",
-                "Nền tảng tự động hóa luồng dữ liệu doanh nghiệp thời gian thực với độ trễ dưới 5ms.",
-                saasCat.Id,
-                "SaaS",
-                "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
-                "/preview/cloudflow-saas",
-                "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
-                "New",
-                null,
-                null,
-                modernSaasConfigJson);
+        var templatesToAdd = new List<Template>();
+        foreach (var def in allTemplateDefinitions)
+        {
+            if (!templateDict.ContainsKey(def.Slug))
+            {
+                var categoryId = categoryDict.TryGetValue(def.CategorySlug, out var cat) ? cat.Id : (Guid?)null;
+                var tmpl = Template.Create(
+                    def.Name,
+                    def.Slug,
+                    def.Description,
+                    categoryId,
+                    def.CategoryName,
+                    def.ThumbnailUrl,
+                    def.PreviewUrl,
+                    def.LongPreviewUrl,
+                    def.Badge,
+                    def.AudioUrl,
+                    def.MusicTitle,
+                    def.ConfigJson);
 
-            context.Templates.AddRange(t1, t2, t3, t4, t5, t6, t7, tAiSummit, tDriftPlanner, tSmileCraft, tCloudFlow);
+                templatesToAdd.Add(tmpl);
+                templateDict[def.Slug] = tmpl;
+            }
+        }
+
+        if (templatesToAdd.Count > 0)
+        {
+            context.Templates.AddRange(templatesToAdd);
             await context.SaveChangesAsync();
         }
-        else
-        {
-            t1 = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "elegance-blossom") ?? await context.Templates.FirstAsync();
-            t2 = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "golden-glamour") ?? t1;
-            t5 = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "pastel-dream-baby") ?? t1;
-            t6 = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "silver-jubilee") ?? t1;
-            tAiSummit = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "ai-summit-pro") ?? t1;
-            tDriftPlanner = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "drift-planner-app") ?? t1;
-            tSmileCraft = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "smilecraft-dental") ?? t1;
-            tCloudFlow = await context.Templates.FirstOrDefaultAsync(t => t.Slug == "cloudflow-saas") ?? t1;
-        }
+
+        var t1 = templateDict.GetValueOrDefault("elegance-blossom") ?? templateDict.Values.First();
+        var t2 = templateDict.GetValueOrDefault("golden-glamour") ?? t1;
+        var t5 = templateDict.GetValueOrDefault("pastel-dream-baby") ?? t1;
+        var t6 = templateDict.GetValueOrDefault("silver-jubilee") ?? t1;
+        var tAiSummit = templateDict.GetValueOrDefault("ai-summit-pro") ?? t1;
+        var tDriftPlanner = templateDict.GetValueOrDefault("drift-planner-app") ?? t1;
 
         // 5. Seed UserCustomizations (Published customized landing pages)
         UserCustomization? c1 = null;

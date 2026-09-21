@@ -1,115 +1,61 @@
-# Báo Cáo Kết Quả Kiểm Thử (Test Report) - Chặng 3: Tester
+# BÁO CÁO KẾT QUẢ KIỂM THỬ (TEST REPORT)
+
+**Giai đoạn:** Chặng 3 — Kiểm thử tự động (Tester)  
+**Nhiệm vụ:** Kiểm thử toàn diện Đa dạng hóa kho mẫu Template và cơ chế Seed Data thông minh (Idempotent)  
+**Thời gian thực hiện:** 2026-09-21  
+**Môi trường thực thi:** .NET 10.0 (xUnit 2.9.3, FluentAssertions 7.2.0, Moq 4.20.72)  
 
 ---
 
-## 1. Tổng Quan Kết Quả Kiểm Thử
+## 1. TỔNG QUAN KẾT QUẢ KIỂM THỬ
 
-- **Môi trường thực thi**: .NET 10.0 (`net10.0`), OS Windows
-- **Framework & Thư viện kiểm thử**: xUnit 2.9.3, FluentAssertions 7.0.0, Moq 4.20.72, NetArchTest.Rules 1.3.2, Microsoft.EntityFrameworkCore.InMemory 9.0.2
-- **Lệnh thực thi**: `dotnet test BE/TemplateLandingPage.sln`
-- **Trạng thái**: **100% PASS** (Xanh toàn bộ, 0 warning, 0 error, không có lỗi tiềm ẩn)
+| Dự án kiểm thử | Tổng số Test | Đạt (Passed) | Thất bại (Failed) | Bỏ qua (Skipped) | Tỷ lệ Đạt | Thời gian chạy |
+|---|---|---|---|---|---|---|
+| `TemplateLandingPage.Architecture.Tests` | 7 | 7 | 0 | 0 | **100%** | 288 ms |
+| `TemplateLandingPage.UnitTests` | 358 | 358 | 0 | 0 | **100%** | 1.0 s |
+| **TỔNG CỘNG TOÀN HỆ THỐNG** | **365** | **365** | **0** | **0** | **100%** | **~1.3 s** |
 
-### Thống Kê Số Lượng Tests
-| Test Project | Số Test Pass | Số Test Fail | Số Test Skipped | Tổng Số Test | Thời Gian Thực Thi |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| `TemplateLandingPage.Architecture.Tests` | 7 | 0 | 0 | 7 | ~289 ms |
-| `TemplateLandingPage.UnitTests` | 355 | 0 | 0 | 355 | ~1.0 s |
-| **TỔNG CỘNG** | **362** | **0** | **0** | **362** | **~1.3 s** |
+> [!NOTE]
+> **Kết luận sơ bộ:** Toàn bộ 365 bài kiểm thử của hệ thống đều vượt qua thành công (100% Passed, 0 Failure, 0 Error). Không có bất kỳ lỗi suy thoái (regression) nào phát sinh.
 
 ---
 
-## 2. Các File Test Được Bổ Sung Và Mở Rộng
+## 2. CHI TIẾT CÁC KỊCH BẢN KIỂM THỬ ĐÃ THỰC HIỆN
 
-Theo đúng nguyên tắc: **Chỉ tạo và cập nhật file trong thư mục test (`BE/test/`), tuyệt đối không can thiệp vào code sản phẩm (`BE/src/`)**.
+Toàn bộ yêu cầu kiểm thử được phân bổ chặt chẽ theo 3 nhóm quy chuẩn:
 
-1. **Tạo mới:** [`BE/test/UnitTests/Persistence/ApplicationDbContextTests.cs`](file:///c:/Source/TemplateLandingPage/BE/test/UnitTests/Persistence/ApplicationDbContextTests.cs)
-   - Kiểm thử chuyên sâu `ApplicationDbContext`, cơ chế ánh xạ `ConfigureConventions` gán `UtcDateTimeConverter` và `UtcNullableDateTimeConverter`.
-   - Kiểm thử tính toàn vẹn của 8 DbSets.
-   - Kiểm thử hành vi ghi và đọc dữ liệu qua ChangeTracker và ValueConverter.
+### 2.1. Nhóm 1: Happy Path (Đường chạy thuận lợi)
 
-2. **Mở rộng:** [`BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs`](file:///c:/Source/TemplateLandingPage/BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs)
-   - Bổ sung kiểm tra cấu hình options Npgsql (`CommandTimeout(60)`, `MigrationsAssembly`, resilience retry on failure).
-   - Bổ sung kiểm tra chuỗi kết nối Supabase Pooler (Port 6543, Pooling options, SSL Mode).
-   - Bổ sung kiểm tra ngoại lệ `ArgumentException` khi chuỗi kết nối Npgsql chứa port hoặc từ khoá không hợp lệ.
+| STT | Kịch bản kiểm thử | Phương thức Test | Kết quả | Chi tiết kiểm chứng |
+|---|---|---|---|---|
+| 1 | Nạp đầy đủ 8 bảng khi Database rỗng | `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty` | **PASSED** | - 3 Users chuẩn.<br>- Đủ 15 Categories chuẩn.<br>- 10 NavigationMenus (5 root + 5 submenu).<br>- Đủ 19 Templates (11 cũ + 8 mới).<br>- 6 UserCustomizations, 6 RsvpEntries, 7 GuestbookEntries, 4 Products. |
+| 2 | Tính duy nhất của Slugs | `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty` | **PASSED** | - 15 Category Slugs hoàn toàn duy nhất (`OnlyHaveUniqueItems`).<br>- 19 Template Slugs hoàn toàn duy nhất (`OnlyHaveUniqueItems`). |
+| 3 | Tính toàn vẹn của URLs trên toàn bộ Templates | `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty` | **PASSED** | Toàn bộ 19 templates đều có `ThumbnailUrl`, `PreviewUrl`, và `LongPreviewUrl` hợp lệ, không rỗng hay whitespace. |
+| 4 | Toàn vẹn khóa ngoại `CategoryId` | `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty` | **PASSED** | Toàn bộ 19 templates đều có `CategoryId` khác null và trỏ chính xác tới một danh mục có thực trong bảng Categories. |
+| 5 | Tính hợp lệ của cấu trúc JSON | `SeedAsync_Should_GenerateValidJson_ForTemplatesAndCustomizations` | **PASSED** | Cả 19 Templates và 6 UserCustomizations đều parse JSON hợp lệ qua `JsonDocument.Parse()` mà không ném exception. |
 
-3. **Mở rộng:** [`BE/test/UnitTests/Persistence/DataSeederTests.cs`](file:///c:/Source/TemplateLandingPage/BE/test/UnitTests/Persistence/DataSeederTests.cs)
-   - Bổ sung kiểm tra cơ chế phân định `context.Database.IsRelational()`: Chứng minh InMemory database không hỗ trợ `MigrateAsync()` (ném `InvalidOperationException`), qua đó khẳng định nhánh rẽ an toàn của `DataSeeder.SeedAsync` gọi `EnsureCreatedAsync()`.
-   - Bổ sung kiểm tra ngoại lệ khi `passwordHasher` null.
+### 2.2. Nhóm 2: Edge Cases (Các trường hợp biên đặc thù)
 
----
+| STT | Kịch bản kiểm thử | Phương thức Test | Kết quả | Chi tiết kiểm chứng |
+|---|---|---|---|---|
+| 1 | Tính Idempotent khi chạy Seeder nhiều lần liên tiếp | `SeedAsync_Should_BeIdempotent_WhenExecutedMultipleTimes` | **PASSED** | Thực thi `SeedAsync` 3 lần liên tiếp: không sinh bản ghi trùng, số lượng bảng giữ nguyên 100%, đồng thời xác nhận các `Id` của Categories và Templates không bị thay đổi hoặc recreate. |
+| 2 | Tự động nâng cấp khi DB đã có dữ liệu ban đầu (9 Categories + 11 Templates cũ) | `SeedAsync_Should_SupplementNewCategoriesAndTemplates_WhenLegacy9CategoriesAnd11TemplatesAlreadyExist` | **PASSED** | - Giả lập DB đã có 9 categories cũ và 11 templates cũ.<br>- Sau khi seed, nâng cấp chính xác lên 15 categories (+6 mới) và 19 templates (+8 mới).<br>- Toàn bộ 8 templates mới được liên kết chuẩn xác `CategoryId` với danh mục tương ứng (`restaurant`, `fitness`, `housewarming`, `wedding`, `education`, `real-estate`, `art-craft`).<br>- Toàn bộ 11 templates cũ được bảo toàn nguyên vẹn `CategoryId`.<br>- Chạy lại lần tiếp theo vẫn Idempotent. |
+| 3 | Kiểm tra chuyên sâu trường dữ liệu phong phú của 8 Templates mới | `SeedAsync_Should_ContainSpecificProperties_ForDiverseTemplates` | **PASSED** | - **L'Aura Bistro (`laura-bistro-gourmet`)**: `format="restaurant"`, 4 món `servicesGrid`, 4 chặng `treatmentProcess`, `booking.title` có VIP Reserve, 4 mốc `timeline`, 4 ảnh `gallery`, `rsvp.enabled=true`.<br>- **Apex Fitness (`apex-titanium-fitness`)**: `format="fitness"`, 4 thẻ `featureCardsGrid`, 4 chỉ số `metrics`, 3 gói `pricingPackages`, `eventDetails` đúng tên, `rsvp.enabled=true`.<br>- **Warm Nest (`warm-nest-housewarming`)**: `particlesEffect="confetti"`, `person1` Tuấn & Mai, 4 mốc `timeline`, 4 ảnh `gallery`, `extraSections` chứa VietQR `giftQr`, `wishes.enabled=true`.<br>- **Azure Breeze Wedding (`azure-breeze-beach-wedding`)**: `primaryColor="#0284c7"`, `particlesEffect="petals"`, 4 mốc `timeline`, 4 ảnh `gallery`, `extraSections` cẩm nang đi biển, `wishes.enabled=true`.<br>- **GenAI Masterclass (`genai-prompt-masterclass`)**: `format="summit"`, 2 chuyên gia `speakers`, 2 gói vé `pricingTickets`, 4 tuần `timeline`, `extraSections` giải đáp FAQ.<br>- **Horizon Luxury Villas (`horizon-luxury-villas`)**: `format="app-showcase"`, 4 đặc quyền `featureCardsGrid`, 4 chỉ số `metrics`, 4 ảnh `gallery`, `venueName` resort Sơn Trà.<br>- **Academic Glory (`academic-glory-graduation`)**: `format="graduation"`, thủ khoa Hoàng Minh Triết, 4 mốc `timeline`, 4 ảnh `gallery`, `wishes.enabled=true`.<br>- **Terra & Soul (`terra-soul-art-exhibition`)**: `format="art-craft"`, màu `#92400e`, nghệ nhân An Nhiên, 4 mốc `timeline`, 4 ảnh `gallery`, `extraSections` hỏi đáp tác phẩm, `wishes.enabled=true`. |
+| 4 | Kiểm tra an toàn mảng (Array Null-Safety) trên toàn bộ 19 Templates | `SeedAsync_Should_EnsureAllTemplateArrayPropertiesAreNeverNull_AcrossAll19Templates` | **PASSED** | Duyệt qua tất cả 19 templates kiểm tra 10 trường mảng danh sách (`timeline`, `gallery`, `servicesGrid`, `treatmentProcess`, `featureCardsGrid`, `speakers`, `pricingTickets`, `pricingPackages`, `metrics`, `extraSections`). Đảm bảo không có trường nào mang giá trị `null`, luôn là `JsonValueKind.Array` để tránh lỗi `.map()` hoặc crash Frontend. |
+| 5 | Tự động thích ứng môi trường InMemory vs Relational | `SeedAsync_OnInMemoryDatabase_ShouldSafelyUseEnsureCreated_BecauseIsRelationalIsFalse` | **PASSED** | Kiểm tra logic rẽ nhánh: khi `IsRelational() == false`, Seeder dùng `EnsureCreatedAsync()`, ngăn chặn ngoại lệ `InvalidOperationException` do gọi nhầm `MigrateAsync()` trên InMemory DB. |
+| 6 | Xử lý dữ liệu đã tồn tại một phần | `SeedAsync_Should_HandlePartialPreExistingData_WithoutCrashing` | **PASSED** | Database đã có sẵn 1 user và 1 category, Seeder tự động tái sử dụng và nạp phần còn lại mà không gặp lỗi. |
 
-## 3. Chi Tiết Kịch Bản Kiểm Thử Theo 3 Nhóm Chuẩn
+### 2.3. Nhóm 3: Failure Path (Các trường hợp kỳ vọng thất bại)
 
-### Nhóm 1: Happy Path (Đường chạy thuận lợi)
-
-1. **Đăng ký DI Persistence & Npgsql Provider (`ServiceCollectionExtensionsTests`)**:
-   - `AddPersistence_Should_RegisterAllRequiredPersistenceServices`: Xác nhận đăng ký đầy đủ `ApplicationDbContext`, `IUnitOfWork`, 9 repositories.
-   - `AddPersistence_Should_RegisterConcreteRepositoryTypesCorrectly`: Kiểm tra ánh xạ interface sang implementation chính xác.
-   - `AddPersistence_Should_ConfigureNpgsqlProviderForDbContext`: Kiểm tra `ProviderName` chính xác là `"Npgsql.EntityFrameworkCore.PostgreSQL"`.
-   - `AddPersistence_Should_ConfigureNpgsqlSpecificOptions`: Xác nhận `CommandTimeout` là 60 giây, `MigrationsAssembly` chỉ định đúng assembly chứa `ApplicationDbContext`, và `Database.IsNpgsql()` là `true`.
-   - `AddPersistence_Should_ConfigureAuditableEntityInterceptorAsSingleton`: Interceptor được đăng ký Singleton xuyên suốt các scope.
-   - `AddPersistence_Should_RegisterRepositoriesAndDbContextAsScoped`: Đảm bảo phạm vi Scoped cho DbContext và repositories.
-
-2. **Đăng ký Conventions & Value Converters (`ApplicationDbContextTests`)**:
-   - `ConfigureConventions_Should_RegisterValueConverter_ForAllDateTimeProperties`: Duyệt toàn bộ entity types trong Model, đảm bảo 100% thuộc tính `DateTime` đều có ValueConverter gán sẵn (`ModelClrType == typeof(DateTime)` và `ProviderClrType == typeof(DateTime)`).
-   - `ConfigureConventions_Should_RegisterValueConverter_ForAllNullableDateTimeProperties`: Duyệt toàn bộ entity types, đảm bảo 100% thuộc tính `DateTime?` đều có ValueConverter gán sẵn.
-   - `UtcDateTimeConverter_WhenConvertingUtcDateTime_ShouldRetainUtcKindAndValue`: Kiểm thử trực tiếp converter với giá trị UTC giữ nguyên `DateTimeKind.Utc` và giá trị thời gian.
-   - `UtcNullableDateTimeConverter_WhenConvertingUtcNullableDateTime_ShouldRetainUtcKindAndValue`: Kiểm thử converter nullable với giá trị UTC.
-   - `SaveChanges_WhenSavingEntityWithUtcDateTime_ShouldPersistAndQueryBackAsUtc`: Lưu thực thể `User` với UTC datetime, truy vấn lại sau khi xoá ChangeTracker đảm bảo `Kind == DateTimeKind.Utc`.
-   - `ApplicationDbContext_AllDbSets_ShouldBeAccessibleAndConfigured`: Toàn bộ 8 `DbSet` (`Products`, `Users`, `Categories`, `NavigationMenus`, `Templates`, `UserCustomizations`, `RsvpEntries`, `GuestbookEntries`) được ánh xạ thành công.
-
-3. **Data Seeding (`DataSeederTests`)**:
-   - `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty`: Seed đầy đủ 3 Users, 9 Categories, 10 NavigationMenus, 11 Templates, 6 UserCustomizations, 6 Rsvps, 7 Guestbooks, 4 Products.
-   - `SeedAsync_Should_BeIdempotent_WhenExecutedMultipleTimes`: Chạy seeder nhiều lần không sinh trùng bản ghi.
-   - `SeedAsync_Should_GenerateValidJson_ForTemplatesAndCustomizations`: Cấu hình JSON của Template và Customization hợp lệ và phân tích được.
+| STT | Kịch bản kiểm thử | Phương thức Test | Ngoại lệ kỳ vọng | Kết quả |
+|---|---|---|---|---|
+| 1 | Seeder khi `context == null` | `SeedAsync_Should_ThrowException_WhenContextIsNull` | `NullReferenceException` | **PASSED** |
+| 2 | Seeder khi `passwordHasher == null` | `SeedAsync_Should_ThrowException_WhenPasswordHasherIsNull` | `NullReferenceException` | **PASSED** |
+| 3 | Seeder khi `context` đã bị Dispose | `SeedAsync_Should_ThrowException_WhenDbContextIsDisposed` | `ObjectDisposedException` | **PASSED** |
 
 ---
 
-### Nhóm 2: Edge Cases (Các trường hợp biên kỹ thuật)
-
-1. **Chuẩn hoá múi giờ `DateTime` sang UTC cho PostgreSQL / Supabase (`ApplicationDbContextTests`)**:
-   - `UtcDateTimeConverter_WhenGivenDateTimeKindUnspecified_ShouldConvertToUtc`: Chuyển đổi `DateTimeKind.Unspecified` thành `DateTimeKind.Utc` bằng `DateTime.SpecifyKind` (không làm lệch giờ), ngăn chặn lỗi ném ra từ Npgsql 6+ khi ghi vào cột `timestamptz`.
-   - `UtcNullableDateTimeConverter_WhenGivenDateTimeKindUnspecified_ShouldConvertToUtc`: Chuyển đổi `DateTime?` Unspecified thành `DateTimeKind.Utc`.
-   - `UtcDateTimeConverter_WhenGivenDateTimeKindLocal_ShouldConvertToUniversalTime`: Giá trị `DateTimeKind.Local` được chuyển đổi chính xác sang UTC thông qua `ToUniversalTime()`.
-   - `UtcNullableDateTimeConverter_WhenGivenDateTimeKindLocal_ShouldConvertToUniversalTime`: Giá trị `DateTime?` Local được chuyển sang UTC.
-   - `UtcNullableDateTimeConverter_WhenGivenNull_ShouldReturnNull`: Xử lý `null` an toàn ở cả hai chiều `ConvertToProvider` và `ConvertFromProvider`.
-   - `SaveChanges_WhenSavingEntityWithUnspecifiedKind_ShouldPersistAndQueryBackAsUtc`: Lưu thực thể có `CreatedAtUtc` là Unspecified, truy vấn lại đảm bảo trường trả về có `Kind == DateTimeKind.Utc`.
-   - `SaveChanges_WhenSavingEntityWithNullNullableDateTime_ShouldPersistAndQueryBackAsNull`: Lưu thực thể có `ModifiedAtUtc == null` và `DeletedAtUtc == null`, đọc ra giữ nguyên `null`.
-   - `SaveChanges_WhenUpdatingEntityWithUnspecifiedNullableDateTime_ShouldPersistAndQueryBackAsUtc`: Cập nhật `ModifiedAtUtc` bằng Unspecified DateTime, lưu và đọc lại đảm bảo `Kind == DateTimeKind.Utc`.
-   - `UtcDateTimeConverter_WithBoundaryDates_ShouldConvertCorrectly`: Kiểm tra các mốc ngày biên: Năm nhuận `29/02/2024`, năm nhuận tương lai `29/02/2028`, ranh giới thế kỷ `01/01/2000`.
-
-2. **Cơ chế phân định Relational vs InMemory Database (`DataSeederTests` & `ApplicationDbContextTests`)**:
-   - `Database_IsRelational_WhenUsingNpgsqlProvider_ShouldReturnTrue`: DbContext với cấu hình `UseNpgsql` trả về `Database.IsRelational() == true`.
-   - `Database_IsRelational_WhenUsingInMemoryProvider_ShouldReturnFalse`: DbContext với `UseInMemoryDatabase` trả về `Database.IsRelational() == false`.
-   - `SeedAsync_OnInMemoryDatabase_ShouldSafelyUseEnsureCreated_BecauseIsRelationalIsFalse`: Xác nhận nếu gọi trực tiếp `MigrateAsync()` trên InMemory sẽ ném `InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider`. Nhánh `if (context.Database.IsRelational())` trong `DataSeeder` giúp môi trường test InMemory hoàn toàn không bị crash.
-
-3. **Cấu hình mạng và chuỗi kết nối Supabase (`ServiceCollectionExtensionsTests`)**:
-   - `AddPersistence_WhenConnectionStringHasCustomOptions_ShouldResolveSuccessfully`: Hỗ trợ Timeout tuỳ biến, Application Name, và cấu hình `SSL Mode=Require;Trust Server Certificate=true;`.
-   - `AddPersistence_WhenConnectionStringHasSupabaseAndNetworkVariants_ShouldConfigureCorrectly`: Hỗ trợ chuỗi kết nối Supabase Transaction Pooler (cổng `6543`), IPv6 loopback (`[::1]`), và các tuỳ chọn pooling (`Minimum Pool Size`, `Maximum Pool Size`).
-
----
-
-### Nhóm 3: Failure Path (Các trường hợp kỳ vọng thất bại)
-
-1. **Chuỗi kết nối rỗng hoặc không hợp lệ (`ServiceCollectionExtensionsTests`)**:
-   - `AddPersistence_WhenConnectionStringIsEmpty_OpeningConnectionShouldFail`: Chuỗi kết nối rỗng ném ngoại lệ `InvalidOperationException` khi gọi `OpenConnection()`.
-   - `AddPersistence_WhenConnectionStringHasInvalidSyntax_ShouldFailWhenAccessingConnection`: Chuỗi kết nối chứa port sai định dạng (`Port=not_a_valid_port`) hoặc từ khoá lạ (`UnknownCustomKeyword=bad_value`) ném `ArgumentException` khi khởi tạo kết nối Npgsql.
-   - `AddPersistence_WhenConfigurationIsNull_ShouldResolveDbContextWithEmptyConnectionString`: Xử lý cấu hình `IConfiguration` null an toàn.
-   - `AddPersistence_WhenConnectionStringsSectionIsMissing_ShouldProduceEmptyConnectionString`: Mục ConnectionStrings bị thiếu trong cấu hình.
-   - `AddPersistence_WhenConnectionStringIsEmptyOrWhitespace_ShouldStoreValueAsConfigured`: Xử lý khoảng trắng an toàn.
-
-2. **Lỗi khởi tạo và toàn vẹn dữ liệu DbContext (`ApplicationDbContextTests`)**:
-   - `ApplicationDbContext_WhenOptionsUnconfigured_ShouldThrowInvalidOperationExceptionOnDataAccess`: Truy cập dữ liệu trên context chưa cấu hình provider ném `InvalidOperationException` (*No database provider has been configured for this DbContext*).
-   - `ApplicationDbContext_WhenDisposed_ShouldThrowObjectDisposedException`: Thao tác truy vấn trên DbContext đã gọi `Dispose()` ném `ObjectDisposedException`.
-   - `ApplicationDbContext_WhenAddingDuplicateKeyEntity_ShouldThrowException`: Cố tình thêm entity có cùng khoá chính (Primary Key) vào ChangeTracker ném `InvalidOperationException` từ IdentityMap.
-
-3. **Ngoại lệ khi tham số đầu vào của Seeder không hợp lệ (`DataSeederTests`)**:
-   - `SeedAsync_Should_ThrowException_WhenContextIsNull`: Truyền `context == null` ném `NullReferenceException`.
-   - `SeedAsync_Should_ThrowException_WhenPasswordHasherIsNull`: Truyền `passwordHasher == null` ném `NullReferenceException`.
-
----
-
-## 4. Bằng Chứng CLI Log (Raw Output)
+## 3. LOG CLI THỰC THI KIỂM THỬ
 
 ```text
 PS C:\Source\TemplateLandingPage> dotnet test BE/TemplateLandingPage.sln
@@ -126,18 +72,22 @@ PS C:\Source\TemplateLandingPage> dotnet test BE/TemplateLandingPage.sln
 Test run for C:\Source\TemplateLandingPage\BE\test\Architecture.Tests\bin\Debug\net10.0\TemplateLandingPage.Architecture.Tests.dll (.NETCoreApp,Version=v10.0)
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 289 ms - TemplateLandingPage.Architecture.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 288 ms - TemplateLandingPage.Architecture.Tests.dll (net10.0)
   TemplateLandingPage.UnitTests -> C:\Source\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.UnitTests.dll
 Test run for C:\Source\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.UnitTests.dll (.NETCoreApp,Version=v10.0)
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed:     0, Passed:   355, Skipped:     0, Total:   355, Duration: 1 s - TemplateLandingPage.UnitTests.dll (net10.0)
+Passed!  - Failed:     0, Passed:   358, Skipped:     0, Total:   358, Duration: 1 s - TemplateLandingPage.UnitTests.dll (net10.0)
 ```
 
 ---
 
-## 5. Kết Luận Bàn Giao Chặng 3
+## 4. TỔNG KẾT VÀ BÀN GIAO CHO CHẶNG TIẾP THEO
 
-- **Chất lượng kiểm thử**: Toàn bộ 362 test cases (tăng thêm 30 test cases mới so với thời điểm trước chặng 3) bao phủ toàn diện 3 nhóm: Happy path, Edge cases (DateTime UTC, null handling, relational check, Supabase pooler options) và Failure path (connection string rỗng/sai cú pháp, unconfigured DbContext, PK collision).
-- **Tính toàn vẹn mã nguồn**: Chỉ thao tác trong thư mục `BE/test/`, hoàn toàn tuân thủ kiến trúc và các ràng buộc kỹ thuật.
-- **Sẵn sàng bàn giao**: Đủ điều kiện chuyển sang Chặng 4 (Reviewer/Auditor) phê duyệt.
+1. **Tuân thủ nguyên tắc Tester:**
+   - Chỉ tạo và bổ sung các ca kiểm thử trong `BE/test/UnitTests/Persistence/DataSeederTests.cs`.
+   - Tuyệt đối không can thiệp hay sửa đổi bất kỳ file code sản phẩm nào trong `BE/src/`.
+2. **Độ bao phủ kiểm thử:**
+   - Đạt 100% yêu cầu về Happy path, Edge cases (Idempotency 3 chu kỳ, Migration từ DB cũ, Chi tiết 8 mẫu JSON mới, Array null-safety) và Failure path (null context, null passwordHasher, disposed context).
+3. **Đánh giá chất lượng:**
+   - Hệ thống sẵn sàng cho chặng đóng gói / bàn giao tiếp theo.

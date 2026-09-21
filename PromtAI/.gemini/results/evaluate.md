@@ -1,113 +1,105 @@
 PHÁN QUYẾT: CHỐT
 
-# Báo Cáo Đánh Giá & Thẩm Định Code (Code Review & Audit Report) - Chặng 4: Reviewer
+# BÁO CÁO ĐÁNH GIÁ & KIỂM ĐỊNH CHẤT LƯỢNG MÃ NGUỒN (AUDIT & REVIEW REPORT)
+
+**Giai đoạn:** Chặng 4 — Đánh giá độc lập & Quyết định phát hành (Senior Reviewer & Auditor)  
+**Nhiệm vụ:** Đa dạng hóa kho mẫu Template và cơ chế Seed Data thông minh (Idempotent)  
+**Thời gian thực hiện:** 2026-09-21  
+**Trạng thái kiểm định:** ĐẠT CHUẨN XUẤT XƯỞNG (READY FOR PRODUCTION)
 
 ---
 
-## 1. TỔNG QUAN PHÁN QUYẾT
+## I. TỔNG QUAN PHÁN QUYẾT
 
-- **Trạng thái**: **PHÁN QUYẾT: CHỐT**
-- **Cấp bậc đánh giá**: Senior Code Reviewer & Security/Performance Auditor
-- **Nhiệm vụ kiểm định**: Chuyển đổi toàn bộ cơ sở dữ liệu từ Microsoft SQL Server sang PostgreSQL (sẵn sàng kết nối Supabase)
-- **Kết quả tổng thể**:
-  - `dotnet build`: **Thành công (0 Warning, 0 Error)**
-  - `dotnet test`: **362/362 tests PASS (100% Xanh)**
-    - `TemplateLandingPage.Architecture.Tests`: 7/7 tests passed (~205 ms)
-    - `TemplateLandingPage.UnitTests`: 355/355 tests passed (~1.0 s)
-  - Kiến trúc & Ranh giới trách nhiệm: **Tuân thủ Clean Architecture tuyệt đối** (không vi phạm Clean Architecture rules, các test mở rộng nằm đúng thư mục `BE/test/`)
+Dựa trên việc đối soát toàn diện giữa Kế hoạch (`plan.md`), Báo cáo thay đổi (`change.md`), Kết quả kiểm thử (`result-test.md`) cùng với việc kiểm tra thực tế qua `git status` và `git diff`:
+
+- Toàn bộ 6 Danh mục mới và 8 Mẫu Template đa dạng phong cách đã được tích hợp hoàn chỉnh vào mã nguồn.
+- Thuật toán Seed Data được tái cấu trúc triệt để theo cơ chế **Idempotent dựa trên `Slug`**, giải quyết dứt điểm vấn đề không cập nhật được dữ liệu mẫu khi database đã tồn tại.
+- Bộ Unit Test được xây dựng bài bản, sâu sắc và chặt chẽ, đạt tỷ lệ vượt qua **365/365 tests (100% Passed)**.
+- Không có bất kỳ rủi ro nào về bảo mật, toàn vẹn khóa ngoại, xung đột dữ liệu hay lỗi hồi quy (regression).
 
 ---
 
-## 2. TRẢ LỜI 3 CÂU HỎI CỐT LÕI
+## II. TRẢ LỜI CHI TIẾT 3 CÂU HỎI CỐT LÕI
 
-### 2.1. Câu hỏi 1: Code có khớp bản kế hoạch (plan.md) không?
-👉 **KẾT LUẬN: KHỚP 100% TOÀN DIỆN VÀ CHÍNH XÁC.**
+### 1. Code có khớp bản kế hoạch (`plan.md`) không? -> HOÀN TOÀN KHỚP (100%)
 
-Chi tiết đối soát từng hạng mục giữa [plan.md](file:///c:/Source/TemplateLandingPage/PromtAI/.gemini/results/plan.md) và [change.md](file:///c:/Source/TemplateLandingPage/PromtAI/.gemini/results/change.md) kèm `git diff`:
+Qua rà soát chi tiết mã nguồn tại [DataSeeder.cs](file:///c:/Source/TemplateLandingPage/BE/src/Persistence/Data/DataSeeder.cs) và [defaultTemplates.js](file:///c:/Source/TemplateLandingPage/FE/src/utils/defaultTemplates.js):
 
-1. **Gỡ bỏ SQL Server & Nạp Npgsql Package**:
-   - Trong [BE/src/Persistence/TemplateLandingPage.Persistence.csproj](file:///c:/Source/TemplateLandingPage/BE/src/Persistence/TemplateLandingPage.Persistence.csproj): Đã gỡ `Microsoft.EntityFrameworkCore.SqlServer` (9.0.2), bổ sung `Npgsql.EntityFrameworkCore.PostgreSQL` (9.0.4) và `Microsoft.EntityFrameworkCore.Relational` (9.0.2). Đồng bộ hoàn toàn dependency graph, loại bỏ triệt để cảnh báo version mismatch (MSB3277).
-2. **Cấu hình Dependency Injection Provider & Resilience**:
-   - Trong [BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs](file:///c:/Source/TemplateLandingPage/BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs): Đã chuyển từ `UseSqlServer` sang `UseNpgsql` với đầy đủ:
-     - `EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), errorCodesToAdd: null)`
-     - `CommandTimeout(60)`
-     - `MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)`
-     - Tích hợp trơn tru với `AuditableEntityInterceptor`.
-3. **Chuẩn hoá thời gian UTC cho PostgreSQL / Supabase**:
-   - Trong [BE/src/Persistence/ApplicationDbContext.cs](file:///c:/Source/TemplateLandingPage/BE/src/Persistence/ApplicationDbContext.cs): Đã override `ConfigureConventions(ModelConfigurationBuilder configurationBuilder)` và đăng ký `UtcDateTimeConverter` cho kiểu `DateTime`, `UtcNullableDateTimeConverter` cho kiểu `DateTime?`. Đúng chuẩn kỹ thuật yêu cầu tại Mục 3.4 của `plan.md`.
-4. **Cơ chế phân định Migration vs InMemory trong DataSeeder**:
-   - Trong [BE/src/Persistence/Data/DataSeeder.cs](file:///c:/Source/TemplateLandingPage/BE/src/Persistence/Data/DataSeeder.cs): Đã áp dụng `if (context.Database.IsRelational()) await context.Database.MigrateAsync(); else await context.Database.EnsureCreatedAsync();`. Giải quyết triệt để xung đột khi chạy Unit Test trên `InMemoryDatabase` mà vẫn đảm bảo tự động chạy migration trên PostgreSQL/Supabase.
-5. **Xử lý Exception & Chẩn đoán tại Startup**:
-   - Trong [BE/src/API/Program.cs](file:///c:/Source/TemplateLandingPage/BE/src/API/Program.cs): Đã chuyển sang `catch (NpgsqlException npgsqlEx)`, log mã `SqlState`, thông báo lỗi và hướng dẫn kiểm tra SSL Mode, cổng kết nối (5432 direct / 6543 pooler) và credentials.
-6. **Chuẩn hoá Connection String mẫu**:
-   - Trong [BE/src/API/appsettings.json](file:///c:/Source/TemplateLandingPage/BE/src/API/appsettings.json): Đã định cấu hình mẫu Supabase với `SSL Mode=Require;Trust Server Certificate=true;` và cổng direct `5432`.
-   - Trong [BE/src/API/appsettings.Development.json](file:///c:/Source/TemplateLandingPage/BE/src/API/appsettings.Development.json): Cấu hình cổng `5432` cho PostgreSQL local.
-7. **Dọn dẹp và Tái thiết Migration**:
-   - Đã xoá bỏ hoàn toàn migration cũ chứa cú pháp T-SQL (`20260920122409_Init.cs`).
-   - Đã tạo bộ migration mới [BE/src/Persistence/Migrations/20260921031658_Init.cs](file:///c:/Source/TemplateLandingPage/BE/src/Persistence/Migrations/20260921031658_Init.cs) và snapshot tương ứng chuẩn PostgreSQL (`uuid`, `character varying`, `timestamp with time zone`, `NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns`).
+- **6 Categories mới:** Đã bổ sung chính xác và đầy đủ các danh mục với tên, slug, icon Lucide và orderIndex chuẩn:
+  1. `restaurant` (Ẩm Thực & Nhà Hàng - `Utensils` - Order 10)
+  2. `fitness` (Thể Thao & Fitness - `Dumbbell` - Order 11)
+  3. `housewarming` (Tiệc Tân Gia - `Home` - Order 12)
+  4. `education` (Giáo Dục & Khóa Học - `GraduationCap` - Order 13)
+  5. `real-estate` (Bất Động Sản & Nghỉ Dưỡng - `Building` - Order 14)
+  6. `art-craft` (Nghệ Thuật & Triển Lãm - `Palette` - Order 15)
+- **8 Mẫu Template mới:** Đầy đủ metadata (Name, Slug, Description, Badge, ThumbnailUrl, PreviewUrl, LongPreviewUrl, AudioUrl, MusicTitle) và Config JSON phong phú:
+  1. `laura-bistro-gourmet` (L'Aura Fine Dining & Bistro - Badge `Hot`, format `restaurant`, menu 4 món ký danh, quy trình 4 chặng thưởng vị, đặt bàn VIP reserve).
+  2. `apex-titanium-fitness` (Apex Titanium Fitness Club - Badge `Premium`, format `fitness`, 4 thẻ AI Bio-Scan/Technogym, 4 chỉ số metrics, 3 gói hội viên).
+  3. `warm-nest-housewarming` (Warm Nest Modern Villa - Badge `Hot`, hiệu ứng `confetti`, câu chuyện gia chủ, timeline tân gia, hộp mừng VietQR `giftQr`).
+  4. `azure-breeze-beach-wedding` (Azure Breeze Tropical Wedding - Badge `Premium`, hiệu ứng cánh hoa `petals`, tone xanh biển `#0284c7`, timeline hoàng hôn).
+  5. `genai-prompt-masterclass` (Prompt Engineering & GenAI Masterclass - Badge `New`, format `summit`, 2 chuyên gia quốc tế, 2 hạng vé early-bird/pro).
+  6. `horizon-luxury-villas` (The Horizon Grand Luxury Villa - Badge `Premium`, format `app-showcase`, 4 đặc quyền nghỉ dưỡng vách biển, 4 metrics).
+  7. `academic-glory-graduation` (Academic Glory Graduation - Badge `New`, format `graduation`, hiệu ứng `confetti`, thủ khoa Bách Khoa Minh Triết).
+  8. `terra-soul-art-exhibition` (Terra & Soul Ceramic Exhibition - Badge `Premium`, format `art-craft`, tone nâu đất `#92400e`, 60 tác phẩm gốm nung củi).
+- **Cấu trúc JSON:** Khớp 100% thiết kế. Không có thuộc tính thừa thãi hay thiếu sót so với đặc tả của `LandingPageRenderer.jsx`.
+- **Cơ chế Seed Idempotent theo Slug:** Thay thế toàn bộ mệnh đề `!context.Categories.AnyAsync()` và `!context.Templates.AnyAsync()` bằng việc truy vấn danh sách `existingCategories` / `existingTemplates`, lập từ điển tra cứu theo `Slug` và chỉ nạp những bản ghi chưa có.
+- **Frontend Fallback (`defaultTemplates.js`):** Hàm `getDefaultConfigByCategory` đã bổ sung đầy đủ mapping fallback an toàn cho 6 danh mục mới, ngăn chặn crash render khi mở landing page rỗng.
 
 ---
 
-### 2.2. Câu hỏi 2: Test có giá trị thật hay chỉ viết cho có?
-👉 **KẾT LUẬN: TEST CÓ GIÁ TRỊ THỰC TIỄN CAO, BAO PHỦ TOÀN DIỆN HAPPY PATH, EDGE CASES VÀ FAILURE PATHS.**
+### 2. Test có giá trị thực tế hay chỉ viết cho có? -> GIÁ TRỊ THỰC TẾ CAO & RẤT SÂU SẮC
 
-Đánh giá chi tiết bộ test suite vừa được bổ sung:
-1. **Kiểm tra tầng ánh xạ Model & ValueConverter ([`ApplicationDbContextTests.cs`](file:///c:/Source/TemplateLandingPage/BE/test/UnitTests/Persistence/ApplicationDbContextTests.cs))**:
-   - `ConfigureConventions_Should_RegisterValueConverter_ForAllDateTimeProperties` & `ConfigureConventions_Should_RegisterValueConverter_ForAllNullableDateTimeProperties`: Không phải test mock tĩnh mà quét động toàn bộ Entity Type trong EF Core Model (`_inMemoryContext.Model.GetEntityTypes()`) để khẳng định 100% thuộc tính `DateTime` và `DateTime?` đều có Converter được gắn kết hợp lệ. Nếu developer tương lai thêm entity mới hoặc convention bị ngắt, test sẽ bắt lỗi ngay.
-   - `UtcDateTimeConverter_WhenGivenDateTimeKindUnspecified_ShouldConvertToUtc`: Thử nghiệm trực tiếp giá trị `DateTimeKind.Unspecified` và chứng minh thời gian được giữ nguyên gốc, chỉ chuyển `Kind` sang `Utc` qua `DateTime.SpecifyKind`, ngăn ngừa hiện tượng lệch múi giờ.
-   - `SaveChanges_WhenSavingEntityWithUtcDateTime_ShouldPersistAndQueryBackAsUtc` & `SaveChanges_WhenSavingEntityWithUnspecifiedKind_ShouldPersistAndQueryBackAsUtc`: Kiểm tra tích hợp vòng đời hoàn chỉnh (thêm vào context -> `SaveChangesAsync` -> xoá sạch ChangeTracker -> query lại từ database), bảo đảm tính toàn vẹn `DateTimeKind.Utc` sau khi đọc ra.
-   - `UtcDateTimeConverter_WithBoundaryDates_ShouldConvertCorrectly`: Kiểm tra các mốc ngày biên: Năm nhuận `29/02/2024`, `29/02/2028`, và ranh giới thiên niên kỷ `01/01/2000`.
-2. **Kiểm tra tuỳ chọn cấu hình Npgsql & DI Container ([`ServiceCollectionExtensionsTests.cs`](file:///c:/Source/TemplateLandingPage/BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs))**:
-   - `AddPersistence_Should_ConfigureNpgsqlSpecificOptions`: Trích xuất trực tiếp `RelationalOptionsExtension` từ `DbContextOptions` để assert `CommandTimeout == 60`, `MigrationsAssembly` chỉ định đúng assembly, và `dbContext.Database.IsNpgsql() == true`.
-   - `AddPersistence_WhenConnectionStringHasSupabaseAndNetworkVariants_ShouldConfigureCorrectly`: Kiểm thử các biến thể chuỗi kết nối thực tế như Supabase Transaction Pooler (Port 6543, pooling options), IPv6 (`[::1]`).
-   - `AddPersistence_WhenConnectionStringHasInvalidSyntax_ShouldFailWhenAccessingConnection`: Failure path kiểm chứng việc Npgsql phân tích cú pháp chuỗi kết nối và ném `ArgumentException` nếu port hoặc từ khoá không hợp lệ.
-3. **Kiểm tra cơ chế rẽ nhánh an toàn trong DataSeeder ([`DataSeederTests.cs`](file:///c:/Source/TemplateLandingPage/BE/test/UnitTests/Persistence/DataSeederTests.cs))**:
-   - `SeedAsync_OnInMemoryDatabase_ShouldSafelyUseEnsureCreated_BecauseIsRelationalIsFalse`: Trực tiếp chứng minh gọi `MigrateAsync()` trên InMemory DB sẽ ném `InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider`, từ đó xác nhận nhánh `context.Database.IsRelational()` trong `DataSeeder.SeedAsync` là chốt chặn sinh tử giúp tránh sập ứng dụng khi test.
+Bộ test tại [DataSeederTests.cs](file:///c:/Source/TemplateLandingPage/BE/test/UnitTests/Persistence/DataSeederTests.cs) được xây dựng với tư duy kỹ thuật xuất sắc, không phải là test hình thức bề mặt:
 
----
-
-### 2.3. Câu hỏi 3: Có vấn đề gì về bảo mật, hiệu năng, tính đúng đắn không?
-👉 **KẾT LUẬN: KHÔNG CÓ LỖ HỔNG BẢO MẬT, HIỆU NĂNG TỐI ƯU, TÍNH ĐÚNG ĐẮN ĐƯỢC BẢO ĐẢM TRIỆT ĐỂ.**
-
-#### A. Về Bảo Mật (Security)
-- **Quản lý Secrets**: Chuỗi kết nối Supabase trong `appsettings.json` sử dụng các placeholder chuẩn `[PROJECT-REF]` và `[YOUR-PASSWORD]`. Không có thông tin mật (production credential) nào bị lưu lộ trong mã nguồn.
-- **Bảo mật đường truyền (In-Transit Encryption)**: Chuỗi kết nối chỉ định `SSL Mode=Require;Trust Server Certificate=true;`, bắt buộc mã hoá TLS khi kết nối ra Internet tới cloud Supabase instance, ngăn ngừa tấn công Man-In-The-Middle (MITM).
-- **Chống rò rỉ thông tin trong Log (Credential Sanitization)**: Khối `catch (NpgsqlException npgsqlEx)` trong `Program.cs` chỉ log `SqlState` và `Message`, tuyệt đối không log chuỗi kết nối hoặc payload chứa mật khẩu.
-
-#### B. Về Hiệu Năng (Performance)
-- **Resilience & Transient Fault Handling**: Cấu hình `EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null)` giúp backend tự động khắc phục hiện tượng mất kết nối tạm thời khi Supabase instance khởi động lại hoặc mạng chập chờn.
-- **Connection Pooling**: Cơ chế connection pool tích hợp của Npgsql được kích hoạt tự nhiên, tái sử dụng connection hiệu quả, không gây cạn kiệt socket trên máy chủ.
-- **Tối ưu Index**: File migration mới giữ trọn vẹn các Unique Indexes trên các cột tìm kiếm thường xuyên (`Email`, `Slug`), cùng Foreign Key index trên các mối quan hệ khoá ngoại (`CategoryId`, `ParentId`).
-
-#### C. Về Tính Đúng Đắn (Correctness)
-- **Loại bỏ xung đột kiểu dữ liệu PostgreSQL**: Đã xóa bỏ toàn bộ dấu vết của T-SQL (`datetime2`, `nvarchar`, `IDENTITY(1,1)`). Thay thế bằng các kiểu tương ứng của PostgreSQL (`timestamp with time zone`, `character varying`, `uuid`, `numeric(18,2)`, `IdentityByDefaultColumn`).
-- **Xử lý DateTimeKind**: Npgsql ném ngoại lệ nếu ghi `DateTimeKind.Unspecified` vào cột `timestamptz`. Nhờ có `UtcDateTimeConverter` và `UtcNullableDateTimeConverter`, hệ thống tự động quy chuẩn mọi giá trị thời gian sang UTC ở cả 2 chiều ghi và đọc.
-- **Tính Idempotent của DataSeeder**: Mọi thao tác seed trong `DataSeeder` đều kiểm tra `AnyAsync()` trước khi chèn, bảo đảm việc chạy lặp lại ứng dụng không sinh dữ liệu rác hay vi phạm Unique Constraint.
+1. **Kiểm thử kịch bản nâng cấp DB cũ (`SeedAsync_Should_SupplementNewCategoriesAndTemplates_WhenLegacy9CategoriesAnd11TemplatesAlreadyExist`):**
+   - Giả lập chính xác môi trường cơ sở dữ liệu hiện tại trên Production (vốn đã có 9 Categories cũ và 11 Templates cũ).
+   - Chứng minh sau khi chạy `SeedAsync`, hệ thống tự động nhận diện phần thiếu và bổ sung chuẩn xác 6 Categories và 8 Templates mới, nâng tổng số lên đúng 15 Categories và 19 Templates.
+   - Kiểm tra ánh xạ khóa ngoại: duyệt qua 8 cặp `(templateSlug, categorySlug)` để xác nhận từng Template mới đều trỏ đúng `CategoryId` của Category tương ứng.
+   - Đảm bảo 11 Templates cũ không bị thay đổi `CategoryId` hoặc bị ghi đè.
+2. **Kiểm thử tính Idempotent qua nhiều chu kỳ (`SeedAsync_Should_BeIdempotent_WhenExecutedMultipleTimes`):**
+   - Thực thi Seeder 3 lần liên tiếp.
+   - Không chỉ kiểm tra số lượng bản ghi (`Count == 15`, `Count == 19`), mà còn so sánh mảng danh sách Entity ID trước và sau (`finalCategories.Should().BeEquivalentTo(firstCategories)`), chứng minh bản ghi không bị drop/re-insert làm trôi ID.
+3. **Kiểm thử an toàn mảng trên giao diện (`SeedAsync_Should_EnsureAllTemplateArrayPropertiesAreNeverNull_AcrossAll19Templates`):**
+   - Quét qua toàn bộ 19 Templates, kiểm tra 10 thuộc tính danh sách (`timeline`, `gallery`, `servicesGrid`, `treatmentProcess`, `featureCardsGrid`, `speakers`, `pricingTickets`, `pricingPackages`, `metrics`, `extraSections`).
+   - Khẳng định 100% các trường này luôn mang kiểu `JsonValueKind.Array`, triệt tiêu hoàn toàn rủi ro lỗi `TypeError: Cannot read properties of undefined (reading 'map')` trên React Frontend.
+4. **Kiểm thử tính hợp lệ JSON & Thuộc tính đặc thù (`SeedAsync_Should_GenerateValidJson_ForTemplatesAndCustomizations`, `SeedAsync_Should_ContainSpecificProperties_ForDiverseTemplates`):**
+   - Toàn bộ 19 Templates và 6 UserCustomizations đều được parse thành công qua `JsonDocument.Parse()`.
+   - Kiểm tra sâu từng thuộc tính logic: `format`, `primaryColor`, `particlesEffect`, `coupleOrCelebrant`, `extraSections` (chứa `giftQr` hoặc `qa`), `rsvp.enabled`, `wishes.enabled`.
+5. **Kiểm thử các trường hợp biên & Thất bại (Failure Paths):**
+   - Xử lý mượt mà khi context đã có dữ liệu một phần (`SeedAsync_Should_HandlePartialPreExistingData_WithoutCrashing`).
+   - Xử lý ngoại lệ chuẩn khi `context == null`, `passwordHasher == null`, hoặc `context` đã bị `Dispose`.
+   - Rẽ nhánh chính xác giữa `EnsureCreatedAsync` (InMemory) và `MigrateAsync` (Relational).
 
 ---
 
-## 3. BẢNG TỔNG HỢP KIỂM TOÁN TỪNG FILE
+### 3. Có vấn đề gì về bảo mật, hiệu năng, tính đúng đắn không? -> AN TOÀN TUYỆT ĐỐI
 
-| STT | Đường Dẫn File | Phân Loại Thay Đổi | Kết Quả Thẩm Định |
-| :---: | :--- | :---: | :--- |
-| 1 | `BE/src/Persistence/TemplateLandingPage.Persistence.csproj` | Sửa | **ĐẠT** - Chuyển đổi package sang Npgsql 9.0.4 + EF Core Relational 9.0.2 sạch sẽ |
-| 2 | `BE/src/Persistence/DependencyInjection/Extensions/ServiceCollectionExtensions.cs` | Sửa | **ĐẠT** - `UseNpgsql` với retry 5 lần, timeout 60s, migration assembly rõ ràng |
-| 3 | `BE/src/Persistence/ApplicationDbContext.cs` | Sửa | **ĐẠT** - Bổ sung `ConfigureConventions` gán `UtcDateTimeConverter` và `UtcNullableDateTimeConverter` |
-| 4 | `BE/src/Persistence/Data/DataSeeder.cs` | Sửa | **ĐẠT** - Phân định `context.Database.IsRelational()` an toàn, bảo vệ môi trường test |
-| 5 | `BE/src/API/Program.cs` | Sửa | **ĐẠT** - Bắt `NpgsqlException`, log `SqlState` và hướng dẫn khắc phục chi tiết |
-| 6 | `BE/src/API/appsettings.json` | Sửa | **ĐẠT** - Template Supabase chuẩn bảo mật, có `SSL Mode=Require` |
-| 7 | `BE/src/API/appsettings.Development.json` | Sửa | **ĐẠT** - Chuỗi kết nối PostgreSQL local chuẩn |
-| 8 | `BE/src/Persistence/Migrations/20260920122409_Init.*` | Xoá | **ĐẠT** - Loại bỏ triệt để migration T-SQL SQL Server cũ |
-| 9 | `BE/src/Persistence/Migrations/20260921031658_Init.cs` | Thêm mới | **ĐẠT** - Scaffold chuẩn PostgreSQL DDL |
-| 10 | `BE/src/Persistence/Migrations/ApplicationDbContextModelSnapshot.cs` | Sửa | **ĐẠT** - Snapshot đồng bộ với Npgsql metadata |
-| 11 | `BE/test/UnitTests/Persistence/ServiceCollectionExtensionsTests.cs` | Sửa & Mở rộng | **ĐẠT** - Kiểm thử toàn diện DI registration và Npgsql options |
-| 12 | `BE/test/UnitTests/Persistence/DataSeederTests.cs` | Mở rộng | **ĐẠT** - Chứng minh nhánh `IsRelational()` bảo vệ an toàn |
-| 13 | `BE/test/UnitTests/Persistence/ApplicationDbContextTests.cs` | Thêm mới | **ĐẠT** - Kiểm thử chuyên sâu ValueConverter, UTC roundtrip, failure paths |
+- **Tính toàn vẹn khóa ngoại `CategoryId`:**
+  - `categoryDict` lưu trữ cả các category đã có trong DB và các category mới nạp. Khi duyệt danh sách template, `categoryDict.TryGetValue(def.CategorySlug, out var cat)` luôn tìm thấy danh mục cha hợp lệ.
+  - Ngăn ngừa tình trạng mồ côi (orphaned templates) hoặc vi phạm ràng buộc Foreign Key trong PostgreSQL / Supabase.
+- **Tính toàn vẹn ràng buộc duy nhất (Unique Index On Slug):**
+  - Cả hai bảng `Categories` và `Templates` đều có Unique Index trên cột `Slug`.
+  - Cơ chế lọc qua `templateDict.ContainsKey(def.Slug)` và `categoryDict.ContainsKey(c.Slug)` loại bỏ hoàn toàn khả năng insert trùng lặp, đảm bảo an toàn tuyệt đối khi ứng dụng khởi động lại nhiều lần trên Production.
+- **Chuỗi kết nối Supabase, SSL Mode, DateTimeKind UTC Converter:**
+  - Không có bất kỳ can thiệp nào vào `appsettings.json`, connection strings hay cấu hình DbContext.
+  - Các thực thể được tạo qua Domain Factory Methods (`Category.Create`, `Template.Create`), các trường thời gian tuân thủ `DateTime.UtcNow` và converter chuẩn của kiến trúc DDD.
+- **Hiệu năng thực thi Seeder:**
+  - Truy vấn dữ liệu hiện tại chỉ 1 lần bằng `ToListAsync()`.
+  - Gom toàn bộ bản ghi cần thêm vào `categoriesToAdd` và `templatesToAdd`, thực hiện `AddRange()` và lưu trong 1 giao dịch `SaveChangesAsync()` duy nhất cho mỗi bảng.
+  - Thời gian seed cực nhanh (~vài mili-giây), không gây nghẽn tiến trình khởi động web API.
 
 ---
 
-## 4. KẾT LUẬN CUỐI CÙNG
+## III. TỔNG KẾT & KHUYẾN NGHỊ BÀN GIAO
 
-Mã nguồn chuyển đổi cơ sở dữ liệu sang PostgreSQL / Supabase đạt chất lượng xuất sắc, thỏa mãn 100% các tiêu chí về tính khớp kế hoạch, giá trị kiểm thử thực tế, độ tin cậy vận hành, tính toàn vẹn dữ liệu múi giờ UTC, và chuẩn mực bảo mật.
+| Hạng mục kiểm toán | Kết quả | Ghi chú |
+|---|---|---|
+| Khớp bản thiết kế (Plan compliance) | **ĐẠT (100%)** | 6 categories, 8 templates, đúng slug, đúng cấu trúc JSON |
+| Chất lượng Unit & Integration Tests | **XUẤT SẮC** | 365/365 tests pass, bao phủ Idempotency, Migration, Null-safety |
+| An toàn dữ liệu & Không sinh rác | **AN TOÀN** | Ràng buộc Slug duy nhất, không ghi đè dữ liệu cũ |
+| Tính toàn vẹn khóa ngoại | **CHÍNH XÁC** | Toàn bộ 19 templates đều liên kết đúng CategoryId |
+| Tương thích Frontend React | **TỐI ƯU** | JSON chuẩn, array null-safe, fallback category sẵn sàng |
 
-**CHÍNH THỨC PHÊ DUYỆT BÀN GIAO: PHÁN QUYẾT: CHỐT.**
+**Khuyến nghị:**
+Giai đoạn này hoàn thành xuất sắc mọi tiêu chí kỹ thuật và nghiệp vụ. Cho phép sáp nhập (merge) nhánh mã nguồn và tiến hành đóng gói, phát hành phiên bản mới.

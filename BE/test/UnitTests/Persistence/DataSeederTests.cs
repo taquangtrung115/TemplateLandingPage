@@ -49,14 +49,16 @@ public class DataSeederTests : IDisposable
         users.Should().Contain(u => u.Email == "minhlinh@template.com" && u.Role == "User");
         users.All(u => u.PasswordHash.StartsWith("hashed_")).Should().BeTrue();
 
-        // Assert - 2. Categories (9 categories including conference, app-showcase, medical, saas)
+        // Assert - 2. Categories (15 categories including restaurant, fitness, housewarming, education, real-estate, art-craft)
         var categories = await _dbContext.Categories.ToListAsync();
-        categories.Should().HaveCount(9);
+        categories.Should().HaveCount(15);
         categories.Select(c => c.Slug).Should().BeEquivalentTo(new[]
         {
             "wedding", "engagement", "birthday", "anniversary", "baby-shower",
-            "conference", "app-showcase", "medical", "saas"
+            "conference", "app-showcase", "medical", "saas",
+            "restaurant", "fitness", "housewarming", "education", "real-estate", "art-craft"
         });
+        categories.Select(c => c.Slug).Should().OnlyHaveUniqueItems();
 
         // Assert - 3. NavigationMenus (5 root + 5 submenus = 10 total)
         var menus = await _dbContext.NavigationMenus.ToListAsync();
@@ -76,9 +78,9 @@ public class DataSeederTests : IDisposable
             "/templates?category=baby-shower"
         });
 
-        // Assert - 4. Templates (11 templates: 7 classic + 4 diverse formats)
+        // Assert - 4. Templates (19 templates: 11 classic/formats + 8 new diverse themes)
         var templates = await _dbContext.Templates.ToListAsync();
-        templates.Should().HaveCount(11);
+        templates.Should().HaveCount(19);
         templates.Select(t => t.Slug).Should().BeEquivalentTo(new[]
         {
             "elegance-blossom",
@@ -91,10 +93,23 @@ public class DataSeederTests : IDisposable
             "ai-summit-pro",
             "drift-planner-app",
             "smilecraft-dental",
-            "cloudflow-saas"
+            "cloudflow-saas",
+            "laura-bistro-gourmet",
+            "apex-titanium-fitness",
+            "warm-nest-housewarming",
+            "azure-breeze-beach-wedding",
+            "genai-prompt-masterclass",
+            "horizon-luxury-villas",
+            "academic-glory-graduation",
+            "terra-soul-art-exhibition"
         });
+        templates.Select(t => t.Slug).Should().OnlyHaveUniqueItems();
         templates.All(t => !string.IsNullOrWhiteSpace(t.DefaultConfigJson)).Should().BeTrue();
         templates.All(t => !string.IsNullOrWhiteSpace(t.ThumbnailUrl)).Should().BeTrue();
+        templates.All(t => !string.IsNullOrWhiteSpace(t.PreviewUrl)).Should().BeTrue();
+        templates.All(t => !string.IsNullOrWhiteSpace(t.LongPreviewUrl)).Should().BeTrue();
+        templates.All(t => t.CategoryId.HasValue).Should().BeTrue();
+        templates.All(t => categories.Any(c => c.Id == t.CategoryId!.Value)).Should().BeTrue();
 
         // Assert - 5. UserCustomizations (6 customizations)
         var customizations = await _dbContext.UserCustomizations.ToListAsync();
@@ -144,21 +159,33 @@ public class DataSeederTests : IDisposable
         // Act - Run 1st time
         await DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
 
-        // Act - Run 2nd time immediately
-        var act = () => DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
+        var firstCategories = await _dbContext.Categories.OrderBy(c => c.Slug).Select(c => new { c.Id, c.Slug }).ToListAsync();
+        var firstTemplates = await _dbContext.Templates.OrderBy(t => t.Slug).Select(t => new { t.Id, t.Slug }).ToListAsync();
 
-        // Assert - Should not throw any exception
-        await act.Should().NotThrowAsync();
+        // Act - Run 2nd time immediately
+        var act2 = () => DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
+        await act2.Should().NotThrowAsync();
+
+        // Act - Run 3rd time immediately
+        var act3 = () => DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
+        await act3.Should().NotThrowAsync();
 
         // Assert - Counts should remain unchanged (no duplicate records)
         (await _dbContext.Users.CountAsync()).Should().Be(3);
-        (await _dbContext.Categories.CountAsync()).Should().Be(9);
+        (await _dbContext.Categories.CountAsync()).Should().Be(15);
         (await _dbContext.NavigationMenus.CountAsync()).Should().Be(10);
-        (await _dbContext.Templates.CountAsync()).Should().Be(11);
+        (await _dbContext.Templates.CountAsync()).Should().Be(19);
         (await _dbContext.UserCustomizations.CountAsync()).Should().Be(6);
         (await _dbContext.RsvpEntries.CountAsync()).Should().Be(6);
         (await _dbContext.GuestbookEntries.CountAsync()).Should().Be(7);
         (await _dbContext.Products.CountAsync()).Should().Be(4);
+
+        // Assert - Entity IDs must remain identical after multiple runs (not recreated or shifted)
+        var finalCategories = await _dbContext.Categories.OrderBy(c => c.Slug).Select(c => new { c.Id, c.Slug }).ToListAsync();
+        var finalTemplates = await _dbContext.Templates.OrderBy(t => t.Slug).Select(t => new { t.Id, t.Slug }).ToListAsync();
+
+        finalCategories.Should().BeEquivalentTo(firstCategories);
+        finalTemplates.Should().BeEquivalentTo(firstTemplates);
     }
 
     [Fact]
@@ -177,8 +204,11 @@ public class DataSeederTests : IDisposable
         await DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
 
         // Assert - Seeder should safely reuse existing records and proceed with remaining tables
+        var categories = await _dbContext.Categories.ToListAsync();
+        categories.Should().HaveCount(15);
+
         var templates = await _dbContext.Templates.ToListAsync();
-        templates.Should().HaveCount(11);
+        templates.Should().HaveCount(19);
 
         var customizations = await _dbContext.UserCustomizations.ToListAsync();
         customizations.Should().HaveCount(6);
@@ -188,13 +218,114 @@ public class DataSeederTests : IDisposable
     }
 
     [Fact]
+    public async Task SeedAsync_Should_SupplementNewCategoriesAndTemplates_WhenLegacy9CategoriesAnd11TemplatesAlreadyExist()
+    {
+        // Arrange - Pre-populate with legacy 9 categories and 11 templates (simulating current Supabase production db)
+        var legacyCategories = new[]
+        {
+            Category.Create("Thiệp Cưới", "wedding", "Desc", "Heart", 1),
+            Category.Create("Lễ Đính Hôn", "engagement", "Desc", "Ring", 2),
+            Category.Create("Sinh Nhật", "birthday", "Desc", "Cake", 3),
+            Category.Create("Kỷ Niệm Ngày Cưới", "anniversary", "Desc", "Sparkles", 4),
+            Category.Create("Thôi Nôi & Đầy Tháng", "baby-shower", "Desc", "Baby", 5),
+            Category.Create("Hội Nghị & Sự Kiện", "conference", "Desc", "Mic", 6),
+            Category.Create("Ứng Dụng & Năng Suất", "app-showcase", "Desc", "Layers", 7),
+            Category.Create("Y Tế & Nha Khoa", "medical", "Desc", "Stethoscope", 8),
+            Category.Create("Nền Tảng SaaS", "saas", "Desc", "Cpu", 9)
+        };
+        _dbContext.Categories.AddRange(legacyCategories);
+        await _dbContext.SaveChangesAsync();
+
+        var legacyTemplates = new[]
+        {
+            Template.Create("Elegance Blossom", "elegance-blossom", "Desc", legacyCategories[0].Id, "Wedding", "thumb", "/preview", "long", "Premium", null, null, "{}"),
+            Template.Create("Golden Glamour", "golden-glamour", "Desc", legacyCategories[2].Id, "Birthday", "thumb", "/preview", "long", "Hot", null, null, "{}"),
+            Template.Create("Sweet Romance", "sweet-romance", "Desc", legacyCategories[0].Id, "Wedding", "thumb", "/preview", "long", "Basic", null, null, "{}"),
+            Template.Create("Eternal Love", "eternal-love", "Desc", legacyCategories[0].Id, "Wedding", "thumb", "/preview", "long", "Free", null, null, "{}"),
+            Template.Create("Pastel Dream Baby", "pastel-dream-baby", "Desc", legacyCategories[4].Id, "BabyShower", "thumb", "/preview", "long", "New", null, null, "{}"),
+            Template.Create("Silver Jubilee", "silver-jubilee", "Desc", legacyCategories[3].Id, "Anniversary", "thumb", "/preview", "long", "Premium", null, null, "{}"),
+            Template.Create("Traditional Grace", "traditional-grace", "Desc", legacyCategories[1].Id, "Engagement", "thumb", "/preview", "long", "New", null, null, "{}"),
+            Template.Create("Virtual AI Summit 2026", "ai-summit-pro", "Desc", legacyCategories[5].Id, "Conference", "thumb", "/preview", "long", "Premium", null, null, "{}"),
+            Template.Create("Drift ADHD Planner", "drift-planner-app", "Desc", legacyCategories[6].Id, "AppShowcase", "thumb", "/preview", "long", "Hot", null, null, "{}"),
+            Template.Create("SmileCraft Dental Clinic", "smilecraft-dental", "Desc", legacyCategories[7].Id, "Medical", "thumb", "/preview", "long", "Premium", null, null, "{}"),
+            Template.Create("CloudFlow Modern SaaS", "cloudflow-saas", "Desc", legacyCategories[8].Id, "SaaS", "thumb", "/preview", "long", "New", null, null, "{}")
+        };
+        _dbContext.Templates.AddRange(legacyTemplates);
+        await _dbContext.SaveChangesAsync();
+
+        (await _dbContext.Categories.CountAsync()).Should().Be(9);
+        (await _dbContext.Templates.CountAsync()).Should().Be(11);
+
+        // Act - Run Seeder on database that already has legacy 9 categories and 11 templates
+        await DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
+
+        // Assert - Categories should now be 15 (6 new categories added)
+        var categories = await _dbContext.Categories.ToListAsync();
+        categories.Should().HaveCount(15);
+        categories.Select(c => c.Slug).Should().Contain(new[]
+        {
+            "restaurant", "fitness", "housewarming", "education", "real-estate", "art-craft"
+        });
+
+        // Assert - Templates should now be 19 (8 new templates added)
+        var templates = await _dbContext.Templates.ToListAsync();
+        templates.Should().HaveCount(19);
+        templates.Select(t => t.Slug).Should().Contain(new[]
+        {
+            "laura-bistro-gourmet",
+            "apex-titanium-fitness",
+            "warm-nest-housewarming",
+            "azure-breeze-beach-wedding",
+            "genai-prompt-masterclass",
+            "horizon-luxury-villas",
+            "academic-glory-graduation",
+            "terra-soul-art-exhibition"
+        });
+
+        // Verify ALL 8 newly added templates are mapped to correct category IDs
+        var expectedCategoryMappings = new Dictionary<string, string>
+        {
+            { "laura-bistro-gourmet", "restaurant" },
+            { "apex-titanium-fitness", "fitness" },
+            { "warm-nest-housewarming", "housewarming" },
+            { "azure-breeze-beach-wedding", "wedding" },
+            { "genai-prompt-masterclass", "education" },
+            { "horizon-luxury-villas", "real-estate" },
+            { "academic-glory-graduation", "education" },
+            { "terra-soul-art-exhibition", "art-craft" }
+        };
+
+        foreach (var (templateSlug, categorySlug) in expectedCategoryMappings)
+        {
+            var tmpl = templates.Single(t => t.Slug == templateSlug);
+            var expectedCat = categories.Single(c => c.Slug == categorySlug);
+            tmpl.CategoryId.Should().Be(expectedCat.Id, $"Template '{templateSlug}' must link to Category '{categorySlug}'");
+        }
+
+        // Verify that 11 legacy templates retained their original CategoryId and were untouched
+        foreach (var legacyTmpl in legacyTemplates)
+        {
+            var found = templates.Single(t => t.Slug == legacyTmpl.Slug);
+            found.CategoryId.Should().Be(legacyTmpl.CategoryId, $"Legacy template '{legacyTmpl.Slug}' CategoryId must remain unchanged");
+        }
+
+        // Act - Run second time to verify full idempotency with legacy baseline
+        var actSecondRun = () => DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
+        await actSecondRun.Should().NotThrowAsync();
+
+        (await _dbContext.Categories.CountAsync()).Should().Be(15);
+        (await _dbContext.Templates.CountAsync()).Should().Be(19);
+    }
+
+    [Fact]
     public async Task SeedAsync_Should_GenerateValidJson_ForTemplatesAndCustomizations()
     {
         // Act
         await DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
 
-        // Assert Templates JSON
+        // Assert Templates JSON (All 19 templates)
         var templates = await _dbContext.Templates.ToListAsync();
+        templates.Should().HaveCount(19);
         foreach (var t in templates)
         {
             var parseAction = () => JsonDocument.Parse(t.DefaultConfigJson);
@@ -262,6 +393,170 @@ public class DataSeederTests : IDisposable
             doc.RootElement.TryGetProperty("pricingPackages", out var packages).Should().BeTrue();
             packages.GetArrayLength().Should().BeGreaterThan(0);
         }
+
+        // Assert 1: L'Aura Fine Dining & Bistro
+        var bistro = await _dbContext.Templates.FirstAsync(t => t.Slug == "laura-bistro-gourmet");
+        using (var doc = JsonDocument.Parse(bistro.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("format").GetString().Should().Be("restaurant");
+            doc.RootElement.TryGetProperty("servicesGrid", out var dishes).Should().BeTrue();
+            dishes.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("treatmentProcess", out var courses).Should().BeTrue();
+            courses.GetArrayLength().Should().Be(4);
+            doc.RootElement.GetProperty("booking").GetProperty("enabled").GetBoolean().Should().BeTrue();
+            doc.RootElement.GetProperty("booking").GetProperty("title").GetString().Should().Contain("VIP Reserve");
+            doc.RootElement.TryGetProperty("timeline", out var timeline).Should().BeTrue();
+            timeline.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("gallery", out var gallery).Should().BeTrue();
+            gallery.GetArrayLength().Should().Be(4);
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+
+        // Assert 2: Apex Titanium Fitness Club
+        var fitness = await _dbContext.Templates.FirstAsync(t => t.Slug == "apex-titanium-fitness");
+        using (var doc = JsonDocument.Parse(fitness.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("format").GetString().Should().Be("fitness");
+            doc.RootElement.TryGetProperty("featureCardsGrid", out var features).Should().BeTrue();
+            features.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("metrics", out var metrics).Should().BeTrue();
+            metrics.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("pricingPackages", out var pkgs).Should().BeTrue();
+            pkgs.GetArrayLength().Should().Be(3);
+            doc.RootElement.GetProperty("eventDetails").GetProperty("ceremonyName").GetString().Should().Contain("Apex Titanium");
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+
+        // Assert 3: Warm Nest Modern Villa (Tân gia)
+        var warmNest = await _dbContext.Templates.FirstAsync(t => t.Slug == "warm-nest-housewarming");
+        using (var doc = JsonDocument.Parse(warmNest.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("theme").GetProperty("particlesEffect").GetString().Should().Be("confetti");
+            doc.RootElement.GetProperty("coupleOrCelebrant").GetProperty("person1").GetProperty("name").GetString().Should().Contain("Tuấn");
+            doc.RootElement.TryGetProperty("timeline", out var timeline).Should().BeTrue();
+            timeline.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("gallery", out var gallery).Should().BeTrue();
+            gallery.GetArrayLength().Should().Be(4);
+            doc.RootElement.GetProperty("extraSections").EnumerateArray()
+                .Should().Contain(s => s.GetProperty("type").GetString() == "giftQr");
+            doc.RootElement.GetProperty("wishes").GetProperty("enabled").GetBoolean().Should().BeTrue();
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+
+        // Assert 4: Azure Breeze Beach Wedding
+        var beachWedding = await _dbContext.Templates.FirstAsync(t => t.Slug == "azure-breeze-beach-wedding");
+        using (var doc = JsonDocument.Parse(beachWedding.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("theme").GetProperty("primaryColor").GetString().Should().Be("#0284c7");
+            doc.RootElement.GetProperty("theme").GetProperty("particlesEffect").GetString().Should().Be("petals");
+            doc.RootElement.GetProperty("coupleOrCelebrant").GetProperty("type").GetString().Should().Be("wedding");
+            doc.RootElement.TryGetProperty("timeline", out var timeline).Should().BeTrue();
+            timeline.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("gallery", out var gallery).Should().BeTrue();
+            gallery.GetArrayLength().Should().Be(4);
+            doc.RootElement.GetProperty("extraSections").EnumerateArray()
+                .Should().Contain(s => s.GetProperty("type").GetString() == "qa");
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+            doc.RootElement.GetProperty("wishes").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+
+        // Assert 5: GenAI & Prompt Masterclass
+        var genAi = await _dbContext.Templates.FirstAsync(t => t.Slug == "genai-prompt-masterclass");
+        using (var doc = JsonDocument.Parse(genAi.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("format").GetString().Should().Be("summit");
+            doc.RootElement.TryGetProperty("speakers", out var speakers).Should().BeTrue();
+            speakers.GetArrayLength().Should().Be(2);
+            doc.RootElement.TryGetProperty("pricingTickets", out var tickets).Should().BeTrue();
+            tickets.GetArrayLength().Should().Be(2);
+            doc.RootElement.TryGetProperty("timeline", out var timeline).Should().BeTrue();
+            timeline.GetArrayLength().Should().Be(4);
+            doc.RootElement.GetProperty("extraSections").EnumerateArray()
+                .Should().Contain(s => s.GetProperty("type").GetString() == "qa");
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+
+        // Assert 6: The Horizon Luxury Villas
+        var horizon = await _dbContext.Templates.FirstAsync(t => t.Slug == "horizon-luxury-villas");
+        using (var doc = JsonDocument.Parse(horizon.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("format").GetString().Should().Be("app-showcase");
+            doc.RootElement.TryGetProperty("featureCardsGrid", out var features).Should().BeTrue();
+            features.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("metrics", out var metrics).Should().BeTrue();
+            metrics.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("gallery", out var gallery).Should().BeTrue();
+            gallery.GetArrayLength().Should().Be(4);
+            doc.RootElement.GetProperty("eventDetails").GetProperty("venueName").GetString().Should().Contain("The Horizon");
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+
+        // Assert 7: Academic Glory Graduation
+        var graduation = await _dbContext.Templates.FirstAsync(t => t.Slug == "academic-glory-graduation");
+        using (var doc = JsonDocument.Parse(graduation.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("format").GetString().Should().Be("graduation");
+            doc.RootElement.GetProperty("coupleOrCelebrant").GetProperty("person1").GetProperty("name").GetString()
+                .Should().Be("Hoàng Minh Triết");
+            doc.RootElement.TryGetProperty("timeline", out var timeline).Should().BeTrue();
+            timeline.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("gallery", out var gallery).Should().BeTrue();
+            gallery.GetArrayLength().Should().Be(4);
+            doc.RootElement.GetProperty("wishes").GetProperty("enabled").GetBoolean().Should().BeTrue();
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+
+        // Assert 8: Terra & Soul Ceramic Exhibition
+        var ceramic = await _dbContext.Templates.FirstAsync(t => t.Slug == "terra-soul-art-exhibition");
+        using (var doc = JsonDocument.Parse(ceramic.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("format").GetString().Should().Be("art-craft");
+            doc.RootElement.GetProperty("theme").GetProperty("primaryColor").GetString().Should().Be("#92400e");
+            doc.RootElement.GetProperty("coupleOrCelebrant").GetProperty("person1").GetProperty("name").GetString()
+                .Should().Contain("An Nhiên");
+            doc.RootElement.TryGetProperty("timeline", out var timeline).Should().BeTrue();
+            timeline.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("gallery", out var gallery).Should().BeTrue();
+            gallery.GetArrayLength().Should().Be(4);
+            doc.RootElement.GetProperty("extraSections").EnumerateArray()
+                .Should().Contain(s => s.GetProperty("type").GetString() == "qa");
+            doc.RootElement.GetProperty("wishes").GetProperty("enabled").GetBoolean().Should().BeTrue();
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task SeedAsync_Should_EnsureAllTemplateArrayPropertiesAreNeverNull_AcrossAll19Templates()
+    {
+        // Act
+        await DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
+
+        // Assert - Verify that in all 19 templates, common array fields are never null (preventing frontend .map() crashes)
+        var templates = await _dbContext.Templates.ToListAsync();
+        templates.Should().HaveCount(19);
+
+        var arrayPropertyNames = new[]
+        {
+            "timeline", "gallery", "servicesGrid", "treatmentProcess",
+            "featureCardsGrid", "speakers", "pricingTickets", "pricingPackages",
+            "metrics", "extraSections"
+        };
+
+        foreach (var tmpl in templates)
+        {
+            using var doc = JsonDocument.Parse(tmpl.DefaultConfigJson);
+            var root = doc.RootElement;
+
+            foreach (var propName in arrayPropertyNames)
+            {
+                if (root.TryGetProperty(propName, out var propValue))
+                {
+                    propValue.ValueKind.Should().Be(
+                        JsonValueKind.Array,
+                        $"Property '{propName}' in template '{tmpl.Slug}' must be a JSON array (never null or non-array)");
+                }
+            }
+        }
     }
 
     [Fact]
@@ -298,5 +593,23 @@ public class DataSeederTests : IDisposable
 
         // Assert
         await act.Should().ThrowAsync<NullReferenceException>();
+    }
+
+    [Fact]
+    public async Task SeedAsync_Should_ThrowException_WhenDbContextIsDisposed()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: $"DisposedSeederDb_{Guid.NewGuid()}")
+            .Options;
+
+        var disposedContext = new ApplicationDbContext(options);
+        disposedContext.Dispose();
+
+        // Act
+        var act = () => DataSeeder.SeedAsync(disposedContext, _passwordHasherMock.Object);
+
+        // Assert
+        await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 }

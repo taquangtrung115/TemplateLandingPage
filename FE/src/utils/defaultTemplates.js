@@ -632,19 +632,19 @@ export const DEFAULT_BIRTHDAY_CONFIG = {
 export const getDefaultConfigByCategory = (category = 'Wedding') => {
   const cat = category?.toLowerCase() || '';
 
-  if (cat === 'conference' || cat === 'summit' || cat.includes('summit') || cat.includes('ai')) {
+  if (cat === 'conference' || cat === 'summit' || cat.includes('summit') || cat.includes('ai') || cat === 'education' || cat.includes('edu')) {
     return JSON.parse(JSON.stringify(DEFAULT_AI_SUMMIT_CONFIG));
   }
-  if (cat === 'app-showcase' || cat === 'planner' || cat.includes('drift') || cat.includes('adhd')) {
+  if (cat === 'app-showcase' || cat === 'planner' || cat.includes('drift') || cat.includes('adhd') || cat === 'real-estate') {
     return JSON.parse(JSON.stringify(DEFAULT_DRIFT_PLANNER_CONFIG));
   }
-  if (cat === 'medical' || cat === 'dental' || cat.includes('dental') || cat.includes('clinic')) {
+  if (cat === 'medical' || cat === 'dental' || cat.includes('dental') || cat.includes('clinic') || cat === 'restaurant') {
     return JSON.parse(JSON.stringify(DEFAULT_DENTAL_CLINIC_CONFIG));
   }
-  if (cat === 'saas' || cat.includes('saas') || cat.includes('cloud')) {
+  if (cat === 'saas' || cat.includes('saas') || cat.includes('cloud') || cat === 'fitness') {
     return JSON.parse(JSON.stringify(DEFAULT_MODERN_SAAS_CONFIG));
   }
-  if (cat === 'kids-birthday' || cat.includes('kid') || cat.includes('baby-shower') || cat.includes('baby')) {
+  if (cat === 'kids-birthday' || cat.includes('kid') || cat.includes('baby-shower') || cat.includes('baby') || cat === 'housewarming' || cat === 'art-craft') {
     return JSON.parse(JSON.stringify(DEFAULT_KIDS_PARTY_CONFIG));
   }
   if (cat === 'birthday') {
