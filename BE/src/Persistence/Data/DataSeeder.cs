@@ -8,7 +8,14 @@ public static class DataSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context, IPasswordHasher passwordHasher)
     {
-        await context.Database.EnsureCreatedAsync();
+        if (context.Database.IsRelational())
+        {
+            await context.Database.MigrateAsync();
+        }
+        else
+        {
+            await context.Database.EnsureCreatedAsync();
+        }
 
         // 1. Seed Users
         User adminUser;

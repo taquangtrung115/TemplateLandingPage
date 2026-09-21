@@ -19,13 +19,14 @@ public static class ServiceCollectionExtensions
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            options.UseSqlServer(connectionString, sqlOptions =>
+            options.UseNpgsql(connectionString, npgsqlOptions =>
             {
-                sqlOptions.EnableRetryOnFailure(
+                npgsqlOptions.EnableRetryOnFailure(
                     maxRetryCount: 5,
                     maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null);
-                sqlOptions.CommandTimeout(60);
+                    errorCodesToAdd: null);
+                npgsqlOptions.CommandTimeout(60);
+                npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
             })
             .AddInterceptors(interceptor);
         });
