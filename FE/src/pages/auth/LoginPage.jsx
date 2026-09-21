@@ -74,7 +74,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@template.com"
+                  placeholder="Input email"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-rose-500 outline-none"
                 />
               </div>
@@ -108,10 +108,10 @@ export default function LoginPage() {
           </form>
 
           {/* Demo credential hints */}
-          <div className="mt-6 pt-4 border-t border-gray-100 text-[11px] text-gray-400 text-center space-y-1">
+          {/* <div className="mt-6 pt-4 border-t border-gray-100 text-[11px] text-gray-400 text-center space-y-1">
             <p>Admin: <span className="font-mono text-gray-600">admin@template.com</span> / <span className="font-mono text-gray-600">Admin@123456</span></p>
             <p>User: <span className="font-mono text-gray-600">user@template.com</span> / <span className="font-mono text-gray-600">User@123456</span></p>
-          </div>
+          </div> */}
 
           <div className="mt-6 text-center text-xs text-gray-500">
             Chưa có tài khoản?{' '}
