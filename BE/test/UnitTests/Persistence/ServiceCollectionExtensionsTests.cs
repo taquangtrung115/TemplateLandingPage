@@ -15,8 +15,8 @@ using Xunit;
 
 public class ServiceCollectionExtensionsTests
 {
-    private const string DefaultLocalDbConnectionString =
-        "Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;";
+    private const string DefaultPostgreSqlConnectionString =
+        "Host=localhost;Port=5432;Database=TemplateLandingPageDb;Username=postgres;Password=postgres;";
 
     private static IConfiguration CreateConfiguration(string? connectionString)
     {
@@ -39,7 +39,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
-        var configuration = CreateConfiguration(DefaultLocalDbConnectionString);
+        var configuration = CreateConfiguration(DefaultPostgreSqlConnectionString);
 
         // Act
         services.AddPersistence(configuration);
@@ -65,7 +65,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
-        var configuration = CreateConfiguration(DefaultLocalDbConnectionString);
+        var configuration = CreateConfiguration(DefaultPostgreSqlConnectionString);
 
         // Act
         services.AddPersistence(configuration);
@@ -90,7 +90,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
-        var configuration = CreateConfiguration(DefaultLocalDbConnectionString);
+        var configuration = CreateConfiguration(DefaultPostgreSqlConnectionString);
 
         // Act
         services.AddPersistence(configuration);
@@ -112,7 +112,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
-        var configuration = CreateConfiguration(DefaultLocalDbConnectionString);
+        var configuration = CreateConfiguration(DefaultPostgreSqlConnectionString);
 
         // Act
         services.AddPersistence(configuration);
@@ -137,11 +137,11 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddPersistence_Should_ConfigureSqlServerProviderForDbContext()
+    public void AddPersistence_Should_ConfigureNpgsqlProviderForDbContext()
     {
         // Arrange
         var services = new ServiceCollection();
-        var configuration = CreateConfiguration(DefaultLocalDbConnectionString);
+        var configuration = CreateConfiguration(DefaultPostgreSqlConnectionString);
 
         // Act
         services.AddPersistence(configuration);
@@ -150,7 +150,28 @@ public class ServiceCollectionExtensionsTests
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
         // Assert
-        dbContext.Database.ProviderName.Should().Be("Microsoft.EntityFrameworkCore.SqlServer");
+        dbContext.Database.ProviderName.Should().Be("Npgsql.EntityFrameworkCore.PostgreSQL");
+    }
+
+    [Fact]
+    public void AddPersistence_Should_ConfigureNpgsqlSpecificOptions()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var configuration = CreateConfiguration(DefaultPostgreSqlConnectionString);
+
+        // Act
+        services.AddPersistence(configuration);
+        var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbOptions = scope.ServiceProvider.GetRequiredService<DbContextOptions<ApplicationDbContext>>();
+
+        // Assert - Relational and Npgsql options
+        var relationalOptions = Microsoft.EntityFrameworkCore.Infrastructure.RelationalOptionsExtension.Extract(dbOptions);
+        relationalOptions.CommandTimeout.Should().Be(60);
+        relationalOptions.MigrationsAssembly.Should().Be(typeof(ApplicationDbContext).Assembly.FullName);
+        dbContext.Database.IsNpgsql().Should().BeTrue();
     }
 
     #endregion
@@ -158,9 +179,9 @@ public class ServiceCollectionExtensionsTests
     #region 2. Edge Case Tests
 
     [Theory]
-    [InlineData("Server=(localdb)\\mssqllocaldb;Database=TemplateLandingPageDb;Trusted_Connection=True;Connection Timeout=45;MultipleActiveResultSets=true;Encrypt=False;Application Name=LandingPageTestApp;")]
-    [InlineData("Server=127.0.0.1,1433;Database=TestDb;User Id=sa;Password=P@ssw0rd123;TrustServerCertificate=True;Command Timeout=120;")]
-    [InlineData("Server=localhost;Database=CustomDb;Integrated Security=SSPI;Persist Security Info=False;")]
+    [InlineData("Host=localhost;Port=5432;Database=TemplateLandingPageDb;Username=postgres;Password=postgres;Timeout=45;Application Name=LandingPageTestApp;")]
+    [InlineData("Host=127.0.0.1;Port=5432;Database=TestDb;Username=postgres;Password=P@ssw0rd123;Command Timeout=120;")]
+    [InlineData("Host=db.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=secret;SSL Mode=Require;Trust Server Certificate=true;")]
     public void AddPersistence_WhenConnectionStringHasCustomOptions_ShouldResolveSuccessfully(string customConnectionString)
     {
         // Arrange
@@ -175,7 +196,7 @@ public class ServiceCollectionExtensionsTests
 
         // Assert
         dbContext.Should().NotBeNull();
-        dbContext.Database.ProviderName.Should().Be("Microsoft.EntityFrameworkCore.SqlServer");
+        dbContext.Database.ProviderName.Should().Be("Npgsql.EntityFrameworkCore.PostgreSQL");
         dbContext.Database.GetDbConnection().ConnectionString.Should().Be(customConnectionString);
 
         // Repositories resolve cleanly
@@ -190,7 +211,7 @@ public class ServiceCollectionExtensionsTests
         var services = new ServiceCollection();
         var mockSection = new Mock<IConfigurationSection>();
         mockSection.Setup(s => s["DefaultConnection"])
-            .Returns("Server=(localdb)\\specialInstance;Database=SpecialDb;Trusted_Connection=True;");
+            .Returns("Host=localhost;Port=5432;Database=SpecialDb;Username=postgres;Password=postgres;");
 
         var mockConfig = new Mock<IConfiguration>();
         mockConfig.Setup(c => c.GetSection("ConnectionStrings"))
@@ -203,7 +224,29 @@ public class ServiceCollectionExtensionsTests
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
         // Assert
-        dbContext.Database.GetDbConnection().ConnectionString.Should().Contain("specialInstance");
+        dbContext.Database.GetDbConnection().ConnectionString.Should().Contain("SpecialDb");
+    }
+
+    [Theory]
+    [InlineData("Host=db.supabase.co;Port=6543;Database=postgres;Username=postgres;Password=secret;SSL Mode=Require;Trust Server Certificate=true;Pooling=true;Minimum Pool Size=0;Maximum Pool Size=10;")]
+    [InlineData("Host=[::1];Port=5432;Database=TemplateLandingPageDb;Username=postgres;Password=postgres;")]
+    [InlineData("Host=localhost;Port=5432;Database=TemplateLandingPageDb;Username=postgres;Password=postgres;Include Error Detail=true;")]
+    public void AddPersistence_WhenConnectionStringHasSupabaseAndNetworkVariants_ShouldConfigureCorrectly(string customConnectionString)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var configuration = CreateConfiguration(customConnectionString);
+
+        // Act
+        services.AddPersistence(configuration);
+        var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        // Assert
+        dbContext.Should().NotBeNull();
+        dbContext.Database.IsNpgsql().Should().BeTrue();
+        dbContext.Database.GetDbConnection().ConnectionString.Should().Be(customConnectionString);
     }
 
     #endregion
@@ -279,6 +322,26 @@ public class ServiceCollectionExtensionsTests
         // Assert
         var act = () => dbContext.Database.OpenConnection();
         act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Theory]
+    [InlineData("Host=localhost;Port=not_a_valid_port;Database=test;")]
+    [InlineData("Host=localhost;Port=5432;Database=test;UnknownCustomKeyword=bad_value;")]
+    public void AddPersistence_WhenConnectionStringHasInvalidSyntax_ShouldFailWhenAccessingConnection(string invalidConnectionString)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var configuration = CreateConfiguration(invalidConnectionString);
+
+        // Act
+        services.AddPersistence(configuration);
+        var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        // Assert: Npgsql parses connection string upon opening or creating connection
+        var act = () => dbContext.Database.OpenConnection();
+        act.Should().Throw<ArgumentException>();
     }
 
     #endregion

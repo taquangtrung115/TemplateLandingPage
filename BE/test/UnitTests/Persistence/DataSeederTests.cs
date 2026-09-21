@@ -265,10 +265,36 @@ public class DataSeederTests : IDisposable
     }
 
     [Fact]
+    public async Task SeedAsync_OnInMemoryDatabase_ShouldSafelyUseEnsureCreated_BecauseIsRelationalIsFalse()
+    {
+        // 1. Verify InMemory provider returns false for IsRelational
+        _dbContext.Database.IsRelational().Should().BeFalse();
+
+        // 2. Demonstrate that calling MigrateAsync directly on InMemory throws InvalidOperationException
+        var directMigrateAct = () => _dbContext.Database.MigrateAsync();
+        await directMigrateAct.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Relational-specific methods can only be used when the context is using a relational database provider*");
+
+        // 3. Confirm that DataSeeder's IsRelational check prevents this failure and seeds successfully
+        var seedAct = () => DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
+        await seedAct.Should().NotThrowAsync();
+    }
+
+    [Fact]
     public async Task SeedAsync_Should_ThrowException_WhenContextIsNull()
     {
         // Act
         var act = () => DataSeeder.SeedAsync(null!, _passwordHasherMock.Object);
+
+        // Assert
+        await act.Should().ThrowAsync<NullReferenceException>();
+    }
+
+    [Fact]
+    public async Task SeedAsync_Should_ThrowException_WhenPasswordHasherIsNull()
+    {
+        // Act - Seeder tries to use password hasher to hash user passwords when users table is empty
+        var act = () => DataSeeder.SeedAsync(_dbContext, null!);
 
         // Assert
         await act.Should().ThrowAsync<NullReferenceException>();
