@@ -121,10 +121,10 @@ public class CreateCommunityTemplateCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_TruncateSlugTo200Chars_WhenSlugWithSuffixExceeds200Chars()
+    public async Task Handle_Should_PreserveUniqueSuffix_WhenInitialSlugIs200CharsAndAlreadyExists()
     {
-        // Arrange - 198 characters slug + 6 char suffix would be 204 chars
-        var longSlug = new string('a', 198);
+        // Arrange - Slug dài 200 ký tự và đã tồn tại
+        var longSlug = new string('a', 200);
         var command = new CreateCommunityTemplateCommand(
             "Long Slug Template",
             longSlug,
@@ -145,7 +145,9 @@ public class CreateCommunityTemplateCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         _templateRepositoryMock.Verify(r => r.Add(It.Is<Template>(t =>
-            t.Slug.Length <= 200)), Times.Once);
+            t.Slug.Length <= 200 &&
+            t.Slug != longSlug && // Bắt buộc phải khác slug trùng ban đầu
+            t.Slug.Contains('-'))), Times.Once);
     }
 
     [Theory]

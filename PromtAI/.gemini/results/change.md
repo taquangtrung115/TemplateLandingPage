@@ -97,3 +97,41 @@
 7. **Kiểm tra Validation khi tạo Mẫu Cộng Đồng (`CreateCommunityTemplateCommandValidator`)**:
    - Thao tác: Gửi request tạo template cộng đồng với `defaultConfigJson` sai cú pháp JSON hoặc `authorName` vượt quá 150 ký tự.
    - Kết quả kỳ vọng: Request bị chặn bởi FluentValidation với thông báo lỗi validation rõ ràng tương ứng cho thuộc tính đó, không bị lỗi 500.
+
+---
+
+## 4. HOTFIX — GỠ CHẶN PHÁN QUYẾT REVIEWER (2026-09-22)
+
+> [!IMPORTANT]
+> Mục này bổ sung sau khi Chặng 4 (Reviewer) ban hành phán quyết **CHẶN (BLOCK)** do phát hiện 2 lỗi nghiêm trọng và 1 thiếu sót hạ tầng. Xem chi tiết tại `PromtAI/.gemini/results/evaluate.md`.
+
+### 4.1 Danh sách file đã sửa / tạo mới
+
+| STT | Đường dẫn File | Loại | Mô tả |
+|:---:|:---|:---:|:---|
+| 1 | `BE/src/Application/UseCases/V1/Templates/Commands/CreateCommunityTemplateCommandHandler.cs` | Sửa | Khắc phục bug cắt slug: cắt ngắn phần thân slug gốc về tối đa 194 ký tự **trước** khi nối hậu tố `-xxxxx`, thay vì cắt **sau** khi đã nối (gây mất suffix duy nhất). |
+| 2 | `BE/test/UnitTests/Application/Templates/CreateCommunityTemplateCommandHandlerTests.cs` | Sửa | Thay thế test case hời hợt `Handle_Should_TruncateSlugTo200Chars_WhenSlugWithSuffixExceeds200Chars` bằng test case mạnh hơn `Handle_Should_PreserveUniqueSuffix_WhenInitialSlugIs200CharsAndAlreadyExists` — kiểm chứng slug ≤ 200 ký tự **VÀ** slug khác slug trùng ban đầu **VÀ** slug chứa dấu `-` (bảo toàn suffix). |
+| 3 | `BE/src/Persistence/Migrations/20260922110438_AddCommunityFieldsToTemplate.cs` | Tạo mới | Migration EF Core bổ sung 3 cột vào bảng `Templates`: `IsCommunity` (boolean, default false), `AuthorName` (varchar 150, nullable), `CreatedByUserId` (uuid, nullable). |
+| 4 | `BE/src/Persistence/Migrations/20260922110438_AddCommunityFieldsToTemplate.Designer.cs` | Tạo mới | Designer metadata cho migration trên. |
+| 5 | `BE/src/Persistence/Migrations/ApplicationDbContextModelSnapshot.cs` | Cập nhật | Snapshot model được EF Core tự động cập nhật đồng bộ 3 cột mới. |
+
+### 4.2 Lý do sửa (Gỡ chặn Reviewer)
+
+1. **Bug cắt slug (Điểm 2 trong evaluate.md)**: Khi `request.Slug` dài 200 ký tự và đã tồn tại, logic cũ nối suffix rồi cắt `[..200]` từ đầu → cắt bỏ hoàn toàn suffix → slug quay về chuỗi trùng ban đầu → `UniqueIndex Violation` trên PostgreSQL. Logic mới cắt base slug về ≤194 ký tự trước rồi mới nối `-xxxxx` (tối đa 200 ký tự), đảm bảo suffix luôn được bảo toàn.
+
+2. **Unit Test hời hợt (Điểm 3 trong evaluate.md)**: Test cũ chỉ assert `t.Slug.Length <= 200` — pass cả khi slug mới trùng slug cũ. Test mới bổ sung 2 assertion bắt buộc: `t.Slug != longSlug` (phải khác slug trùng) và `t.Slug.Contains('-')` (phải chứa dấu phân tách suffix).
+
+3. **Thiếu Migration EF Core (Điểm 1 trong evaluate.md)**: Entity `Template` đã được mở rộng 3 thuộc tính mới trong code C# nhưng chưa có file migration để đồng bộ schema PostgreSQL. Chạy `dotnet ef migrations add AddCommunityFieldsToTemplate` đã sinh migration chứa `AddColumn` cho cả 3 cột, kèm `DropColumn` trong method `Down()` để rollback an toàn.
+
+### 4.3 Kết quả kiểm chứng sau hotfix
+
+- **Build**: `dotnet build BE/TemplateLandingPage.sln` → ✅ **0 Warning, 0 Error**
+- **Test**: `dotnet test BE/TemplateLandingPage.sln` → ✅ **379/379 PASSED** (7 Architecture + 372 Unit Tests)
+- **Migration file**: Xác nhận `AddColumn` cho `IsCommunity`, `AuthorName`, `CreatedByUserId` ✅
+- **Snapshot**: Xác nhận `ApplicationDbContextModelSnapshot.cs` chứa đủ 3 cột mới ✅
+
+### 4.4 Vị trí Tester nên soi kỹ (bổ sung)
+
+1. **Slug 200 ký tự trùng lặp**: Tạo 2 template cộng đồng liên tiếp với cùng slug dài 200 ký tự → template thứ 2 phải có slug khác, ≤200 ký tự, và chứa hậu tố ngẫu nhiên. Không được văng lỗi 500.
+2. **Migration trên PostgreSQL thật**: Sau khi deploy, chạy `dotnet ef database update` hoặc để `MigrateAsync()` tự chạy, kiểm tra bảng `Templates` trên Supabase phải có đủ 3 cột mới: `IsCommunity`, `AuthorName`, `CreatedByUserId`.
+3. **Truy vấn GET/POST sau migration**: Gọi `GET /api/v1/templates` và `POST /api/v1/templates/community` trên môi trường PostgreSQL thật, xác nhận không còn lỗi `42703 (column does not exist)`.

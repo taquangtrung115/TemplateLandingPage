@@ -27,11 +27,9 @@ public sealed class CreateCommunityTemplateCommandHandler : ICommandHandler<Crea
         if (await _templateRepository.ExistsBySlugAsync(finalSlug, cancellationToken))
         {
             var suffix = Guid.NewGuid().ToString("N")[..5];
-            finalSlug = $"{finalSlug}-{suffix}";
-            if (finalSlug.Length > 200)
-            {
-                finalSlug = finalSlug[..200];
-            }
+            // Cắt ngắn phần thân slug gốc về tối đa 194 ký tự trước khi nối suffix (-xxxxx)
+            var baseSlug = finalSlug.Length > 194 ? finalSlug[..194].TrimEnd('-') : finalSlug;
+            finalSlug = $"{baseSlug}-{suffix}";
         }
 
         var template = Template.CreateCommunity(
