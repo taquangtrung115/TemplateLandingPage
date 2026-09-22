@@ -58,6 +58,15 @@ public sealed class TemplateConfiguration : IEntityTypeConfiguration<Template>
         builder.Property(t => t.IsActive)
             .IsRequired();
 
+        builder.Property(t => t.IsCommunity)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(t => t.AuthorName)
+            .HasMaxLength(150);
+
+        builder.Property(t => t.CreatedByUserId);
+
         builder.Property(t => t.IsDeleted)
             .IsRequired();
 

@@ -37,6 +37,8 @@ public sealed class GetTemplateBySlugQueryHandler : IQueryHandler<GetTemplateByS
             template.MusicTitle,
             template.DefaultConfigJson,
             template.IsActive,
+            template.IsCommunity,
+            template.AuthorName,
             template.CreatedAtUtc);
 
         return Result.Success(response);

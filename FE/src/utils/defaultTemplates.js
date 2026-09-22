@@ -619,19 +619,305 @@ export const DEFAULT_BIRTHDAY_CONFIG = {
   ],
 };
 
+// Format 7: Spa & Chăm Sóc Sắc Đẹp (Spa & Wellness)
+export const DEFAULT_SPA_BEAUTY_CONFIG = {
+  format: "spa-beauty",
+  theme: {
+    primaryColor: "#059669",
+    secondaryColor: "#10b981",
+    accentColor: "#6ee7b7",
+    backgroundColor: "#f0fdf4",
+    textColor: "#064e3b",
+    fontFamily: "Playfair Display",
+    stylePreset: "glass",
+    particlesEffect: "bubbles",
+    defaultAnimation: "fade-up",
+  },
+  hero: {
+    badge: "AURA WELLNESS & LUXURY RETREAT",
+    title: "Aura Spa — Đánh Thức Vẻ Đẹp Thuần Khiết",
+    subtitle: "Liệu pháp thảo mộc cổ truyền kết hợp công nghệ trẻ hóa da hàng đầu Thụy Sĩ.",
+    eventDate: "2026-12-31T21:00:00",
+    coverImageUrl: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=80",
+    callToActionText: "Đặt Lịch Trải Nghiệm",
+    animation: "fade-up",
+  },
+  eventDetails: {
+    ceremonyName: "Trải Nghiệm Trị Liệu & Trẻ Hóa Da Tự Nhiên",
+    time: "09:00 - 21:00 Hàng ngày",
+    venueName: "Aura Wellness Haven",
+    address: "88 Đường Thảo Điền, Quận 2, TP. Hồ Chí Minh",
+    mapEmbedUrl: "https://maps.google.com",
+    mapDirectLink: "https://maps.google.com",
+    animation: "fade-up",
+  },
+  servicesGrid: [
+    { id: "svc-1", name: "Massage Đá Nóng Thảo Dược", description: "Lưu thông khí huyết, giải tỏa căng thẳng với đá nham thạch Himalaya.", priceFrom: "650.000 đ/75p" },
+    { id: "svc-2", name: "Trẻ Hóa Da Tế Bào Tươi", description: "Cung cấp độ ẩm sâu và collagen hữu cơ phục hồi độ đàn hồi cho làn da.", priceFrom: "1.200.000 đ/90p" },
+    { id: "svc-3", name: "Liệu Pháp Tắm Trắng Onsen", description: "Ngâm khoáng ấm và ủ thảo mộc thiên nhiên sáng mịn làn da.", priceFrom: "890.000 đ/60p" },
+    { id: "svc-4", name: "Chăm Sóc Toàn Diện Thải Độc", description: "Xông hơi tinh dầu tràm trà và massage ấn huyệt chuyên sâu.", priceFrom: "1.500.000 đ/120p" }
+  ],
+  hierarchicalCards: [
+    {
+      id: "card-spa-1",
+      title: "Gói Chăm Sóc Thư Thái Thân Tâm",
+      subHeader: "Liệu trình chăm sóc toàn diện 120 phút",
+      content: "Kết hợp tinh hoa thảo mộc tự nhiên và bàn tay điêu luyện của các chuyên gia hàng đầu.",
+      stylePreset: "glass",
+      backgroundColor: "#ffffff",
+      textColor: "#064e3b",
+      animation: "fade-up",
+      subCards: [
+        { id: "sub-spa-1", title: "Xông Hơi Đá Muối Himalaya", subHeader: "30 phút", content: "Thải độc tố, giải phóng năng lượng ứ trệ", animation: "zoom-in" },
+        { id: "sub-spa-2", title: "Massage Tinh Dầu Oải Hương", subHeader: "60 phút", content: "Thư giãn hệ thần kinh, tái tạo tế bào cơ", animation: "zoom-in" }
+      ]
+    }
+  ],
+  gallery: [
+    { id: "1", url: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80", caption: "Không gian thiền định ngập tràn hương hoa", animation: "zoom-in" },
+    { id: "2", url: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80", caption: "Liệu pháp massage đá nóng thư giãn sâu", animation: "zoom-in" }
+  ],
+  rsvp: {
+    enabled: true,
+    deadline: "2026-12-31",
+    note: "Đặt hẹn trước ít nhất 2 giờ để chuẩn bị phòng trị liệu riêng tư tốt nhất.",
+    animation: "fade-up",
+  },
+  music: {
+    enabled: true,
+    audioUrl: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3",
+    title: "Zen Spa Relaxation - Bamboo Flute",
+    autoPlay: true
+  }
+};
+
+// Format 8: Kênh Podcast & Ra Mắt Âm Nhạc (Podcast & Music)
+export const DEFAULT_PODCAST_MUSIC_CONFIG = {
+  format: "podcast-music",
+  theme: {
+    primaryColor: "#8b5cf6",
+    secondaryColor: "#a78bfa",
+    accentColor: "#f472b6",
+    backgroundColor: "#0d0d15",
+    textColor: "#f8fafc",
+    fontFamily: "Inter",
+    stylePreset: "glass",
+    particlesEffect: "cyber-grid",
+    defaultAnimation: "fade-up",
+  },
+  hero: {
+    badge: "NEW ALBUM & PODCAST PREMIERE",
+    title: "Sonic Wave — Tiếng Vọng Trong Tâm Thức",
+    subtitle: "Kênh podcast âm nhạc độc lập khám phá thế giới Ambient, Lo-Fi và những câu chuyện sáng tác.",
+    eventDate: "2026-10-16T20:00:00",
+    coverImageUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1600&q=80",
+    callToActionText: "Nghe Ngay Trên Spotify",
+    animation: "fade-up",
+  },
+  eventDetails: {
+    ceremonyName: "Buổi Phát Hành Album Trực Tiếp",
+    time: "20:00 - Thứ Sáu, 16/10/2026",
+    venueName: "Spotify Live Studio & YouTube Music",
+    address: "Phát sóng toàn cầu trực tuyến",
+    animation: "fade-up",
+  },
+  featureCardsGrid: [
+    { id: "ep-1", title: "Tập 01: Vũ Trụ Ambient & Đêm Mưa Hà Nội", description: "Cuộc trò chuyện cùng nghệ sĩ về sự tối giản trong hòa âm nhạc cụ mộc." },
+    { id: "ep-2", title: "Tập 02: Tần Số Chữa Lành 432Hz", description: "Giải mã khoa học tâm lý âm học và tác động của sóng âm lên giấc ngủ." },
+    { id: "ep-3", title: "Tập 03: Những Giai Điệu Bị Lãng Quên", description: "Hồi ức về các bản nhạc Jazz của thế kỷ trước được tái sinh qua synthesizer." }
+  ],
+  hierarchicalCards: [
+    {
+      id: "card-music-1",
+      title: "Danh Sách Bài Hát Mới Nhất (Tracklist)",
+      subHeader: "Trải nghiệm âm thanh vòm Spatial Audio",
+      content: "Bao gồm 8 ca khúc nguyên bản hòa quyện cùng âm thanh tự nhiên của đại ngàn và sóng biển.",
+      stylePreset: "glass",
+      backgroundColor: "#181824",
+      textColor: "#ffffff",
+      animation: "fade-up",
+      subCards: [
+        { id: "sub-trk-1", title: "01. Midnight Solitude", subHeader: "04:15", content: "Ambient Synth & Piano Solo", animation: "zoom-in" },
+        { id: "sub-trk-2", title: "02. Echoes in the Rain", subHeader: "03:48", content: "Lo-Fi Beats & Cellos", animation: "zoom-in" }
+      ]
+    }
+  ],
+  gallery: [
+    { id: "1", url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80", caption: "Phòng thu âm chuyên nghiệp với dàn mixer analog", animation: "zoom-in" },
+    { id: "2", url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80", caption: "Đêm nhạc thính phòng giới hạn người nghe", animation: "zoom-in" }
+  ],
+  rsvp: {
+    enabled: true,
+    deadline: "2026-10-15",
+    note: "Đăng ký nhận thông báo khi tập mới phát hành độc quyền trên podcast.",
+    animation: "fade-up",
+  },
+  music: {
+    enabled: true,
+    audioUrl: "https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77c30.mp3",
+    title: "Sonic Wave Ambient Theme",
+    autoPlay: true
+  }
+};
+
+// Format 9: Khởi Nghiệp Công Nghệ (Tech Startup)
+export const DEFAULT_TECH_STARTUP_CONFIG = {
+  format: "tech-startup",
+  theme: {
+    primaryColor: "#00f0ff",
+    secondaryColor: "#3b82f6",
+    accentColor: "#ffe600",
+    backgroundColor: "#0b0f19",
+    textColor: "#f8fafc",
+    fontFamily: "Inter",
+    stylePreset: "glass",
+    particlesEffect: "cyber-grid",
+    defaultAnimation: "fade-up",
+  },
+  hero: {
+    badge: "SEED ROUND $3.5M ANNOUNCEMENT",
+    title: "Nexus AI — Nền Tảng Tự Động Hóa Trí Tuệ Đa Tác Nhân",
+    subtitle: "Trao quyền cho các kỹ sư xây dựng hệ thống Autonomous Agents vận hành 24/7 với độ tin cậy tuyệt đối.",
+    eventDate: "2026-11-18T14:00:00",
+    coverImageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1600&q=80",
+    callToActionText: "Nhận Bản Demo & Whitepaper",
+    animation: "fade-up",
+  },
+  eventDetails: {
+    ceremonyName: "Nexus AI Global Launch & Pitch Day",
+    time: "14:00 - Thứ Tư, 18/11/2026",
+    venueName: "Silicon Valley Innovation Center & Live Stream",
+    address: "Palo Alto, California & Trực tuyến toàn cầu",
+    animation: "fade-up",
+  },
+  featureCardsGrid: [
+    { id: "feat-1", title: "Multi-Agent Coordination", description: "Giao thức định tuyến thông minh cho phép các mô hình AI cộng tác giải quyết bài toán phức tạp." },
+    { id: "feat-2", title: "Zero-Latency Memory Vault", description: "Lưu trữ bộ nhớ ngữ cảnh vector siêu tốc với thời gian truy xuất dưới 2 mili-giây." },
+    { id: "feat-3", title: "Enterprise Guardrails", description: "Hệ thống phòng vệ an ninh hai tầng ngăn ngừa prompt injection và rò rỉ dữ liệu." }
+  ],
+  hierarchicalCards: [
+    {
+      id: "card-startup-1",
+      title: "Lộ Trình Phát Triển Sản Phẩm (Roadmap 2026-2027)",
+      subHeader: "Từ phiên bản Alpha đến Hệ sinh thái AI mở",
+      content: "Cam kết mang đến cho cộng đồng công nghệ những công cụ lập trình mạnh mẽ nhất.",
+      stylePreset: "glass",
+      backgroundColor: "#131b2e",
+      textColor: "#f8fafc",
+      animation: "fade-up",
+      subCards: [
+        { id: "sub-st-1", title: "Q4 2026: Private Alpha", subHeader: "500 Developers", content: "Mở quyền truy cập sớm cho các đối tác Enterprise", animation: "zoom-in" },
+        { id: "sub-st-2", title: "Q1 2027: Public Beta & SDK", subHeader: "Open Source", content: "Phát hành Python & TypeScript SDK chính thức", animation: "zoom-in" }
+      ]
+    }
+  ],
+  metrics: [
+    { value: "$3.5M", label: "Vốn vòng Hạt Giống từ quỹ mạo hiểm hàng đầu" },
+    { value: "12,000+", label: "Lập trình viên trong danh sách chờ Waitlist" },
+    { value: "99.99%", label: "Uptime cam kết cho dịch vụ đám mây" }
+  ],
+  rsvp: {
+    enabled: true,
+    deadline: "2026-11-15",
+    note: "Đăng ký tham gia để nhận vé mời VIP tại sự kiện công bố sản phẩm.",
+    animation: "fade-up",
+  },
+  music: {
+    enabled: false
+  }
+};
+
+// Format 10: Nhiếp Ảnh Nghệ Thuật & Studio (Photography)
+export const DEFAULT_PHOTOGRAPHY_CONFIG = {
+  format: "photography",
+  theme: {
+    primaryColor: "#d4af37",
+    secondaryColor: "#aa771c",
+    accentColor: "#fff8dc",
+    backgroundColor: "#121214",
+    textColor: "#f5f5f0",
+    fontFamily: "Playfair Display",
+    stylePreset: "luxury",
+    particlesEffect: "sparkles",
+    defaultAnimation: "fade-up",
+  },
+  hero: {
+    badge: "VISUAL STORYTELLING & FINE ART",
+    title: "Lumina Studio — Ghi Lại Vẻ Đẹp Của Từng Khoảnh Khắc",
+    subtitle: "Nhiếp ảnh chân dung, cưới nghệ thuật và sự kiện độc bản với ánh sáng điện ảnh kinh điển.",
+    eventDate: "2026-12-31T18:00:00",
+    coverImageUrl: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=1600&q=80",
+    callToActionText: "Đặt Lịch Chụp Ảnh",
+    animation: "fade-up",
+  },
+  eventDetails: {
+    ceremonyName: "Triển Lãm Ảnh & Workshop Ánh Sáng",
+    time: "10:00 - 18:00 Hàng ngày",
+    venueName: "Lumina Creative Hub",
+    address: "25 Ngô Thời Nhiệm, Phường 6, Quận 3, TP. Hồ Chí Minh",
+    mapEmbedUrl: "https://maps.google.com",
+    mapDirectLink: "https://maps.google.com",
+    animation: "fade-up",
+  },
+  servicesGrid: [
+    { id: "pack-1", name: "Gói Ảnh Cưới Pre-Wedding", description: "Chụp ngoại cảnh hoặc studio phong cách tối giản nghệ thuật Châu Âu.", priceFrom: "12.000.000 đ" },
+    { id: "pack-2", name: "Chân Dung Nghệ Thuật (Fine Art)", description: "Ánh sáng studio điện ảnh, tôn vinh cá tính và thần thái riêng biệt.", priceFrom: "3.500.000 đ" },
+    { id: "pack-3", name: "Kỷ Niệm Gia Đình & Bầu", description: "Lưu giữ khoảnh khắc ấm áp sum vầy của các thành viên gia đình.", priceFrom: "5.000.000 đ" },
+    { id: "pack-4", name: "Sự Kiện Cao Cấp & Fashion", description: "Ghi hình sự kiện doanh nghiệp, lookbook thời trang thương hiệu.", priceFrom: "8.000.000 đ" }
+  ],
+  hierarchicalCards: [
+    {
+      id: "card-photo-1",
+      title: "Quy Trình Sáng Tác Ảnh Độc Bản",
+      subHeader: "Từ lên ý tưởng concept đến ấn phẩm hoàn thiện",
+      content: "Chúng tôi không chỉ bấm máy, chúng tôi lắng nghe câu chuyện của bạn và vẽ nên tác phẩm bằng ánh sáng.",
+      stylePreset: "luxury",
+      backgroundColor: "#1a1a1e",
+      textColor: "#f5f5f0",
+      animation: "fade-up",
+      subCards: [
+        { id: "sub-ph-1", title: "Bước 1: Moodboard & Styling", subHeader: "Thảo luận", content: "Định hình phong cách, màu sắc và trang phục phù hợp", animation: "zoom-in" },
+        { id: "sub-ph-2", title: "Bước 2: Buổi Chụp Cảm Xúc", subHeader: "Shooting Day", content: "Tạo không khí tự nhiên, thoải mái nhất cho khách hàng", animation: "zoom-in" }
+      ]
+    }
+  ],
+  gallery: [
+    { id: "1", url: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=800&q=80", caption: "Khoảnh khắc đôi lứa say đắm trong ánh hoàng hôn", animation: "zoom-in" },
+    { id: "2", url: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80", caption: "Nụ cười rạng rỡ của cô dâu ngày trọng đại", animation: "zoom-in" }
+  ],
+  rsvp: {
+    enabled: true,
+    deadline: "2026-12-31",
+    note: "Vui lòng đặt lịch trước ít nhất 1 tuần để studio chuẩn bị concept tốt nhất.",
+    animation: "fade-up",
+  },
+  music: {
+    enabled: true,
+    audioUrl: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
+    title: "Lumina Fine Art - Cinematic Piano",
+    autoPlay: true
+  }
+};
+
 /**
  * Ánh xạ category hoặc format type sang default configuration tương ứng
- * Hỗ trợ 6 định dạng phong phú:
- * 1. Wedding / Romance
- * 2. AI Summit / Conference
- * 3. ADHD Planner / App Showcase
- * 4. Dental & Medical Clinic
- * 5. Modern Cloud SaaS
- * 6. Kids Birthday & Celebration
+ * Hỗ trợ 10 định dạng phong phú
  */
 export const getDefaultConfigByCategory = (category = 'Wedding') => {
   const cat = category?.toLowerCase() || '';
 
+  if (cat === 'spa-beauty' || cat.includes('spa') || cat.includes('beauty')) {
+    return JSON.parse(JSON.stringify(DEFAULT_SPA_BEAUTY_CONFIG));
+  }
+  if (cat === 'podcast-music' || cat.includes('podcast') || cat.includes('music')) {
+    return JSON.parse(JSON.stringify(DEFAULT_PODCAST_MUSIC_CONFIG));
+  }
+  if (cat === 'tech-startup' || cat.includes('startup')) {
+    return JSON.parse(JSON.stringify(DEFAULT_TECH_STARTUP_CONFIG));
+  }
+  if (cat === 'photography' || cat.includes('photo') || cat.includes('studio')) {
+    return JSON.parse(JSON.stringify(DEFAULT_PHOTOGRAPHY_CONFIG));
+  }
   if (cat === 'conference' || cat === 'summit' || cat.includes('summit') || cat.includes('ai') || cat === 'education' || cat.includes('edu')) {
     return JSON.parse(JSON.stringify(DEFAULT_AI_SUMMIT_CONFIG));
   }

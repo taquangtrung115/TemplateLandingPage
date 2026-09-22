@@ -18,6 +18,7 @@ import SpeakersSection from './sections/SpeakersSection';
 import PricingSection from './sections/PricingSection';
 import ServicesSection from './sections/ServicesSection';
 import FeatureCardsSection from './sections/FeatureCardsSection';
+import HierarchicalCardsSection from './sections/HierarchicalCardsSection';
 
 /**
  * Orchestrator Component renders the complete responsive Landing Page
@@ -52,6 +53,7 @@ export const LandingPageRenderer = ({
   const booking = config?.booking || {};
   const featureCardsGrid = config?.featureCardsGrid || [];
   const metrics = config?.metrics || [];
+  const hierarchicalCards = Array.isArray(config?.hierarchicalCards) ? config.hierarchicalCards : [];
 
   // Color & Theme styles
   const primaryColor = theme.primaryColor || '#e11d48';
@@ -159,6 +161,16 @@ export const LandingPageRenderer = ({
           metrics={metrics}
           primaryColor={primaryColor}
           isHighlighted={activeEditSection === 'features'}
+        />
+      )}
+
+      {/* 3.1 Dynamic Hierarchical Cards Section (Card Builder) */}
+      {hierarchicalCards.length > 0 && (
+        <HierarchicalCardsSection
+          hierarchicalCards={hierarchicalCards}
+          primaryColor={primaryColor}
+          secondaryColor={secondaryColor}
+          isHighlighted={activeEditSection === 'cards' || activeEditSection === 'hierarchicalCards'}
         />
       )}
 

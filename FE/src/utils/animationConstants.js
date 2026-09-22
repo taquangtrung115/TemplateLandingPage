@@ -1,15 +1,50 @@
-export const ANIMATION_OPTIONS = [
-  { value: 'none', label: 'Không hiệu ứng (None)' },
-  { value: 'fade-up', label: 'Mờ dần từ dưới lên (Fade Up)' },
-  { value: 'fade-down', label: 'Mờ dần từ trên xuống (Fade Down)' },
-  { value: 'fade-left', label: 'Mờ dần từ trái sang (Fade Left)' },
-  { value: 'fade-right', label: 'Mờ dần từ phải sang (Fade Right)' },
-  { value: 'zoom-in', label: 'Phóng to xuất hiện (Zoom In)' },
-  { value: 'zoom-out', label: 'Thu nhỏ xuất hiện (Zoom Out)' },
-  { value: 'flip-up', label: 'Lật 3D từ dưới lên (Flip Up)' },
-  { value: 'bounce', label: 'Nảy vui nhộn (Bounce)' },
-  { value: 'float', label: 'Bồng bềnh lơ lửng (Float)' },
-  { value: 'pulse', label: 'Nhịp đập phát sáng (Pulse)' },
+/**
+ * Phân nhóm hiệu ứng hoạt họa chuyên nghiệp cho Landing Page & Thiệp điện tử
+ */
+
+export const ANIMATION_GROUPS = [
+  {
+    groupId: 'entrance',
+    groupName: 'Hiệu Ứng Xuất Hiện (Entrance)',
+    options: [
+      { value: 'none', label: 'Không hiệu ứng (None)' },
+      { value: 'fade-up', label: 'Mờ dần từ dưới lên (Fade Up)' },
+      { value: 'fade-down', label: 'Mờ dần từ trên xuống (Fade Down)' },
+      { value: 'fade-left', label: 'Mờ dần từ trái sang (Fade Left)' },
+      { value: 'fade-right', label: 'Mờ dần từ phải sang (Fade Right)' },
+      { value: 'zoom-in', label: 'Phóng to xuất hiện (Zoom In)' },
+      { value: 'zoom-out', label: 'Thu nhỏ xuất hiện (Zoom Out)' },
+      { value: 'flip-up', label: 'Lật 3D từ dưới lên (Flip Up)' },
+      { value: 'flip-down', label: 'Lật 3D từ trên xuống (Flip Down)' },
+      { value: 'bounce', label: 'Nảy vui nhộn (Bounce)' },
+      { value: 'roll-in', label: 'Lăn xoay vào màn hình (Roll In)' },
+      { value: 'slide-up', label: 'Trượt nhẹ từ dưới (Slide Up)' },
+    ]
+  },
+  {
+    groupId: 'continuous',
+    groupName: 'Chuyển Động Liên Tục (Continuous)',
+    options: [
+      { value: 'float', label: 'Bồng bềnh lơ lửng (Float Slow)' },
+      { value: 'pulse', label: 'Nhịp thở phát sáng (Pulse Glow)' },
+      { value: 'shimmer', label: 'Ánh kim lấp lánh (Shimmer)' },
+      { value: 'wiggle', label: 'Lắc lư thu hút (Wiggle)' },
+      { value: 'heartbeat', label: 'Nhịp đập trái tim (Heartbeat)' },
+    ]
+  }
+];
+
+export const ANIMATION_OPTIONS = ANIMATION_GROUPS.flatMap((group) => group.options);
+
+export const PARTICLES_OPTIONS = [
+  { value: 'none', label: 'Không hạt bay' },
+  { value: 'petals', label: 'Cánh hoa hồng rơi (Petals)' },
+  { value: 'confetti', label: 'Pháo hoa giấy rực rỡ (Confetti)' },
+  { value: 'sparkles', label: 'Bụi sao lấp lánh (Sparkles)' },
+  { value: 'snow', label: 'Bông tuyết trắng rơi (Snow)' },
+  { value: 'bubbles', label: 'Bong bóng nước trong suốt (Bubbles)' },
+  { value: 'fireflies', label: 'Đom đóm mùa hạ (Fireflies)' },
+  { value: 'cyber-grid', label: 'Mạng lưới ánh sáng Cyber (Cyber Grid)' }
 ];
 
 export const getAnimationClass = (animationType = 'fade-up', isVisible = true) => {
@@ -34,12 +69,20 @@ export const getAnimationClass = (animationType = 'fade-up', isVisible = true) =
         return 'opacity-0 scale-110';
       case 'flip-up':
         return 'opacity-0 [transform:perspective(800px)_rotateX(45deg)]';
+      case 'flip-down':
+        return 'opacity-0 [transform:perspective(800px)_rotateX(-45deg)]';
+      case 'roll-in':
+        return 'opacity-0 -translate-x-10 -rotate-12';
+      case 'slide-up':
+        return 'opacity-0 translate-y-4';
       case 'bounce':
         return 'opacity-0 translate-y-6';
       case 'float':
-        return 'opacity-0';
       case 'pulse':
-        return 'opacity-0 scale-95';
+      case 'shimmer':
+      case 'wiggle':
+      case 'heartbeat':
+        return 'opacity-0';
       default:
         return 'opacity-0 translate-y-6';
     }
@@ -60,12 +103,24 @@ export const getAnimationClass = (animationType = 'fade-up', isVisible = true) =
       return 'opacity-100 scale-100 animate-zoom-out';
     case 'flip-up':
       return 'opacity-100 [transform:perspective(800px)_rotateX(0deg)] animate-flip-up';
+    case 'flip-down':
+      return 'opacity-100 [transform:perspective(800px)_rotateX(0deg)] animate-flip-down';
+    case 'roll-in':
+      return 'opacity-100 translate-x-0 rotate-0 animate-roll-in';
+    case 'slide-up':
+      return 'opacity-100 translate-y-0 animate-slide-up';
     case 'bounce':
       return 'opacity-100 translate-y-0 animate-bounce-subtle';
     case 'float':
       return 'opacity-100 animate-float-slow';
     case 'pulse':
       return 'opacity-100 scale-100 animate-pulse-glow';
+    case 'shimmer':
+      return 'opacity-100 animate-shimmer';
+    case 'wiggle':
+      return 'opacity-100 animate-wiggle';
+    case 'heartbeat':
+      return 'opacity-100 animate-heartbeat';
     default:
       return 'opacity-100 animate-fade-up';
   }
@@ -150,12 +205,11 @@ export const addPersonHelper = (coupleOrCelebrant = {}) => {
 export const removePersonHelper = (coupleOrCelebrant = {}, personKeyToRemove) => {
   const currentList = extractPersonsList(coupleOrCelebrant);
   if (currentList.length <= 1) {
-    return coupleOrCelebrant; // Giữ tối thiểu 1 person
+    return coupleOrCelebrant;
   }
 
   const remaining = currentList.filter((p) => p.key !== personKeyToRemove);
 
-  // Giữ lại các thuộc tính không phải person (như type, storyQuote, animation...)
   const updated = {};
   Object.keys(coupleOrCelebrant).forEach((k) => {
     if (!/^person\d+$/.test(k)) {
@@ -163,7 +217,6 @@ export const removePersonHelper = (coupleOrCelebrant = {}, personKeyToRemove) =>
     }
   });
 
-  // Re-index từ person1, person2...
   remaining.forEach((p, idx) => {
     const newKey = `person${idx + 1}`;
     const { key, ...data } = p;
