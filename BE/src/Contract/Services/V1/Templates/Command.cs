@@ -16,6 +16,16 @@ public record CreateTemplateCommand(
     string? MusicTitle,
     string DefaultConfigJson) : ICommand<Guid>;
 
+public record CreateCommunityTemplateCommand(
+    string Name,
+    string Slug,
+    string? Description,
+    string Category,
+    string ThumbnailUrl,
+    string DefaultConfigJson,
+    string? AuthorName,
+    Guid? CreatedByUserId = null) : ICommand<Guid>;
+
 public record UpdateTemplateCommand(
     Guid Id,
     string Name,

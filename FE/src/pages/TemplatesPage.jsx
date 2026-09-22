@@ -8,6 +8,7 @@ import {
   Layers,
   Volume2,
   VolumeX,
+  Globe,
 } from 'lucide-react';
 import { templateApi } from '../api/templateApi';
 import categoryApi from '../api/categoryApi';
@@ -20,6 +21,7 @@ export default function TemplatesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentCategory = searchParams.get('category') || 'all';
   const currentBadge = searchParams.get('badge') || 'all';
+  const currentTab = searchParams.get('tab') || 'all'; // 'all' | 'official' | 'community'
 
   const [templates, setTemplates] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -108,8 +110,23 @@ export default function TemplatesPage() {
     setSearchParams(searchParams);
   };
 
+  const handleTabChange = (tab) => {
+    if (tab === 'all') {
+      searchParams.delete('tab');
+    } else {
+      searchParams.set('tab', tab);
+    }
+    setSearchParams(searchParams);
+  };
+
   // Filter templates
   const filteredTemplates = templates.filter((template) => {
+    // Source Tab match: all | official | community
+    const matchTab =
+      currentTab === 'all' ||
+      (currentTab === 'official' && !template.isCommunity) ||
+      (currentTab === 'community' && Boolean(template.isCommunity));
+
     // Category match: match either category slug, category name, or categoryId
     const matchCategory =
       currentCategory === 'all' ||
@@ -125,9 +142,10 @@ export default function TemplatesPage() {
     const matchSearch =
       !searchQuery.trim() ||
       template.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      template.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (template.authorName && template.authorName.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchCategory && matchBadge && matchSearch;
+    return matchTab && matchCategory && matchBadge && matchSearch;
   });
 
   const badgeFilters = [
@@ -174,6 +192,54 @@ export default function TemplatesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
         {/* Sticky Filter & Search Control Panel */}
         <div className="bg-white rounded-3xl p-4 sm:p-5 border border-gray-200/80 shadow-lg shadow-gray-200/50 space-y-4 mb-8">
+          {/* Top Source Tabs: Tất Cả / Mẫu Hệ Thống (Official) / Cộng Đồng Đóng Góp (Community) */}
+          <div className="flex items-center gap-2 p-1 bg-gray-100/80 rounded-2xl w-full sm:w-fit overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => handleTabChange('all')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                currentTab === 'all'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Tất Cả Mẫu</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-700 font-extrabold">
+                {templates.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleTabChange('official')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                currentTab === 'official'
+                  ? 'bg-white text-rose-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-rose-500" />
+              <span>Mẫu Hệ Thống</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-600 font-extrabold">
+                {templates.filter((t) => !t.isCommunity).length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleTabChange('community')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                currentTab === 'community'
+                  ? 'bg-white text-teal-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5 text-teal-600" />
+              <span>Cộng Đồng Đóng Góp</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 font-extrabold">
+                {templates.filter((t) => t.isCommunity).length}
+              </span>
+            </button>
+          </div>
+
           {/* Category Tabs (Horizontal Scrollable) */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             <button

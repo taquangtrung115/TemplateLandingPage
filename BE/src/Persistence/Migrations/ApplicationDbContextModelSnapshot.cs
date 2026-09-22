@@ -257,6 +257,10 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<string>("AuthorName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
                     b.Property<string>("Badge")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -272,6 +276,9 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("DefaultConfigJson")
                         .IsRequired()
                         .HasColumnType("text");
@@ -285,6 +292,11 @@ namespace TemplateLandingPage.Persistence.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<bool>("IsCommunity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");

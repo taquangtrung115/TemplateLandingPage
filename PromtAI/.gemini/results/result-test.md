@@ -1,93 +1,224 @@
-# BÁO CÁO KẾT QUẢ KIỂM THỬ (TEST REPORT)
+# BÁO CÁO KẾT QUẢ TÁI KIỂM THỬ SAU HOTFIX (CHẶNG 3 - LẦN 2)
 
-**Giai đoạn:** Chặng 3 — Kiểm thử tự động (Tester)  
-**Nhiệm vụ:** Kiểm thử toàn diện Đa dạng hóa kho mẫu Template và cơ chế Seed Data thông minh (Idempotent)  
-**Thời gian thực hiện:** 2026-09-21  
-**Môi trường thực thi:** .NET 10.0 (xUnit 2.9.3, FluentAssertions 7.2.0, Moq 4.20.72)  
-
----
-
-## 1. TỔNG QUAN KẾT QUẢ KIỂM THỬ
-
-| Dự án kiểm thử | Tổng số Test | Đạt (Passed) | Thất bại (Failed) | Bỏ qua (Skipped) | Tỷ lệ Đạt | Thời gian chạy |
-|---|---|---|---|---|---|---|
-| `TemplateLandingPage.Architecture.Tests` | 7 | 7 | 0 | 0 | **100%** | 288 ms |
-| `TemplateLandingPage.UnitTests` | 358 | 358 | 0 | 0 | **100%** | 1.0 s |
-| **TỔNG CỘNG TOÀN HỆ THỐNG** | **365** | **365** | **0** | **0** | **100%** | **~1.3 s** |
-
-> [!NOTE]
-> **Kết luận sơ bộ:** Toàn bộ 365 bài kiểm thử của hệ thống đều vượt qua thành công (100% Passed, 0 Failure, 0 Error). Không có bất kỳ lỗi suy thoái (regression) nào phát sinh.
+**Dự án**: Nâng Cấp Toàn Diện Nền Tảng Template Landing Page  
+**Thời gian thực hiện**: 2026-09-22 18:06 (UTC+7)  
+**Lý do tái kiểm thử**: Chặng 4 (Reviewer) ban hành **PHÁN QUYẾT CHẶN (BLOCK)** do phát hiện 2 lỗi nghiêm trọng và 1 thiếu sót hạ tầng. Coder đã thực hiện hotfix theo §4 của `change.md`.  
+**Trạng thái tổng thể**: ✅ **100% PASSED — TẤT CẢ 522 BÀI TEST ĐỀU ĐẠT CHUẨN**  
+**Đánh giá chặng**: Coder đã khắc phục hoàn toàn 3 điểm bị chặn bởi Reviewer. Toàn bộ 522 bài test (7 Architecture + 372 Unit Tests + 143 Frontend Vitest) đều vượt qua thành công trên môi trường CLI thực tế. Hệ thống sẵn sàng bàn giao lại Chặng 4 (Reviewer) để gỡ chặn.
 
 ---
 
-## 2. CHI TIẾT CÁC KỊCH BẢN KIỂM THỬ ĐÃ THỰC HIỆN
+## 1. TỔNG HỢP KẾT QUẢ KIỂM THỬ TỰ ĐỘNG (CLI)
 
-Toàn bộ yêu cầu kiểm thử được phân bổ chặt chẽ theo 3 nhóm quy chuẩn:
-
-### 2.1. Nhóm 1: Happy Path (Đường chạy thuận lợi)
-
-| STT | Kịch bản kiểm thử | Phương thức Test | Kết quả | Chi tiết kiểm chứng |
-|---|---|---|---|---|
-| 1 | Nạp đầy đủ 8 bảng khi Database rỗng | `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty` | **PASSED** | - 3 Users chuẩn.<br>- Đủ 15 Categories chuẩn.<br>- 10 NavigationMenus (5 root + 5 submenu).<br>- Đủ 19 Templates (11 cũ + 8 mới).<br>- 6 UserCustomizations, 6 RsvpEntries, 7 GuestbookEntries, 4 Products. |
-| 2 | Tính duy nhất của Slugs | `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty` | **PASSED** | - 15 Category Slugs hoàn toàn duy nhất (`OnlyHaveUniqueItems`).<br>- 19 Template Slugs hoàn toàn duy nhất (`OnlyHaveUniqueItems`). |
-| 3 | Tính toàn vẹn của URLs trên toàn bộ Templates | `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty` | **PASSED** | Toàn bộ 19 templates đều có `ThumbnailUrl`, `PreviewUrl`, và `LongPreviewUrl` hợp lệ, không rỗng hay whitespace. |
-| 4 | Toàn vẹn khóa ngoại `CategoryId` | `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty` | **PASSED** | Toàn bộ 19 templates đều có `CategoryId` khác null và trỏ chính xác tới một danh mục có thực trong bảng Categories. |
-| 5 | Tính hợp lệ của cấu trúc JSON | `SeedAsync_Should_GenerateValidJson_ForTemplatesAndCustomizations` | **PASSED** | Cả 19 Templates và 6 UserCustomizations đều parse JSON hợp lệ qua `JsonDocument.Parse()` mà không ném exception. |
-
-### 2.2. Nhóm 2: Edge Cases (Các trường hợp biên đặc thù)
-
-| STT | Kịch bản kiểm thử | Phương thức Test | Kết quả | Chi tiết kiểm chứng |
-|---|---|---|---|---|
-| 1 | Tính Idempotent khi chạy Seeder nhiều lần liên tiếp | `SeedAsync_Should_BeIdempotent_WhenExecutedMultipleTimes` | **PASSED** | Thực thi `SeedAsync` 3 lần liên tiếp: không sinh bản ghi trùng, số lượng bảng giữ nguyên 100%, đồng thời xác nhận các `Id` của Categories và Templates không bị thay đổi hoặc recreate. |
-| 2 | Tự động nâng cấp khi DB đã có dữ liệu ban đầu (9 Categories + 11 Templates cũ) | `SeedAsync_Should_SupplementNewCategoriesAndTemplates_WhenLegacy9CategoriesAnd11TemplatesAlreadyExist` | **PASSED** | - Giả lập DB đã có 9 categories cũ và 11 templates cũ.<br>- Sau khi seed, nâng cấp chính xác lên 15 categories (+6 mới) và 19 templates (+8 mới).<br>- Toàn bộ 8 templates mới được liên kết chuẩn xác `CategoryId` với danh mục tương ứng (`restaurant`, `fitness`, `housewarming`, `wedding`, `education`, `real-estate`, `art-craft`).<br>- Toàn bộ 11 templates cũ được bảo toàn nguyên vẹn `CategoryId`.<br>- Chạy lại lần tiếp theo vẫn Idempotent. |
-| 3 | Kiểm tra chuyên sâu trường dữ liệu phong phú của 8 Templates mới | `SeedAsync_Should_ContainSpecificProperties_ForDiverseTemplates` | **PASSED** | - **L'Aura Bistro (`laura-bistro-gourmet`)**: `format="restaurant"`, 4 món `servicesGrid`, 4 chặng `treatmentProcess`, `booking.title` có VIP Reserve, 4 mốc `timeline`, 4 ảnh `gallery`, `rsvp.enabled=true`.<br>- **Apex Fitness (`apex-titanium-fitness`)**: `format="fitness"`, 4 thẻ `featureCardsGrid`, 4 chỉ số `metrics`, 3 gói `pricingPackages`, `eventDetails` đúng tên, `rsvp.enabled=true`.<br>- **Warm Nest (`warm-nest-housewarming`)**: `particlesEffect="confetti"`, `person1` Tuấn & Mai, 4 mốc `timeline`, 4 ảnh `gallery`, `extraSections` chứa VietQR `giftQr`, `wishes.enabled=true`.<br>- **Azure Breeze Wedding (`azure-breeze-beach-wedding`)**: `primaryColor="#0284c7"`, `particlesEffect="petals"`, 4 mốc `timeline`, 4 ảnh `gallery`, `extraSections` cẩm nang đi biển, `wishes.enabled=true`.<br>- **GenAI Masterclass (`genai-prompt-masterclass`)**: `format="summit"`, 2 chuyên gia `speakers`, 2 gói vé `pricingTickets`, 4 tuần `timeline`, `extraSections` giải đáp FAQ.<br>- **Horizon Luxury Villas (`horizon-luxury-villas`)**: `format="app-showcase"`, 4 đặc quyền `featureCardsGrid`, 4 chỉ số `metrics`, 4 ảnh `gallery`, `venueName` resort Sơn Trà.<br>- **Academic Glory (`academic-glory-graduation`)**: `format="graduation"`, thủ khoa Hoàng Minh Triết, 4 mốc `timeline`, 4 ảnh `gallery`, `wishes.enabled=true`.<br>- **Terra & Soul (`terra-soul-art-exhibition`)**: `format="art-craft"`, màu `#92400e`, nghệ nhân An Nhiên, 4 mốc `timeline`, 4 ảnh `gallery`, `extraSections` hỏi đáp tác phẩm, `wishes.enabled=true`. |
-| 4 | Kiểm tra an toàn mảng (Array Null-Safety) trên toàn bộ 19 Templates | `SeedAsync_Should_EnsureAllTemplateArrayPropertiesAreNeverNull_AcrossAll19Templates` | **PASSED** | Duyệt qua tất cả 19 templates kiểm tra 10 trường mảng danh sách (`timeline`, `gallery`, `servicesGrid`, `treatmentProcess`, `featureCardsGrid`, `speakers`, `pricingTickets`, `pricingPackages`, `metrics`, `extraSections`). Đảm bảo không có trường nào mang giá trị `null`, luôn là `JsonValueKind.Array` để tránh lỗi `.map()` hoặc crash Frontend. |
-| 5 | Tự động thích ứng môi trường InMemory vs Relational | `SeedAsync_OnInMemoryDatabase_ShouldSafelyUseEnsureCreated_BecauseIsRelationalIsFalse` | **PASSED** | Kiểm tra logic rẽ nhánh: khi `IsRelational() == false`, Seeder dùng `EnsureCreatedAsync()`, ngăn chặn ngoại lệ `InvalidOperationException` do gọi nhầm `MigrateAsync()` trên InMemory DB. |
-| 6 | Xử lý dữ liệu đã tồn tại một phần | `SeedAsync_Should_HandlePartialPreExistingData_WithoutCrashing` | **PASSED** | Database đã có sẵn 1 user và 1 category, Seeder tự động tái sử dụng và nạp phần còn lại mà không gặp lỗi. |
-
-### 2.3. Nhóm 3: Failure Path (Các trường hợp kỳ vọng thất bại)
-
-| STT | Kịch bản kiểm thử | Phương thức Test | Ngoại lệ kỳ vọng | Kết quả |
-|---|---|---|---|---|
-| 1 | Seeder khi `context == null` | `SeedAsync_Should_ThrowException_WhenContextIsNull` | `NullReferenceException` | **PASSED** |
-| 2 | Seeder khi `passwordHasher == null` | `SeedAsync_Should_ThrowException_WhenPasswordHasherIsNull` | `NullReferenceException` | **PASSED** |
-| 3 | Seeder khi `context` đã bị Dispose | `SeedAsync_Should_ThrowException_WhenDbContextIsDisposed` | `ObjectDisposedException` | **PASSED** |
+| Dự án / Phân hệ | Framework | Tổng số test | Passed | Failed | Skipped | Trạng thái |
+|:---|:---|:---:|:---:|:---:|:---:|:---:|
+| **Backend Architecture Tests** | xUnit + NetArchTest (.NET 10) | 7 | 7 | 0 | 0 | ✅ **PASSED** (100%) |
+| **Backend Unit Tests** | xUnit + FluentAssertions + Moq (.NET 10) | 372 | 372 | 0 | 0 | ✅ **PASSED** (100%) |
+| **Frontend Component & Unit Tests** | Vitest 5.0.1 + React Testing Library (React 19) | 143 | 143 | 0 | 0 | ✅ **PASSED** (100%) |
+| **TỔNG CỘNG TOÀN BỘ HỆ THỐNG** | | **522** | **522** | **0** | **0** | ✅ **SẴN SÀNG GỠ CHẶN** |
 
 ---
 
-## 3. LOG CLI THỰC THI KIỂM THỬ
+## 2. XÁC NHẬN CỤ THỂ TỪNG ĐIỂM HOTFIX ĐÃ ĐƯỢC KIỂM CHỨNG
 
+### 2.1 Hotfix #1 — Thiếu Migration EF Core (Điểm 1 trong evaluate.md) ✅ ĐÃ KHẮC PHỤC
+
+| Hạng mục kiểm tra | Kết quả | Chi tiết |
+|:---|:---:|:---|
+| File migration tồn tại | ✅ | `BE/src/Persistence/Migrations/20260922110438_AddCommunityFieldsToTemplate.cs` đã được tạo. |
+| File Designer tồn tại | ✅ | `BE/src/Persistence/Migrations/20260922110438_AddCommunityFieldsToTemplate.Designer.cs` đã được tạo. |
+| Migration chứa `AddColumn` cho `AuthorName` | ✅ | `migrationBuilder.AddColumn<string>(name: "AuthorName", table: "Templates", type: "character varying(150)", maxLength: 150, nullable: true)` — Dòng 14-19 |
+| Migration chứa `AddColumn` cho `CreatedByUserId` | ✅ | `migrationBuilder.AddColumn<Guid>(name: "CreatedByUserId", table: "Templates", type: "uuid", nullable: true)` — Dòng 21-25 |
+| Migration chứa `AddColumn` cho `IsCommunity` | ✅ | `migrationBuilder.AddColumn<bool>(name: "IsCommunity", table: "Templates", type: "boolean", nullable: false, defaultValue: false)` — Dòng 27-32 |
+| Migration chứa `Down()` rollback an toàn | ✅ | `DropColumn` cho cả 3 cột `AuthorName`, `CreatedByUserId`, `IsCommunity` — Dòng 36-49 |
+| `ApplicationDbContextModelSnapshot.cs` cập nhật | ✅ | Snapshot chứa đủ 3 cột mới: `AuthorName` (dòng 260), `CreatedByUserId` (dòng 279), `IsCommunity` (dòng 296) |
+
+### 2.2 Hotfix #2 — Bug Cắt Slug Unique (Điểm 2 trong evaluate.md) ✅ ĐÃ KHẮC PHỤC
+
+| Hạng mục kiểm tra | Kết quả | Chi tiết |
+|:---|:---:|:---|
+| Logic mã nguồn đã sửa | ✅ | `CreateCommunityTemplateCommandHandler.cs` dòng 31: `var baseSlug = finalSlug.Length > 194 ? finalSlug[..194].TrimEnd('-') : finalSlug;` — cắt base slug **trước** khi nối suffix |
+| Suffix luôn được bảo toàn | ✅ | Dòng 32: `finalSlug = $"{baseSlug}-{suffix}";` — suffix `-xxxxx` (6 ký tự) nối sau base ≤194 → tổng ≤200 |
+| Không còn logic cắt **sau** khi nối | ✅ | Đã loại bỏ hoàn toàn đoạn `if (finalSlug.Length > 200) { finalSlug = finalSlug[..200]; }` |
+
+### 2.3 Hotfix #3 — Unit Test Hời Hợt (Điểm 3 trong evaluate.md) ✅ ĐÃ KHẮC PHỤC
+
+**Test case cũ (đã bị thay thế)**:
+- `Handle_Should_TruncateSlugTo200Chars_WhenSlugWithSuffixExceeds200Chars` — chỉ assert `t.Slug.Length <= 200` → pass cả khi slug mới trùng slug cũ.
+
+**Test case mới (đã xác nhận PASSED)**:
+- `Handle_Should_PreserveUniqueSuffix_WhenInitialSlugIs200CharsAndAlreadyExists`
+- 3 assertions kiểm chứng:
+  1. `t.Slug.Length <= 200` — slug kết quả ≤ 200 ký tự ✅
+  2. `t.Slug != longSlug` — slug kết quả **phải khác** slug trùng ban đầu (200 ký tự 'a') ✅
+  3. `t.Slug.Contains('-')` — slug kết quả **phải chứa** dấu phân tách suffix `-` ✅
+
+> [!IMPORTANT]
+> Test case mới đảm bảo **không thể xảy ra trường hợp slug quay về chuỗi trùng ban đầu** dẫn đến UniqueIndex Violation trên PostgreSQL.
+
+---
+
+## 3. CHI TIẾT CÁC NHÓM KIỂM THỬ THEO QUY ĐỊNH
+
+### Nhóm 1: Happy Paths (Đường chạy thuận lợi) — 100% PASSED
+
+1. **Tạo Mẫu Cộng Đồng Thành Công (Slug Unique)**:
+   - `Handle_Should_CreateCommunityTemplate_WhenSlugIsUnique` — Tạo template cộng đồng với slug mới, gắn cờ `IsCommunity = true`, `AuthorName = "Nguyen Van A"`. PASSED ✅
+
+2. **Xử Lý Slug Trùng Tự Động**:
+   - `Handle_Should_AppendSuffixToSlug_WhenSlugAlreadyExists` — Slug `existing-slug` trùng → tự động sinh `existing-slug-xxxxx`, author mặc định `"Anonymous"`. PASSED ✅
+
+3. **Lưu CreatedByUserId**:
+   - `Handle_Should_StoreCreatedByUserId_WhenProvided` — Khi user đăng nhập, `CreatedByUserId` được lưu chính xác. PASSED ✅
+
+4. **Lọc Template Theo `isCommunity`**:
+   - `Handle_Should_ReturnFilteredTemplates_WhenIsCommunityFilterApplied` — GET query với `isCommunity = true/false/null` trả về kết quả đúng. PASSED ✅
+
+5. **Simulator Thiết bị Thực tế (Device Simulator & Viewport)**:
+   - 8 dòng thiết bị iOS/Android: iPhone 15 Pro Max, iPhone 15/14, iPhone SE, iPad Mini, Samsung S24 Ultra, Pixel 8 Pro, Xiaomi 14, Galaxy Z Fold. PASSED ✅
+
+6. **Khối Thẻ Động Phân Tầng (Hierarchical Cards Section)**:
+   - Render chính xác cấu trúc thẻ lồng nhau: Card → Header → SubHeader → Content → SubCards, 5 preset style. PASSED ✅
+
+7. **Bảng Màu 1-Click (Color Palettes Engine)**:
+   - 10 bảng màu chuẩn với mã hex hợp lệ, `applyPaletteToConfig` cập nhật tức thì 5 thuộc tính màu và bảo tồn các thuộc tính khác. PASSED ✅
+
+8. **Hiệu ứng Hoạt họa & Hạt rơi (Animations & Motion Particles)**:
+   - Phân nhóm Entrance (11 loại) + Continuous (5 loại) + 7 hiệu ứng hạt canvas. PASSED ✅
+
+9. **DataSeeder: 4 Template Mới**:
+   - `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty` — 19 categories, 23 templates, dữ liệu JSON hợp lệ. PASSED ✅
+
+10. **Điều hướng Vercel & Route Công khai**:
+    - `/p/:slug` và `/live/:slug` trỏ về `PublicLandingPage`. `vercel.json` rewrites SPA `/(.*)` → `/index.html`. PASSED ✅
+
+---
+
+### Nhóm 2: Edge Cases (Trường hợp biên & An toàn hệ thống) — 100% PASSED
+
+1. **Slug 200 Ký Tự Trùng Lặp (HOTFIX FOCUS)**:
+   - `Handle_Should_PreserveUniqueSuffix_WhenInitialSlugIs200CharsAndAlreadyExists` — Slug 200 ký tự 'a', đã tồn tại → sinh slug mới ≤200, ≠ slug cũ, chứa '-'. **PASSED** ✅
+
+2. **Xử Lý Va Chạm Slug Tự Động (Auto-generate Suffix)**:
+   - `Handle_Should_AppendSuffixToSlug_WhenSlugAlreadyExists` — Slug `existing-slug` trùng → `existing-slug-xxxxx`. PASSED ✅
+
+3. **Thông Số Kích Thước Thiết Bị & Viền Bezel**:
+   - Toàn bộ 8 thiết bị: width > 300px, height > 600px, bezel regex hợp lệ, notch type trong tập cho phép. PASSED ✅
+
+4. **Xử Lý Key Animation Không Hợp Lệ & Null/Undefined**:
+   - Fallback an toàn: `getAnimationClass('non-existent')` → `animate-fade-up`; `null`/`''`/`'none'` → `opacity-100`. PASSED ✅
+
+5. **An Toàn Dữ Liệu Thiếu/Rỗng Trong Khối Thẻ Lồng Nhau**:
+   - `hierarchicalCards` = `null`/`undefined`/`[]` → `HierarchicalCardsSection` return null, không lỗi `undefined.map()`. PASSED ✅
+
+6. **Bảo Toàn Config Khi Palette Null/Undefined**:
+   - `applyPaletteToConfig(config, null)` → trả về config ban đầu nguyên vẹn. PASSED ✅
+
+7. **DataSeeder Bất Biến & Bổ Sung**:
+   - `SeedAsync_Should_BeIdempotent_WhenExecutedMultipleTimes` — Chạy 3 lần liên tiếp, số lượng bản ghi không đổi. PASSED ✅
+   - `SeedAsync_Should_SupplementNewCategoriesAndTemplates_WhenLegacy9CategoriesAnd11TemplatesAlreadyExist`. PASSED ✅
+
+8. **Tương Thích PostgreSQL UTC DateTime & DI InMemory**:
+   - `ConfigureConventions_Should_RegisterValueConverter_ForAllDateTimeProperties` — Tất cả `DateTime`/`DateTime?` gắn UTC converter. PASSED ✅
+   - `UtcDateTimeConverter_WithBoundaryDates_ShouldConvertCorrectly` — Leap year (2024-02-29), millennium (2000-01-01). PASSED ✅
+   - `Database_IsRelational_WhenUsingNpgsqlProvider_ShouldReturnTrue` / `WhenUsingInMemoryProvider_ShouldReturnFalse`. PASSED ✅
+   - `SeedAsync_OnInMemoryDatabase_ShouldSafelyUseEnsureCreated_BecauseIsRelationalIsFalse`. PASSED ✅
+
+9. **Npgsql DI Configuration**:
+   - `AddPersistence_Should_ConfigureNpgsqlSpecificOptions` — Provider Npgsql đăng ký đúng. PASSED ✅
+   - `AddPersistence_Should_ConfigureNpgsqlProviderForDbContext`. PASSED ✅
+   - `AddPersistence_WhenConnectionStringIsEmpty_OpeningConnectionShouldFail`. PASSED ✅
+   - `AddPersistence_WhenConnectionStringsSectionIsMissing_ShouldProduceEmptyConnectionString`. PASSED ✅
+
+---
+
+### Nhóm 3: Failure Paths (Kỳ vọng thất bại & Chặn lỗi hệ thống) — 100% PASSED
+
+1. **Từ Chối Cú Pháp JSON Sai (`DefaultConfigJson`)**:
+   - `Validator_Should_HaveValidationError_WhenDefaultConfigJsonIsNotValidJson` — Đầu vào: `"{ not valid json syntax }"` → `IsValid = false`, lỗi trỏ vào `DefaultConfigJson`. PASSED ✅
+
+2. **Từ Chối Tên Tác Giả Quá Dài (`AuthorName > 150 ký tự`)**:
+   - `Validator_Should_HaveValidationError_WhenAuthorNameExceeds150Characters` — Đầu vào: `new string('X', 151)` → `IsValid = false`, lỗi trỏ vào `AuthorName`. PASSED ✅
+
+3. **Từ Chối Khi Thiếu Các Trường Bắt Buộc**:
+   - `Validator_Should_HaveValidationError_WhenRequiredFieldsAreEmpty` (5 InlineData) — `Name=""`, `Slug=""`, `Category=""`, `ThumbnailUrl=""`, `DefaultConfigJson=""` → Toàn bộ bị chặn. PASSED ✅
+
+4. **DbContext Disposed**:
+   - `ApplicationDbContext_WhenDisposed_ShouldThrowObjectDisposedException`. PASSED ✅
+   - `SeedAsync_Should_ThrowException_WhenDbContextIsDisposed`. PASSED ✅
+
+5. **Password Hasher Null**:
+   - `SeedAsync_Should_ThrowException_WhenPasswordHasherIsNull`. PASSED ✅
+
+6. **DbContext Options Unconfigured**:
+   - `ApplicationDbContext_WhenOptionsUnconfigured_ShouldThrowInvalidOperationExceptionOnDataAccess`. PASSED ✅
+
+7. **Duplicate Key Entity**:
+   - `ApplicationDbContext_WhenAddingDuplicateKeyEntity_ShouldThrowException`. PASSED ✅
+
+8. **Frontend Error Handling**:
+   - `publishCommunityTemplate`: Bắt lỗi 400 Validation Error và 500 Server Error. PASSED ✅
+   - Phân quyền: 403 Forbidden, 404 NotFound. PASSED ✅
+
+---
+
+## 4. BẰNG CHỨNG CLI EXECUTION LOGS
+
+### A. Backend Test Suite (`dotnet test BE/TemplateLandingPage.sln --verbosity normal`)
 ```text
-PS C:\Source\TemplateLandingPage> dotnet test BE/TemplateLandingPage.sln
-  Determining projects to restore...
-  All projects are up-to-date for restore.
-  TemplateLandingPage.Domain -> C:\Source\TemplateLandingPage\BE\src\Domain\bin\Debug\net10.0\TemplateLandingPage.Domain.dll
-  TemplateLandingPage.Contract -> C:\Source\TemplateLandingPage\BE\src\Contract\bin\Debug\net10.0\TemplateLandingPage.Contract.dll
-  TemplateLandingPage.Application -> C:\Source\TemplateLandingPage\BE\src\Application\bin\Debug\net10.0\TemplateLandingPage.Application.dll
-  TemplateLandingPage.Infrastructure -> C:\Source\TemplateLandingPage\BE\src\Infrastructure\bin\Debug\net10.0\TemplateLandingPage.Infrastructure.dll
-  TemplateLandingPage.Persistence -> C:\Source\TemplateLandingPage\BE\src\Persistence\bin\Debug\net10.0\TemplateLandingPage.Persistence.dll
-  TemplateLandingPage.Presentation -> C:\Source\TemplateLandingPage\BE\src\Presentation\bin\Debug\net10.0\TemplateLandingPage.Presentation.dll
-  TemplateLandingPage.API -> C:\Source\TemplateLandingPage\BE\src\API\bin\Debug\net10.0\TemplateLandingPage.API.dll
-  TemplateLandingPage.Architecture.Tests -> C:\Source\TemplateLandingPage\BE\test\Architecture.Tests\bin\Debug\net10.0\TemplateLandingPage.Architecture.Tests.dll
-Test run for C:\Source\TemplateLandingPage\BE\test\Architecture.Tests\bin\Debug\net10.0\TemplateLandingPage.Architecture.Tests.dll (.NETCoreApp,Version=v10.0)
-A total of 1 test files matched the specified pattern.
+Test Run Successful.
+Total tests: 7
+     Passed: 7
+ Total time: 1.6552 Seconds
+     (TemplateLandingPage.Architecture.Tests.dll)
 
-Passed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 288 ms - TemplateLandingPage.Architecture.Tests.dll (net10.0)
-  TemplateLandingPage.UnitTests -> C:\Source\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.UnitTests.dll
-Test run for C:\Source\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.UnitTests.dll (.NETCoreApp,Version=v10.0)
-A total of 1 test files matched the specified pattern.
+Test Run Successful.
+Total tests: 372
+     Passed: 372
+ Total time: 3.4062 Seconds
+     (TemplateLandingPage.UnitTests.dll)
 
-Passed!  - Failed:     0, Passed:   358, Skipped:     0, Total:   358, Duration: 1 s - TemplateLandingPage.UnitTests.dll (net10.0)
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:07.15
+```
+
+### B. Frontend Test Suite (`npm --prefix FE test`)
+```text
+> template-landing-page-fe@1.0.0 test
+> vitest run
+
+ RUN  v5.0.1 C:/Source/TemplateLandingPage/FE
+
+ ✓ test/useStaggeredReveal.test.jsx (4 tests) 137ms
+ ✓ test/authContext.test.jsx (11 tests) 271ms
+ ✓ test/splashScreen.test.jsx (4 tests) 312ms
+ ✓ test/apiUnwrap.test.js (16 tests) 19ms
+ ✓ test/useMaskAnimation.test.jsx (9 tests) 147ms
+ ✓ test/advancedFeatures.test.jsx (16 tests) 472ms
+ ✓ test/loginPage.test.jsx (8 tests) 810ms
+ ✓ test/landingPageSections.test.jsx (16 tests) 475ms
+ ✓ test/diverseTemplates.test.jsx (15 tests) 1160ms
+ ✓ test/homePageNew.test.jsx (6 tests) 1825ms
+ ✓ test/customizerDynamic.test.jsx (26 tests) 1978ms
+ ✓ test/customizerDeferredHighlight.test.jsx (3 tests) 2074ms
+ ✓ test/customizerGuestFlow.test.jsx (9 tests) 2385ms
+
+ Test Files  13 passed (13)
+      Tests  143 passed (143)
+   Start at  18:08:24
+   Duration  11.37s
 ```
 
 ---
 
-## 4. TỔNG KẾT VÀ BÀN GIAO CHO CHẶNG TIẾP THEO
+## 5. KẾT LUẬN & BÀN GIAO CHẶNG
 
-1. **Tuân thủ nguyên tắc Tester:**
-   - Chỉ tạo và bổ sung các ca kiểm thử trong `BE/test/UnitTests/Persistence/DataSeederTests.cs`.
-   - Tuyệt đối không can thiệp hay sửa đổi bất kỳ file code sản phẩm nào trong `BE/src/`.
-2. **Độ bao phủ kiểm thử:**
-   - Đạt 100% yêu cầu về Happy path, Edge cases (Idempotency 3 chu kỳ, Migration từ DB cũ, Chi tiết 8 mẫu JSON mới, Array null-safety) và Failure path (null context, null passwordHasher, disposed context).
-3. **Đánh giá chất lượng:**
-   - Hệ thống sẵn sàng cho chặng đóng gói / bàn giao tiếp theo.
+1. **Hotfix hoàn chỉnh**: Coder đã khắc phục triệt để cả 3 điểm bị Reviewer chặn:
+   - ✅ Migration EF Core đã được tạo đầy đủ với `AddColumn` cho 3 cột `IsCommunity`, `AuthorName`, `CreatedByUserId` và `Down()` rollback an toàn.
+   - ✅ Logic cắt slug đã được sửa: cắt base slug về ≤194 ký tự **trước** khi nối suffix `-xxxxx`, đảm bảo suffix luôn được bảo toàn.
+   - ✅ Test case `Handle_Should_PreserveUniqueSuffix_WhenInitialSlugIs200CharsAndAlreadyExists` kiểm chứng mạnh mẽ với 3 assertions (≤200, ≠ slug cũ, chứa '-').
+2. **Không hồi quy**: Toàn bộ 522 bài test trên cả BE (379) và FE (143) đều PASSED — không phát sinh bất kỳ regression nào.
+3. **Quy tắc tuân thủ**: Tester chỉ đọc code sản phẩm để kiểm chứng, cập nhật kết quả tại `result-test.md`, tuyệt đối không can thiệp vào mã nguồn.
+4. **Bàn giao**: Đủ điều kiện 100% để chuyển tiếp lại **Chặng 4: Reviewer xem xét gỡ chặn và phê duyệt chốt triển khai**.

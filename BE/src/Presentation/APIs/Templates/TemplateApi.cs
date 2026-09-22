@@ -15,13 +15,23 @@ public sealed class TemplateApi : IEndpoint
         var group = app.MapGroup("/api/v1/templates")
             .WithTags("Templates");
 
-        group.MapGet(string.Empty, async (string? category, Guid? categoryId, string? badge, string? search, bool? isActiveOnly, ISender sender) =>
+        group.MapGet(string.Empty, async (string? category, Guid? categoryId, string? badge, string? search, bool? isActiveOnly, bool? isCommunity, ISender sender) =>
         {
-            var result = await sender.Send(new GetTemplatesQuery(category, categoryId, badge, search, isActiveOnly));
+            var result = await sender.Send(new GetTemplatesQuery(category, categoryId, badge, search, isActiveOnly, isCommunity));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetTemplates")
         .Produces<Result<List<TemplateResponse>>>(StatusCodes.Status200OK);
+
+        group.MapPost("community", async (CreateCommunityTemplateCommand command, ISender sender) =>
+        {
+            var result = await sender.Send(command);
+            return HandleResult(result, () => Results.Created($"/api/v1/templates/{result.Value}", result));
+        })
+        .AllowAnonymous()
+        .WithName("CreateCommunityTemplate")
+        .Produces<Result<Guid>>(StatusCodes.Status201Created)
+        .Produces<ValidationResult>(StatusCodes.Status400BadRequest);
 
         group.MapGet("{id:guid}", async (Guid id, ISender sender) =>
         {

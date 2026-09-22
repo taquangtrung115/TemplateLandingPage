@@ -55,7 +55,7 @@ describe('LoginPage Component', () => {
 
       renderComponent();
 
-      fireEvent.change(screen.getByPlaceholderText('admin@template.com'), {
+      fireEvent.change(screen.getByPlaceholderText(/Input email|admin@template\.com/i), {
         target: { value: 'admin@template.com' },
       });
       fireEvent.change(screen.getByPlaceholderText('••••••••'), {
@@ -79,7 +79,7 @@ describe('LoginPage Component', () => {
 
       renderComponent();
 
-      fireEvent.change(screen.getByPlaceholderText('admin@template.com'), {
+      fireEvent.change(screen.getByPlaceholderText(/Input email|admin@template\.com/i), {
         target: { value: 'user@template.com' },
       });
       fireEvent.change(screen.getByPlaceholderText('••••••••'), {
@@ -104,7 +104,7 @@ describe('LoginPage Component', () => {
 
       renderComponent();
 
-      fireEvent.change(screen.getByPlaceholderText('admin@template.com'), {
+      fireEvent.change(screen.getByPlaceholderText(/Input email|admin@template\.com/i), {
         target: { value: 'user2@template.com' },
       });
       fireEvent.change(screen.getByPlaceholderText('••••••••'), {
@@ -126,7 +126,7 @@ describe('LoginPage Component', () => {
 
       renderComponent();
 
-      fireEvent.change(screen.getByPlaceholderText('admin@template.com'), {
+      fireEvent.change(screen.getByPlaceholderText(/Input email|admin@template\.com/i), {
         target: { value: 'admin@template.com' },
       });
       fireEvent.change(screen.getByPlaceholderText('••••••••'), {
@@ -151,7 +151,7 @@ describe('LoginPage Component', () => {
 
       renderComponent();
 
-      fireEvent.change(screen.getByPlaceholderText('admin@template.com'), {
+      fireEvent.change(screen.getByPlaceholderText(/Input email|admin@template\.com/i), {
         target: { value: 'admin@template.com' },
       });
       fireEvent.change(screen.getByPlaceholderText('••••••••'), {
@@ -170,7 +170,7 @@ describe('LoginPage Component', () => {
 
       renderComponent();
 
-      fireEvent.change(screen.getByPlaceholderText('admin@template.com'), {
+      fireEvent.change(screen.getByPlaceholderText(/Input email|admin@template\.com/i), {
         target: { value: 'norole@test.com' },
       });
       fireEvent.change(screen.getByPlaceholderText('••••••••'), {
@@ -191,7 +191,7 @@ describe('LoginPage Component', () => {
 
       renderComponent();
 
-      fireEvent.change(screen.getByPlaceholderText('admin@template.com'), {
+      fireEvent.change(screen.getByPlaceholderText(/Input email|admin@template\.com/i), {
         target: { value: 'invalid@template.com' },
       });
       fireEvent.change(screen.getByPlaceholderText('••••••••'), {
@@ -214,7 +214,7 @@ describe('LoginPage Component', () => {
 
       renderComponent();
 
-      fireEvent.change(screen.getByPlaceholderText('admin@template.com'), {
+      fireEvent.change(screen.getByPlaceholderText(/Input email|admin@template\.com/i), {
         target: { value: 'invalid@template.com' },
       });
       fireEvent.change(screen.getByPlaceholderText('••••••••'), {

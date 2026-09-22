@@ -4,6 +4,7 @@ import HomePage from '../pages/HomePage';
 import TemplatesPage from '../pages/TemplatesPage';
 import CustomizerPage from '../pages/CustomizerPage';
 import LivePreviewPage from '../pages/LivePreviewPage';
+import PublicLandingPage from '../pages/PublicLandingPage';
 import MyCustomizationsPage from '../pages/MyCustomizationsPage';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
@@ -24,6 +25,8 @@ export default function AppRoutes() {
       <Route path="/templates" element={<TemplatesPage />} />
       <Route path="/preview/:templateId" element={<LivePreviewPage />} />
       <Route path="/view/:slug" element={<LivePreviewPage />} />
+      <Route path="/p/:slug" element={<PublicLandingPage />} />
+      <Route path="/live/:slug" element={<PublicLandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 

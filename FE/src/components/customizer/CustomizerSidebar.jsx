@@ -9,8 +9,10 @@ import AnimationSelector from './AnimationSelector';
 import { 
   extractPersonsList, 
   addPersonHelper, 
-  removePersonHelper 
+  removePersonHelper,
+  PARTICLES_OPTIONS
 } from '../../utils/animationConstants';
+import { COLOR_PALETTES, applyPaletteToConfig } from '../../utils/colorPalettes';
 
 export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange, onSectionEdit }) => {
   const [activeTab, setActiveTab] = useState('theme');
@@ -323,6 +325,76 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
     onChange({ ...config, featureCardsGrid: updated });
   };
 
+  // Hierarchical Cards Builder helpers
+  const handleCardChange = (cardIndex, field, value) => {
+    onSectionEdit?.('cards');
+    const cards = Array.isArray(config.hierarchicalCards) ? [...config.hierarchicalCards] : [];
+    cards[cardIndex] = { ...cards[cardIndex], [field]: value };
+    onChange({ ...config, hierarchicalCards: cards });
+  };
+
+  const handleAddCard = () => {
+    onSectionEdit?.('cards');
+    const cards = Array.isArray(config.hierarchicalCards) ? [...config.hierarchicalCards] : [];
+    const newCard = {
+      id: `card-${Date.now()}`,
+      title: 'Khối thẻ nội dung mới',
+      subHeader: 'Mô tả tóm tắt ngắn gọn',
+      content: 'Nội dung thông tin chi tiết cho khối thẻ...',
+      stylePreset: 'glass',
+      backgroundColor: '',
+      textColor: '',
+      animation: 'fade-up',
+      subCards: []
+    };
+    onChange({ ...config, hierarchicalCards: [...cards, newCard] });
+  };
+
+  const handleRemoveCard = (cardIndex) => {
+    onSectionEdit?.('cards');
+    const cards = Array.isArray(config.hierarchicalCards) ? [...config.hierarchicalCards] : [];
+    const updated = cards.filter((_, idx) => idx !== cardIndex);
+    onChange({ ...config, hierarchicalCards: updated });
+  };
+
+  const handleAddSubCard = (cardIndex) => {
+    onSectionEdit?.('cards');
+    const cards = Array.isArray(config.hierarchicalCards) ? [...config.hierarchicalCards] : [];
+    const targetCard = cards[cardIndex];
+    if (!targetCard) return;
+    const subCards = Array.isArray(targetCard.subCards) ? [...targetCard.subCards] : [];
+    subCards.push({
+      id: `sub-${Date.now()}`,
+      title: 'Thẻ con mới',
+      subHeader: 'Ghi chú phụ',
+      content: 'Chi tiết nội dung thẻ con...',
+      animation: 'zoom-in'
+    });
+    cards[cardIndex] = { ...targetCard, subCards };
+    onChange({ ...config, hierarchicalCards: cards });
+  };
+
+  const handleSubCardChange = (cardIndex, subIndex, field, value) => {
+    onSectionEdit?.('cards');
+    const cards = Array.isArray(config.hierarchicalCards) ? [...config.hierarchicalCards] : [];
+    const targetCard = cards[cardIndex];
+    if (!targetCard) return;
+    const subCards = Array.isArray(targetCard.subCards) ? [...targetCard.subCards] : [];
+    subCards[subIndex] = { ...subCards[subIndex], [field]: value };
+    cards[cardIndex] = { ...targetCard, subCards };
+    onChange({ ...config, hierarchicalCards: cards });
+  };
+
+  const handleRemoveSubCard = (cardIndex, subIndex) => {
+    onSectionEdit?.('cards');
+    const cards = Array.isArray(config.hierarchicalCards) ? [...config.hierarchicalCards] : [];
+    const targetCard = cards[cardIndex];
+    if (!targetCard) return;
+    const subCards = (targetCard.subCards || []).filter((_, idx) => idx !== subIndex);
+    cards[cardIndex] = { ...targetCard, subCards };
+    onChange({ ...config, hierarchicalCards: cards });
+  };
+
   // Dynamic Tabs detection based on template format and fields
   const hasSpeakers = Array.isArray(config?.speakers) || config?.format === 'summit';
   const hasPricing = Array.isArray(config?.pricingTickets) || Array.isArray(config?.pricingPackages) || config?.format === 'summit' || config?.format === 'saas';
@@ -333,6 +405,7 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
     { id: 'general', label: 'Xuất bản', icon: Sparkles },
     { id: 'theme', label: 'Màu & Phông', icon: Palette },
     { id: 'hero', label: 'Màn hình đầu', icon: Image },
+    { id: 'cards', label: 'Khối thẻ động', icon: Layers },
   ];
 
   if (hasFeatures) {
@@ -531,6 +604,38 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
               </div>
             </div>
 
+            {/* 1-Click Professional Color Palettes */}
+            <div className="pt-2 border-t border-gray-100">
+              <label className="block text-xs font-semibold text-gray-700 mb-2 flex items-center justify-between">
+                <span>Bảng màu chuẩn (1-Click Apply)</span>
+                <span className="text-[10px] text-rose-500 font-medium">{COLOR_PALETTES.length} bảng màu</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1 no-scrollbar">
+                {COLOR_PALETTES.map((palette) => (
+                  <button
+                    key={palette.id}
+                    type="button"
+                    onClick={() => {
+                      const updated = applyPaletteToConfig(config, palette);
+                      onChange(updated);
+                    }}
+                    className="flex flex-col items-start p-2 rounded-xl border border-gray-200 hover:border-rose-400 hover:shadow-sm transition-all text-left group bg-gray-50/60 hover:bg-white"
+                  >
+                    <div className="flex items-center gap-1 w-full mb-1">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: palette.primaryColor }} />
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: palette.secondaryColor }} />
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: palette.accentColor }} />
+                      <span className="w-3 h-3 rounded-full shrink-0 border border-gray-300" style={{ backgroundColor: palette.backgroundColor }} />
+                    </div>
+                    <span className="text-[11px] font-bold text-gray-800 truncate w-full group-hover:text-rose-600">
+                      {palette.name}
+                    </span>
+                    <span className="text-[9px] text-gray-400 truncate w-full">{palette.tag}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Phong cách hiển thị (Style Preset)</label>
               <select
@@ -560,15 +665,17 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Hiệu ứng hạt bay</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Hiệu ứng hạt bay (Motion Particles)</label>
               <select
                 value={config.theme?.particlesEffect || 'petals'}
                 onChange={(e) => updateConfig('theme', 'particlesEffect', e.target.value)}
                 className="w-full px-3 py-2 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-rose-500"
               >
-                <option value="petals">Cánh hoa rơi (Đám cưới lãng mạn)</option>
-                <option value="confetti">Pháo hoa giấy Confetti (Sinh nhật sôi động)</option>
-                <option value="none">Không dùng hiệu ứng</option>
+                {PARTICLES_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -577,6 +684,170 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
               value={config.theme?.defaultAnimation || 'fade-up'}
               onChange={(val) => updateConfig('theme', 'defaultAnimation', val)}
             />
+          </div>
+        )}
+
+        {/* Hierarchical Cards Builder Tab */}
+        {activeTab === 'cards' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Khối Thẻ Động (Card Builder)</h3>
+                <p className="text-[11px] text-gray-500">Cấu trúc thẻ lồng nhau Header → Nội dung → Thẻ con</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddCard}
+                className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-semibold transition-all border border-rose-200"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Thêm Thẻ</span>
+              </button>
+            </div>
+
+            {(!config.hierarchicalCards || config.hierarchicalCards.length === 0) ? (
+              <div className="text-center py-8 px-4 border-2 border-dashed border-gray-200 rounded-2xl">
+                <Layers className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-xs font-medium text-gray-500 mb-3">Chưa có khối thẻ nội dung nào</p>
+                <button
+                  type="button"
+                  onClick={handleAddCard}
+                  className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                >
+                  Tạo Thẻ Đầu Tiên
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {config.hierarchicalCards.map((card, cIdx) => (
+                  <div key={card.id || cIdx} className="p-4 rounded-2xl border border-gray-200 bg-gray-50/70 space-y-3.5 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-2.5">
+                      <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-rose-500" />
+                        <span>Thẻ #{cIdx + 1}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCard(cIdx)}
+                        className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xoá thẻ này"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-600 mb-1">Tiêu đề Thẻ Chính</label>
+                      <input
+                        type="text"
+                        value={card.title || ''}
+                        onChange={(e) => handleCardChange(cIdx, 'title', e.target.value)}
+                        className="w-full px-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-2 focus:ring-rose-500 outline-none"
+                        placeholder="Tiêu đề chính của khối thẻ..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-600 mb-1">Tiêu đề phụ (Sub Header)</label>
+                      <input
+                        type="text"
+                        value={card.subHeader || ''}
+                        onChange={(e) => handleCardChange(cIdx, 'subHeader', e.target.value)}
+                        className="w-full px-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-2 focus:ring-rose-500 outline-none"
+                        placeholder="Mô tả ngắn gọn bổ trợ..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-600 mb-1">Nội dung chi tiết</label>
+                      <textarea
+                        rows={2}
+                        value={card.content || ''}
+                        onChange={(e) => handleCardChange(cIdx, 'content', e.target.value)}
+                        className="w-full px-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-2 focus:ring-rose-500 outline-none resize-none"
+                        placeholder="Nội dung diễn giải chi tiết cho khối thẻ..."
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">Kiểu thẻ (Style Preset)</label>
+                        <select
+                          value={card.stylePreset || 'glass'}
+                          onChange={(e) => handleCardChange(cIdx, 'stylePreset', e.target.value)}
+                          className="w-full px-2 py-1.5 border rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-rose-500"
+                        >
+                          <option value="glass">Glass (Kính mờ bóng bẩy)</option>
+                          <option value="solid">Solid (Nền trắng viền bóng)</option>
+                          <option value="gradient">Gradient (Chuyển sắc êm dịu)</option>
+                          <option value="luxury">Luxury (Hoàng gia ánh kim)</option>
+                          <option value="minimal">Minimal (Tối giản thanh mảnh)</option>
+                        </select>
+                      </div>
+
+                      <AnimationSelector
+                        label="Hiệu ứng"
+                        value={card.animation || 'fade-up'}
+                        onChange={(val) => handleCardChange(cIdx, 'animation', val)}
+                      />
+                    </div>
+
+                    {/* Sub Cards List */}
+                    <div className="pt-2 border-t border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] font-bold text-gray-700 flex items-center gap-1">
+                          <span>Các Thẻ Con ({card.subCards?.length || 0})</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleAddSubCard(cIdx)}
+                          className="flex items-center gap-1 px-2 py-1 bg-white hover:bg-gray-100 text-gray-700 rounded-md text-[11px] font-medium border border-gray-200 transition-colors"
+                        >
+                          <Plus className="w-3 h-3 text-rose-500" />
+                          <span>Thêm Mục Con</span>
+                        </button>
+                      </div>
+
+                      {card.subCards?.map((sub, sIdx) => (
+                        <div key={sub.id || sIdx} className="p-2.5 rounded-xl border border-gray-200 bg-white mb-2 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-gray-400">Mục con #{sIdx + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSubCard(cIdx, sIdx)}
+                              className="text-red-400 hover:text-red-600 p-0.5"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            value={sub.title || ''}
+                            onChange={(e) => handleSubCardChange(cIdx, sIdx, 'title', e.target.value)}
+                            className="w-full px-2.5 py-1 border rounded-md text-xs"
+                            placeholder="Tiêu đề mục con..."
+                          />
+                          <input
+                            type="text"
+                            value={sub.subHeader || ''}
+                            onChange={(e) => handleSubCardChange(cIdx, sIdx, 'subHeader', e.target.value)}
+                            className="w-full px-2.5 py-1 border rounded-md text-xs"
+                            placeholder="Ghi chú (vd: 30 phút, Quan trọng...)"
+                          />
+                          <input
+                            type="text"
+                            value={sub.content || ''}
+                            onChange={(e) => handleSubCardChange(cIdx, sIdx, 'content', e.target.value)}
+                            className="w-full px-2.5 py-1 border rounded-md text-xs"
+                            placeholder="Nội dung mục con..."
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

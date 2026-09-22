@@ -30,6 +30,11 @@ export const templateApi = {
     const response = await axiosInstance.delete(`/templates/${id}`);
     return response.data?.value ?? response.data;
   },
+
+  publishCommunityTemplate: async (templateData) => {
+    const response = await axiosInstance.post('/templates/community', templateData);
+    return response.data?.value ?? response.data;
+  },
 };
 
 export default templateApi;

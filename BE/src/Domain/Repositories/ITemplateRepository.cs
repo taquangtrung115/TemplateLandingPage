@@ -13,5 +13,6 @@ public interface ITemplateRepository : IRepositoryBase<Template, Guid>
         string? badge = null,
         string? search = null,
         bool? isActiveOnly = null,
+        bool? isCommunity = null,
         CancellationToken cancellationToken = default);
 }

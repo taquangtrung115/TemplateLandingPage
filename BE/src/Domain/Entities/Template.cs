@@ -18,6 +18,9 @@ public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelet
     public string? MusicTitle { get; private set; }
     public string DefaultConfigJson { get; private set; } = string.Empty;
     public bool IsActive { get; private set; } = true;
+    public bool IsCommunity { get; private set; }
+    public string? AuthorName { get; private set; }
+    public Guid? CreatedByUserId { get; private set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
     public DateTime CreatedAtUtc { get; set; }
@@ -123,6 +126,47 @@ public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelet
             null,
             null,
             defaultConfigJson);
+    }
+
+    public static Template CreateCommunity(
+        string name,
+        string slug,
+        string? description,
+        string category,
+        string thumbnailUrl,
+        string defaultConfigJson,
+        string? authorName,
+        Guid? createdByUserId = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Template name cannot be empty.", nameof(name));
+        if (string.IsNullOrWhiteSpace(slug))
+            throw new ArgumentException("Slug cannot be empty.", nameof(slug));
+        if (string.IsNullOrWhiteSpace(thumbnailUrl))
+            throw new ArgumentException("Thumbnail URL cannot be empty.", nameof(thumbnailUrl));
+        if (string.IsNullOrWhiteSpace(defaultConfigJson))
+            throw new ArgumentException("Default config JSON cannot be empty.", nameof(defaultConfigJson));
+
+        var template = new Template(
+            Guid.NewGuid(),
+            name.Trim(),
+            slug.Trim().ToLowerInvariant(),
+            description?.Trim(),
+            null,
+            category.Trim(),
+            thumbnailUrl.Trim(),
+            null,
+            null,
+            "Community",
+            null,
+            null,
+            defaultConfigJson,
+            true);
+
+        template.IsCommunity = true;
+        template.AuthorName = string.IsNullOrWhiteSpace(authorName) ? "Anonymous" : authorName.Trim();
+        template.CreatedByUserId = createdByUserId;
+        return template;
     }
 
     public void Update(

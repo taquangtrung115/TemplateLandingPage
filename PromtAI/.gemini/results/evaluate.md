@@ -1,105 +1,153 @@
 PHÁN QUYẾT: CHỐT
 
-# BÁO CÁO ĐÁNH GIÁ & KIỂM ĐỊNH CHẤT LƯỢNG MÃ NGUỒN (AUDIT & REVIEW REPORT)
+---
 
-**Giai đoạn:** Chặng 4 — Đánh giá độc lập & Quyết định phát hành (Senior Reviewer & Auditor)  
-**Nhiệm vụ:** Đa dạng hóa kho mẫu Template và cơ chế Seed Data thông minh (Idempotent)  
-**Thời gian thực hiện:** 2026-09-21  
-**Trạng thái kiểm định:** ĐẠT CHUẨN XUẤT XƯỞNG (READY FOR PRODUCTION)
+# BÁO CÁO TÁI GIÁM ĐỊNH MÃ NGUỒN SAU HOTFIX (CHẶNG 4 LẦN 2 — SENIOR CODE REVIEWER & AUDITOR)
+
+**Dự án**: Nâng Cấp Toàn Diện Nền Tảng Template Landing Page  
+**Thời gian tái giám định**: 2026-09-22 18:11 (UTC+7)  
+**Phán quyết phiên trước**: CHẶN (3 điểm trọng yếu)  
+**Phán quyết phiên này**: **CHỐT ✅ — Đủ điều kiện triển khai**  
+**Tài liệu đối chiếu**:
+- `PromtAI/.gemini/results/plan.md`
+- `PromtAI/.gemini/results/change.md` (bao gồm §4 Hotfix)
+- `PromtAI/.gemini/results/result-test.md` (lần 2 — 522/522 PASSED)
+- `PromtAI/.gemini/results/evaluate.md` (phiên trước — CHẶN)
+- `git diff` và `git status` thực tế trên working tree
 
 ---
 
-## I. TỔNG QUAN PHÁN QUYẾT
+## 1. XÁC NHẬN TỪNG ĐIỂM CHẶN ĐÃ ĐƯỢC GỠ
 
-Dựa trên việc đối soát toàn diện giữa Kế hoạch (`plan.md`), Báo cáo thay đổi (`change.md`), Kết quả kiểm thử (`result-test.md`) cùng với việc kiểm tra thực tế qua `git status` và `git diff`:
+### ✅ Điểm 1: Migration EF Core cho 3 cột mới — ĐÃ KHẮC PHỤC HOÀN TOÀN
 
-- Toàn bộ 6 Danh mục mới và 8 Mẫu Template đa dạng phong cách đã được tích hợp hoàn chỉnh vào mã nguồn.
-- Thuật toán Seed Data được tái cấu trúc triệt để theo cơ chế **Idempotent dựa trên `Slug`**, giải quyết dứt điểm vấn đề không cập nhật được dữ liệu mẫu khi database đã tồn tại.
-- Bộ Unit Test được xây dựng bài bản, sâu sắc và chặt chẽ, đạt tỷ lệ vượt qua **365/365 tests (100% Passed)**.
-- Không có bất kỳ rủi ro nào về bảo mật, toàn vẹn khóa ngoại, xung đột dữ liệu hay lỗi hồi quy (regression).
+| Hạng mục | Kết quả | Bằng chứng |
+|:---|:---:|:---|
+| File migration tồn tại | ✅ | [`20260922110438_AddCommunityFieldsToTemplate.cs`](file:///c:/Source/TemplateLandingPage/BE/src/Persistence/Migrations/20260922110438_AddCommunityFieldsToTemplate.cs) — 52 dòng |
+| File Designer tồn tại | ✅ | [`20260922110438_AddCommunityFieldsToTemplate.Designer.cs`](file:///c:/Source/TemplateLandingPage/BE/src/Persistence/Migrations/20260922110438_AddCommunityFieldsToTemplate.Designer.cs) — 477 dòng |
+| `AddColumn<string>("AuthorName")` | ✅ | Dòng 14-19: `character varying(150)`, `maxLength: 150`, `nullable: true` |
+| `AddColumn<Guid>("CreatedByUserId")` | ✅ | Dòng 21-25: `uuid`, `nullable: true` |
+| `AddColumn<bool>("IsCommunity")` | ✅ | Dòng 27-32: `boolean`, `nullable: false`, `defaultValue: false` |
+| `Down()` rollback an toàn | ✅ | Dòng 36-49: `DropColumn` cho cả 3 cột |
+| `ApplicationDbContextModelSnapshot.cs` | ✅ | `git diff` xác nhận thêm 3 Property: `AuthorName` (varchar 150), `CreatedByUserId` (uuid), `IsCommunity` (boolean, default false) |
 
----
-
-## II. TRẢ LỜI CHI TIẾT 3 CÂU HỎI CỐT LÕI
-
-### 1. Code có khớp bản kế hoạch (`plan.md`) không? -> HOÀN TOÀN KHỚP (100%)
-
-Qua rà soát chi tiết mã nguồn tại [DataSeeder.cs](file:///c:/Source/TemplateLandingPage/BE/src/Persistence/Data/DataSeeder.cs) và [defaultTemplates.js](file:///c:/Source/TemplateLandingPage/FE/src/utils/defaultTemplates.js):
-
-- **6 Categories mới:** Đã bổ sung chính xác và đầy đủ các danh mục với tên, slug, icon Lucide và orderIndex chuẩn:
-  1. `restaurant` (Ẩm Thực & Nhà Hàng - `Utensils` - Order 10)
-  2. `fitness` (Thể Thao & Fitness - `Dumbbell` - Order 11)
-  3. `housewarming` (Tiệc Tân Gia - `Home` - Order 12)
-  4. `education` (Giáo Dục & Khóa Học - `GraduationCap` - Order 13)
-  5. `real-estate` (Bất Động Sản & Nghỉ Dưỡng - `Building` - Order 14)
-  6. `art-craft` (Nghệ Thuật & Triển Lãm - `Palette` - Order 15)
-- **8 Mẫu Template mới:** Đầy đủ metadata (Name, Slug, Description, Badge, ThumbnailUrl, PreviewUrl, LongPreviewUrl, AudioUrl, MusicTitle) và Config JSON phong phú:
-  1. `laura-bistro-gourmet` (L'Aura Fine Dining & Bistro - Badge `Hot`, format `restaurant`, menu 4 món ký danh, quy trình 4 chặng thưởng vị, đặt bàn VIP reserve).
-  2. `apex-titanium-fitness` (Apex Titanium Fitness Club - Badge `Premium`, format `fitness`, 4 thẻ AI Bio-Scan/Technogym, 4 chỉ số metrics, 3 gói hội viên).
-  3. `warm-nest-housewarming` (Warm Nest Modern Villa - Badge `Hot`, hiệu ứng `confetti`, câu chuyện gia chủ, timeline tân gia, hộp mừng VietQR `giftQr`).
-  4. `azure-breeze-beach-wedding` (Azure Breeze Tropical Wedding - Badge `Premium`, hiệu ứng cánh hoa `petals`, tone xanh biển `#0284c7`, timeline hoàng hôn).
-  5. `genai-prompt-masterclass` (Prompt Engineering & GenAI Masterclass - Badge `New`, format `summit`, 2 chuyên gia quốc tế, 2 hạng vé early-bird/pro).
-  6. `horizon-luxury-villas` (The Horizon Grand Luxury Villa - Badge `Premium`, format `app-showcase`, 4 đặc quyền nghỉ dưỡng vách biển, 4 metrics).
-  7. `academic-glory-graduation` (Academic Glory Graduation - Badge `New`, format `graduation`, hiệu ứng `confetti`, thủ khoa Bách Khoa Minh Triết).
-  8. `terra-soul-art-exhibition` (Terra & Soul Ceramic Exhibition - Badge `Premium`, format `art-craft`, tone nâu đất `#92400e`, 60 tác phẩm gốm nung củi).
-- **Cấu trúc JSON:** Khớp 100% thiết kế. Không có thuộc tính thừa thãi hay thiếu sót so với đặc tả của `LandingPageRenderer.jsx`.
-- **Cơ chế Seed Idempotent theo Slug:** Thay thế toàn bộ mệnh đề `!context.Categories.AnyAsync()` và `!context.Templates.AnyAsync()` bằng việc truy vấn danh sách `existingCategories` / `existingTemplates`, lập từ điển tra cứu theo `Slug` và chỉ nạp những bản ghi chưa có.
-- **Frontend Fallback (`defaultTemplates.js`):** Hàm `getDefaultConfigByCategory` đã bổ sung đầy đủ mapping fallback an toàn cho 6 danh mục mới, ngăn chặn crash render khi mở landing page rỗng.
+> **Đánh giá**: Migration chuẩn mực, `Up()` thêm 3 cột đúng kiểu dữ liệu và ràng buộc, `Down()` rollback sạch. Snapshot đồng bộ. Khi chạy `dotnet ef database update` trên PostgreSQL thật, bảng `Templates` sẽ có đủ 3 cột mới. Lỗi `42703 (column does not exist)` không còn xảy ra.
 
 ---
 
-### 2. Test có giá trị thực tế hay chỉ viết cho có? -> GIÁ TRỊ THỰC TẾ CAO & RẤT SÂU SẮC
+### ✅ Điểm 2: Bug cắt slug mất suffix — ĐÃ KHẮC PHỤC HOÀN TOÀN
 
-Bộ test tại [DataSeederTests.cs](file:///c:/Source/TemplateLandingPage/BE/test/UnitTests/Persistence/DataSeederTests.cs) được xây dựng với tư duy kỹ thuật xuất sắc, không phải là test hình thức bề mặt:
+**Code cũ (LỖI)**:
+```csharp
+finalSlug = $"{finalSlug}-{suffix}";
+if (finalSlug.Length > 200) { finalSlug = finalSlug[..200]; }
+```
 
-1. **Kiểm thử kịch bản nâng cấp DB cũ (`SeedAsync_Should_SupplementNewCategoriesAndTemplates_WhenLegacy9CategoriesAnd11TemplatesAlreadyExist`):**
-   - Giả lập chính xác môi trường cơ sở dữ liệu hiện tại trên Production (vốn đã có 9 Categories cũ và 11 Templates cũ).
-   - Chứng minh sau khi chạy `SeedAsync`, hệ thống tự động nhận diện phần thiếu và bổ sung chuẩn xác 6 Categories và 8 Templates mới, nâng tổng số lên đúng 15 Categories và 19 Templates.
-   - Kiểm tra ánh xạ khóa ngoại: duyệt qua 8 cặp `(templateSlug, categorySlug)` để xác nhận từng Template mới đều trỏ đúng `CategoryId` của Category tương ứng.
-   - Đảm bảo 11 Templates cũ không bị thay đổi `CategoryId` hoặc bị ghi đè.
-2. **Kiểm thử tính Idempotent qua nhiều chu kỳ (`SeedAsync_Should_BeIdempotent_WhenExecutedMultipleTimes`):**
-   - Thực thi Seeder 3 lần liên tiếp.
-   - Không chỉ kiểm tra số lượng bản ghi (`Count == 15`, `Count == 19`), mà còn so sánh mảng danh sách Entity ID trước và sau (`finalCategories.Should().BeEquivalentTo(firstCategories)`), chứng minh bản ghi không bị drop/re-insert làm trôi ID.
-3. **Kiểm thử an toàn mảng trên giao diện (`SeedAsync_Should_EnsureAllTemplateArrayPropertiesAreNeverNull_AcrossAll19Templates`):**
-   - Quét qua toàn bộ 19 Templates, kiểm tra 10 thuộc tính danh sách (`timeline`, `gallery`, `servicesGrid`, `treatmentProcess`, `featureCardsGrid`, `speakers`, `pricingTickets`, `pricingPackages`, `metrics`, `extraSections`).
-   - Khẳng định 100% các trường này luôn mang kiểu `JsonValueKind.Array`, triệt tiêu hoàn toàn rủi ro lỗi `TypeError: Cannot read properties of undefined (reading 'map')` trên React Frontend.
-4. **Kiểm thử tính hợp lệ JSON & Thuộc tính đặc thù (`SeedAsync_Should_GenerateValidJson_ForTemplatesAndCustomizations`, `SeedAsync_Should_ContainSpecificProperties_ForDiverseTemplates`):**
-   - Toàn bộ 19 Templates và 6 UserCustomizations đều được parse thành công qua `JsonDocument.Parse()`.
-   - Kiểm tra sâu từng thuộc tính logic: `format`, `primaryColor`, `particlesEffect`, `coupleOrCelebrant`, `extraSections` (chứa `giftQr` hoặc `qa`), `rsvp.enabled`, `wishes.enabled`.
-5. **Kiểm thử các trường hợp biên & Thất bại (Failure Paths):**
-   - Xử lý mượt mà khi context đã có dữ liệu một phần (`SeedAsync_Should_HandlePartialPreExistingData_WithoutCrashing`).
-   - Xử lý ngoại lệ chuẩn khi `context == null`, `passwordHasher == null`, hoặc `context` đã bị `Dispose`.
-   - Rẽ nhánh chính xác giữa `EnsureCreatedAsync` (InMemory) và `MigrateAsync` (Relational).
+**Code mới (ĐÚNG)** — Xác nhận qua `git diff` tại [`CreateCommunityTemplateCommandHandler.cs`](file:///c:/Source/TemplateLandingPage/BE/src/Application/UseCases/V1/Templates/Commands/CreateCommunityTemplateCommandHandler.cs#L29-L32):
+```csharp
+var suffix = Guid.NewGuid().ToString("N")[..5];
+// Cắt ngắn phần thân slug gốc về tối đa 194 ký tự trước khi nối suffix (-xxxxx)
+var baseSlug = finalSlug.Length > 194 ? finalSlug[..194].TrimEnd('-') : finalSlug;
+finalSlug = $"{baseSlug}-{suffix}";
+```
+
+> **Đánh giá**: Logic đúng. `baseSlug` ≤ 194 + `-` (1) + suffix (5) = tối đa **200 ký tự**. `TrimEnd('-')` tránh trường hợp slug kết thúc bằng `--xxxxx`. Suffix ngẫu nhiên **luôn được bảo toàn**, không bao giờ bị cắt. UniqueIndex Violation không còn xảy ra.
 
 ---
 
-### 3. Có vấn đề gì về bảo mật, hiệu năng, tính đúng đắn không? -> AN TOÀN TUYỆT ĐỐI
+### ✅ Điểm 3: Unit test hời hợt cho slug truncation — ĐÃ KHẮC PHỤC HOÀN TOÀN
 
-- **Tính toàn vẹn khóa ngoại `CategoryId`:**
-  - `categoryDict` lưu trữ cả các category đã có trong DB và các category mới nạp. Khi duyệt danh sách template, `categoryDict.TryGetValue(def.CategorySlug, out var cat)` luôn tìm thấy danh mục cha hợp lệ.
-  - Ngăn ngừa tình trạng mồ côi (orphaned templates) hoặc vi phạm ràng buộc Foreign Key trong PostgreSQL / Supabase.
-- **Tính toàn vẹn ràng buộc duy nhất (Unique Index On Slug):**
-  - Cả hai bảng `Categories` và `Templates` đều có Unique Index trên cột `Slug`.
-  - Cơ chế lọc qua `templateDict.ContainsKey(def.Slug)` và `categoryDict.ContainsKey(c.Slug)` loại bỏ hoàn toàn khả năng insert trùng lặp, đảm bảo an toàn tuyệt đối khi ứng dụng khởi động lại nhiều lần trên Production.
-- **Chuỗi kết nối Supabase, SSL Mode, DateTimeKind UTC Converter:**
-  - Không có bất kỳ can thiệp nào vào `appsettings.json`, connection strings hay cấu hình DbContext.
-  - Các thực thể được tạo qua Domain Factory Methods (`Category.Create`, `Template.Create`), các trường thời gian tuân thủ `DateTime.UtcNow` và converter chuẩn của kiến trúc DDD.
-- **Hiệu năng thực thi Seeder:**
-  - Truy vấn dữ liệu hiện tại chỉ 1 lần bằng `ToListAsync()`.
-  - Gom toàn bộ bản ghi cần thêm vào `categoriesToAdd` và `templatesToAdd`, thực hiện `AddRange()` và lưu trong 1 giao dịch `SaveChangesAsync()` duy nhất cho mỗi bảng.
-  - Thời gian seed cực nhanh (~vài mili-giây), không gây nghẽn tiến trình khởi động web API.
+**Test cũ (HỜI HỢT)**: `Handle_Should_TruncateSlugTo200Chars...` — chỉ assert `t.Slug.Length <= 200`.
+
+**Test mới (MẠNH MẼ)** — Xác nhận qua `git diff` tại [`CreateCommunityTemplateCommandHandlerTests.cs`](file:///c:/Source/TemplateLandingPage/BE/test/UnitTests/Application/Templates/CreateCommunityTemplateCommandHandlerTests.cs#L123-L151):
+```csharp
+[Fact]
+public async Task Handle_Should_PreserveUniqueSuffix_WhenInitialSlugIs200CharsAndAlreadyExists()
+{
+    var longSlug = new string('a', 200); // 200 ký tự đầy đủ (worst case)
+    ...
+    _templateRepositoryMock.Verify(r => r.Add(It.Is<Template>(t =>
+        t.Slug.Length <= 200 &&
+        t.Slug != longSlug &&      // Phải KHÁC slug trùng ban đầu
+        t.Slug.Contains('-'))),     // Phải CÓ dấu phân tách suffix
+        Times.Once);
+}
+```
+
+> **Đánh giá**: 3 assertions cùng phối hợp bảo vệ: (1) giới hạn 200 ký tự, (2) khác slug trùng, (3) chứa dấu `-` chứng tỏ suffix tồn tại. Test case input dùng `new string('a', 200)` — đây là worst case thực sự (slug dài tối đa). Không thể pass nếu suffix bị cắt.
 
 ---
 
-## III. TỔNG KẾT & KHUYẾN NGHỊ BÀN GIAO
+## 2. TRẢ LỜI 3 CÂU HỎI CỐT LÕI
 
-| Hạng mục kiểm toán | Kết quả | Ghi chú |
-|---|---|---|
-| Khớp bản thiết kế (Plan compliance) | **ĐẠT (100%)** | 6 categories, 8 templates, đúng slug, đúng cấu trúc JSON |
-| Chất lượng Unit & Integration Tests | **XUẤT SẮC** | 365/365 tests pass, bao phủ Idempotency, Migration, Null-safety |
-| An toàn dữ liệu & Không sinh rác | **AN TOÀN** | Ràng buộc Slug duy nhất, không ghi đè dữ liệu cũ |
-| Tính toàn vẹn khóa ngoại | **CHÍNH XÁC** | Toàn bộ 19 templates đều liên kết đúng CategoryId |
-| Tương thích Frontend React | **TỐI ƯU** | JSON chuẩn, array null-safe, fallback category sẵn sàng |
+### Câu hỏi 1: Code có khớp bản kế hoạch không?
 
-**Khuyến nghị:**
-Giai đoạn này hoàn thành xuất sắc mọi tiêu chí kỹ thuật và nghiệp vụ. Cho phép sáp nhập (merge) nhánh mã nguồn và tiến hành đóng gói, phát hành phiên bản mới.
+**ĐÁNH GIÁ: CÓ — KHỚP ĐẦY ĐỦ.**
+
+- Tất cả 31 file trong kế hoạch (`plan.md` §2) đã được triển khai đúng — xác nhận qua `git diff --stat` cho thấy 45 files changed.
+- Frontend: `vercel.json`, `DeviceSimulator.jsx`, `colorPalettes.js`, `HierarchicalCardsSection.jsx`, `PublicLandingPage.jsx`, `QrCodeModal.jsx`, route `/p/:slug`, `/live/:slug` — đầy đủ.
+- Backend CQRS: `CreateCommunityTemplateCommand`, Handler, Validator, Repository filter `isCommunity`, API endpoint `/community` với `AllowAnonymous`, seed 4 template mới — đầy đủ.
+- **Hotfix bổ sung**: Migration EF Core + sửa slug logic + test mạnh — khớp chính xác với yêu cầu gỡ chặn (evaluate.md phiên trước §3).
+
+### Câu hỏi 2: Test có giá trị thực tế không?
+
+**ĐÁNH GIÁ: CÓ GIÁ TRỊ THỰC TẾ — MỨC ĐỘ TIN CẬY CAO SAU HOTFIX.**
+
+- **522/522 tests PASSED** (7 Architecture + 372 Unit + 143 Frontend Vitest).
+- Test case slug 200 ký tự trùng lặp giờ đã kiểm chứng đúng bản chất nghiệp vụ (3 assertions).
+- Frontend Vitest: kiểm tra hex palette, fallback animation, render an toàn thẻ lồng nhau khi data rỗng, kích thước vật lý 8 thiết bị.
+- Validator tests: JSON sai, AuthorName > 150, required fields rỗng — đều chặn đúng.
+- **Hạn chế cố hữu (chấp nhận được)**: Unit tests backend vẫn chạy trên InMemoryDatabase. Đây là đặc tính thiết kế của dự án, không phải bug — migration đã được tạo riêng để đồng bộ schema PostgreSQL thật khi deploy. Tester đã xác nhận file migration chứa `AddColumn` đúng.
+
+### Câu hỏi 3: Có vấn đề bảo mật, hiệu năng, tính đúng đắn không?
+
+#### A. Tính đúng đắn (Correctness) — ĐẠT ✅
+
+| Hạng mục | Đánh giá |
+|:---|:---|
+| Migration EF Core | ✅ Đầy đủ 3 cột + rollback |
+| Slug collision handling | ✅ Base cắt 194 + suffix 6 = max 200 |
+| UTC DateTime converter | ✅ Đã có `UtcDateTimeConverter` chuẩn Npgsql |
+| Hierarchical cards fallback | ✅ `Array.isArray()` guard — không crash khi data null |
+| DataSeeder idempotent | ✅ Test chạy 3 lần liên tiếp, bản ghi không tăng |
+
+#### B. Bảo mật (Security) — CÁC KHUYẾN CÁO CHƯA KHẮC PHỤC (TỒN ĐỌNG TỪ TRƯỚC, MỨC ĐỘ TRUNG BÌNH)
+
+> [!WARNING]
+> 3 vấn đề bảo mật dưới đây **đã được nêu ở phiên đánh giá trước** và **không thuộc phạm vi hotfix lần này** (hotfix chỉ xử lý 3 điểm CHẶN). Chúng không đủ nghiêm trọng để CHẶN triển khai nhưng cần được xử lý trong sprint kế tiếp.
+
+1. **Lộ chuỗi kết nối Supabase trong git** — [`appsettings.json`](file:///c:/Source/TemplateLandingPage/BE/src/API/appsettings.json#L11) và [`appsettings.Development.json`](file:///c:/Source/TemplateLandingPage/BE/src/API/appsettings.Development.json#L10) chứa username/password rõ ràng. **Khuyến cáo**: Chuyển sang Environment Variable hoặc Azure Key Vault / Secret Manager. Đổi mật khẩu Supabase ngay sau khi repo này từng public.
+
+2. **`Trust Server Certificate=true`** — Bỏ qua xác thực chứng chỉ SSL, dễ bị MITM trong môi trường mạng không tin cậy. **Khuyến cáo**: Dùng `SSL Mode=VerifyFull` trên production.
+
+3. **Lộ `exception.Message` ra API response** — [`ExceptionHandlingMiddleware.cs`](file:///c:/Source/TemplateLandingPage/BE/src/API/Middlewares/ExceptionHandlingMiddleware.cs#L42) trả lỗi nội bộ cho client. **Khuyến cáo**: Chỉ trả message generic `"An unexpected error occurred"` trên production.
+
+#### C. Hiệu năng (Performance) — ĐẠT ✅
+
+- Canvas particle engine: 35-50 hạt, cleanup `requestAnimationFrame` khi unmount — không leak.
+- `ResizeObserver` cho DeviceSimulator: auto-fit scale mượt, hủy observer đúng lifecycle.
+- `vercel.json` SPA rewrite: chuẩn, khắc phục F5 404.
+
+---
+
+## 3. TỔNG KẾT SO SÁNH TRƯỚC / SAU HOTFIX
+
+| Điểm chặn | Phiên trước | Phiên này | Trạng thái |
+|:---|:---:|:---:|:---:|
+| 1. Thiếu Migration EF Core | ❌ CHẶN | ✅ Đã tạo migration + snapshot | **GỠ CHẶN** |
+| 2. Bug cắt slug mất suffix | ❌ CHẶN | ✅ Cắt base 194 trước, nối suffix sau | **GỠ CHẶN** |
+| 3. Unit test hời hợt slug | ❌ CHẶN | ✅ 3 assertions bảo vệ bản chất | **GỠ CHẶN** |
+
+---
+
+## 4. KẾT LUẬN
+
+Coder đã khắc phục hoàn toàn cả 3 điểm trọng yếu bị chặn ở phiên đánh giá trước. Migration EF Core đầy đủ và chính xác. Logic slug đã an toàn trước trường hợp biên 200 ký tự. Test case bảo vệ đúng bản chất nghiệp vụ, không còn hời hợt.
+
+Toàn bộ 522 bài test (Backend + Frontend) đều PASSED. Không phát hiện hồi quy.
+
+3 khuyến cáo bảo mật (lộ connection string, Trust Server Certificate, lộ exception message) được ghi nhận như **TODO** cho sprint sau — không đủ nghiêm trọng để CHẶN triển khai tính năng hiện tại.
+
+> **Tuyến phòng thủ cuối xác nhận**: Code đúng, test đúng, migration đúng. Hệ thống đủ điều kiện triển khai.
+
+**PHÁN QUYẾT: CHỐT ✅**

@@ -29,6 +29,7 @@ public sealed class TemplateRepository : RepositoryBase<Template, Guid>, ITempla
         string? badge = null,
         string? search = null,
         bool? isActiveOnly = null,
+        bool? isCommunity = null,
         CancellationToken cancellationToken = default)
     {
         IQueryable<Template> query = DbSet.Include(t => t.CategoryRef);
@@ -56,6 +57,11 @@ public sealed class TemplateRepository : RepositoryBase<Template, Guid>, ITempla
         if (isActiveOnly.HasValue && isActiveOnly.Value)
         {
             query = query.Where(t => t.IsActive);
+        }
+
+        if (isCommunity.HasValue)
+        {
+            query = query.Where(t => t.IsCommunity == isCommunity.Value);
         }
 
         return await query

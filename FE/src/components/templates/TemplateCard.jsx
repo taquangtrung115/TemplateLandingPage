@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Edit3, Play, Pause, Music, Sparkles } from 'lucide-react';
+import { Eye, Edit3, Play, Pause, Music, Sparkles, Globe, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { resolveIcon } from '../../utils/iconResolver';
 
@@ -80,9 +80,15 @@ export default function TemplateCard({
             />
           </div>
 
-          {/* Badge (Gói thiệp) */}
-          {template.badge && (
-            <div className="absolute top-3 left-3 z-20">
+          {/* Badges (Gói thiệp & Cộng đồng) */}
+          <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 items-start">
+            {template.isCommunity && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider bg-teal-600/95 text-white shadow-md border border-teal-300 backdrop-blur-sm">
+                <Globe className="w-2.5 h-2.5" />
+                Cộng đồng
+              </span>
+            )}
+            {template.badge && (
               <span
                 className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-sm shadow-md border ${getBadgeStyle(
                   template.badge
@@ -91,8 +97,8 @@ export default function TemplateCard({
                 <Sparkles className="w-2.5 h-2.5" />
                 {template.badge}
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Audio Preview Pill on Card */}
           {template.audioUrl && (
@@ -156,16 +162,21 @@ export default function TemplateCard({
       {/* Card Info Details */}
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div>
-          <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
             <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">
               {template.category}
             </span>
-            {template.musicTitle && (
+            {template.isCommunity && template.authorName ? (
+              <span className="text-[10px] text-teal-700 bg-teal-50 font-semibold px-2 py-0.5 rounded-full border border-teal-200/80 flex items-center gap-1 truncate max-w-[140px]">
+                <User className="w-3 h-3 text-teal-600 shrink-0" />
+                <span className="truncate">{template.authorName}</span>
+              </span>
+            ) : template.musicTitle ? (
               <span className="text-[10px] text-gray-400 truncate max-w-[140px] flex items-center gap-1">
                 <Music className="w-3 h-3 text-rose-400 flex-shrink-0" />
                 {template.musicTitle}
               </span>
-            )}
+            ) : null}
           </div>
 
           <h3 className="text-base font-bold text-gray-900 group-hover:text-rose-600 transition-colors line-clamp-1">

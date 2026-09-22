@@ -17,6 +17,8 @@ public record TemplateResponse(
     string? MusicTitle,
     string DefaultConfigJson,
     bool IsActive,
+    bool IsCommunity,
+    string? AuthorName,
     DateTime CreatedAtUtc);
 
 public static class TemplateErrors

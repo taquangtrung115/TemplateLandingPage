@@ -37,6 +37,8 @@ public sealed class GetTemplateByIdQueryHandler : IQueryHandler<GetTemplateByIdQ
             template.MusicTitle,
             template.DefaultConfigJson,
             template.IsActive,
+            template.IsCommunity,
+            template.AuthorName,
             template.CreatedAtUtc);
 
         return Result.Success(response);

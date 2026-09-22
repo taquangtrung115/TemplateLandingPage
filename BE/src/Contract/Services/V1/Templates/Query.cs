@@ -7,7 +7,8 @@ public record GetTemplatesQuery(
     Guid? CategoryId = null,
     string? Badge = null,
     string? Search = null,
-    bool? IsActiveOnly = null) : IQuery<List<TemplateResponse>>;
+    bool? IsActiveOnly = null,
+    bool? IsCommunity = null) : IQuery<List<TemplateResponse>>;
 
 public record GetTemplateByIdQuery(Guid Id) : IQuery<TemplateResponse>;
 

@@ -23,6 +23,7 @@ public sealed class GetTemplatesQueryHandler : IQueryHandler<GetTemplatesQuery, 
             request.Badge,
             request.Search,
             request.IsActiveOnly,
+            request.IsCommunity,
             cancellationToken);
 
         var response = (templates ?? new List<Template>()).Select(t => new TemplateResponse(
@@ -40,6 +41,8 @@ public sealed class GetTemplatesQueryHandler : IQueryHandler<GetTemplatesQuery, 
             t.MusicTitle,
             t.DefaultConfigJson,
             t.IsActive,
+            t.IsCommunity,
+            t.AuthorName,
             t.CreatedAtUtc)).ToList();
 
         return Result.Success(response);

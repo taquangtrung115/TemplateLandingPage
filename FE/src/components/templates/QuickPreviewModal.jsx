@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Monitor, Smartphone, ExternalLink, Play, Pause, Music, Edit3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LandingPageRenderer from './LandingPageRenderer';
+import DeviceSimulator from '../common/DeviceSimulator';
 import { getDefaultConfigByCategory } from '../../utils/defaultTemplates';
 
 export const QuickPreviewModal = ({ template, isOpen, onClose }) => {
@@ -107,7 +108,7 @@ export const QuickPreviewModal = ({ template, isOpen, onClose }) => {
                 }`}
               >
                 <Smartphone className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Mobile (375px)</span>
+                <span className="hidden sm:inline">Mô phỏng di động</span>
               </button>
               <button
                 onClick={() => setViewport('desktop')}
@@ -153,16 +154,16 @@ export const QuickPreviewModal = ({ template, isOpen, onClose }) => {
         </div>
 
         {/* Modal Canvas Body */}
-        <div className="flex-1 bg-gray-950 overflow-y-auto flex items-center justify-center p-3 sm:p-6">
+        <div className="flex-1 bg-gray-950 overflow-y-auto flex items-center justify-center p-2 sm:p-6">
           {viewport === 'desktop' ? (
             <div className="w-full h-full rounded-2xl overflow-y-auto shadow-2xl bg-white no-scrollbar border border-gray-800">
               <LandingPageRenderer config={parsedConfig} isPreview={true} />
             </div>
           ) : (
-            <div className="w-[375px] h-[700px] rounded-[44px] border-[10px] border-gray-800 shadow-2xl overflow-y-auto bg-white no-scrollbar relative my-auto ring-1 ring-white/15">
-              {/* Dynamic Island / Speaker notch */}
-              <div className="sticky top-2 left-1/2 -translate-x-1/2 w-24 h-4 bg-gray-900 rounded-full z-30 mx-auto shadow-sm" />
-              <LandingPageRenderer config={parsedConfig} isPreview={true} />
+            <div className="w-full h-full flex items-center justify-center">
+              <DeviceSimulator initialOs="ios" showToolbar={true}>
+                <LandingPageRenderer config={parsedConfig} isPreview={true} />
+              </DeviceSimulator>
             </div>
           )}
         </div>

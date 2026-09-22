@@ -49,14 +49,15 @@ public class DataSeederTests : IDisposable
         users.Should().Contain(u => u.Email == "minhlinh@template.com" && u.Role == "User");
         users.All(u => u.PasswordHash.StartsWith("hashed_")).Should().BeTrue();
 
-        // Assert - 2. Categories (15 categories including restaurant, fitness, housewarming, education, real-estate, art-craft)
+        // Assert - 2. Categories (19 categories)
         var categories = await _dbContext.Categories.ToListAsync();
-        categories.Should().HaveCount(15);
+        categories.Should().HaveCount(19);
         categories.Select(c => c.Slug).Should().BeEquivalentTo(new[]
         {
             "wedding", "engagement", "birthday", "anniversary", "baby-shower",
             "conference", "app-showcase", "medical", "saas",
-            "restaurant", "fitness", "housewarming", "education", "real-estate", "art-craft"
+            "restaurant", "fitness", "housewarming", "education", "real-estate", "art-craft",
+            "spa-beauty", "podcast-music", "tech-startup", "photography"
         });
         categories.Select(c => c.Slug).Should().OnlyHaveUniqueItems();
 
@@ -78,9 +79,9 @@ public class DataSeederTests : IDisposable
             "/templates?category=baby-shower"
         });
 
-        // Assert - 4. Templates (19 templates: 11 classic/formats + 8 new diverse themes)
+        // Assert - 4. Templates (23 templates: Diverse Formats & Categories)
         var templates = await _dbContext.Templates.ToListAsync();
-        templates.Should().HaveCount(19);
+        templates.Should().HaveCount(23);
         templates.Select(t => t.Slug).Should().BeEquivalentTo(new[]
         {
             "elegance-blossom",
@@ -101,7 +102,11 @@ public class DataSeederTests : IDisposable
             "genai-prompt-masterclass",
             "horizon-luxury-villas",
             "academic-glory-graduation",
-            "terra-soul-art-exhibition"
+            "terra-soul-art-exhibition",
+            "aura-wellness-spa",
+            "sonic-wave-podcast",
+            "nexus-ai-startup",
+            "lumina-photography-studio"
         });
         templates.Select(t => t.Slug).Should().OnlyHaveUniqueItems();
         templates.All(t => !string.IsNullOrWhiteSpace(t.DefaultConfigJson)).Should().BeTrue();
@@ -172,9 +177,9 @@ public class DataSeederTests : IDisposable
 
         // Assert - Counts should remain unchanged (no duplicate records)
         (await _dbContext.Users.CountAsync()).Should().Be(3);
-        (await _dbContext.Categories.CountAsync()).Should().Be(15);
+        (await _dbContext.Categories.CountAsync()).Should().Be(19);
         (await _dbContext.NavigationMenus.CountAsync()).Should().Be(10);
-        (await _dbContext.Templates.CountAsync()).Should().Be(19);
+        (await _dbContext.Templates.CountAsync()).Should().Be(23);
         (await _dbContext.UserCustomizations.CountAsync()).Should().Be(6);
         (await _dbContext.RsvpEntries.CountAsync()).Should().Be(6);
         (await _dbContext.GuestbookEntries.CountAsync()).Should().Be(7);
@@ -205,10 +210,10 @@ public class DataSeederTests : IDisposable
 
         // Assert - Seeder should safely reuse existing records and proceed with remaining tables
         var categories = await _dbContext.Categories.ToListAsync();
-        categories.Should().HaveCount(15);
+        categories.Should().HaveCount(19);
 
         var templates = await _dbContext.Templates.ToListAsync();
-        templates.Should().HaveCount(19);
+        templates.Should().HaveCount(23);
 
         var customizations = await _dbContext.UserCustomizations.ToListAsync();
         customizations.Should().HaveCount(6);
@@ -259,17 +264,18 @@ public class DataSeederTests : IDisposable
         // Act - Run Seeder on database that already has legacy 9 categories and 11 templates
         await DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
 
-        // Assert - Categories should now be 15 (6 new categories added)
+        // Assert - Categories should now be 19 (10 new categories added)
         var categories = await _dbContext.Categories.ToListAsync();
-        categories.Should().HaveCount(15);
+        categories.Should().HaveCount(19);
         categories.Select(c => c.Slug).Should().Contain(new[]
         {
-            "restaurant", "fitness", "housewarming", "education", "real-estate", "art-craft"
+            "restaurant", "fitness", "housewarming", "education", "real-estate", "art-craft",
+            "spa-beauty", "podcast-music", "tech-startup", "photography"
         });
 
-        // Assert - Templates should now be 19 (8 new templates added)
+        // Assert - Templates should now be 23 (12 new templates added)
         var templates = await _dbContext.Templates.ToListAsync();
-        templates.Should().HaveCount(19);
+        templates.Should().HaveCount(23);
         templates.Select(t => t.Slug).Should().Contain(new[]
         {
             "laura-bistro-gourmet",
@@ -279,10 +285,14 @@ public class DataSeederTests : IDisposable
             "genai-prompt-masterclass",
             "horizon-luxury-villas",
             "academic-glory-graduation",
-            "terra-soul-art-exhibition"
+            "terra-soul-art-exhibition",
+            "aura-wellness-spa",
+            "sonic-wave-podcast",
+            "nexus-ai-startup",
+            "lumina-photography-studio"
         });
 
-        // Verify ALL 8 newly added templates are mapped to correct category IDs
+        // Verify ALL newly added templates are mapped to correct category IDs
         var expectedCategoryMappings = new Dictionary<string, string>
         {
             { "laura-bistro-gourmet", "restaurant" },
@@ -292,7 +302,11 @@ public class DataSeederTests : IDisposable
             { "genai-prompt-masterclass", "education" },
             { "horizon-luxury-villas", "real-estate" },
             { "academic-glory-graduation", "education" },
-            { "terra-soul-art-exhibition", "art-craft" }
+            { "terra-soul-art-exhibition", "art-craft" },
+            { "aura-wellness-spa", "spa-beauty" },
+            { "sonic-wave-podcast", "podcast-music" },
+            { "nexus-ai-startup", "tech-startup" },
+            { "lumina-photography-studio", "photography" }
         };
 
         foreach (var (templateSlug, categorySlug) in expectedCategoryMappings)
@@ -313,8 +327,8 @@ public class DataSeederTests : IDisposable
         var actSecondRun = () => DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
         await actSecondRun.Should().NotThrowAsync();
 
-        (await _dbContext.Categories.CountAsync()).Should().Be(15);
-        (await _dbContext.Templates.CountAsync()).Should().Be(19);
+        (await _dbContext.Categories.CountAsync()).Should().Be(19);
+        (await _dbContext.Templates.CountAsync()).Should().Be(23);
     }
 
     [Fact]
@@ -323,9 +337,9 @@ public class DataSeederTests : IDisposable
         // Act
         await DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
 
-        // Assert Templates JSON (All 19 templates)
+        // Assert Templates JSON (All 23 templates)
         var templates = await _dbContext.Templates.ToListAsync();
-        templates.Should().HaveCount(19);
+        templates.Should().HaveCount(23);
         foreach (var t in templates)
         {
             var parseAction = () => JsonDocument.Parse(t.DefaultConfigJson);
@@ -523,17 +537,78 @@ public class DataSeederTests : IDisposable
             doc.RootElement.GetProperty("wishes").GetProperty("enabled").GetBoolean().Should().BeTrue();
             doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
         }
+
+        // Assert 9: Aura Wellness & Luxury Spa
+        var spa = await _dbContext.Templates.FirstAsync(t => t.Slug == "aura-wellness-spa");
+        using (var doc = JsonDocument.Parse(spa.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("format").GetString().Should().Be("spa-beauty");
+            doc.RootElement.GetProperty("theme").GetProperty("primaryColor").GetString().Should().Be("#059669");
+            doc.RootElement.TryGetProperty("servicesGrid", out var services).Should().BeTrue();
+            services.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("hierarchicalCards", out var hCards).Should().BeTrue();
+            hCards.GetArrayLength().Should().BeGreaterThan(0);
+            doc.RootElement.TryGetProperty("gallery", out var gallery).Should().BeTrue();
+            gallery.GetArrayLength().Should().BeGreaterThan(0);
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+
+        // Assert 10: Sonic Wave Podcast & Music
+        var podcast = await _dbContext.Templates.FirstAsync(t => t.Slug == "sonic-wave-podcast");
+        using (var doc = JsonDocument.Parse(podcast.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("format").GetString().Should().Be("podcast-music");
+            doc.RootElement.GetProperty("theme").GetProperty("primaryColor").GetString().Should().Be("#8b5cf6");
+            doc.RootElement.TryGetProperty("featureCardsGrid", out var episodes).Should().BeTrue();
+            episodes.GetArrayLength().Should().Be(3);
+            doc.RootElement.TryGetProperty("hierarchicalCards", out var tracklist).Should().BeTrue();
+            tracklist.GetArrayLength().Should().BeGreaterThan(0);
+            doc.RootElement.TryGetProperty("gallery", out var gallery).Should().BeTrue();
+            gallery.GetArrayLength().Should().BeGreaterThan(0);
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+
+        // Assert 11: Nexus AI Cloud & NextGen Startup
+        var startup = await _dbContext.Templates.FirstAsync(t => t.Slug == "nexus-ai-startup");
+        using (var doc = JsonDocument.Parse(startup.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("format").GetString().Should().Be("tech-startup");
+            doc.RootElement.GetProperty("theme").GetProperty("primaryColor").GetString().Should().Be("#00f0ff");
+            doc.RootElement.TryGetProperty("featureCardsGrid", out var features).Should().BeTrue();
+            features.GetArrayLength().Should().Be(3);
+            doc.RootElement.TryGetProperty("hierarchicalCards", out var roadmap).Should().BeTrue();
+            roadmap.GetArrayLength().Should().BeGreaterThan(0);
+            doc.RootElement.TryGetProperty("metrics", out var metrics).Should().BeTrue();
+            metrics.GetArrayLength().Should().Be(3);
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
+
+        // Assert 12: Lumina Fine Art Photography & Studio
+        var photography = await _dbContext.Templates.FirstAsync(t => t.Slug == "lumina-photography-studio");
+        using (var doc = JsonDocument.Parse(photography.DefaultConfigJson))
+        {
+            doc.RootElement.GetProperty("format").GetString().Should().Be("photography");
+            doc.RootElement.GetProperty("theme").GetProperty("primaryColor").GetString().Should().Be("#d4af37");
+            doc.RootElement.TryGetProperty("servicesGrid", out var services).Should().BeTrue();
+            services.GetArrayLength().Should().Be(4);
+            doc.RootElement.TryGetProperty("hierarchicalCards", out var process).Should().BeTrue();
+            process.GetArrayLength().Should().BeGreaterThan(0);
+            doc.RootElement.TryGetProperty("gallery", out var gallery).Should().BeTrue();
+            gallery.GetArrayLength().Should().BeGreaterThan(0);
+            doc.RootElement.GetProperty("rsvp").GetProperty("enabled").GetBoolean().Should().BeTrue();
+        }
     }
 
+
     [Fact]
-    public async Task SeedAsync_Should_EnsureAllTemplateArrayPropertiesAreNeverNull_AcrossAll19Templates()
+    public async Task SeedAsync_Should_EnsureAllTemplateArrayPropertiesAreNeverNull_AcrossAll23Templates()
     {
         // Act
         await DataSeeder.SeedAsync(_dbContext, _passwordHasherMock.Object);
 
-        // Assert - Verify that in all 19 templates, common array fields are never null (preventing frontend .map() crashes)
+        // Assert - Verify that in all 23 templates, common array fields are never null (preventing frontend .map() crashes)
         var templates = await _dbContext.Templates.ToListAsync();
-        templates.Should().HaveCount(19);
+        templates.Should().HaveCount(23);
 
         var arrayPropertyNames = new[]
         {
