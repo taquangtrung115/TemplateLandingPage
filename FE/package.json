@@ -10,7 +10,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.0",
     "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.7.9",
     "lucide-react": "^0.475.0",

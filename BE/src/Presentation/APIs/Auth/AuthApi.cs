@@ -34,16 +34,6 @@ public sealed class AuthApi : IEndpoint
         .Produces<Result<LoginResponse>>(StatusCodes.Status200OK)
         .Produces<Error>(StatusCodes.Status400BadRequest);
 
-        group.MapPost("external-login", async (ExternalLoginCommand command, ISender sender) =>
-        {
-            var result = await sender.Send(command);
-            return HandleResult(result, () => Results.Ok(result));
-        })
-        .WithName("ExternalLogin")
-        .Produces<Result<LoginResponse>>(StatusCodes.Status200OK)
-        .Produces<ValidationResult>(StatusCodes.Status400BadRequest)
-        .Produces<Error>(StatusCodes.Status400BadRequest);
-
         group.MapGet("me", async (ClaimsPrincipal user, ISender sender) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value

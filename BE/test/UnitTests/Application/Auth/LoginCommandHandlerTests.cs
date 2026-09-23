@@ -94,4 +94,41 @@ public class LoginCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Be(AuthErrors.InvalidCredentials);
     }
+
+    [Fact]
+    public async Task Handle_Should_ReturnFailure_WhenUserIsInactive()
+    {
+        // Arrange
+        var user = User.Create("inactive@template.com", "hashed_pwd", "Inactive User", "User");
+        user.UpdateProfile("Inactive User", "User", false);
+
+        _userRepositoryMock.Setup(r => r.GetByEmailAsync("inactive@template.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var command = new LoginCommand("inactive@template.com", "Password123!");
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be(AuthErrors.UserInactive);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnFailure_WhenUserDoesNotExist()
+    {
+        // Arrange
+        _userRepositoryMock.Setup(r => r.GetByEmailAsync("nonexistent@template.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var command = new LoginCommand("nonexistent@template.com", "Password123!");
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be(AuthErrors.InvalidCredentials);
+    }
 }

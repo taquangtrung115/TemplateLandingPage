@@ -44,28 +44,6 @@ public sealed class User : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
         return new User(Guid.NewGuid(), email.Trim().ToLowerInvariant(), passwordHash, fullName.Trim(), role);
     }
 
-    public static User CreateExternal(
-        string email,
-        string fullName,
-        string? avatarUrl = null,
-        string provider = "Google",
-        string role = "User")
-    {
-        if (string.IsNullOrWhiteSpace(email))
-            throw new ArgumentException("Email cannot be empty.", nameof(email));
-        if (string.IsNullOrWhiteSpace(fullName))
-            fullName = email.Split('@')[0];
-
-        var secureDummyHash = $"EXTERNAL_{provider.ToUpperInvariant()}_{Guid.NewGuid():N}";
-
-        var user = new User(Guid.NewGuid(), email.Trim().ToLowerInvariant(), secureDummyHash, fullName.Trim(), role)
-        {
-            AvatarUrl = avatarUrl?.Trim(),
-            Provider = provider.Trim()
-        };
-        return user;
-    }
-
     public void UpdateProfile(string fullName, string role, bool isActive)
     {
         if (string.IsNullOrWhiteSpace(fullName))
@@ -74,26 +52,6 @@ public sealed class User : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
         FullName = fullName.Trim();
         Role = role;
         IsActive = isActive;
-        ModifiedAtUtc = DateTime.UtcNow;
-    }
-
-    public void UpdateExternalProfile(string? fullName, string? avatarUrl, string? provider = null)
-    {
-        if (!string.IsNullOrWhiteSpace(fullName) && (string.IsNullOrWhiteSpace(FullName) || FullName == Email.Split('@')[0]))
-        {
-            FullName = fullName.Trim();
-        }
-
-        if (!string.IsNullOrWhiteSpace(avatarUrl) && string.IsNullOrWhiteSpace(AvatarUrl))
-        {
-            AvatarUrl = avatarUrl.Trim();
-        }
-
-        if (!string.IsNullOrWhiteSpace(provider) && (string.IsNullOrWhiteSpace(Provider) || Provider == "Local"))
-        {
-            Provider = provider.Trim();
-        }
-
         ModifiedAtUtc = DateTime.UtcNow;
     }
 

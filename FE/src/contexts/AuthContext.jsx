@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { authApi } from '../api/authApi';
-import { signInWithGoogle, signInWithFacebook, supabase } from '../lib/supabaseClient';
 
 export const AuthContext = createContext(null);
 
@@ -82,68 +81,11 @@ export const AuthProvider = ({ children }) => {
     return await login(email, password);
   }, [login]);
 
-  const loginWithOAuth = useCallback(async (provider) => {
-    if (provider === 'google') {
-      const { error } = await signInWithGoogle();
-      if (error) throw error;
-    } else if (provider === 'facebook') {
-      const { error } = await signInWithFacebook();
-      if (error) throw error;
-    } else {
-      throw new Error('Unsupported OAuth provider');
-    }
-  }, []);
-
-  const handleOAuthCallback = useCallback(async (session) => {
-    if (!session?.user) {
-      throw new Error('Không tìm thấy thông tin phiên xác thực từ mạng xã hội.');
-    }
-
-    const { user: sbUser, access_token } = session;
-    const provider = sbUser.app_metadata?.provider === 'facebook' ? 'Facebook' : 'Google';
-    const email = sbUser.email;
-    const fullName =
-      sbUser.user_metadata?.full_name ||
-      sbUser.user_metadata?.name ||
-      sbUser.email?.split('@')[0] ||
-      'Người dùng';
-    const avatarUrl =
-      sbUser.user_metadata?.avatar_url ||
-      sbUser.user_metadata?.picture ||
-      null;
-
-    const payload = {
-      provider,
-      email,
-      fullName,
-      avatarUrl,
-      idToken: access_token,
-    };
-
-    const data = await authApi.externalLogin(payload);
-    const authResult = data?.value ?? data;
-
-    if (authResult?.token && authResult?.user) {
-      localStorage.setItem('token', authResult.token);
-      localStorage.setItem('user', JSON.stringify(authResult.user));
-      setToken(authResult.token);
-      setUser(authResult.user);
-      return authResult.user;
-    }
-
-    throw new Error('Phản hồi đăng nhập không hợp lệ từ máy chủ.');
-  }, []);
-
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
-    try {
-      supabase.auth.signOut().catch(() => {});
-    } catch {
-      // Ignore Supabase signout error
-    }
   }, []);
 
   const isAuthenticated = !!token && !!user;
@@ -157,8 +99,6 @@ export const AuthProvider = ({ children }) => {
     isAdmin,
     login,
     register,
-    loginWithOAuth,
-    handleOAuthCallback,
     logout,
   };
 
