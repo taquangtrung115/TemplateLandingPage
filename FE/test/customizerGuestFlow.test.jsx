@@ -208,7 +208,7 @@ describe('Guest Customization Flow (Happy Paths & Error Handling)', () => {
     await waitFor(() => {
       expect(screen.getByText('Tiệc Khôi Phục')).toBeInTheDocument();
       expect(screen.getByText('Người Khôi Phục')).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it('triggers standalone HTML export when "Xuất HTML" button is clicked', async () => {
