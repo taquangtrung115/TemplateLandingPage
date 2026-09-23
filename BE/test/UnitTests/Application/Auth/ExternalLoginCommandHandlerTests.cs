@@ -82,6 +82,32 @@ public class ExternalLoginCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_Should_PreserveAdminRole_WhenExistingAdminLogsInViaOAuth()
+    {
+        // Arrange: Existing Admin user
+        var adminUser = User.Create("admin@domain.com", "admin_hashed_pwd", "System Admin", "Admin");
+        var command = new ExternalLoginCommand("Google", "admin@domain.com", "System Admin", "https://google.com/avatar.png");
+
+        _userRepositoryMock.Setup(r => r.GetByEmailAsync("admin@domain.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(adminUser);
+        _jwtTokenGeneratorMock.Setup(g => g.GenerateToken(adminUser))
+            .Returns("admin_token_jwt");
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert: Role must remain Admin, password hash preserved, JWT issued
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Token.Should().Be("admin_token_jwt");
+        result.Value.User.Role.Should().Be("Admin");
+        adminUser.Role.Should().Be("Admin");
+        adminUser.PasswordHash.Should().Be("admin_hashed_pwd");
+        adminUser.AvatarUrl.Should().Be("https://google.com/avatar.png");
+        _userRepositoryMock.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Handle_Should_ReturnFailure_WhenUserIsInactive()
     {
         // Arrange
