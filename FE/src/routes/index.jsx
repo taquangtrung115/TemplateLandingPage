@@ -8,7 +8,6 @@ import PublicLandingPage from '../pages/PublicLandingPage';
 import MyCustomizationsPage from '../pages/MyCustomizationsPage';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
-import AuthCallbackPage from '../pages/auth/AuthCallbackPage';
 import AdminLayout from '../components/admin/AdminLayout';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminTemplatesPage from '../pages/admin/AdminTemplatesPage';
@@ -30,7 +29,6 @@ export default function AppRoutes() {
       <Route path="/live/:slug" element={<PublicLandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
       {/* Customizer Pages (Public to allow Guest customization) */}
       <Route path="/customize/:templateId" element={<CustomizerPage />} />
