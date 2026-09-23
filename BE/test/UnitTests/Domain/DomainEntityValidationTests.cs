@@ -2,6 +2,7 @@ namespace TemplateLandingPage.UnitTests.Domain;
 
 using FluentAssertions;
 using TemplateLandingPage.Domain.Entities;
+using TemplateLandingPage.Infrastructure.Services;
 using Xunit;
 
 public class DomainEntityValidationTests
@@ -62,6 +63,84 @@ public class DomainEntityValidationTests
         user.Delete();
         user.IsDeleted.Should().BeTrue();
         user.DeletedAtUtc.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void User_CreateExternal_Should_InitializeProperly()
+    {
+        var user = User.CreateExternal("oauth@test.com", "OAuth User", "https://img.com/avatar.jpg", "Google");
+        user.Email.Should().Be("oauth@test.com");
+        user.FullName.Should().Be("OAuth User");
+        user.AvatarUrl.Should().Be("https://img.com/avatar.jpg");
+        user.Provider.Should().Be("Google");
+        user.Role.Should().Be("User");
+        user.IsActive.Should().BeTrue();
+        user.PasswordHash.Should().StartWith("EXTERNAL_GOOGLE_");
+    }
+
+    [Fact]
+    public void User_CreateExternal_Should_FallbackFullName_WhenFullNameIsEmpty()
+    {
+        var user = User.CreateExternal("john.doe@test.com", "", null, "Facebook");
+        user.FullName.Should().Be("john.doe");
+        user.Provider.Should().Be("Facebook");
+    }
+
+    [Fact]
+    public void User_UpdateExternalProfile_Should_UpdateMissingFields()
+    {
+        var user = User.Create("test@domain.com", "hash", "test");
+        user.UpdateExternalProfile("New Full Name", "https://new.avatar/1.jpg", "Google");
+
+        user.FullName.Should().Be("New Full Name");
+        user.AvatarUrl.Should().Be("https://new.avatar/1.jpg");
+        user.Provider.Should().Be("Google");
+        user.ModifiedAtUtc.Should().NotBeNull();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void User_CreateExternal_Should_ThrowArgumentException_WhenEmailIsInvalid(string? email)
+    {
+        var act = () => User.CreateExternal(email!, "OAuth User", null, "Google");
+        act.Should().Throw<ArgumentException>().WithParameterName("email");
+    }
+
+    [Fact]
+    public void User_CreateExternal_DummyHash_Should_NeverVerifyWithPasswordHasher()
+    {
+        // Arrange
+        var hasher = new PasswordHasher();
+        var googleUser = User.CreateExternal("oauth.google@test.com", "Google User", null, "Google");
+        var fbUser = User.CreateExternal("oauth.facebook@test.com", "FB User", null, "Facebook");
+
+        // Act & Assert: Empty password
+        hasher.VerifyPassword("", googleUser.PasswordHash).Should().BeFalse();
+        hasher.VerifyPassword("", fbUser.PasswordHash).Should().BeFalse();
+
+        // Act & Assert: Arbitrary password attempts
+        hasher.VerifyPassword("Password@123", googleUser.PasswordHash).Should().BeFalse();
+        hasher.VerifyPassword("Admin123!", fbUser.PasswordHash).Should().BeFalse();
+
+        // Act & Assert: Trying the dummy hash string itself
+        hasher.VerifyPassword(googleUser.PasswordHash, googleUser.PasswordHash).Should().BeFalse();
+        hasher.VerifyPassword(fbUser.PasswordHash, fbUser.PasswordHash).Should().BeFalse();
+    }
+
+    [Fact]
+    public void User_UpdateExternalProfile_Should_NotOverwriteExistingAvatar_WhenAvatarAlreadySet()
+    {
+        // Arrange
+        var user = User.Create("existing@domain.com", "hash", "Existing User");
+        user.UpdateExternalProfile("Existing User", "https://initial.avatar/1.jpg", "Local");
+
+        // Act: External login provides a different avatar URL
+        user.UpdateExternalProfile("New Name", "https://new.social.avatar/2.jpg", "Facebook");
+
+        // Assert: Existing avatar must be preserved
+        user.AvatarUrl.Should().Be("https://initial.avatar/1.jpg");
     }
 
     // ==========================================

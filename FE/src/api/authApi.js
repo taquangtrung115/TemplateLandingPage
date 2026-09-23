@@ -15,6 +15,11 @@ export const authApi = {
     const response = await axiosInstance.get('/auth/me');
     return response.data?.value ?? response.data;
   },
+
+  externalLogin: async (payload) => {
+    const response = await axiosInstance.post('/auth/external-login', payload);
+    return response.data?.value ?? response.data;
+  },
 };
 
 export default authApi;

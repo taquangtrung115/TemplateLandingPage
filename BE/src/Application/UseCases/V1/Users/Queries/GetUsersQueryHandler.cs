@@ -24,6 +24,7 @@ public sealed class GetUsersQueryHandler : IQueryHandler<GetUsersQuery, List<Use
             u.FullName,
             u.Role,
             u.IsActive,
+            u.AvatarUrl,
             u.CreatedAtUtc)).ToList();
 
         return Result.Success(response);

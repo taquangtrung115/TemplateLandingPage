@@ -102,7 +102,7 @@ public class ValidationPipelineBehaviorTests
         var behavior = new ValidationPipelineBehavior<LoginCommand, Result<LoginResponse>>(validators);
         var command = new LoginCommand("valid@example.com", "Password123!");
 
-        var userResponse = new UserResponse(Guid.NewGuid(), "valid@example.com", "Valid User", "User", true, DateTime.UtcNow);
+        var userResponse = new UserResponse(Guid.NewGuid(), "valid@example.com", "Valid User", "User", true, null, DateTime.UtcNow);
         var expectedResponse = new LoginResponse("test-token", userResponse);
         var nextCalled = false;
         RequestHandlerDelegate<Result<LoginResponse>> next = () =>
@@ -134,7 +134,7 @@ public class ValidationPipelineBehaviorTests
         RequestHandlerDelegate<Result<LoginResponse>> next = () =>
         {
             nextCalled = true;
-            var user = new UserResponse(Guid.NewGuid(), "dummy@example.com", "Dummy", "User", true, DateTime.UtcNow);
+            var user = new UserResponse(Guid.NewGuid(), "dummy@example.com", "Dummy", "User", true, null, DateTime.UtcNow);
             return Task.FromResult(Result.Success(new LoginResponse("token", user)));
         };
 

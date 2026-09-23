@@ -1,137 +1,110 @@
-# BÁO CÁO THAY ĐỔI MÃ NGUỒN (CHẶNG 2 - CODER)
-
-**Dự án**: Nâng Cấp Toàn Diện Nền Tảng Template Landing Page  
-**Thời gian hoàn thành**: 2026-09-22  
-**Trạng thái**: Hoàn tất 100% theo đúng bản kế hoạch tại `PromtAI/.gemini/results/plan.md`.  
-**Kết quả kiểm thử tự động**:
-- **Backend .NET 10**: 379/379 tests pass (7 Architecture Tests + 372 Unit Tests, 0 Failed, 0 Skipped - PASS 100%).
-- **Frontend React 19 + Vite**: `npm run build` hoàn thành thành công 100% không lỗi biên dịch.
+# BÁO CÁO TRIỂN KHAI: XÁC THỰC GOOGLE & FACEBOOK OAUTH VỚI SUPABASE, .NET 10 CLEAN ARCHITECTURE VÀ REACT 19
 
 ---
 
-## 1. DANH SÁCH FILE THAY ĐỔI / TẠO MỚI
+## 1. TỔNG QUAN KẾT QUẢ TRIỂN KHAI
 
-### A. Backend (.NET 10 Clean Architecture)
-| STT | Đường dẫn File | Loại | Mục đích sửa đổi |
-|:---:|:---|:---:|:---|
-| 1 | `BE/src/Domain/Entities/Template.cs` | Sửa | Thêm các thuộc tính `IsCommunity`, `AuthorName`, `CreatedByUserId` và phương thức factory `CreateCommunity(...)`. |
-| 2 | `BE/src/Persistence/Configurations/TemplateConfiguration.cs` | Sửa | Cấu hình Fluent API EF Core: `IsCommunity` (default false, có index), `AuthorName` (max 150), `CreatedByUserId`. |
-| 3 | `BE/src/Domain/Repositories/ITemplateRepository.cs` | Sửa | Cập nhật chữ ký hàm `GetListAsync` thêm tham số `bool? isCommunity = null`. |
-| 4 | `BE/src/Persistence/Repositories/TemplateRepository.cs` | Sửa | Thực thi bộ lọc `isCommunity` trong câu truy vấn `GetListAsync`. |
-| 5 | `BE/src/Contract/Services/V1/Templates/Command.cs` | Sửa | Bổ sung record `CreateCommunityTemplateCommand` triển khai `ICommand<Guid>`. |
-| 6 | `BE/src/Contract/Services/V1/Templates/Query.cs` | Sửa | Bổ sung `bool? IsCommunity = null` vào `GetTemplatesQuery`. |
-| 7 | `BE/src/Contract/Services/V1/Templates/Response.cs` | Sửa | Bổ sung `bool IsCommunity, string? AuthorName` vào record `TemplateResponse`. |
-| 8 | `BE/src/Application/UseCases/V1/Templates/Commands/CreateCommunityTemplateCommandHandler.cs` | Tạo mới | Handler MediatR xử lý tạo template cộng đồng, tự động xử lý xung đột slug (append 5 ký tự ngẫu nhiên khi slug đã tồn tại). |
-| 9 | `BE/src/Application/UseCases/V1/Templates/Validators/CreateCommunityTemplateCommandValidator.cs` | Sửa | Bổ sung kiểm tra tính hợp lệ JSON cho `DefaultConfigJson` bằng `Must(BeValidJson)` dùng `JsonDocument.Parse` và giới hạn `AuthorName` tối đa 150 ký tự (`MaximumLength(150)`). |
-| 10 | `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplatesQueryHandler.cs` | Sửa | Truyền `query.IsCommunity` vào repository và map `IsCommunity`, `AuthorName` vào `TemplateResponse`. |
-| 11 | `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplateByIdQueryHandler.cs` | Sửa | Map `IsCommunity` và `AuthorName` vào `TemplateResponse`. |
-| 12 | `BE/src/Application/UseCases/V1/Templates/Queries/GetTemplateBySlugQueryHandler.cs` | Sửa | Map `IsCommunity` và `AuthorName` vào `TemplateResponse`. |
-| 13 | `BE/src/Presentation/APIs/Templates/TemplateApi.cs` | Sửa | Thêm endpoint public `POST /api/v1/templates/community` (`AllowAnonymous`) và query param `isCommunity` trong `GET /api/v1/templates`. |
-| 14 | `BE/src/Persistence/Data/DataSeeder.cs` | Sửa | Bổ sung 4 danh mục mới (`spa-beauty`, `podcast-music`, `tech-startup`, `photography`) và 4 template tương ứng với config JSON chi tiết. |
-| 15 | `BE/test/UnitTests/Application/Templates/GetTemplatesQueryHandlerTests.cs` | Sửa | Cập nhật mock setup với 7 tham số và bổ sung test case lọc `isCommunity`. |
-| 16 | `BE/test/UnitTests/Application/Templates/CreateCommunityTemplateCommandHandlerTests.cs` | Tạo mới | Unit tests cho `CreateCommunityTemplateCommandHandler` (tạo thành công, xử lý trùng slug) và validator. |
-| 17 | `BE/test/UnitTests/Persistence/DataSeederTests.cs` | Sửa | Cập nhật số lượng danh mục (19) và templates (23), kiểm tra map chính xác 4 template mới. |
+Hệ thống xác thực Google & Facebook OAuth đã được triển khai hoàn chỉnh theo mô hình **Hybrid OAuth Architecture**:
+- **Frontend (React 19 + Supabase Client SDK)**: Sử dụng chuẩn OAuth 2.1 kết hợp PKCE để kết nối tới Google và Meta (Facebook). Không yêu cầu client secret tại Frontend.
+- **Backend (.NET 10 Web API - Clean Architecture)**: Là **Source of Truth** duy nhất. Tiếp nhận session payload qua endpoint `POST /api/v1/auth/external-login`, thực hiện cơ chế Account Linking (liên kết tài khoản đã có mà không ghi đè mật khẩu), Just-In-Time Provisioning (tự động tạo tài khoản với Role="User" và dummy hash bảo mật), kiểm tra trạng thái khóa tài khoản (`IsActive`), và cấp JWT Bearer Token chuẩn của hệ thống.
+- **Kiểm thử tự động**:
+  - Backend: **400/400 tests PASS (100%)** bao gồm 393 UnitTests và 7 ArchitectureTests.
+  - Frontend: **149/149 tests PASS (100%)** trên 14 test suites, `npm run build` thành công sạch sẽ.
 
 ---
 
-### B. Frontend (React 19 + Tailwind CSS + Vite)
-| STT | Đường dẫn File | Loại | Mục đích sửa đổi |
-|:---:|:---|:---:|:---|
-| 18 | `FE/vercel.json` | Tạo mới | Cấu hình rewrites `/(.*)` về `/index.html` khắc phục triệt để lỗi F5 404 trên Vercel. |
-| 19 | `FE/src/components/common/DeviceSimulator.jsx` | Tạo mới | Khung mô phỏng thiết bị thực tế chuyển đổi iOS vs Android (iPhone 15 Pro Max, 15/14, SE, iPad, S24 Ultra, Pixel 8 Pro, Z Fold, Xiaomi 14) kèm bezel, dynamic island, punch hole, status bar và auto-fit scale observer. |
-| 20 | `FE/src/utils/colorPalettes.js` | Tạo mới | Danh mục 10 Color Palettes chuẩn chuyên nghiệp (`Luxury Gold`, `Cyberpunk`, `Romantic Rose`, `Ocean Breeze`, `Emerald Garden`, `Sunset Glow`, `Minimalist Mono`, `Pastel Dream`, `Vintage Sepia`, `Midnight Velvet`) kèm hàm áp dụng tức thì `applyPaletteToConfig`. |
-| 21 | `FE/tailwind.config.js` | Sửa | Bổ sung animation keyframes: `shimmer`, `wiggle`, `heartbeat`, `float-slow`, `fade-up`, `zoom-in`. |
-| 22 | `FE/src/utils/animationConstants.js` | Sửa | Phân nhóm hiệu ứng Entrance, Continuous, Particles (`petals`, `confetti`, `sparkles`, `snow`, `bubbles`, `fireflies`, `cyber-grid`). |
-| 23 | `FE/src/components/templates/MotionParticles.jsx` | Sửa | Nâng cấp canvas particle engine hỗ trợ trọn vẹn 7 hiệu ứng hạt với physics và blend mode phù hợp. |
-| 24 | `FE/src/components/customizer/AnimationSelector.jsx` | Sửa | Bộ chọn animation phân nhóm trực quan với optgroup và icon động. |
-| 25 | `FE/src/components/templates/sections/HierarchicalCardsSection.jsx` | Tạo mới | Khối thẻ lồng nhau động (Card -> Header Card -> Sub Header -> Content -> Sub Cards) với 5 preset style (`glass`, `solid`, `gradient`, `minimal`, `luxury`). |
-| 26 | `FE/src/components/templates/LandingPageRenderer.jsx` | Sửa | Tích hợp render an toàn `HierarchicalCardsSection` khi `config.hierarchicalCards` có dữ liệu. |
-| 27 | `FE/src/utils/defaultTemplates.js` | Sửa | Cung cấp cấu hình mặc định phong phú cho 4 danh mục mới (`DEFAULT_SPA_BEAUTY_CONFIG`, `DEFAULT_PODCAST_MUSIC_CONFIG`, `DEFAULT_TECH_STARTUP_CONFIG`, `DEFAULT_PHOTOGRAPHY_CONFIG`). |
-| 28 | `FE/src/components/customizer/CustomizerSidebar.jsx` | Sửa | Thêm Tab "Khối Thẻ Động (Cards)", bộ chọn 1-click Color Palettes trong Tab Theme, và cập nhật 7 loại hạt Particles. |
-| 29 | `FE/src/components/customizer/CustomizerToolbar.jsx` | Sửa | Tối ưu responsive trên màn hình điện thoại, thêm nút "Chia sẻ cộng đồng" mở modal đóng góp mẫu. |
-| 30 | `FE/src/pages/CustomizerPage.jsx` | Sửa | Tích hợp `DeviceSimulator` cho mobile viewport, responsive tabs ("Chỉnh Sửa" vs "Xem Trước") kèm bottom bar trên di động, modal đóng góp template cộng đồng. |
-| 31 | `FE/src/components/templates/QuickPreviewModal.jsx` | Sửa | Tích hợp `DeviceSimulator` cho phép chọn OS và thiết bị thực tế khi xem trước ở Home và Preview. |
-| 32 | `FE/src/components/templates/TemplateCard.jsx` | Sửa | Hiển thị huy hiệu "Cộng đồng" (`Globe`) và tác giả đóng góp (`User`) trên card khi `template.isCommunity` là true. |
-| 33 | `FE/src/components/common/QrCodeModal.jsx` | Tạo mới | Modal hiển thị mã QR Code chuẩn SVG/PNG không phụ thuộc thư viện nặng, nút sao chép link và nút tải ảnh QR PNG về máy. |
-| 34 | `FE/src/pages/PublicLandingPage.jsx` | Tạo mới | Trang công khai độc lập cho `/p/:slug` và `/live/:slug` với sticky footer bản quyền / watermark cố định (`?ref=watermark`) và thanh công cụ nổi (Sao chép link, Mã QR, Chia sẻ). |
-| 35 | `FE/src/routes/index.jsx` | Sửa | Đăng ký route `/p/:slug` và `/live/:slug` trỏ về `PublicLandingPage`. |
-| 36 | `FE/src/api/templateApi.js` | Sửa | Thêm API method `publishCommunityTemplate(templateData)`. |
-| 37 | `FE/src/pages/TemplatesPage.jsx` | Sửa | Thêm bộ Tabs nguồn: "Tất Cả Mẫu", "Mẫu Hệ Thống (Official)", "Cộng Đồng Đóng Góp (Community)" kèm bộ đếm số lượng thực tế. |
+## 2. DANH SÁCH FILE ĐÃ THAY ĐỔI VÀ TẠO MỚI
+
+### 2.1. Backend (.NET 10 Clean Architecture)
+
+| STT | Đường dẫn file | Hành động | Mục đích chi tiết |
+|---|---|---|---|
+| 1 | [`BE/src/Domain/Entities/User.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Domain/Entities/User.cs) | **Sửa** | Thêm thuộc tính `AvatarUrl`, `Provider` (mặc định "Local"); bổ sung static factory `CreateExternal(...)` sinh dummy hash bảo mật dạng `EXTERNAL_{provider}_{guid}` (chống bypass mật khẩu rỗng); bổ sung phương thức `UpdateExternalProfile(...)` để liên kết thông tin. |
+| 2 | [`BE/src/Contract/Services/V1/Auth/Command.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Contract/Services/V1/Auth/Command.cs) | **Sửa** | Khai báo record `ExternalLoginCommand(Provider, Email, FullName, AvatarUrl, IdToken) : ICommand<LoginResponse>`. |
+| 3 | [`BE/src/Contract/Services/V1/Auth/Response.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Contract/Services/V1/Auth/Response.cs) | **Sửa** | Bổ sung `string? AvatarUrl` vào record `UserResponse`; bổ sung `AuthErrors.InvalidProvider` và `AuthErrors.ExternalAuthFailed`. |
+| 4 | [`BE/src/Application/UseCases/V1/Auth/Commands/ExternalLoginCommandHandler.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Application/UseCases/V1/Auth/Commands/ExternalLoginCommandHandler.cs) | **Tạo mới** | Handler xử lý nghiệp vụ OAuth: Kiểm tra `IsActive`, liên kết tài khoản nếu email đã có sẵn (Account Linking), tạo mới tài khoản nếu chưa có (JIT Provisioning), cập nhật `AvatarUrl`, cấp phát JWT token hệ thống. |
+| 5 | [`BE/src/Application/UseCases/V1/Auth/Validators/ExternalLoginCommandValidator.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Application/UseCases/V1/Auth/Validators/ExternalLoginCommandValidator.cs) | **Tạo mới** | Validator kiểm tra: Provider chỉ chấp nhận "Google" hoặc "Facebook" (case-insensitive), Email hợp lệ, FullName không để trống. |
+| 6 | [`BE/src/Application/UseCases/V1/Auth/Commands/LoginCommandHandler.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Application/UseCases/V1/Auth/Commands/LoginCommandHandler.cs) | **Sửa** | Cập nhật khởi tạo `UserResponse` truyền thêm `user.AvatarUrl`. |
+| 7 | [`BE/src/Application/UseCases/V1/Auth/Queries/GetCurrentUserQueryHandler.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Application/UseCases/V1/Auth/Queries/GetCurrentUserQueryHandler.cs) | **Sửa** | Cập nhật khởi tạo `UserResponse` truyền thêm `user.AvatarUrl`. |
+| 8 | [`BE/src/Application/UseCases/V1/Users/Queries/GetUsersQueryHandler.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Application/UseCases/V1/Users/Queries/GetUsersQueryHandler.cs) | **Sửa** | Cập nhật khởi tạo `UserResponse` truyền thêm `u.AvatarUrl`. |
+| 9 | [`BE/src/Application/UseCases/V1/Users/Queries/GetUserByIdQueryHandler.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Application/UseCases/V1/Users/Queries/GetUserByIdQueryHandler.cs) | **Sửa** | Cập nhật khởi tạo `UserResponse` truyền thêm `user.AvatarUrl`. |
+| 10 | [`BE/src/Presentation/APIs/Auth/AuthApi.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Presentation/APIs/Auth/AuthApi.cs) | **Sửa** | Đăng ký Minimal API endpoint `POST /api/v1/auth/external-login`. |
+| 11 | [`BE/src/Persistence/Configurations/UserConfiguration.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Persistence/Configurations/UserConfiguration.cs) | **Sửa** | Cấu hình EF Core: `AvatarUrl` (varchar 500, nullable), `Provider` (varchar 50, nullable). |
+| 12 | [`BE/src/Persistence/Migrations/20260923143000_AddAvatarAndProviderToUsers.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Persistence/Migrations/20260923143000_AddAvatarAndProviderToUsers.cs) | **Tạo mới** | EF Core Migration thêm cột `AvatarUrl` và `Provider` vào bảng `Users`. |
+| 13 | [`BE/src/Persistence/Migrations/20260923143000_AddAvatarAndProviderToUsers.Designer.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Persistence/Migrations/20260923143000_AddAvatarAndProviderToUsers.Designer.cs) | **Tạo mới** | File Designer cho migration `AddAvatarAndProviderToUsers`. |
+| 14 | [`BE/src/Persistence/Migrations/ApplicationDbContextModelSnapshot.cs`](file:///e:/Code/TemplateLandingPage/BE/src/Persistence/Migrations/ApplicationDbContextModelSnapshot.cs) | **Sửa** | Cập nhật ModelSnapshot chứa `AvatarUrl` và `Provider`. |
+| 15 | [`BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs) | **Tạo mới** | Bộ unit test kiểm thử: Tạo user JIT mới, Liên kết tài khoản cũ bảo toàn mật khẩu, Chặn user bị vô hiệu hóa (`IsActive = false`). |
+| 16 | [`BE/test/UnitTests/Application/Auth/ExternalLoginCommandValidatorTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandValidatorTests.cs) | **Tạo mới** | Bộ unit test kiểm thử validation: Provider hợp lệ/không hợp lệ, định dạng email, tên rỗng. |
+| 17 | [`BE/test/UnitTests/Domain/DomainEntityValidationTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Domain/DomainEntityValidationTests.cs) | **Sửa** | Bổ sung unit test cho domain logic: `User.CreateExternal` và `User.UpdateExternalProfile`. |
+| 18 | [`BE/test/UnitTests/Application/Behaviors/ValidationPipelineBehaviorTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Behaviors/ValidationPipelineBehaviorTests.cs) | **Sửa** | Cập nhật khởi tạo `UserResponse` trong mock test dữ liệu. |
 
 ---
 
-## 2. CHI TIẾT MỖI CHỖ SỬA ĐỂ LÀM GÌ
+### 2.2. Frontend (React 19 + Vite)
 
-1. **Khắc phục lỗi F5 404 trên Vercel**: Tạo `FE/vercel.json` định tuyến toàn bộ request `/(.*)` về `/index.html` của SPA React.
-2. **Trình mô phỏng thiết bị thực tế iOS vs Android (`DeviceSimulator.jsx`)**: Giúp khách hàng xem trước giao diện trang web trên các dòng máy iPhone (Dynamic Island, Bezel) và Android (Samsung, Pixel, Fold, Xiaomi - Punch Hole). Tự động co giãn scale bằng ResizeObserver để tránh tràn màn hình laptop/máy tính bàn.
-3. **Bộ màu 1-Click Color Palettes (`colorPalettes.js`)**: Cho phép người dùng chuyển đổi toàn bộ màu chủ đạo, phụ, nền, chữ của trang chỉ với 1 cú click.
-4. **Hệ thống hiệu ứng chuyển động & Hạt rơi (`animationConstants.js`, `MotionParticles.jsx`)**: Mở rộng hiệu ứng từ 2 loại lên 7 loại hạt (petals, confetti, sparkles, snow, bubbles, fireflies, cyber-grid) chạy trên canvas mượt mà 60fps.
-5. **Cấu trúc Khối Thẻ Động Lồng Nhau (`HierarchicalCardsSection.jsx`)**: Cho phép tạo nội dung phân tầng linh hoạt (Card -> Header -> Sub Header -> Content -> Sub Cards) với các preset kính mờ (glassmorphism), viền gradient, tối giản, sang trọng.
-6. **Mở rộng 4 Chủ đề & Mẫu Thiết kế mới (`DataSeeder.cs`, `defaultTemplates.js`)**: Bổ sung đầy đủ dữ liệu mẫu cho Spa & Làm Đẹp, Podcast & Âm Nhạc, Công Nghệ & Startup, Nhiếp Ảnh Studio.
-7. **Chia sẻ và Khám phá Mẫu Cộng Đồng (`TemplateApi.cs`, `CustomizerToolbar.jsx`, `CustomizerPage.jsx`, `TemplatesPage.jsx`)**: Cho phép bất kỳ người dùng nào sau khi tùy biến trang thiệp/landing page có thể chia sẻ lên kho mẫu cộng đồng. Hệ thống tự động phát hiện và xử lý hậu tố trùng slug, hiển thị badge tác giả và tab lọc riêng biệt.
-8. **Trang hiển thị công khai có Watermark & QR Code (`PublicLandingPage.jsx`, `QrCodeModal.jsx`, `routes/index.jsx`)**: Hỗ trợ chia sẻ đường dẫn ngắn gọn `/p/:slug` hoặc `/live/:slug` với footer bản quyền cố định kèm link dẫn về trang chủ và modal quét mã QR tải về máy.
-9. **Bổ sung Validator cho Mẫu Cộng Đồng (`CreateCommunityTemplateCommandValidator.cs`)**: Thêm kiểm tra định dạng JSON hợp lệ cho `DefaultConfigJson` bằng `Must(BeValidJson)` (sử dụng `JsonDocument.Parse`) và ràng buộc độ dài tối đa 150 ký tự cho `AuthorName` khi có giá trị (`MaximumLength(150)`). Đảm bảo 100% (372/372) Unit Tests vượt qua thành công.
-
----
-
-## 3. VỊ TRÍ TRỌNG YẾU MÀ TESTER NÊN SOI KỸ
-
-1. **Kiểm tra va chạm Slug khi đăng tải Mẫu Cộng Đồng**:
-   - Thao tác: Vào trang Customizer, nhấn "Chia sẻ cộng đồng", nhập tên và slug đã tồn tại (ví dụ: `cinelove-classic`).
-   - Kết quả kỳ vọng: Backend tự động sinh slug mới kèm hậu tố ngẫu nhiên (ví dụ: `cinelove-classic-a1b2c`) và lưu thành công, không văng lỗi 500 hay Duplicate Key.
-2. **Kiểm tra Bộ Lọc Nguồn trên `TemplatesPage`**:
-   - Thao tác: Chuyển đổi giữa 3 tabs: "Tất Cả Mẫu", "Mẫu Hệ Thống", "Cộng Đồng Đóng Góp".
-   - Kết quả kỳ vọng: Tab "Mẫu Hệ Thống" chỉ hiển thị các mẫu có `isCommunity = false`; Tab "Cộng Đồng Đóng Góp" chỉ hiển thị các mẫu cộng đồng có gắn huy hiệu "Cộng đồng" và tên tác giả.
-3. **Kiểm tra Device Simulator và Auto-fit Scale**:
-   - Thao tác: Trên trang Customizer (chế độ Mobile) hoặc mở QuickPreviewModal, bấm đổi giữa iPhone 15 Pro Max, iPhone SE, Samsung S24 Ultra, Pixel 8 Pro, Galaxy Fold.
-   - Kết quả kỳ vọng: Màn hình simulator tự động căn chỉnh tỷ lệ (scale transform) vừa vặn khung hình xem trước, hiển thị đúng Dynamic Island / Punch Hole / Status Bar tương ứng với OS và máy đã chọn.
-4. **Kiểm tra Responsive trên Mobile (< 768px) tại Customizer**:
-   - Thao tác: Giả lập màn hình điện thoại (F12 Responsive 375px) vào trang `/customize/:templateId`.
-   - Kết quả kỳ vọng: Màn hình không bị vỡ giao diện; hiển thị thanh bottom bar cố định với 2 nút "Chỉnh Sửa" và "Xem Trước", chuyển đổi qua lại mượt mà giữa Sidebar và Canvas.
-5. **Kiểm tra Khối Thẻ Động (Hierarchical Cards)**:
-   - Thao tác: Trong Customizer, mở Tab "Khối Thẻ Động", thêm thẻ chính, thêm thẻ con (Sub-cards), đổi preset style (`glass`, `luxury`, `gradient`).
-   - Kết quả kỳ vọng: Canvas hiển thị ngay lập tức khối thẻ lồng nhau theo đúng style preset và dữ liệu đã nhập; xuất bản trang `/p/:slug` hiển thị đầy đủ và không bị lỗi JavaScript `undefined`.
-6. **Kiểm tra Mã QR Code và Tải ảnh (`QrCodeModal`)**:
-   - Thao tác: Trên trang `/p/:slug`, bấm nút QR Code trên thanh công cụ nổi, bấm "Sao chép" và bấm "Tải ảnh QR".
-   - Kết quả kỳ vọng: Ảnh QR hiển thị rõ ràng, tải về file PNG thành công và camera điện thoại quét dẫn đúng URL trang.
-7. **Kiểm tra Validation khi tạo Mẫu Cộng Đồng (`CreateCommunityTemplateCommandValidator`)**:
-   - Thao tác: Gửi request tạo template cộng đồng với `defaultConfigJson` sai cú pháp JSON hoặc `authorName` vượt quá 150 ký tự.
-   - Kết quả kỳ vọng: Request bị chặn bởi FluentValidation với thông báo lỗi validation rõ ràng tương ứng cho thuộc tính đó, không bị lỗi 500.
+| STT | Đường dẫn file | Hành động | Mục đích chi tiết |
+|---|---|---|---|
+| 1 | [`FE/package.json`](file:///e:/Code/TemplateLandingPage/FE/package.json) | **Sửa** | Cài đặt thư viện `@supabase/supabase-js`. |
+| 2 | [`FE/.env`](file:///e:/Code/TemplateLandingPage/FE/.env) | **Tạo mới** | Cấu hình `VITE_SUPABASE_URL` và `VITE_SUPABASE_ANON_KEY` phục vụ môi trường chạy ứng dụng. |
+| 3 | [`FE/.env.example`](file:///e:/Code/TemplateLandingPage/FE/.env.example) | **Tạo mới** | Mẫu biến môi trường hướng dẫn cấu hình API Base URL và Supabase Auth. |
+| 4 | [`FE/src/lib/supabaseClient.js`](file:///e:/Code/TemplateLandingPage/FE/src/lib/supabaseClient.js) | **Tạo mới** | Khởi tạo Supabase client singleton với chế độ PKCE (`flowType: 'pkce'`), cung cấp hàm `signInWithGoogle()`, `signInWithFacebook()`, `getSupabaseSession()`. |
+| 5 | [`FE/src/api/authApi.js`](file:///e:/Code/TemplateLandingPage/FE/src/api/authApi.js) | **Sửa** | Thêm hàm `externalLogin(payload)` gọi tới `/auth/external-login`. |
+| 6 | [`FE/src/contexts/AuthContext.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/contexts/AuthContext.jsx) | **Sửa** | Thêm `loginWithOAuth(provider)`, `handleOAuthCallback(session)` (bóc tách metadata từ Google/Facebook và gửi về backend để cấp JWT token); cập nhật `logout()` dọn dẹp phiên đồng bộ và đăng xuất khỏi Supabase. |
+| 7 | [`FE/src/components/auth/SocialAuthButtons.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/components/auth/SocialAuthButtons.jsx) | **Tạo mới** | Component nút đăng nhập Google và Facebook kèm icon SVG thương hiệu chính thức, divider phân tách tinh tế và loading indicator. |
+| 8 | [`FE/src/pages/auth/LoginPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/auth/LoginPage.jsx) | **Sửa** | Tích hợp `SocialAuthButtons mode="login"` lên trên form đăng nhập truyền thống. |
+| 9 | [`FE/src/pages/auth/RegisterPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/auth/RegisterPage.jsx) | **Sửa** | Tích hợp `SocialAuthButtons mode="register"` lên trên form đăng ký truyền thống. |
+| 10 | [`FE/src/pages/auth/AuthCallbackPage.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/pages/auth/AuthCallbackPage.jsx) | **Tạo mới** | Trang tiếp nhận redirect sau khi đăng nhập Google/Facebook: bắt lỗi từ URL params (`error`, `error_description`), lấy session từ Supabase, gọi `handleOAuthCallback` và tự động chuyển hướng theo Role (`/admin` hoặc `/templates`). |
+| 11 | [`FE/src/routes/index.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/routes/index.jsx) | **Sửa** | Khai báo route `/auth/callback` trỏ tới `AuthCallbackPage`. |
+| 12 | [`FE/src/components/Navbar.jsx`](file:///e:/Code/TemplateLandingPage/FE/src/components/Navbar.jsx) | **Sửa** | Hiển thị avatar ảnh thật (`user.avatarUrl`) trong dropdown profile tài khoản khi người dùng có ảnh từ Google/Facebook. |
+| 13 | [`FE/test/oauthFlow.test.jsx`](file:///e:/Code/TemplateLandingPage/FE/test/oauthFlow.test.jsx) | **Tạo mới** | Bộ unit test kiểm thử giao diện `SocialAuthButtons`, luồng redirect và xử lý lỗi của `AuthCallbackPage`. |
 
 ---
 
-## 4. HOTFIX — GỠ CHẶN PHÁN QUYẾT REVIEWER (2026-09-22)
+## 3. VỊ TRÍ TRỌNG YẾU TESTER NÊN SOI KỸ (CRITICAL TEST SCENARIOS)
 
-> [!IMPORTANT]
-> Mục này bổ sung sau khi Chặng 4 (Reviewer) ban hành phán quyết **CHẶN (BLOCK)** do phát hiện 2 lỗi nghiêm trọng và 1 thiếu sót hạ tầng. Xem chi tiết tại `PromtAI/.gemini/results/evaluate.md`.
+Tester và QA cần chú trọng kiểm tra các điểm giao thoa và trường hợp biên (edge cases) sau:
 
-### 4.1 Danh sách file đã sửa / tạo mới
+1. **Account Linking (Liên kết tài khoản theo Email)**:
+   - *Kịch bản*: Tạo trước 1 tài khoản thường bằng Email `tester@gmail.com` và Password `Password@123`.
+   - *Kiểm tra*: Nhấn "Tiếp tục với Google" bằng chính email `tester@gmail.com`.
+   - *Kỳ vọng*: Backend không tạo bản ghi mới mà liên kết vào user hiện tại, cập nhật `AvatarUrl` nếu trước đó chưa có; sau đó đăng xuất và dùng lại mật khẩu `Password@123` để đăng nhập thường vẫn thành công (mật khẩu không bị mất hay ghi đè).
+2. **Khóa tài khoản (Account Inactive)**:
+   - *Kịch bản*: Tài khoản có email `banned@gmail.com` bị Admin set `IsActive = false` trong CSDL.
+   - *Kiểm tra*: Người dùng thực hiện đăng nhập bằng Google/Facebook với email `banned@gmail.com`.
+   - *Kỳ vọng*: Backend chặn ngay lập tức và trả về mã lỗi `Auth.UserInactive`. Frontend trên trang `/auth/callback` phải hiển thị thông báo lỗi rõ ràng *"Tài khoản của bạn đã bị khóa."* và có nút quay về trang Đăng nhập.
+3. **Phân quyền người dùng mới (Role Assignment)**:
+   - *Kịch bản*: Người dùng mới tinh lần đầu đăng nhập bằng Google hoặc Facebook.
+   - *Kỳ vọng*: Bản ghi trong bảng `Users` có `Role = "User"`, `Provider = "Google"` hoặc `"Facebook"`. Không bao giờ được phép tự động gán quyền `"Admin"`.
+4. **Bảo vệ PasswordHash của tài khoản OAuth**:
+   - *Kịch bản*: Kẻ tấn công cố tình gọi `POST /api/v1/auth/login` với email của tài khoản OAuth và mật khẩu rỗng `""` hoặc mật khẩu ngẫu nhiên.
+   - *Kỳ vọng*: Hệ thống luôn trả về `400 Bad Request` hoặc `Auth.InvalidCredentials` vì `PasswordHash` lưu chuỗi dummy `EXTERNAL_GOOGLE_{guid}` không thể verify thành công qua thuật toán PBKDF2.
+5. **Xử lý người dùng bấm Hủy (OAuth Cancellation)**:
+   - *Kịch bản*: Trên màn hình chọn tài khoản Google/Facebook, người dùng bấm nút Hủy / Cancel.
+   - *Kỳ vọng*: Nhà cung cấp redirect về `/auth/callback?error=access_denied`. Trang `AuthCallbackPage` không bị đơ hoặc trắng trang, mà hiển thị thông báo thân thiện và nút "Quay lại trang Đăng Nhập".
+6. **Hiển thị Avatar trên Navbar**:
+   - *Kịch bản*: Sau khi đăng nhập bằng Google/Facebook thành công.
+   - *Kỳ vọng*: Dropdown profile ở góc trên bên phải hiển thị hình ảnh đại diện thực tế (ảnh tròn bo viền mượt) thay vì chỉ là chữ cái viết tắt đầu tiên.
 
-| STT | Đường dẫn File | Loại | Mô tả |
-|:---:|:---|:---:|:---|
-| 1 | `BE/src/Application/UseCases/V1/Templates/Commands/CreateCommunityTemplateCommandHandler.cs` | Sửa | Khắc phục bug cắt slug: cắt ngắn phần thân slug gốc về tối đa 194 ký tự **trước** khi nối hậu tố `-xxxxx`, thay vì cắt **sau** khi đã nối (gây mất suffix duy nhất). |
-| 2 | `BE/test/UnitTests/Application/Templates/CreateCommunityTemplateCommandHandlerTests.cs` | Sửa | Thay thế test case hời hợt `Handle_Should_TruncateSlugTo200Chars_WhenSlugWithSuffixExceeds200Chars` bằng test case mạnh hơn `Handle_Should_PreserveUniqueSuffix_WhenInitialSlugIs200CharsAndAlreadyExists` — kiểm chứng slug ≤ 200 ký tự **VÀ** slug khác slug trùng ban đầu **VÀ** slug chứa dấu `-` (bảo toàn suffix). |
-| 3 | `BE/src/Persistence/Migrations/20260922110438_AddCommunityFieldsToTemplate.cs` | Tạo mới | Migration EF Core bổ sung 3 cột vào bảng `Templates`: `IsCommunity` (boolean, default false), `AuthorName` (varchar 150, nullable), `CreatedByUserId` (uuid, nullable). |
-| 4 | `BE/src/Persistence/Migrations/20260922110438_AddCommunityFieldsToTemplate.Designer.cs` | Tạo mới | Designer metadata cho migration trên. |
-| 5 | `BE/src/Persistence/Migrations/ApplicationDbContextModelSnapshot.cs` | Cập nhật | Snapshot model được EF Core tự động cập nhật đồng bộ 3 cột mới. |
+---
 
-### 4.2 Lý do sửa (Gỡ chặn Reviewer)
+## 4. KẾT QUẢ XÁC MINH HỆ THỐNG
 
-1. **Bug cắt slug (Điểm 2 trong evaluate.md)**: Khi `request.Slug` dài 200 ký tự và đã tồn tại, logic cũ nối suffix rồi cắt `[..200]` từ đầu → cắt bỏ hoàn toàn suffix → slug quay về chuỗi trùng ban đầu → `UniqueIndex Violation` trên PostgreSQL. Logic mới cắt base slug về ≤194 ký tự trước rồi mới nối `-xxxxx` (tối đa 200 ký tự), đảm bảo suffix luôn được bảo toàn.
+```
+[Backend Unit & Architecture Tests]
+Passed! - Failed: 0, Passed: 393, Skipped: 0, Total: 393 - TemplateLandingPage.UnitTests.dll (net10.0)
+Passed! - Failed: 0, Passed:   7, Skipped: 0, Total:   7 - TemplateLandingPage.Architecture.Tests.dll (net10.0)
+==> 400/400 TESTS PASS (100%)
 
-2. **Unit Test hời hợt (Điểm 3 trong evaluate.md)**: Test cũ chỉ assert `t.Slug.Length <= 200` — pass cả khi slug mới trùng slug cũ. Test mới bổ sung 2 assertion bắt buộc: `t.Slug != longSlug` (phải khác slug trùng) và `t.Slug.Contains('-')` (phải chứa dấu phân tách suffix).
+[Frontend Unit & Integration Tests]
+Test Files: 14 passed (14)
+Tests:      149 passed (149)
+Duration:   37.11s
+==> 149/149 TESTS PASS (100%)
 
-3. **Thiếu Migration EF Core (Điểm 1 trong evaluate.md)**: Entity `Template` đã được mở rộng 3 thuộc tính mới trong code C# nhưng chưa có file migration để đồng bộ schema PostgreSQL. Chạy `dotnet ef migrations add AddCommunityFieldsToTemplate` đã sinh migration chứa `AddColumn` cho cả 3 cột, kèm `DropColumn` trong method `Down()` để rollback an toàn.
-
-### 4.3 Kết quả kiểm chứng sau hotfix
-
-- **Build**: `dotnet build BE/TemplateLandingPage.sln` → ✅ **0 Warning, 0 Error**
-- **Test**: `dotnet test BE/TemplateLandingPage.sln` → ✅ **379/379 PASSED** (7 Architecture + 372 Unit Tests)
-- **Migration file**: Xác nhận `AddColumn` cho `IsCommunity`, `AuthorName`, `CreatedByUserId` ✅
-- **Snapshot**: Xác nhận `ApplicationDbContextModelSnapshot.cs` chứa đủ 3 cột mới ✅
-
-### 4.4 Vị trí Tester nên soi kỹ (bổ sung)
-
-1. **Slug 200 ký tự trùng lặp**: Tạo 2 template cộng đồng liên tiếp với cùng slug dài 200 ký tự → template thứ 2 phải có slug khác, ≤200 ký tự, và chứa hậu tố ngẫu nhiên. Không được văng lỗi 500.
-2. **Migration trên PostgreSQL thật**: Sau khi deploy, chạy `dotnet ef database update` hoặc để `MigrateAsync()` tự chạy, kiểm tra bảng `Templates` trên Supabase phải có đủ 3 cột mới: `IsCommunity`, `AuthorName`, `CreatedByUserId`.
-3. **Truy vấn GET/POST sau migration**: Gọi `GET /api/v1/templates` và `POST /api/v1/templates/community` trên môi trường PostgreSQL thật, xác nhận không còn lỗi `42703 (column does not exist)`.
+[Frontend Production Build]
+✓ built in 7.98s
+dist/index.html                     0.51 kB │ gzip:   0.33 kB
+dist/assets/index-C_nf2yvl.css     84.45 kB │ gzip:  13.22 kB
+dist/assets/index-CeULjlNA.js   1,715.62 kB │ gzip: 395.95 kB
+==> BUILD SUCCESS CLEANLY
+```
