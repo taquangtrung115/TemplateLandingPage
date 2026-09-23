@@ -40,7 +40,7 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, LoginRes
         }
 
         var token = _jwtTokenGenerator.GenerateToken(user);
-        var userResponse = new UserResponse(user.Id, user.Email, user.FullName, user.Role, user.IsActive, user.CreatedAtUtc);
+        var userResponse = new UserResponse(user.Id, user.Email, user.FullName, user.Role, user.IsActive, user.AvatarUrl, user.CreatedAtUtc);
 
         return Result.Success(new LoginResponse(token, userResponse));
     }

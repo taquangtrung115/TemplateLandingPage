@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
+import SocialAuthButtons from '../../components/auth/SocialAuthButtons';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -55,6 +56,8 @@ export default function RegisterPage() {
               <span>{error}</span>
             </div>
           )}
+
+          <SocialAuthButtons mode="register" onError={(err) => setError(err)} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

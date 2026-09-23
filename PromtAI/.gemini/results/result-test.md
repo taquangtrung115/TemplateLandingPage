@@ -1,224 +1,140 @@
-# BÁO CÁO KẾT QUẢ TÁI KIỂM THỬ SAU HOTFIX (CHẶNG 3 - LẦN 2)
-
-**Dự án**: Nâng Cấp Toàn Diện Nền Tảng Template Landing Page  
-**Thời gian thực hiện**: 2026-09-22 18:06 (UTC+7)  
-**Lý do tái kiểm thử**: Chặng 4 (Reviewer) ban hành **PHÁN QUYẾT CHẶN (BLOCK)** do phát hiện 2 lỗi nghiêm trọng và 1 thiếu sót hạ tầng. Coder đã thực hiện hotfix theo §4 của `change.md`.  
-**Trạng thái tổng thể**: ✅ **100% PASSED — TẤT CẢ 522 BÀI TEST ĐỀU ĐẠT CHUẨN**  
-**Đánh giá chặng**: Coder đã khắc phục hoàn toàn 3 điểm bị chặn bởi Reviewer. Toàn bộ 522 bài test (7 Architecture + 372 Unit Tests + 143 Frontend Vitest) đều vượt qua thành công trên môi trường CLI thực tế. Hệ thống sẵn sàng bàn giao lại Chặng 4 (Reviewer) để gỡ chặn.
+# BÁO CÁO KẾT QUẢ KIỂM THỬ ĐỘC LẬP (TEST REPORT)
+## CHẶNG 3: XÁC THỰC GOOGLE & FACEBOOK OAUTH VỚI SUPABASE, .NET 10 CLEAN ARCHITECTURE VÀ REACT 19
 
 ---
 
-## 1. TỔNG HỢP KẾT QUẢ KIỂM THỬ TỰ ĐỘNG (CLI)
+### 1. TỔNG QUAN KẾT QUẢ KIỂM THỬ
 
-| Dự án / Phân hệ | Framework | Tổng số test | Passed | Failed | Skipped | Trạng thái |
-|:---|:---|:---:|:---:|:---:|:---:|:---:|
-| **Backend Architecture Tests** | xUnit + NetArchTest (.NET 10) | 7 | 7 | 0 | 0 | ✅ **PASSED** (100%) |
-| **Backend Unit Tests** | xUnit + FluentAssertions + Moq (.NET 10) | 372 | 372 | 0 | 0 | ✅ **PASSED** (100%) |
-| **Frontend Component & Unit Tests** | Vitest 5.0.1 + React Testing Library (React 19) | 143 | 143 | 0 | 0 | ✅ **PASSED** (100%) |
-| **TỔNG CỘNG TOÀN BỘ HỆ THỐNG** | | **522** | **522** | **0** | **0** | ✅ **SẴN SÀNG GỠ CHẶN** |
+Toàn bộ hệ thống Backend và Frontend đã được kiểm thử độc lập toàn diện và đạt tỷ lệ thành công **100% (XANH TOÀN BỘ - ZERO FAILURES)**.
 
----
-
-## 2. XÁC NHẬN CỤ THỂ TỪNG ĐIỂM HOTFIX ĐÃ ĐƯỢC KIỂM CHỨNG
-
-### 2.1 Hotfix #1 — Thiếu Migration EF Core (Điểm 1 trong evaluate.md) ✅ ĐÃ KHẮC PHỤC
-
-| Hạng mục kiểm tra | Kết quả | Chi tiết |
-|:---|:---:|:---|
-| File migration tồn tại | ✅ | `BE/src/Persistence/Migrations/20260922110438_AddCommunityFieldsToTemplate.cs` đã được tạo. |
-| File Designer tồn tại | ✅ | `BE/src/Persistence/Migrations/20260922110438_AddCommunityFieldsToTemplate.Designer.cs` đã được tạo. |
-| Migration chứa `AddColumn` cho `AuthorName` | ✅ | `migrationBuilder.AddColumn<string>(name: "AuthorName", table: "Templates", type: "character varying(150)", maxLength: 150, nullable: true)` — Dòng 14-19 |
-| Migration chứa `AddColumn` cho `CreatedByUserId` | ✅ | `migrationBuilder.AddColumn<Guid>(name: "CreatedByUserId", table: "Templates", type: "uuid", nullable: true)` — Dòng 21-25 |
-| Migration chứa `AddColumn` cho `IsCommunity` | ✅ | `migrationBuilder.AddColumn<bool>(name: "IsCommunity", table: "Templates", type: "boolean", nullable: false, defaultValue: false)` — Dòng 27-32 |
-| Migration chứa `Down()` rollback an toàn | ✅ | `DropColumn` cho cả 3 cột `AuthorName`, `CreatedByUserId`, `IsCommunity` — Dòng 36-49 |
-| `ApplicationDbContextModelSnapshot.cs` cập nhật | ✅ | Snapshot chứa đủ 3 cột mới: `AuthorName` (dòng 260), `CreatedByUserId` (dòng 279), `IsCommunity` (dòng 296) |
-
-### 2.2 Hotfix #2 — Bug Cắt Slug Unique (Điểm 2 trong evaluate.md) ✅ ĐÃ KHẮC PHỤC
-
-| Hạng mục kiểm tra | Kết quả | Chi tiết |
-|:---|:---:|:---|
-| Logic mã nguồn đã sửa | ✅ | `CreateCommunityTemplateCommandHandler.cs` dòng 31: `var baseSlug = finalSlug.Length > 194 ? finalSlug[..194].TrimEnd('-') : finalSlug;` — cắt base slug **trước** khi nối suffix |
-| Suffix luôn được bảo toàn | ✅ | Dòng 32: `finalSlug = $"{baseSlug}-{suffix}";` — suffix `-xxxxx` (6 ký tự) nối sau base ≤194 → tổng ≤200 |
-| Không còn logic cắt **sau** khi nối | ✅ | Đã loại bỏ hoàn toàn đoạn `if (finalSlug.Length > 200) { finalSlug = finalSlug[..200]; }` |
-
-### 2.3 Hotfix #3 — Unit Test Hời Hợt (Điểm 3 trong evaluate.md) ✅ ĐÃ KHẮC PHỤC
-
-**Test case cũ (đã bị thay thế)**:
-- `Handle_Should_TruncateSlugTo200Chars_WhenSlugWithSuffixExceeds200Chars` — chỉ assert `t.Slug.Length <= 200` → pass cả khi slug mới trùng slug cũ.
-
-**Test case mới (đã xác nhận PASSED)**:
-- `Handle_Should_PreserveUniqueSuffix_WhenInitialSlugIs200CharsAndAlreadyExists`
-- 3 assertions kiểm chứng:
-  1. `t.Slug.Length <= 200` — slug kết quả ≤ 200 ký tự ✅
-  2. `t.Slug != longSlug` — slug kết quả **phải khác** slug trùng ban đầu (200 ký tự 'a') ✅
-  3. `t.Slug.Contains('-')` — slug kết quả **phải chứa** dấu phân tách suffix `-` ✅
-
-> [!IMPORTANT]
-> Test case mới đảm bảo **không thể xảy ra trường hợp slug quay về chuỗi trùng ban đầu** dẫn đến UniqueIndex Violation trên PostgreSQL.
+| Phân hệ | Framework kiểm thử | Số Test Suites | Số Test Cases | Kết quả | Trạng thái |
+|---|---|---|---|---|---|
+| **Backend (.NET 10)** | xUnit, FluentAssertions, Moq | 2 Projects | **409 tests** (402 UnitTests + 7 ArchitectureTests) | **409 Passed / 0 Failed / 0 Skipped** | **PASS (100%)** |
+| **Frontend (React 19)** | Vitest, Testing Library, jsdom | 14 Test Files | **156 tests** | **156 Passed / 0 Failed / 0 Skipped** | **PASS (100%)** |
+| **TỔNG CỘNG** | | | **565 tests** | **565/565 Passed (100%)** | **READY TO SHIP** |
 
 ---
 
-## 3. CHI TIẾT CÁC NHÓM KIỂM THỬ THEO QUY ĐỊNH
+### 2. CHI TIẾT CÁC NHÓM KIỂM THỬ ĐÃ BAO PHỦ
 
-### Nhóm 1: Happy Paths (Đường chạy thuận lợi) — 100% PASSED
+Hệ thống kiểm thử đã được thiết kế và bổ sung để bao quát trọn vẹn cả **3 nhóm kịch bản bắt buộc**:
 
-1. **Tạo Mẫu Cộng Đồng Thành Công (Slug Unique)**:
-   - `Handle_Should_CreateCommunityTemplate_WhenSlugIsUnique` — Tạo template cộng đồng với slug mới, gắn cờ `IsCommunity = true`, `AuthorName = "Nguyen Van A"`. PASSED ✅
-
-2. **Xử Lý Slug Trùng Tự Động**:
-   - `Handle_Should_AppendSuffixToSlug_WhenSlugAlreadyExists` — Slug `existing-slug` trùng → tự động sinh `existing-slug-xxxxx`, author mặc định `"Anonymous"`. PASSED ✅
-
-3. **Lưu CreatedByUserId**:
-   - `Handle_Should_StoreCreatedByUserId_WhenProvided` — Khi user đăng nhập, `CreatedByUserId` được lưu chính xác. PASSED ✅
-
-4. **Lọc Template Theo `isCommunity`**:
-   - `Handle_Should_ReturnFilteredTemplates_WhenIsCommunityFilterApplied` — GET query với `isCommunity = true/false/null` trả về kết quả đúng. PASSED ✅
-
-5. **Simulator Thiết bị Thực tế (Device Simulator & Viewport)**:
-   - 8 dòng thiết bị iOS/Android: iPhone 15 Pro Max, iPhone 15/14, iPhone SE, iPad Mini, Samsung S24 Ultra, Pixel 8 Pro, Xiaomi 14, Galaxy Z Fold. PASSED ✅
-
-6. **Khối Thẻ Động Phân Tầng (Hierarchical Cards Section)**:
-   - Render chính xác cấu trúc thẻ lồng nhau: Card → Header → SubHeader → Content → SubCards, 5 preset style. PASSED ✅
-
-7. **Bảng Màu 1-Click (Color Palettes Engine)**:
-   - 10 bảng màu chuẩn với mã hex hợp lệ, `applyPaletteToConfig` cập nhật tức thì 5 thuộc tính màu và bảo tồn các thuộc tính khác. PASSED ✅
-
-8. **Hiệu ứng Hoạt họa & Hạt rơi (Animations & Motion Particles)**:
-   - Phân nhóm Entrance (11 loại) + Continuous (5 loại) + 7 hiệu ứng hạt canvas. PASSED ✅
-
-9. **DataSeeder: 4 Template Mới**:
-   - `SeedAsync_Should_PopulateAll8Tables_WhenDatabaseIsEmpty` — 19 categories, 23 templates, dữ liệu JSON hợp lệ. PASSED ✅
-
-10. **Điều hướng Vercel & Route Công khai**:
-    - `/p/:slug` và `/live/:slug` trỏ về `PublicLandingPage`. `vercel.json` rewrites SPA `/(.*)` → `/index.html`. PASSED ✅
+#### Nhóm A: Đường chạy thuận lợi (Happy Paths)
+1. **Google OAuth JIT User Creation (Backend)**:
+   - File: [`BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs)
+   - Kịch bản: Người dùng mới lần đầu đăng nhập qua Google (`ExternalLoginCommand` với Provider = "Google").
+   - Kết quả: Hệ thống tự động tạo bản ghi mới với `Role = "User"`, `Provider = "Google"`, lưu `AvatarUrl`, sinh `PasswordHash` dummy an toàn dạng `EXTERNAL_GOOGLE_{guid}`, và cấp phát JWT token hợp lệ của hệ thống.
+2. **Facebook OAuth JIT User Creation (Backend)**:
+   - File: [`BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs)
+   - Kịch bản: Người dùng mới lần đầu đăng nhập qua Facebook (`ExternalLoginCommand` với Provider = "Facebook").
+   - Kết quả: Tạo user mới với `Provider = "Facebook"`, `Role = "User"`, lưu avatar Facebook graph, sinh hash `EXTERNAL_FACEBOOK_{guid}` và cấp JWT token.
+3. **Frontend Social Auth Buttons Render & Trigger (Frontend)**:
+   - File: [`FE/test/oauthFlow.test.jsx`](file:///e:/Code/TemplateLandingPage/FE/test/oauthFlow.test.jsx)
+   - Kịch bản: Hiển thị 2 nút "Tiếp tục với Google" và "Tiếp tục với Facebook" ở chế độ login; "Đăng ký với Google" và "Đăng ký với Facebook" ở chế độ register kèm divider chuẩn UI. Khi nhấn nút, kích hoạt đúng hàm `loginWithOAuth('google')` hoặc `loginWithOAuth('facebook')`.
+4. **Frontend OAuth Callback Processing (Google & Facebook) (Frontend)**:
+   - File: [`FE/test/oauthFlow.test.jsx`](file:///e:/Code/TemplateLandingPage/FE/test/oauthFlow.test.jsx)
+   - Kịch bản: Trang `/auth/callback` tiếp nhận session từ Supabase client (cho cả Google và Facebook), trích xuất metadata (`access_token`, `email`, `fullName`, `avatarUrl`), gửi payload lên `authApi.externalLogin`, lưu JWT token và user profile vào `localStorage` và `AuthContext`, sau đó chuyển hướng đến `/templates`.
+5. **Điều hướng phân quyền theo Role (Frontend)**:
+   - File: [`FE/test/oauthFlow.test.jsx`](file:///e:/Code/TemplateLandingPage/FE/test/oauthFlow.test.jsx)
+   - Kịch bản: Người dùng OAuth có vai trò `Role = "Admin"` được chuyển hướng chính xác đến `/admin`, người dùng `Role = "User"` chuyển hướng về `/templates`.
 
 ---
 
-### Nhóm 2: Edge Cases (Trường hợp biên & An toàn hệ thống) — 100% PASSED
-
-1. **Slug 200 Ký Tự Trùng Lặp (HOTFIX FOCUS)**:
-   - `Handle_Should_PreserveUniqueSuffix_WhenInitialSlugIs200CharsAndAlreadyExists` — Slug 200 ký tự 'a', đã tồn tại → sinh slug mới ≤200, ≠ slug cũ, chứa '-'. **PASSED** ✅
-
-2. **Xử Lý Va Chạm Slug Tự Động (Auto-generate Suffix)**:
-   - `Handle_Should_AppendSuffixToSlug_WhenSlugAlreadyExists` — Slug `existing-slug` trùng → `existing-slug-xxxxx`. PASSED ✅
-
-3. **Thông Số Kích Thước Thiết Bị & Viền Bezel**:
-   - Toàn bộ 8 thiết bị: width > 300px, height > 600px, bezel regex hợp lệ, notch type trong tập cho phép. PASSED ✅
-
-4. **Xử Lý Key Animation Không Hợp Lệ & Null/Undefined**:
-   - Fallback an toàn: `getAnimationClass('non-existent')` → `animate-fade-up`; `null`/`''`/`'none'` → `opacity-100`. PASSED ✅
-
-5. **An Toàn Dữ Liệu Thiếu/Rỗng Trong Khối Thẻ Lồng Nhau**:
-   - `hierarchicalCards` = `null`/`undefined`/`[]` → `HierarchicalCardsSection` return null, không lỗi `undefined.map()`. PASSED ✅
-
-6. **Bảo Toàn Config Khi Palette Null/Undefined**:
-   - `applyPaletteToConfig(config, null)` → trả về config ban đầu nguyên vẹn. PASSED ✅
-
-7. **DataSeeder Bất Biến & Bổ Sung**:
-   - `SeedAsync_Should_BeIdempotent_WhenExecutedMultipleTimes` — Chạy 3 lần liên tiếp, số lượng bản ghi không đổi. PASSED ✅
-   - `SeedAsync_Should_SupplementNewCategoriesAndTemplates_WhenLegacy9CategoriesAnd11TemplatesAlreadyExist`. PASSED ✅
-
-8. **Tương Thích PostgreSQL UTC DateTime & DI InMemory**:
-   - `ConfigureConventions_Should_RegisterValueConverter_ForAllDateTimeProperties` — Tất cả `DateTime`/`DateTime?` gắn UTC converter. PASSED ✅
-   - `UtcDateTimeConverter_WithBoundaryDates_ShouldConvertCorrectly` — Leap year (2024-02-29), millennium (2000-01-01). PASSED ✅
-   - `Database_IsRelational_WhenUsingNpgsqlProvider_ShouldReturnTrue` / `WhenUsingInMemoryProvider_ShouldReturnFalse`. PASSED ✅
-   - `SeedAsync_OnInMemoryDatabase_ShouldSafelyUseEnsureCreated_BecauseIsRelationalIsFalse`. PASSED ✅
-
-9. **Npgsql DI Configuration**:
-   - `AddPersistence_Should_ConfigureNpgsqlSpecificOptions` — Provider Npgsql đăng ký đúng. PASSED ✅
-   - `AddPersistence_Should_ConfigureNpgsqlProviderForDbContext`. PASSED ✅
-   - `AddPersistence_WhenConnectionStringIsEmpty_OpeningConnectionShouldFail`. PASSED ✅
-   - `AddPersistence_WhenConnectionStringsSectionIsMissing_ShouldProduceEmptyConnectionString`. PASSED ✅
+#### Nhóm B: Các trường hợp biên (Edge Cases theo Kế hoạch)
+1. **Account Linking theo Email & Bảo toàn mật khẩu (Account Linking)**:
+   - Files: [`BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs), [`BE/test/UnitTests/Domain/DomainEntityValidationTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Domain/DomainEntityValidationTests.cs)
+   - Kịch bản: Tài khoản đã được tạo từ trước bằng Email và Password thường (`existing_hashed_pwd`). Sau đó người dùng đăng nhập bằng Google hoặc Facebook với cùng email đó.
+   - Kết quả: Không tạo bản ghi trùng lặp (`IUserRepository.Add` không bao giờ được gọi), thông tin `PasswordHash` nguyên bản được bảo toàn 100% (người dùng vẫn có thể đăng xuất và đăng nhập bằng mật khẩu cũ bình thường), cập nhật `Provider` và `AvatarUrl` nếu trước đó chưa có.
+2. **Bảo toàn Avatar gốc khi liên kết tài khoản (Avatar Preservation)**:
+   - File: [`BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs)
+   - Kịch bản: Tài khoản đã có sẵn avatar trước đó (`https://original.avatar/pic.jpg`). Khi đăng nhập qua OAuth mang theo avatar mới, avatar gốc không bị ghi đè.
+3. **Cập nhật Avatar khi tài khoản chưa có Avatar (Avatar Seeding)**:
+   - File: [`BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs)
+   - Kịch bản: Tài khoản cũ có `AvatarUrl = null`. Khi đăng nhập OAuth có avatar mới, `AvatarUrl` được điền tự động.
+4. **Bảo vệ Dummy Password Hash (Anti-Bypass Protection)**:
+   - File: [`BE/test/UnitTests/Domain/DomainEntityValidationTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Domain/DomainEntityValidationTests.cs)
+   - Kịch bản: Tài khoản tạo bằng `User.CreateExternal` có `PasswordHash = "EXTERNAL_GOOGLE_{guid}"` hoặc `"EXTERNAL_FACEBOOK_{guid}"`.
+   - Kết quả: Khi kẻ tấn công gửi request đăng nhập mật khẩu truyền thống `POST /api/v1/auth/login` với:
+     - Mật khẩu rỗng `""`
+     - Mật khẩu bất kỳ `"Password@123"`
+     - Chính chuỗi dummy hash `"EXTERNAL_GOOGLE_..."`
+     -> `PasswordHasher.VerifyPassword` luôn trả về `false` (do không khớp cấu trúc PBKDF2 `salt.hash`), ngăn chặn hoàn toàn việc bypass đăng nhập mật khẩu!
+5. **Chuẩn hóa Email (Email Normalization)**:
+   - File: [`BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs)
+   - Kịch bản: Email gửi lên có khoảng trắng thừa và chữ hoa chữ thường (`"  SPACED.User@Gmail.COM  "`).
+   - Kết quả: Tự động `Trim()` và `ToLowerInvariant()` thành `"spaced.user@gmail.com"` trước khi tra cứu hoặc thêm mới vào cơ sở dữ liệu.
+6. **Fallback FullName từ Email Prefix (Avatar & Metadata Extraction)**:
+   - Files: [`BE/test/UnitTests/Domain/DomainEntityValidationTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Domain/DomainEntityValidationTests.cs), [`FE/test/oauthFlow.test.jsx`](file:///e:/Code/TemplateLandingPage/FE/test/oauthFlow.test.jsx)
+   - Kịch bản: Profile bên Google/Facebook không cung cấp tên đầy đủ (`full_name = null/""`).
+   - Kết quả: Hệ thống tự động cắt chuỗi email trước ký tự `@` (ví dụ `john.doe@test.com` -> `john.doe`) làm FullName, tránh lỗi trống tên.
 
 ---
 
-### Nhóm 3: Failure Paths (Kỳ vọng thất bại & Chặn lỗi hệ thống) — 100% PASSED
-
-1. **Từ Chối Cú Pháp JSON Sai (`DefaultConfigJson`)**:
-   - `Validator_Should_HaveValidationError_WhenDefaultConfigJsonIsNotValidJson` — Đầu vào: `"{ not valid json syntax }"` → `IsValid = false`, lỗi trỏ vào `DefaultConfigJson`. PASSED ✅
-
-2. **Từ Chối Tên Tác Giả Quá Dài (`AuthorName > 150 ký tự`)**:
-   - `Validator_Should_HaveValidationError_WhenAuthorNameExceeds150Characters` — Đầu vào: `new string('X', 151)` → `IsValid = false`, lỗi trỏ vào `AuthorName`. PASSED ✅
-
-3. **Từ Chối Khi Thiếu Các Trường Bắt Buộc**:
-   - `Validator_Should_HaveValidationError_WhenRequiredFieldsAreEmpty` (5 InlineData) — `Name=""`, `Slug=""`, `Category=""`, `ThumbnailUrl=""`, `DefaultConfigJson=""` → Toàn bộ bị chặn. PASSED ✅
-
-4. **DbContext Disposed**:
-   - `ApplicationDbContext_WhenDisposed_ShouldThrowObjectDisposedException`. PASSED ✅
-   - `SeedAsync_Should_ThrowException_WhenDbContextIsDisposed`. PASSED ✅
-
-5. **Password Hasher Null**:
-   - `SeedAsync_Should_ThrowException_WhenPasswordHasherIsNull`. PASSED ✅
-
-6. **DbContext Options Unconfigured**:
-   - `ApplicationDbContext_WhenOptionsUnconfigured_ShouldThrowInvalidOperationExceptionOnDataAccess`. PASSED ✅
-
-7. **Duplicate Key Entity**:
-   - `ApplicationDbContext_WhenAddingDuplicateKeyEntity_ShouldThrowException`. PASSED ✅
-
-8. **Frontend Error Handling**:
-   - `publishCommunityTemplate`: Bắt lỗi 400 Validation Error và 500 Server Error. PASSED ✅
-   - Phân quyền: 403 Forbidden, 404 NotFound. PASSED ✅
+#### Nhóm C: Các trường hợp kỳ vọng thất bại (Expected Failure Cases)
+1. **Chặn tài khoản bị vô hiệu hóa (Inactive Account Rejection)**:
+   - Backend: [`ExternalLoginCommandHandlerTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs) -> Tài khoản có `IsActive = false` khi đăng nhập OAuth bị chặn ngay lập tức, trả về `Result.Failure(AuthErrors.UserInactive)`, không phát sinh JWT token.
+   - Frontend: [`oauthFlow.test.jsx`](file:///e:/Code/TemplateLandingPage/FE/test/oauthFlow.test.jsx) -> Khi backend từ chối đăng nhập (tài khoản khóa), màn hình `/auth/callback` hiển thị thông báo lỗi rõ ràng: *"Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!"*, biểu tượng cảnh báo `AlertCircle` và nút *"Quay lại trang Đăng Nhập"*.
+2. **Từ chối Provider không hỗ trợ hoặc rỗng (Provider Validation)**:
+   - Backend: [`ExternalLoginCommandValidatorTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandValidatorTests.cs) -> Kiểm thử với `Provider = ""` (rỗng), `"   "` (khoảng trắng), `"Github"`, `"Twitter"`, `"Apple"` đều trả về `IsValid = false` và thông báo lỗi tương ứng.
+   - Frontend: [`oauthFlow.test.jsx`](file:///e:/Code/TemplateLandingPage/FE/test/oauthFlow.test.jsx) -> `loginWithOAuth('twitter')` và `loginWithOAuth('github')` ném lỗi `Unsupported OAuth provider`.
+3. **Từ chối Email và FullName không hợp lệ (Input Validation)**:
+   - Backend: [`ExternalLoginCommandValidatorTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandValidatorTests.cs) -> Email rỗng, sai định dạng (`"invalid-email"`, `"user@"`) hoặc FullName rỗng đều bị Validator chặn lại.
+   - Domain: [`DomainEntityValidationTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Domain/DomainEntityValidationTests.cs) -> `User.CreateExternal` với email null hoặc rỗng ném `ArgumentException`.
+4. **Xử lý người dùng hủy ủy quyền OAuth (OAuth Cancellation / Error Callback)**:
+   - Frontend: [`oauthFlow.test.jsx`](file:///e:/Code/TemplateLandingPage/FE/test/oauthFlow.test.jsx) -> Khi URL callback chứa tham số lỗi `?error=access_denied&error_description=User+cancelled`, trang hiển thị thông báo thân thiện và không bị treo hoặc trắng màn hình.
+5. **Xử lý lỗi kết nối Supabase Session (Session Error Handling)**:
+   - Frontend: [`oauthFlow.test.jsx`](file:///e:/Code/TemplateLandingPage/FE/test/oauthFlow.test.jsx) -> Khi `supabase.auth.getSession()` trả về lỗi hoặc session rỗng, trang hiển thị lỗi thông báo và nút chuyển hướng về trang đăng nhập.
 
 ---
 
-## 4. BẰNG CHỨNG CLI EXECUTION LOGS
+### 3. BẢNG THỐNG KÊ CHI TIẾT TỪNG TEST SUITE
 
-### A. Backend Test Suite (`dotnet test BE/TemplateLandingPage.sln --verbosity normal`)
+#### 3.1. Backend (.NET 10)
 ```text
-Test Run Successful.
-Total tests: 7
-     Passed: 7
- Total time: 1.6552 Seconds
-     (TemplateLandingPage.Architecture.Tests.dll)
+Test run for E:\Code\TemplateLandingPage\BE\test\UnitTests\bin\Debug\net10.0\TemplateLandingPage.UnitTests.dll (.NETCoreApp,Version=v10.0)
+Passed!  - Failed: 0, Passed: 402, Skipped: 0, Total: 402, Duration: 2 s - TemplateLandingPage.UnitTests.dll (net10.0)
 
-Test Run Successful.
-Total tests: 372
-     Passed: 372
- Total time: 3.4062 Seconds
-     (TemplateLandingPage.UnitTests.dll)
+Test run for E:\Code\TemplateLandingPage\BE\test\Architecture.Tests\bin\Debug\net10.0\TemplateLandingPage.Architecture.Tests.dll (.NETCoreApp,Version=v10.0)
+Passed!  - Failed: 0, Passed:   7, Skipped: 0, Total:   7, Duration: 282 ms - TemplateLandingPage.Architecture.Tests.dll (net10.0)
 
-Build succeeded.
-    0 Warning(s)
-    0 Error(s)
-Time Elapsed 00:00:07.15
+==> TỔNG KẾT BACKEND: 409/409 TESTS PASS (100%)
 ```
 
-### B. Frontend Test Suite (`npm --prefix FE test`)
+Các test suite nổi bật liên quan trực tiếp đến OAuth:
+- [`ExternalLoginCommandHandlerTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandHandlerTests.cs): 7 tests (Google JIT, Facebook JIT, Account Linking, Password Preservation, Inactive User, Avatar Preservation, Avatar Seeding, Email Normalization).
+- [`ExternalLoginCommandValidatorTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Application/Auth/ExternalLoginCommandValidatorTests.cs): 14 tests (Valid Providers, Invalid Providers, Invalid Emails, Invalid FullNames).
+- [`DomainEntityValidationTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Domain/DomainEntityValidationTests.cs): 28 tests (User Factory, Dummy Hash Security, External Profile Updating, Fallback Naming, Entity Constraints).
+- [`PasswordHasherAndJwtTokenGeneratorTests.cs`](file:///e:/Code/TemplateLandingPage/BE/test/UnitTests/Infrastructure/PasswordHasherAndJwtTokenGeneratorTests.cs): 10 tests (PBKDF2 Hashing, Token Generation, Malformed Hash Rejection).
+
+#### 3.2. Frontend (React 19 + Vitest)
 ```text
-> template-landing-page-fe@1.0.0 test
-> vitest run
+Test Files  14 passed (14)
+Tests       156 passed (156)
+Duration    33.29s
 
- RUN  v5.0.1 C:/Source/TemplateLandingPage/FE
-
- ✓ test/useStaggeredReveal.test.jsx (4 tests) 137ms
- ✓ test/authContext.test.jsx (11 tests) 271ms
- ✓ test/splashScreen.test.jsx (4 tests) 312ms
- ✓ test/apiUnwrap.test.js (16 tests) 19ms
- ✓ test/useMaskAnimation.test.jsx (9 tests) 147ms
- ✓ test/advancedFeatures.test.jsx (16 tests) 472ms
- ✓ test/loginPage.test.jsx (8 tests) 810ms
- ✓ test/landingPageSections.test.jsx (16 tests) 475ms
- ✓ test/diverseTemplates.test.jsx (15 tests) 1160ms
- ✓ test/homePageNew.test.jsx (6 tests) 1825ms
- ✓ test/customizerDynamic.test.jsx (26 tests) 1978ms
- ✓ test/customizerDeferredHighlight.test.jsx (3 tests) 2074ms
- ✓ test/customizerGuestFlow.test.jsx (9 tests) 2385ms
-
- Test Files  13 passed (13)
-      Tests  143 passed (143)
-   Start at  18:08:24
-   Duration  11.37s
+==> TỔNG KẾT FRONTEND: 156/156 TESTS PASS (100%)
 ```
+
+Danh sách các file test đã chạy thành công:
+1. `test/oauthFlow.test.jsx` (13 tests) - **13 passed**
+2. `test/loginPage.test.jsx` (8 tests) - **8 passed**
+3. `test/authContext.test.jsx` (11 tests) - **11 passed**
+4. `test/advancedFeatures.test.jsx` (16 tests) - **16 passed**
+5. `test/diverseTemplates.test.jsx` (15 tests) - **15 passed**
+6. `test/homePageNew.test.jsx` (6 tests) - **6 passed**
+7. `test/customizerDynamic.test.jsx` (26 tests) - **26 passed**
+8. `test/customizerDeferredHighlight.test.jsx` (3 tests) - **3 passed**
+9. `test/customizerGuestFlow.test.jsx` (9 tests) - **9 passed**
+10. `test/useMaskAnimation.test.jsx` (9 tests) - **9 passed**
+11. `test/useStaggeredReveal.test.jsx` (4 tests) - **4 passed**
+12. `test/landingPageSections.test.jsx` (16 tests) - **16 passed**
+13. `test/apiUnwrap.test.js` (16 tests) - **16 passed**
+14. `test/splashScreen.test.jsx` (4 tests) - **4 passed**
 
 ---
 
-## 5. KẾT LUẬN & BÀN GIAO CHẶNG
+### 4. KẾT LUẬN NGHIỆM THU
 
-1. **Hotfix hoàn chỉnh**: Coder đã khắc phục triệt để cả 3 điểm bị Reviewer chặn:
-   - ✅ Migration EF Core đã được tạo đầy đủ với `AddColumn` cho 3 cột `IsCommunity`, `AuthorName`, `CreatedByUserId` và `Down()` rollback an toàn.
-   - ✅ Logic cắt slug đã được sửa: cắt base slug về ≤194 ký tự **trước** khi nối suffix `-xxxxx`, đảm bảo suffix luôn được bảo toàn.
-   - ✅ Test case `Handle_Should_PreserveUniqueSuffix_WhenInitialSlugIs200CharsAndAlreadyExists` kiểm chứng mạnh mẽ với 3 assertions (≤200, ≠ slug cũ, chứa '-').
-2. **Không hồi quy**: Toàn bộ 522 bài test trên cả BE (379) và FE (143) đều PASSED — không phát sinh bất kỳ regression nào.
-3. **Quy tắc tuân thủ**: Tester chỉ đọc code sản phẩm để kiểm chứng, cập nhật kết quả tại `result-test.md`, tuyệt đối không can thiệp vào mã nguồn.
-4. **Bàn giao**: Đủ điều kiện 100% để chuyển tiếp lại **Chặng 4: Reviewer xem xét gỡ chặn và phê duyệt chốt triển khai**.
+1. **Tính độc lập & toàn vẹn**: Subagent tester chỉ tạo và bổ sung các test cases tại thư mục `BE/test/` và `FE/test/`, hoàn toàn không can thiệp hay sửa đổi bất kỳ mã nguồn sản phẩm nào (`BE/src/` và `FE/src/`).
+2. **Độ tin cậy nghiệp vụ**: Cả 3 nhóm kiểm thử (Đường chạy thuận lợi, Các trường hợp biên, Các trường hợp kỳ vọng thất bại) đều đã được kiểm tra nghiêm ngặt và đạt kết quả mong muốn.
+3. **Mức độ sẵn sàng triển khai**: Tính năng Xác thực Google & Facebook OAuth trên nền tảng Supabase, .NET 10 Clean Architecture và React 19 đạt chuẩn chất lượng cao nhất, không tồn đọng lỗi hồi quy (zero regression), đủ điều kiện nghiệm thu và hoàn thành Chặng 3.

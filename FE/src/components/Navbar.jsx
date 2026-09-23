@@ -310,9 +310,17 @@ export default function Navbar() {
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2.5 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-600 font-bold text-xs flex items-center justify-center border border-rose-200">
-                    {user?.fullName?.charAt(0) || 'U'}
-                  </div>
+                  {user?.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user?.fullName || 'User'}
+                      className="w-8 h-8 rounded-full object-cover border border-rose-200"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-600 font-bold text-xs flex items-center justify-center border border-rose-200">
+                      {user?.fullName?.charAt(0) || 'U'}
+                    </div>
+                  )}
                   <span className="text-xs font-bold text-gray-700 max-w-[120px] truncate">
                     {user?.fullName || 'Tài khoản'}
                   </span>

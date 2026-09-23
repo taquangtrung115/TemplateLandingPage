@@ -29,6 +29,7 @@ public sealed class GetUserByIdQueryHandler : IQueryHandler<GetUserByIdQuery, Us
             user.FullName,
             user.Role,
             user.IsActive,
+            user.AvatarUrl,
             user.CreatedAtUtc);
 
         return Result.Success(response);

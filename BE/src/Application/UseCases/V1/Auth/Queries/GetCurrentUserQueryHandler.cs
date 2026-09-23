@@ -29,6 +29,7 @@ public sealed class GetCurrentUserQueryHandler : IQueryHandler<GetCurrentUserQue
             user.FullName,
             user.Role,
             user.IsActive,
+            user.AvatarUrl,
             user.CreatedAtUtc);
 
         return Result.Success(response);
