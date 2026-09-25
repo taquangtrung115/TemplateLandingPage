@@ -174,6 +174,10 @@ if (app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("See
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         await DataSeeder.SeedAsync(dbContext, passwordHasher);
+        if (builder.Configuration.GetValue<bool>("SeedData:IncludeCatalog", true))
+        {
+            await TemplateCatalogSeeder.SeedAsync(dbContext);
+        }
     }
     catch (NpgsqlException npgsqlEx)
     {
