@@ -2372,5 +2372,6 @@ public static class DataSeeder
             context.Products.AddRange(p1, p2, p3, p4);
             await context.SaveChangesAsync();
         }
+        await DemoVersionInitializer.InitializeAsync(context);
     }
 }

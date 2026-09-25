@@ -18,7 +18,7 @@ public class SubmitRsvpCommandValidatorTests
     public void Validate_Should_Pass_WhenCommandIsValid()
     {
         // Arrange
-        var command = new SubmitRsvpCommand(Guid.NewGuid(), "Guest", null, null, "Attending", 1, null, null);
+        var command = new SubmitRsvpCommand(Guid.NewGuid(), Guid.NewGuid(), "Guest", null, null, "Attending", 1, null, null);
 
         // Act
         var result = _validator.Validate(command);
@@ -34,7 +34,7 @@ public class SubmitRsvpCommandValidatorTests
     public void Validate_Should_Fail_WhenGuestNameIsEmpty(string? guestName)
     {
         // Arrange
-        var command = new SubmitRsvpCommand(Guid.NewGuid(), guestName!, null, null, "Attending", 1, null, null);
+        var command = new SubmitRsvpCommand(Guid.NewGuid(), Guid.NewGuid(), guestName!, null, null, "Attending", 1, null, null);
 
         // Act
         var result = _validator.Validate(command);
@@ -50,7 +50,7 @@ public class SubmitRsvpCommandValidatorTests
     public void Validate_Should_Fail_WhenNumberOfGuestsIsLessThanOne(int count)
     {
         // Arrange
-        var command = new SubmitRsvpCommand(Guid.NewGuid(), "Guest", null, null, "Attending", count, null, null);
+        var command = new SubmitRsvpCommand(Guid.NewGuid(), Guid.NewGuid(), "Guest", null, null, "Attending", count, null, null);
 
         // Act
         var result = _validator.Validate(command);
@@ -64,12 +64,21 @@ public class SubmitRsvpCommandValidatorTests
     public void Validate_Should_Pass_WhenNumberOfGuestsIsBoundaryOne()
     {
         // Arrange
-        var command = new SubmitRsvpCommand(Guid.NewGuid(), "Guest", null, null, "Declining", 1, null, null);
+        var command = new SubmitRsvpCommand(Guid.NewGuid(), Guid.NewGuid(), "Guest", null, null, "Declining", 1, null, null);
 
         // Act
         var result = _validator.Validate(command);
 
         // Assert
         result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_Should_Fail_WhenVersionIsMissing()
+    {
+        var result = _validator.Validate(new SubmitRsvpCommand(null, Guid.NewGuid(), "Guest", null, null, "Attending", 1, null, null));
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(SubmitRsvpCommand.CustomizationVersionId));
     }
 }

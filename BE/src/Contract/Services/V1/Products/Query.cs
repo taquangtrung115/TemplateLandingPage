@@ -2,6 +2,6 @@ namespace TemplateLandingPage.Contract.Services.V1.Products;
 
 using TemplateLandingPage.Contract.Abstractions.Message;
 
-public record GetProductsQuery() : IQuery<List<ProductResponse>>;
+public record GetProductsQuery(bool IncludeInactive = false) : IQuery<List<ProductResponse>>;
 
-public record GetProductByIdQuery(Guid Id) : IQuery<ProductResponse>;
+public record GetProductByIdQuery(Guid Id, bool IncludeInactive = false) : IQuery<ProductResponse>;

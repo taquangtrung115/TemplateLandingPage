@@ -24,7 +24,8 @@ public class CreateCustomizationCommandValidatorTests
             "Title",
             "slug",
             "{}",
-            true);
+            true,
+            Guid.NewGuid());
 
         // Act
         var result = _validator.Validate(command);
@@ -43,7 +44,8 @@ public class CreateCustomizationCommandValidatorTests
             "Title",
             "slug",
             "{}",
-            true);
+            true,
+            Guid.NewGuid());
 
         // Act
         var result = _validator.Validate(command);
@@ -66,7 +68,8 @@ public class CreateCustomizationCommandValidatorTests
             "Title",
             slug!,
             "{}",
-            true);
+            true,
+            Guid.NewGuid());
 
         // Act
         var result = _validator.Validate(command);
@@ -89,7 +92,8 @@ public class CreateCustomizationCommandValidatorTests
             "Title",
             "slug",
             json!,
-            true);
+            true,
+            Guid.NewGuid());
 
         // Act
         var result = _validator.Validate(command);

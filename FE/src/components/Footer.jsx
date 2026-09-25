@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Heart, Mail, Github, Globe } from 'lucide-react';
+import { Sparkles, Heart, Globe } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -23,7 +23,7 @@ export default function Footer() {
             <div className="flex items-center gap-3 pt-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-gray-900 border border-gray-800 text-gray-300">
                 <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Hoạt động 100% Offline & Online</span>
+                <span>Nháp trên thiết bị · Xuất bản khi sẵn sàng</span>
               </span>
             </div>
           </div>
@@ -33,12 +33,12 @@ export default function Footer() {
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Danh Mục</h4>
             <ul className="space-y-2.5 text-xs">
               <li>
-                <Link to="/templates?category=Wedding" className="hover:text-white transition-colors">
+                <Link to="/templates?category=wedding" className="hover:text-white transition-colors">
                   Thiệp Cưới Sang Trọng
                 </Link>
               </li>
               <li>
-                <Link to="/templates?category=Birthday" className="hover:text-white transition-colors">
+                <Link to="/templates?category=birthday" className="hover:text-white transition-colors">
                   Thiệp Sinh Nhật Rực Rỡ
                 </Link>
               </li>
@@ -50,14 +50,13 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Technology */}
           <div>
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Kiến Trúc & Công Nghệ</h4>
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Thiết kế & chia sẻ</h4>
             <ul className="space-y-2.5 text-xs text-gray-400">
-              <li>.NET 10 Clean Architecture CQRS</li>
-              <li>React 19 + Vite + Tailwind CSS</li>
-              <li>MediatR Pipeline & FluentValidation</li>
-              <li>Standalone Single-File HTML Export</li>
+              <li><Link to="/drafts" className="hover:text-white">Tiếp tục bản nháp</Link></li>
+              <li><Link to="/my-sites" className="hover:text-white">Quản lý trang và phiên bản</Link></li>
+              <li>Lưu và xuất bản với tài khoản của bạn</li>
+              <li>Ảnh và font trong HTML xuất có thể cần mạng</li>
             </ul>
           </div>
         </div>

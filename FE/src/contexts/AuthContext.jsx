@@ -1,53 +1,117 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { authApi } from '../api/authApi';
+import {
+  applyAuthStorageEvent,
+  clearAuthSession,
+  readAuthToken,
+  readAuthUser,
+  writeAuthSession,
+} from '../utils/authStorage';
 
 export const AuthContext = createContext(null);
+const PENDING_AUTH_ACTION_KEY = 'pending_auth_action_v1';
+const PENDING_ACTION_TYPES = ['save', 'createVersion', 'communityShare', 'publishVersion', 'unpublishVersion', 'unpublishSite'];
+let inMemoryPendingAuthAction = null;
+
+export const locationToPath = (location) => {
+  if (typeof location === 'string') return location.startsWith('/') && !location.startsWith('//') ? location : '/';
+  if (!location || typeof location !== 'object') return '/';
+  const path = `${location.pathname || '/'}${location.search || ''}${location.hash || ''}`;
+  return path.startsWith('/') && !path.startsWith('//') ? path : '/';
+};
+
+export const storePendingAuthAction = (action, returnTo) => {
+  if (!action || !PENDING_ACTION_TYPES.includes(action.type)) return null;
+  const pendingAction = {
+    ...action,
+    returnTo: locationToPath(returnTo || action.returnTo),
+    createdAt: new Date().toISOString(),
+  };
+  inMemoryPendingAuthAction = pendingAction;
+  try {
+    window.localStorage.setItem(PENDING_AUTH_ACTION_KEY, JSON.stringify(pendingAction));
+  } catch {
+    // The pending action remains available for same-tab authentication.
+  }
+  return pendingAction;
+};
+
+export const getPendingAuthAction = () => {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(PENDING_AUTH_ACTION_KEY) || 'null');
+    if (value && PENDING_ACTION_TYPES.includes(value.type)) return value;
+  } catch {
+    // Use the in-memory copy when browser storage is unavailable.
+  }
+  return inMemoryPendingAuthAction;
+};
+
+export const clearPendingAuthAction = () => {
+  inMemoryPendingAuthAction = null;
+  try { window.localStorage.removeItem(PENDING_AUTH_ACTION_KEY); } catch { /* In-memory state is already cleared. */ }
+};
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('user');
-    if (!savedUser || savedUser === 'undefined' || savedUser === 'null') return null;
-    try {
-      return JSON.parse(savedUser);
-    } catch {
-      return null;
-    }
-  });
-  const [token, setToken] = useState(() => {
-    const savedToken = localStorage.getItem('token');
-    if (!savedToken || savedToken === 'undefined' || savedToken === 'null') return null;
-    return savedToken;
-  });
+  const [user, setUser] = useState(readAuthUser);
+  const [token, setToken] = useState(readAuthToken);
   const [loading, setLoading] = useState(true);
+  const [authCheckError, setAuthCheckError] = useState(null);
 
-  // Sync profile on mount if token exists
   useEffect(() => {
+    let isMounted = true;
     const initAuth = async () => {
-      const savedToken = localStorage.getItem('token');
-      if (savedToken && savedToken !== 'undefined' && savedToken !== 'null') {
-        try {
-          const res = await authApi.getMe();
-          const profile = res?.value ?? res;
-          if (profile) {
-            setUser(profile);
-            localStorage.setItem('user', JSON.stringify(profile));
-          }
-        } catch {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+      const savedToken = readAuthToken();
+      if (!savedToken) {
+        clearAuthSession();
+        if (isMounted) {
           setToken(null);
           setUser(null);
+          setLoading(false);
         }
-      } else {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setToken(null);
-        setUser(null);
+        return;
       }
-      setLoading(false);
+
+      try {
+        const response = await authApi.getMe();
+        const profile = response?.value ?? response;
+        if (isMounted && profile) {
+          setUser(profile);
+          writeAuthSession(savedToken, profile);
+          setAuthCheckError(null);
+        }
+      } catch (error) {
+        if (error.status === 401) {
+          clearAuthSession();
+          if (isMounted) {
+            setToken(null);
+            setUser(null);
+          }
+        } else if (isMounted) {
+          // A network failure does not prove the saved session is invalid.
+          setAuthCheckError(error.message || 'Không thể kiểm tra phiên đăng nhập lúc này.');
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
 
     initAuth();
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      if (event.key === 'token') {
+        applyAuthStorageEvent('token', event.newValue);
+        setToken(event.newValue || null);
+      }
+      if (event.key === 'user') {
+        applyAuthStorageEvent('user', event.newValue);
+        setUser(readAuthUser());
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const login = useCallback(async (email, password) => {
@@ -56,14 +120,11 @@ export const AuthProvider = ({ children }) => {
     const jwtToken = payload?.token;
     const userProfile = payload?.user;
 
-    if (jwtToken) {
-      localStorage.setItem('token', jwtToken);
-      setToken(jwtToken);
-    }
-    if (userProfile) {
-      localStorage.setItem('user', JSON.stringify(userProfile));
-      setUser(userProfile);
-    }
+    if (!jwtToken || !userProfile) throw new Error('Máy chủ không trả về phiên đăng nhập hợp lệ.');
+    writeAuthSession(jwtToken, userProfile);
+    setToken(jwtToken);
+    setUser(userProfile);
+    setAuthCheckError(null);
     return userProfile;
   }, []);
 
@@ -71,30 +132,31 @@ export const AuthProvider = ({ children }) => {
     const data = await authApi.register({ email, password, fullName });
     const payload = data?.value ?? data;
     if (payload?.token && payload?.user) {
-      localStorage.setItem('token', payload.token);
-      localStorage.setItem('user', JSON.stringify(payload.user));
+      writeAuthSession(payload.token, payload.user);
       setToken(payload.token);
       setUser(payload.user);
       return payload.user;
     }
-    // Backend RegisterCommand trả về Guid, tự động gọi login để thiết lập phiên đăng nhập
-    return await login(email, password);
+    return login(email, password);
   }, [login]);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    clearAuthSession();
     setToken(null);
     setUser(null);
+    setAuthCheckError(null);
   }, []);
 
   const isAuthenticated = !!token && !!user;
   const isAdmin = user?.role === 'Admin';
+  const accountId = user?.id || user?.userId || user?.email || null;
 
   const value = {
     user,
     token,
     loading,
+    authCheckError,
+    accountId,
     isAuthenticated,
     isAdmin,
     login,

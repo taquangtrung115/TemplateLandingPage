@@ -13,8 +13,21 @@ public sealed class GuestbookRepository : RepositoryBase<GuestbookEntry, Guid>, 
 
     public async Task<List<GuestbookEntry>> GetByCustomizationIdAsync(Guid customizationId, CancellationToken cancellationToken = default)
     {
-        return await DbSet.Where(g => g.CustomizationId == customizationId)
+        return await DbSet.AsNoTracking().Where(g => g.CustomizationId == customizationId)
             .OrderByDescending(g => g.CreatedAtUtc)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<(List<GuestbookEntry> Data, int Total)> GetPageByCustomizationVersionIdAsync(Guid versionId, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = DbSet.AsNoTracking().Where(entry => entry.CustomizationVersionId == versionId);
+        var total = await query.CountAsync(cancellationToken);
+        var data = await query
+            .OrderByDescending(entry => entry.CreatedAtUtc)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (data, total);
     }
 }

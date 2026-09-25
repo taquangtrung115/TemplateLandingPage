@@ -14,7 +14,28 @@ import {
 } from '../../utils/animationConstants';
 import { COLOR_PALETTES, applyPaletteToConfig } from '../../utils/colorPalettes';
 
-export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange, onSectionEdit }) => {
+export const CustomizerSidebar = ({
+  config,
+  onChange,
+  metadata,
+  onMetadataChange,
+  onSectionEdit,
+  versions = [],
+  selectedVersionId,
+  onSelectVersion,
+  onPreviewVersion,
+  onContinueFromVersion,
+  onPublishVersion,
+  onUnpublishVersion,
+  onUnpublishSite,
+  onCopyVersionUrl,
+  versionsTotal = versions.length,
+  versionsLoadingMore = false,
+  onLoadMoreVersions,
+  hasServerSite = false,
+  publishedVersionId = null,
+  saving = false,
+}) => {
   const [activeTab, setActiveTab] = useState('theme');
 
   // Deep update helper
@@ -41,6 +62,33 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
         },
       },
     });
+  };
+
+  const renderSectionHeadingEditor = (sectionKey, includeProcess = false) => {
+    const sectionHeadings = config.sectionHeadings?.[sectionKey] || {};
+    const fields = [
+      ['eyebrow', 'Nhãn nhỏ'],
+      ['title', 'Tiêu đề'],
+      ['subtitle', 'Mô tả'],
+      ...(includeProcess ? [['processEyebrow', 'Nhãn quy trình'], ['processTitle', 'Tiêu đề quy trình']] : []),
+    ];
+
+    return (
+      <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200/80 space-y-3">
+        <h5 className="text-xs font-bold text-gray-700">Tiêu đề phần hiển thị</h5>
+        {fields.map(([field, label]) => (
+          <div key={field}>
+            <label className="text-[11px] font-semibold text-gray-600 block mb-1">{label}</label>
+            <input
+              type="text"
+              value={sectionHeadings[field] || ''}
+              onChange={(e) => updateConfig('sectionHeadings', sectionKey, { ...sectionHeadings, [field]: e.target.value })}
+              className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+            />
+          </div>
+        ))}
+      </div>
+    );
   };
 
   // Dynamic Persons helpers
@@ -396,13 +444,14 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
   };
 
   // Dynamic Tabs detection based on template format and fields
-  const hasSpeakers = Array.isArray(config?.speakers) || config?.format === 'summit';
-  const hasPricing = Array.isArray(config?.pricingTickets) || Array.isArray(config?.pricingPackages) || config?.format === 'summit' || config?.format === 'saas';
-  const hasServices = Array.isArray(config?.servicesGrid) || config?.format === 'dental-services' || config?.format === 'medical';
-  const hasFeatures = Array.isArray(config?.featureCardsGrid) || config?.format === 'app-showcase' || config?.format === 'saas';
+  const templateFormat = config?.format || config?.templateFormat;
+  const hasSpeakers = Array.isArray(config?.speakers) || templateFormat === 'summit';
+  const hasPricing = Array.isArray(config?.pricingTickets) || Array.isArray(config?.pricingPackages) || templateFormat === 'summit' || templateFormat === 'saas';
+  const hasServices = Array.isArray(config?.servicesGrid) || Boolean(config?.booking) || templateFormat === 'dental-services' || templateFormat === 'medical';
+  const hasFeatures = Array.isArray(config?.featureCardsGrid) || templateFormat === 'app-showcase' || templateFormat === 'saas';
 
   const baseTabs = [
-    { id: 'general', label: 'Xuất bản', icon: Sparkles },
+    { id: 'general', label: 'Bản nháp & version', icon: Sparkles },
     { id: 'theme', label: 'Màu & Phông', icon: Palette },
     { id: 'hero', label: 'Màn hình đầu', icon: Image },
     { id: 'cards', label: 'Khối thẻ động', icon: Layers },
@@ -469,7 +518,8 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
         {/* General Settings */}
         {activeTab === 'general' && (
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thông tin xuất bản</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thông tin bản nháp</h3>
+            <p className="text-[11px] text-gray-500">Chỉnh sửa và lưu nháp không làm thay đổi nội dung đang công khai. Chỉ phiên bản được tạo mới có thể xuất bản.</p>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Tên thiệp / Dự án</label>
               <input
@@ -481,9 +531,9 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Đường dẫn riêng (Slug)</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Slug hiện hành</label>
               <div className="flex items-center">
-                <span className="text-xs text-gray-400 px-2.5 py-2 bg-gray-100 border border-r-0 rounded-l-xl">/view/</span>
+                <span className="text-xs text-gray-400 px-2.5 py-2 bg-gray-100 border border-r-0 rounded-l-xl">/p/</span>
                 <input
                   type="text"
                   value={metadata?.slug || ''}
@@ -492,19 +542,55 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
                   placeholder="minh-linh-2026"
                 />
               </div>
+              <p className="mt-1 text-[10px] text-gray-400">Đường dẫn chỉ công khai sau khi bạn chọn một phiên bản làm bản chính.</p>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border">
-              <div>
-                <span className="text-xs font-bold text-gray-800 block">Xuất bản công khai</span>
-                <span className="text-[10px] text-gray-500">Mọi người có thể truy cập qua đường dẫn</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={metadata?.isPublished ?? true}
-                onChange={(e) => onMetadataChange({ ...metadata, isPublished: e.target.checked })}
-                className="w-4 h-4 text-rose-600 rounded cursor-pointer"
-              />
+            <div className={`p-3 rounded-xl border text-xs ${hasServerSite ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
+              {hasServerSite ? 'Bản nháp làm việc đã có trên máy chủ.' : 'Bản này chỉ nằm trên thiết bị. Chọn “Lưu server” để tạo bản làm việc.'}
             </div>
+            {versions.length > 0 && (
+              <section className="space-y-2 pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-gray-800">Phiên bản đã tạo</h4>
+                  {versions.some((version) => version.isPublic) && (
+                    <button disabled={saving} onClick={onUnpublishSite} className="text-[10px] font-semibold text-rose-600 hover:underline disabled:opacity-50">Gỡ toàn bộ trang</button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {versions.map((version) => {
+                    const isMain = version.isMain ?? (version.id === publishedVersionId);
+                    return (
+                      <div key={version.id} className={`rounded-xl border p-3 space-y-2 ${selectedVersionId === version.id ? 'border-rose-300 bg-rose-50/40' : 'border-gray-200'}`}>
+                      <button onClick={() => onSelectVersion?.(version.id)} className="w-full text-left">
+                        <span className="flex items-center justify-between gap-2 text-xs font-bold text-gray-800">
+                          <span className="truncate">v{version.versionNumber} · {version.title}</span>
+                          <span className={`shrink-0 text-[9px] px-2 py-0.5 rounded-full ${isMain ? 'bg-emerald-100 text-emerald-700' : version.isPublic ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>{isMain ? 'Bản chính' : version.isPublic ? 'Công khai' : 'Riêng tư'}</span>
+                        </span>
+                        <span className="block mt-1 text-[10px] text-gray-500">{new Date(version.createdAtUtc).toLocaleString('vi-VN')}</span>
+                      </button>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button disabled={saving} onClick={() => onPreviewVersion?.(version)} className="px-2 py-1 rounded-md border bg-white text-[10px] font-semibold disabled:opacity-50">Xem trước</button>
+                        <button disabled={saving} onClick={() => onContinueFromVersion?.(version)} className="px-2 py-1 rounded-md border bg-white text-[10px] font-semibold disabled:opacity-50">Tiếp tục sửa</button>
+                        {!isMain && <button disabled={saving} onClick={() => onPublishVersion?.(version.id)} className="px-2 py-1 rounded-md bg-rose-600 text-white text-[10px] font-semibold disabled:opacity-50">Đặt làm bản chính</button>}
+                        {version.isPublic && (
+                          <button disabled={saving} onClick={() => onUnpublishVersion?.(version.id)} className="px-2 py-1 rounded-md border border-rose-200 bg-white text-[10px] font-semibold text-rose-700 disabled:opacity-50">Gỡ công khai</button>
+                        )}
+                        {version.isPublic && <button onClick={() => onCopyVersionUrl?.(version)} className="px-2 py-1 rounded-md border bg-white text-[10px] font-semibold">Sao chép URL</button>}
+                      </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {versions.length < versionsTotal && (
+                  <button
+                    disabled={versionsLoadingMore}
+                    onClick={onLoadMoreVersions}
+                    className="w-full px-3 py-2 rounded-lg border bg-white text-[11px] font-semibold text-gray-700 disabled:opacity-50"
+                  >
+                    {versionsLoadingMore ? 'Đang tải…' : `Tải thêm phiên bản (${versionsTotal - versions.length} còn lại)`}
+                  </button>
+                )}
+              </section>
+            )}
           </div>
         )}
 
@@ -661,6 +747,11 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
                 <option value="Cinzel">Cinzel (Quý tộc, Hoàng gia)</option>
                 <option value="Montserrat">Montserrat (Hiện đại, Tinh tế)</option>
                 <option value="Great Vibes">Great Vibes (Nét chữ uốn lượn)</option>
+                <option value="Lora">Lora (Trang nhã)</option>
+                <option value="Cormorant Garamond">Cormorant Garamond (Cổ điển)</option>
+                <option value="Nunito">Nunito (Mềm mại)</option>
+                <option value="DM Sans">DM Sans (Gọn gàng)</option>
+                <option value="Inter">Inter (Rõ nét)</option>
               </select>
             </div>
 
@@ -910,6 +1001,30 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
                 onChange={(e) => updateConfig('hero', 'callToActionText', e.target.value)}
                 className="w-full px-3 py-2 border rounded-xl text-xs"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Bố cục Hero</label>
+              <select
+                value={config.hero?.layout || 'center'}
+                onChange={(e) => updateConfig('hero', 'layout', e.target.value)}
+                className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+              >
+                <option value="center">Căn giữa</option>
+                <option value="left">Căn trái</option>
+                <option value="split">Chia đôi</option>
+                <option value="editorial">Tạp chí</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Đường dẫn nút bấm</label>
+              <input
+                type="text"
+                value={config.hero?.ctaUrl || ''}
+                onChange={(e) => updateConfig('hero', 'ctaUrl', e.target.value)}
+                className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
+                placeholder="https://..., mailto:..., tel:... hoặc #rsvp-section"
+              />
+              <p className="mt-1 text-[10px] text-gray-400">Nút chỉ hiển thị khi đường dẫn hợp lệ.</p>
             </div>
             <AnimationSelector
               label="Hiệu ứng chữ màn hình đầu"
@@ -1653,6 +1768,8 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
               </button>
             </div>
 
+            {renderSectionHeadingEditor('speakers')}
+
             <div className="space-y-4">
               {(config.speakers || []).map((spk, idx) => (
                 <div key={spk.id || idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-200/80 space-y-3 relative">
@@ -1737,6 +1854,8 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
               </button>
             </div>
 
+            {renderSectionHeadingEditor('pricing')}
+
             <div className="space-y-4">
               {((config.pricingTickets || config.pricingPackages) || []).map((ticket, idx) => (
                 <div key={ticket.id || idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-200/80 space-y-3 relative">
@@ -1809,6 +1928,16 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
                       className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
                     />
                   </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Đường dẫn nút bấm</label>
+                    <input
+                      type="text"
+                      value={ticket.ctaUrl || ''}
+                      onChange={(e) => handlePricingChange(idx, 'ctaUrl', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-mono"
+                      placeholder="https://..., mailto:..., tel:... hoặc #contact"
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -1822,6 +1951,8 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
               <h4 className="font-bold text-sm text-gray-900">Dịch Vụ Y Tế & Nha Khoa</h4>
               <p className="text-xs text-gray-400">Chỉnh sửa danh mục điều trị và chi phí</p>
             </div>
+
+            {renderSectionHeadingEditor('services', true)}
 
             <div className="space-y-4">
               {(config.servicesGrid || []).map((srv, idx) => (
@@ -1856,8 +1987,29 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
                       className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
                     />
                   </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Đường dẫn nút dịch vụ</label>
+                    <input
+                      type="text"
+                      value={srv.ctaUrl || ''}
+                      onChange={(e) => handleServiceChange(idx, 'ctaUrl', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-mono"
+                      placeholder="https://..., mailto:..., tel:... hoặc #contact"
+                    />
+                  </div>
                 </div>
               ))}
+            </div>
+            <div className="p-4 bg-sky-50 rounded-2xl border border-sky-100 space-y-2">
+              <label className="text-xs font-semibold text-gray-700 block">Đường dẫn đặt lịch</label>
+              <input
+                type="text"
+                value={config.booking?.ctaUrl || ''}
+                onChange={(e) => updateConfig('booking', 'ctaUrl', e.target.value)}
+                className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-mono"
+                placeholder="https://..., mailto:..., tel:... hoặc #contact"
+              />
+              <p className="text-[10px] text-gray-500">Đặt lịch mở đường dẫn này; trang không gửi thông tin liên hệ thay bạn.</p>
             </div>
           </div>
         )}
@@ -1869,6 +2021,8 @@ export const CustomizerSidebar = ({ config, onChange, metadata, onMetadataChange
               <h4 className="font-bold text-sm text-gray-900">Tính Năng Nổi Bật</h4>
               <p className="text-xs text-gray-400">Các thẻ tính năng công nghệ hoặc năng suất</p>
             </div>
+
+            {renderSectionHeadingEditor('features')}
 
             <div className="space-y-4">
               {(config.featureCardsGrid || []).map((feat, idx) => (

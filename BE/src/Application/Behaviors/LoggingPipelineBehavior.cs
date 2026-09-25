@@ -1,6 +1,7 @@
 namespace TemplateLandingPage.Application.Behaviors;
 
 using MediatR;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 
@@ -21,22 +22,23 @@ public class LoggingPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TR
         CancellationToken cancellationToken)
     {
         var requestName = typeof(TRequest).Name;
+        var operationId = Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString("N");
 
-        _logger.LogInformation("Processing request {RequestName}", requestName);
+        _logger.LogInformation("Processing request {RequestName}, operation {OperationId}", requestName, operationId);
 
         var result = await next();
 
         if (result.IsSuccess)
         {
-            _logger.LogInformation("Request {RequestName} processed successfully", requestName);
+            _logger.LogInformation("Request {RequestName} processed successfully, operation {OperationId}", requestName, operationId);
         }
         else
         {
             _logger.LogWarning(
-                "Request {RequestName} processed with error: {ErrorCode} - {ErrorMessage}",
+                "Request {RequestName}, operation {OperationId}, processed with error: {ErrorCode}",
                 requestName,
-                result.Error.Code,
-                result.Error.Message);
+                operationId,
+                result.Error.Code);
         }
 
         return result;

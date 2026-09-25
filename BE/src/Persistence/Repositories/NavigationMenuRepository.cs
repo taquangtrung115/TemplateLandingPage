@@ -13,9 +13,9 @@ public sealed class NavigationMenuRepository : RepositoryBase<NavigationMenu, Gu
 
     public async Task<List<NavigationMenu>> GetTreeAsync(bool? isActiveOnly = null, CancellationToken cancellationToken = default)
     {
-        IQueryable<NavigationMenu> query = DbSet
+        IQueryable<NavigationMenu> query = DbSet.AsNoTracking()
             .Include(m => m.SubMenus)
-            .Where(m => m.ParentId == null);
+            .Where(m => m.ParentId == null && !m.IsDeleted);
 
         if (isActiveOnly.HasValue && isActiveOnly.Value)
         {
@@ -43,6 +43,20 @@ public sealed class NavigationMenuRepository : RepositoryBase<NavigationMenu, Gu
         }
 
         return roots;
+    }
+
+    public async Task<NavigationMenu?> GetVisibleByIdAsync(Guid id, bool includeInactive, CancellationToken cancellationToken = default)
+    {
+        var query = DbSet.AsNoTracking()
+            .Include(m => m.SubMenus)
+            .Where(m => m.Id == id && !m.IsDeleted);
+
+        if (!includeInactive)
+        {
+            query = query.Where(m => m.IsActive);
+        }
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<bool> HasChildrenAsync(Guid id, CancellationToken cancellationToken = default)

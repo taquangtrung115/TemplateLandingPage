@@ -11,232 +11,157 @@ using Xunit;
 
 public class UpdateCustomizationCommandHandlerTests
 {
-    private readonly Mock<ICustomizationRepository> _customizationRepositoryMock;
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<ICustomizationRepository> _customizationRepositoryMock = new();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly UpdateCustomizationCommandHandler _handler;
 
-    public UpdateCustomizationCommandHandlerTests()
-    {
-        _customizationRepositoryMock = new Mock<ICustomizationRepository>();
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
-
-        _handler = new UpdateCustomizationCommandHandler(
-            _customizationRepositoryMock.Object,
-            _unitOfWorkMock.Object);
-    }
+    public UpdateCustomizationCommandHandlerTests() =>
+        _handler = new UpdateCustomizationCommandHandler(_customizationRepositoryMock.Object, _unitOfWorkMock.Object);
 
     [Fact]
     public async Task Handle_Should_ReturnNotFound_WhenCustomizationDoesNotExist()
     {
-        // Arrange
         var id = Guid.NewGuid();
         _customizationRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserCustomization?)null);
 
-        var command = new UpdateCustomizationCommand(
-            id,
-            "Updated Title",
-            "updated-slug",
-            "{}",
-            true,
-            null,
-            "User");
+        var result = await _handler.Handle(
+            new UpdateCustomizationCommand(id, "Title", "slug", "{}", false, Guid.NewGuid(), "User", 1, Guid.NewGuid()),
+            CancellationToken.None);
 
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(CustomizationErrors.NotFound);
     }
 
     [Fact]
-    public async Task Handle_Should_Succeed_WhenGuestUpdatesCustomizationWithNullUserId()
+    public async Task Handle_Should_SaveOwnerDraft_AndIncrementRevision()
     {
-        // Arrange
+        var ownerId = Guid.NewGuid();
         var id = Guid.NewGuid();
-        var customization = UserCustomization.Create(null, Guid.NewGuid(), "Guest Title", "guest-slug", "{}");
+        var site = UserCustomization.Create(ownerId, Guid.NewGuid(), "Before", "before", "{}");
+        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(site);
+        _customizationRepositoryMock.Setup(r => r.FindSlugOwnerAsync("after", It.IsAny<CancellationToken>())).ReturnsAsync((Guid?)null);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(customization);
-        _customizationRepositoryMock.Setup(r => r.GetBySlugAsync("updated-slug", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((UserCustomization?)null);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
+        var result = await _handler.Handle(
+            new UpdateCustomizationCommand(id, "After", "after", "{\"theme\":{}}", false, ownerId, "User", 1, Guid.NewGuid()),
+            CancellationToken.None);
 
-        var command = new UpdateCustomizationCommand(
-            id,
-            "Updated Title",
-            "updated-slug",
-            "{\"theme\":{}}",
-            true,
-            null,
-            "User");
-
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
         result.IsSuccess.Should().BeTrue();
-        customization.Title.Should().Be("Updated Title");
-        customization.Slug.Should().Be("updated-slug");
+        result.Value.Revision.Should().Be(2);
+        site.Title.Should().Be("After");
+        site.Slug.Should().Be("after");
+        site.PublishedVersionId.Should().BeNull();
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_Should_Succeed_WhenOwnerUpdatesOwnCustomization()
+    public async Task Handle_Should_AllowAdminToUpdateAnotherUsersDraft()
     {
-        // Arrange
-        var ownerId = Guid.NewGuid();
-        var id = Guid.NewGuid();
-        var customization = UserCustomization.Create(ownerId, Guid.NewGuid(), "Owner Title", "owner-slug", "{}");
+        var site = UserCustomization.Create(Guid.NewGuid(), Guid.NewGuid(), "Before", "before", "{}");
+        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(site);
+        _customizationRepositoryMock.Setup(r => r.FindSlugOwnerAsync("admin-updated", It.IsAny<CancellationToken>())).ReturnsAsync((Guid?)null);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(customization);
-        _customizationRepositoryMock.Setup(r => r.GetBySlugAsync("updated-owner-slug", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((UserCustomization?)null);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
+        var result = await _handler.Handle(
+            new UpdateCustomizationCommand(Guid.NewGuid(), "Admin Title", "admin-updated", "{}", false, Guid.NewGuid(), "Admin", 1, Guid.NewGuid()),
+            CancellationToken.None);
 
-        var command = new UpdateCustomizationCommand(
-            id,
-            "Updated Title",
-            "updated-owner-slug",
-            "{\"theme\":{}}",
-            true,
-            ownerId,
-            "User");
-
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
         result.IsSuccess.Should().BeTrue();
-        customization.Title.Should().Be("Updated Title");
+        site.Title.Should().Be("Admin Title");
     }
 
     [Fact]
-    public async Task Handle_Should_Succeed_WhenAdminUpdatesAnyCustomization()
+    public async Task Handle_Should_RejectAnotherUser()
     {
-        // Arrange
-        var ownerId = Guid.NewGuid();
-        var adminId = Guid.NewGuid();
-        var id = Guid.NewGuid();
-        var customization = UserCustomization.Create(ownerId, Guid.NewGuid(), "User Title", "user-slug", "{}");
+        var site = UserCustomization.Create(Guid.NewGuid(), Guid.NewGuid(), "Owner Title", "owner", "{}");
+        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(site);
 
-        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(customization);
-        _customizationRepositoryMock.Setup(r => r.GetBySlugAsync("admin-updated-slug", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((UserCustomization?)null);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
+        var result = await _handler.Handle(
+            new UpdateCustomizationCommand(Guid.NewGuid(), "Hacker", "hacker", "{}", false, Guid.NewGuid(), "User", 1, Guid.NewGuid()),
+            CancellationToken.None);
 
-        var command = new UpdateCustomizationCommand(
-            id,
-            "Admin Title",
-            "admin-updated-slug",
-            "{\"theme\":{}}",
-            true,
-            adminId,
-            "Admin");
-
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        customization.Title.Should().Be("Admin Title");
-    }
-
-    [Fact]
-    public async Task Handle_Should_ReturnUnauthorized_WhenAnotherUserTriesToUpdate()
-    {
-        // Arrange
-        var ownerId = Guid.NewGuid();
-        var anotherUserId = Guid.NewGuid();
-        var id = Guid.NewGuid();
-        var customization = UserCustomization.Create(ownerId, Guid.NewGuid(), "User Title", "user-slug", "{}");
-
-        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(customization);
-
-        var command = new UpdateCustomizationCommand(
-            id,
-            "Hacker Title",
-            "hacker-slug",
-            "{}",
-            true,
-            anotherUserId,
-            "User");
-
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(CustomizationErrors.Unauthorized);
+        site.Title.Should().Be("Owner Title");
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task Handle_Should_ReturnUnauthorized_WhenGuestTriesToUpdateRegisteredUserCustomization()
+    public async Task Handle_Should_RejectGuestUpdatingOwnerlessCustomization()
     {
-        // Arrange
-        var ownerId = Guid.NewGuid();
         var id = Guid.NewGuid();
-        var customization = UserCustomization.Create(ownerId, Guid.NewGuid(), "User Title", "user-slug", "{}");
+        var site = UserCustomization.Create(null, Guid.NewGuid(), "Guest Title", "guest", "{}");
+        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(site);
 
-        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(customization);
+        var result = await _handler.Handle(
+            new UpdateCustomizationCommand(id, "Changed", "changed", "{}", false, null, "User", 1, Guid.NewGuid()),
+            CancellationToken.None);
 
-        var command = new UpdateCustomizationCommand(
-            id,
-            "Guest Title",
-            "guest-slug",
-            "{}",
-            true,
-            null,
-            "User");
-
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(CustomizationErrors.Unauthorized);
+        site.Title.Should().Be("Guest Title");
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task Handle_Should_ReturnDuplicateSlug_WhenSlugIsUsedByAnotherCustomization()
+    public async Task Handle_Should_ReturnConflict_WhenRevisionIsStale()
     {
-        // Arrange
         var ownerId = Guid.NewGuid();
-        var id = Guid.NewGuid();
-        var anotherId = Guid.NewGuid();
-        var customization = UserCustomization.Create(ownerId, Guid.NewGuid(), "User Title", "user-slug", "{}");
-        var existingWithSlug = UserCustomization.Create(ownerId, Guid.NewGuid(), "Existing Title", "duplicate-slug", "{}");
-        // Reflectively set Id on existingWithSlug or create mock
-        // Since UserCustomization Id is Guid from constructor:
-        // existingWithSlug.Id != id is true because new Guid was generated.
+        var site = UserCustomization.Create(ownerId, Guid.NewGuid(), "Current", "current", "{}");
+        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(site);
 
-        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(customization);
-        _customizationRepositoryMock.Setup(r => r.GetBySlugAsync("duplicate-slug", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingWithSlug);
+        var result = await _handler.Handle(
+            new UpdateCustomizationCommand(Guid.NewGuid(), "Stale update", "stale", "{}", false, ownerId, "User", 0, Guid.NewGuid()),
+            CancellationToken.None);
 
-        var command = new UpdateCustomizationCommand(
-            id,
-            "New Title",
-            "duplicate-slug",
-            "{}",
-            true,
-            ownerId,
-            "User");
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be(CustomizationErrors.Conflict);
+        site.Title.Should().Be("Current");
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+    [Fact]
+    public async Task Handle_Should_ReturnDuplicateSlug_WhenSlugAliasBelongsToAnotherSite()
+    {
+        var ownerId = Guid.NewGuid();
+        var siteId = Guid.NewGuid();
+        var otherSiteId = Guid.NewGuid();
+        var site = UserCustomization.Create(ownerId, Guid.NewGuid(), "Current", "current", "{}");
+        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(siteId, It.IsAny<CancellationToken>())).ReturnsAsync(site);
+        _customizationRepositoryMock.Setup(r => r.FindSlugOwnerAsync("duplicate", It.IsAny<CancellationToken>())).ReturnsAsync(otherSiteId);
 
-        // Assert
+        var result = await _handler.Handle(
+            new UpdateCustomizationCommand(siteId, "Changed", "duplicate", "{}", false, ownerId, "User", 1, Guid.NewGuid()),
+            CancellationToken.None);
+
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(CustomizationErrors.DuplicateSlug);
+        site.Title.Should().Be("Current");
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnPreviousRevisionForIdenticalRetry_AndConflictForChangedRetry()
+    {
+        var ownerId = Guid.NewGuid();
+        var id = Guid.NewGuid();
+        var requestId = Guid.NewGuid();
+        var site = UserCustomization.Create(ownerId, Guid.NewGuid(), "Before", "before", "{}");
+        _customizationRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(site);
+        _customizationRepositoryMock.Setup(r => r.FindSlugOwnerAsync("after", It.IsAny<CancellationToken>())).ReturnsAsync((Guid?)null);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var command = new UpdateCustomizationCommand(id, "After", "after", "{}", false, ownerId, "User", 1, requestId);
+
+        var first = await _handler.Handle(command, CancellationToken.None);
+        var retry = await _handler.Handle(command, CancellationToken.None);
+        var changedRetry = await _handler.Handle(command with { Title = "Changed" }, CancellationToken.None);
+
+        first.IsSuccess.Should().BeTrue();
+        retry.IsSuccess.Should().BeTrue();
+        retry.Value.Revision.Should().Be(first.Value.Revision);
+        changedRetry.IsFailure.Should().BeTrue();
+        changedRetry.Error.Should().Be(CustomizationErrors.Conflict);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

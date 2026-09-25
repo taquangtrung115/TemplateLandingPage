@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
+import { getPendingAuthAction, locationToPath } from '../../contexts/AuthContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -13,7 +14,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const from = location.state?.from?.pathname || '/';
+  const pendingAction = getPendingAuthAction();
+  const from = locationToPath(location.state?.from || pendingAction?.returnTo || '/');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,11 +24,7 @@ export default function LoginPage() {
 
     try {
       const user = await login(email, password);
-      if (user?.role === 'Admin') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate(from, { replace: true });
-      }
+      navigate(from === '/' && user?.role === 'Admin' ? '/admin' : from, { replace: true });
     } catch (err) {
       setError(err.message || 'Đăng nhập không thành công. Vui lòng kiểm tra email và mật khẩu!');
     } finally {
@@ -115,7 +113,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center text-xs text-gray-500">
             Chưa có tài khoản?{' '}
-            <Link to="/register" className="font-bold text-rose-600 hover:underline">
+            <Link to="/register" state={{ from }} className="font-bold text-rose-600 hover:underline">
               Đăng ký miễn phí
             </Link>
           </div>

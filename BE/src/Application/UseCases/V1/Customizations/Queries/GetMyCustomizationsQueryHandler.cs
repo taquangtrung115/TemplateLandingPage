@@ -1,40 +1,20 @@
 namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Queries;
-
 using TemplateLandingPage.Application.Abstractions;
+using TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Customizations;
 using TemplateLandingPage.Domain.Repositories;
 
-public sealed class GetMyCustomizationsQueryHandler : IQueryHandler<GetMyCustomizationsQuery, List<CustomizationResponse>>
+public sealed class GetMyCustomizationsQueryHandler(ICustomizationRepository customizationRepository)
+    : IQueryHandler<GetMyCustomizationsQuery, PagedResponse<CustomizationSummaryResponse>>
 {
-    private readonly ICustomizationRepository _customizationRepository;
-    private readonly ITemplateRepository _templateRepository;
-
-    public GetMyCustomizationsQueryHandler(
-        ICustomizationRepository customizationRepository,
-        ITemplateRepository templateRepository)
+    private readonly ICustomizationRepository _repository = customizationRepository;
+    public async Task<Result<PagedResponse<CustomizationSummaryResponse>>> Handle(GetMyCustomizationsQuery request, CancellationToken cancellationToken)
     {
-        _customizationRepository = customizationRepository;
-        _templateRepository = templateRepository;
-    }
-
-    public async Task<Result<List<CustomizationResponse>>> Handle(GetMyCustomizationsQuery request, CancellationToken cancellationToken)
-    {
-        var customizations = await _customizationRepository.GetByUserIdAsync(request.UserId, cancellationToken);
-        var templates = await _templateRepository.GetAllAsync(cancellationToken);
-        var templateMap = templates.ToDictionary(t => t.Id, t => t.Name);
-
-        var response = customizations.Select(c => new CustomizationResponse(
-            c.Id,
-            c.UserId,
-            c.TemplateId,
-            templateMap.TryGetValue(c.TemplateId, out var tName) ? tName : "Template",
-            c.Title,
-            c.Slug,
-            c.ConfigJson,
-            c.IsPublished,
-            c.CreatedAtUtc)).ToList();
-
-        return Result.Success(response);
+        if (request.UserId == Guid.Empty) return Result.Failure<PagedResponse<CustomizationSummaryResponse>>(CustomizationErrors.Unauthorized);
+        var page = Math.Clamp(request.Page, 1, 1_000_000);
+        var size = Math.Clamp(request.PageSize, 1, 100);
+        var result = await _repository.SearchAsync(request.UserId, false, page, size, cancellationToken);
+        return Result.Success(new PagedResponse<CustomizationSummaryResponse>(result.Data.Select(CustomizationRules.Summary).ToList(), result.Total, page, size));
     }
 }

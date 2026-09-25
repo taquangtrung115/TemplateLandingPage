@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, MapPin, ChevronRight } from 'lucide-react';
 import ScrollReveal from '../../common/ScrollReveal';
+import { getSafeHttpUrl } from '../../../utils/safeUrl';
 
 /**
  * @param {Object} props
@@ -13,6 +14,9 @@ export const EventDetailsSection = React.memo(function EventDetailsSection({
   primaryColor = '#e11d48',
   isHighlighted = false,
 }) {
+  const mapDirectLink = getSafeHttpUrl(eventDetails?.mapDirectLink);
+  const mapEmbedUrl = getSafeHttpUrl(eventDetails?.mapEmbedUrl);
+
   return (
     <section
       className={`py-20 px-4 sm:px-6 bg-white/50 backdrop-blur-md border-y border-gray-200/40 relative z-20 transition-all duration-300 ${
@@ -53,10 +57,10 @@ export const EventDetailsSection = React.memo(function EventDetailsSection({
             </div>
           )}
 
-          {eventDetails?.mapDirectLink && (
+          {mapDirectLink && (
             <div className="pt-3">
               <a
-                href={eventDetails.mapDirectLink}
+                href={mapDirectLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm font-semibold hover:underline"
@@ -69,11 +73,11 @@ export const EventDetailsSection = React.memo(function EventDetailsSection({
           )}
 
           {/* Embedded Google Maps if URL is provided */}
-          {eventDetails?.mapEmbedUrl && (
+          {mapEmbedUrl && (
             <div className="pt-6 max-w-2xl mx-auto overflow-hidden rounded-2xl shadow-lg border border-gray-200">
               <iframe
                 title="Venue Map"
-                src={eventDetails.mapEmbedUrl}
+                src={mapEmbedUrl}
                 width="100%"
                 height="280"
                 style={{ border: 0 }}

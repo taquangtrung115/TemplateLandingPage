@@ -9,7 +9,14 @@ public sealed class UserCustomization : AggregateRoot<Guid>, IAuditableEntity, I
     public string Title { get; private set; } = string.Empty;
     public string Slug { get; private set; } = string.Empty;
     public string ConfigJson { get; private set; } = string.Empty;
-    public bool IsPublished { get; private set; } = true;
+    public bool IsPublished { get; private set; }
+    public Guid? PublishedVersionId { get; private set; }
+    public int Revision { get; private set; } = 1;
+    public int LastVersionNumber { get; private set; }
+    public Guid? ClientDraftId { get; private set; }
+    public Guid? LastSaveRequestId { get; private set; }
+    public string? LastSaveRequestHash { get; private set; }
+    public int? LastSaveRevision { get; private set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
     public DateTime CreatedAtUtc { get; set; }
@@ -45,7 +52,7 @@ public sealed class UserCustomization : AggregateRoot<Guid>, IAuditableEntity, I
         string title,
         string slug,
         string configJson,
-        bool isPublished = true)
+        bool isPublished = false)
     {
         if (string.IsNullOrWhiteSpace(title))
             throw new ArgumentException("Title cannot be empty.", nameof(title));
@@ -84,5 +91,42 @@ public sealed class UserCustomization : AggregateRoot<Guid>, IAuditableEntity, I
     {
         IsDeleted = true;
         DeletedAtUtc = DateTime.UtcNow;
+        Touch();
+    }
+
+    public void SetClientDraftId(Guid clientDraftId) => ClientDraftId = clientDraftId;
+
+    public void SaveDraft(string title, string slug, string configJson, Guid requestId, string requestHash)
+    {
+        Update(title, slug, configJson, IsPublished);
+        Touch();
+        LastSaveRequestId = requestId;
+        LastSaveRequestHash = requestHash;
+        LastSaveRevision = Revision;
+    }
+
+    public int AllocateVersionNumber()
+    {
+        LastVersionNumber++;
+        return LastVersionNumber;
+    }
+
+    public void SetPublication(Guid? versionId)
+    {
+        PublishedVersionId = versionId;
+        IsPublished = versionId.HasValue;
+        Touch();
+    }
+
+    public void AssignOwner(Guid userId)
+    {
+        UserId = userId;
+        Touch();
+    }
+
+    public void Touch()
+    {
+        Revision++;
+        ModifiedAtUtc = DateTime.UtcNow;
     }
 }

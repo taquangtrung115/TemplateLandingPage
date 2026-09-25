@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import LoadingSpinner from './LoadingSpinner';
+import { locationToPath } from '../contexts/AuthContext';
 
 export const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const { user, isAuthenticated, loading, isAdmin } = useAuth();
@@ -16,7 +17,7 @@ export const ProtectedRoute = ({ children, requireAdmin = false }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: locationToPath(location) }} replace />;
   }
 
   if (requireAdmin && !isAdmin) {

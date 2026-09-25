@@ -18,6 +18,8 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<NavigationMenu> NavigationMenus => Set<NavigationMenu>();
     public DbSet<Template> Templates => Set<Template>();
     public DbSet<UserCustomization> UserCustomizations => Set<UserCustomization>();
+    public DbSet<CustomizationVersion> CustomizationVersions => Set<CustomizationVersion>();
+    public DbSet<CustomizationSlugAlias> CustomizationSlugAliases => Set<CustomizationSlugAlias>();
     public DbSet<RsvpEntry> RsvpEntries => Set<RsvpEntry>();
     public DbSet<GuestbookEntry> GuestbookEntries => Set<GuestbookEntry>();
 

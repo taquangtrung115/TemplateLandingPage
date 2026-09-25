@@ -1,54 +1,40 @@
 namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Commands;
 
 using TemplateLandingPage.Application.Abstractions;
+using TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Customizations;
 using TemplateLandingPage.Domain.Abstractions.Repositories;
 using TemplateLandingPage.Domain.Repositories;
 
-public sealed class UpdateCustomizationCommandHandler : ICommandHandler<UpdateCustomizationCommand>
+public sealed class UpdateCustomizationCommandHandler(ICustomizationRepository customizationRepository, IUnitOfWork unitOfWork)
+    : ICommandHandler<UpdateCustomizationCommand, CustomizationMutationResponse>
 {
-    private readonly ICustomizationRepository _customizationRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICustomizationRepository _repository = customizationRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-    public UpdateCustomizationCommandHandler(
-        ICustomizationRepository customizationRepository,
-        IUnitOfWork unitOfWork)
+    public async Task<Result<CustomizationMutationResponse>> Handle(UpdateCustomizationCommand request, CancellationToken cancellationToken)
     {
-        _customizationRepository = customizationRepository;
-        _unitOfWork = unitOfWork;
-    }
+        var site = await _repository.GetByIdAsync(request.Id, cancellationToken);
+        if (site is null) return Result.Failure<CustomizationMutationResponse>(CustomizationErrors.NotFound);
+        if (!CustomizationRules.CanAccess(site, request.CurrentUserId, request.CurrentUserRole))
+            return Result.Failure<CustomizationMutationResponse>(CustomizationErrors.Unauthorized);
+        if (!CustomizationRules.IsValidDraft(request.Title, request.Slug, request.ConfigJson) ||
+            !request.RequestId.HasValue || request.RequestId == Guid.Empty)
+            return Result.Failure<CustomizationMutationResponse>(CustomizationErrors.InvalidRequest);
 
-    public async Task<Result> Handle(UpdateCustomizationCommand request, CancellationToken cancellationToken)
-    {
-        var customization = await _customizationRepository.GetByIdAsync(request.Id, cancellationToken);
-        if (customization is null)
-        {
-            return Result.Failure(CustomizationErrors.NotFound);
-        }
+        var hash = CustomizationRules.Hash(request.Title, request.Slug, request.ConfigJson);
+        if (site.LastSaveRequestId == request.RequestId)
+            return site.LastSaveRequestHash == hash
+                ? Result.Success(new CustomizationMutationResponse(site.Id, site.LastSaveRevision ?? site.Revision))
+                : Result.Failure<CustomizationMutationResponse>(CustomizationErrors.Conflict);
+        if (request.ExpectedRevision != site.Revision)
+            return Result.Failure<CustomizationMutationResponse>(CustomizationErrors.Conflict);
+        var slugError = await CustomizationRules.ReserveSlugAsync(_repository, site.Id, request.Slug, cancellationToken);
+        if (slugError is not null) return Result.Failure<CustomizationMutationResponse>(slugError);
 
-        // Check ownership if user is not admin
-        if (request.CurrentUserRole != "Admin")
-        {
-            if (customization.UserId.HasValue)
-            {
-                if (!request.CurrentUserId.HasValue || customization.UserId.Value != request.CurrentUserId.Value)
-                {
-                    return Result.Failure(CustomizationErrors.Unauthorized);
-                }
-            }
-        }
-
-        var existingWithSlug = await _customizationRepository.GetBySlugAsync(request.Slug, cancellationToken);
-        if (existingWithSlug is not null && existingWithSlug.Id != request.Id)
-        {
-            return Result.Failure(CustomizationErrors.DuplicateSlug);
-        }
-
-        customization.Update(request.Title, request.Slug, request.ConfigJson, request.IsPublished);
-        _customizationRepository.Update(customization);
+        site.SaveDraft(request.Title, request.Slug, request.ConfigJson, request.RequestId.Value, hash);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return Result.Success();
+        return Result.Success(new CustomizationMutationResponse(site.Id, site.Revision));
     }
 }

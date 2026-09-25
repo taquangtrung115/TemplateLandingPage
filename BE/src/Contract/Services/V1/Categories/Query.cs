@@ -4,6 +4,6 @@ using TemplateLandingPage.Contract.Abstractions.Message;
 
 public record GetCategoriesQuery(bool? IsActiveOnly = null) : IQuery<List<CategoryResponse>>;
 
-public record GetCategoryByIdQuery(Guid Id) : IQuery<CategoryResponse>;
+public record GetCategoryByIdQuery(Guid Id, bool IncludeInactive = false) : IQuery<CategoryResponse>;
 
-public record GetCategoryBySlugQuery(string Slug) : IQuery<CategoryResponse>;
+public record GetCategoryBySlugQuery(string Slug, bool IncludeInactive = false) : IQuery<CategoryResponse>;

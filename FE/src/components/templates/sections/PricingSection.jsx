@@ -1,5 +1,6 @@
 import React from 'react';
-import { Check, Ticket, ArrowRight, Zap } from 'lucide-react';
+import { Check, Ticket, ArrowRight } from 'lucide-react';
+import { getSafeCssColor, getSafeLinkUrl } from '../../../utils/safeUrl';
 
 /**
  * PricingSection Component
@@ -11,15 +12,15 @@ import { Check, Ticket, ArrowRight, Zap } from 'lucide-react';
  * @param {Array} [props.pricingPackages] Danh sách các gói cước SaaS
  * @param {string} [props.primaryColor='#2563eb'] Màu chủ đạo
  * @param {boolean} [props.isHighlighted=false] Trạng thái đang chỉnh sửa
- * @param {Function} [props.onSelectTicket] Callback khi người dùng bấm chọn vé
  */
 export default function PricingSection({
   pricingTickets = [],
   pricingPackages = [],
+  headings = {},
   primaryColor = '#2563eb',
   isHighlighted = false,
-  onSelectTicket,
 }) {
+  primaryColor = getSafeCssColor(primaryColor, '#2563eb');
   const items = pricingTickets.length > 0 ? pricingTickets : pricingPackages;
 
   if (!items || items.length === 0) {
@@ -45,13 +46,13 @@ export default function PricingSection({
             }}
           >
             <Ticket className="w-3.5 h-3.5" />
-            <span>Passes & Pricing Plans</span>
+            <span>{headings?.eyebrow || 'Dịch vụ & Gói'}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">
-            Chọn Gói Vé Phù Hợp Với Bạn
+            {headings?.title || 'Chọn lựa phù hợp với bạn'}
           </h2>
           <p className="text-sm sm:text-base text-gray-400 font-normal max-w-xl mx-auto">
-            Số lượng vé Early-Bird có hạn. Đăng ký sớm để giữ chỗ và nhận toàn bộ quyền lợi đặc quyền.
+            {headings?.subtitle || 'So sánh các lựa chọn và quyền lợi bên dưới.'}
           </p>
         </div>
 
@@ -65,6 +66,7 @@ export default function PricingSection({
         }`}>
           {items.map((item, idx) => {
             const isPopular = item.badge?.toLowerCase().includes('popular') || item.badge?.toLowerCase().includes('hot');
+            const ctaUrl = getSafeLinkUrl(item.ctaUrl);
 
             return (
               <div
@@ -131,19 +133,22 @@ export default function PricingSection({
                 </div>
 
                 {/* Call to Action button */}
-                <button
-                  type="button"
-                  onClick={() => onSelectTicket?.(item)}
-                  className="w-full py-3.5 px-6 rounded-2xl font-bold text-xs shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: isPopular ? primaryColor : 'rgba(255, 255, 255, 0.08)',
-                    color: '#ffffff',
-                    border: isPopular ? 'none' : '1px solid rgba(255, 255, 255, 0.15)',
-                  }}
-                >
-                  <span>{item.ctaText || 'Đăng Ký Vé Này'}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                {ctaUrl && (
+                  <a
+                    href={ctaUrl}
+                    target={/^https?:/i.test(ctaUrl) ? '_blank' : undefined}
+                    rel={/^https?:/i.test(ctaUrl) ? 'noopener noreferrer' : undefined}
+                    className="w-full py-3.5 px-6 rounded-2xl font-bold text-xs shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                    style={{
+                      backgroundColor: isPopular ? primaryColor : 'rgba(255, 255, 255, 0.08)',
+                      color: '#ffffff',
+                      border: isPopular ? 'none' : '1px solid rgba(255, 255, 255, 0.15)',
+                    }}
+                  >
+                    <span>{item.ctaText || 'Đăng Ký Vé Này'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </a>
+                )}
               </div>
             );
           })}

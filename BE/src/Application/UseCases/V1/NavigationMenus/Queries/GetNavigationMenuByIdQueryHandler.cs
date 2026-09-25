@@ -16,7 +16,7 @@ public sealed class GetNavigationMenuByIdQueryHandler : IQueryHandler<GetNavigat
 
     public async Task<Result<NavigationMenuResponse>> Handle(GetNavigationMenuByIdQuery request, CancellationToken cancellationToken)
     {
-        var menu = await _navigationMenuRepository.GetByIdAsync(request.Id, cancellationToken);
+        var menu = await _navigationMenuRepository.GetVisibleByIdAsync(request.Id, request.IncludeInactive, cancellationToken);
         if (menu is null)
         {
             return Result.Failure<NavigationMenuResponse>(NavigationMenuErrors.NotFound);
@@ -35,7 +35,7 @@ public sealed class GetNavigationMenuByIdQueryHandler : IQueryHandler<GetNavigat
             menu.IsActive,
             menu.CreatedAtUtc,
             menu.SubMenus?
-                .Where(s => !s.IsDeleted)
+                .Where(s => !s.IsDeleted && (request.IncludeInactive || s.IsActive))
                 .OrderBy(s => s.OrderIndex)
                 .Select(s => new NavigationMenuResponse(
                     s.Id,

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Layers, CheckCircle, Zap, Shield, Cpu, Activity, Clock, Compass } from 'lucide-react';
+import { Layers, Zap, Shield, Cpu, Activity, Clock, Compass } from 'lucide-react';
+import { getSafeCssColor } from '../../../utils/safeUrl';
 
 /**
  * FeatureCardsSection Component
@@ -16,9 +17,12 @@ import { Layers, CheckCircle, Zap, Shield, Cpu, Activity, Clock, Compass } from 
 export default function FeatureCardsSection({
   featureCardsGrid = [],
   metrics = [],
+  headings = {},
   primaryColor = '#10b981',
   isHighlighted = false,
 }) {
+  primaryColor = getSafeCssColor(primaryColor, '#10b981');
+
   if (!featureCardsGrid || featureCardsGrid.length === 0) {
     return null;
   }
@@ -44,13 +48,13 @@ export default function FeatureCardsSection({
             }}
           >
             <Zap className="w-3.5 h-3.5" />
-            <span>Tính Năng Vượt Trội</span>
+            <span>{headings?.eyebrow || 'Điểm nổi bật'}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight">
-            Thiết Kế Vì Trải Nghiệm Tối Thượng
+            {headings?.title || 'Điều làm nên khác biệt'}
           </h2>
           <p className="text-sm sm:text-base opacity-75 font-normal max-w-xl mx-auto">
-            Mọi chi tiết đều được tinh chỉnh nhằm loại bỏ áp lực tâm lý và mang lại hiệu quả bền vững nhất.
+            {headings?.subtitle || 'Khám phá các ưu điểm nổi bật và giá trị bạn nhận được.'}
           </p>
         </div>
 

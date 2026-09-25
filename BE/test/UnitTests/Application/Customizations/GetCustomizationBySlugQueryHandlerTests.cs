@@ -4,70 +4,59 @@ using FluentAssertions;
 using Moq;
 using TemplateLandingPage.Application.UseCases.V1.Customizations.Queries;
 using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.Entities;
+using TemplateLandingPage.Domain.ReadModels;
 using TemplateLandingPage.Domain.Repositories;
 using Xunit;
 
 public class GetCustomizationBySlugQueryHandlerTests
 {
-    private readonly Mock<ICustomizationRepository> _customizationRepositoryMock;
-    private readonly Mock<ITemplateRepository> _templateRepositoryMock;
+    private readonly Mock<ICustomizationRepository> _customizationRepositoryMock = new();
     private readonly GetCustomizationBySlugQueryHandler _handler;
 
-    public GetCustomizationBySlugQueryHandlerTests()
-    {
-        _customizationRepositoryMock = new Mock<ICustomizationRepository>();
-        _templateRepositoryMock = new Mock<ITemplateRepository>();
-        _handler = new GetCustomizationBySlugQueryHandler(
-            _customizationRepositoryMock.Object,
-            _templateRepositoryMock.Object);
-    }
+    public GetCustomizationBySlugQueryHandlerTests() =>
+        _handler = new GetCustomizationBySlugQueryHandler(_customizationRepositoryMock.Object);
 
     [Fact]
-    public async Task Handle_Should_ReturnCustomization_WhenSlugExists()
+    public async Task Handle_Should_ReturnOnlyPublishedVersionSnapshot()
     {
-        // Arrange
-        var templateId = Guid.NewGuid();
-        var template = Template.Create("Elegance Blossom", "elegance-blossom", null, "Wedding", "thumb", null, "{}");
-        var customization = UserCustomization.Create(
-            Guid.NewGuid(),
-            templateId,
-            "Romeo & Juliet",
-            "romeo-juliet",
-            "{\"hero\":{\"title\":\"Romeo & Juliet\"}}",
-            true);
+        var siteId = Guid.NewGuid();
+        var versionId = Guid.NewGuid();
+        const string configJson = "{\"hero\":{\"title\":\"Romeo & Juliet\"}}";
+        _customizationRepositoryMock.Setup(r => r.GetPublicAsync("romeo-juliet", null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PublishedCustomization(siteId, versionId, 1, Guid.NewGuid(), "Romeo & Juliet", "romeo-juliet", configJson));
 
-        _customizationRepositoryMock.Setup(r => r.GetBySlugAsync("romeo-juliet", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(customization);
-        _templateRepositoryMock.Setup(r => r.GetByIdAsync(templateId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(template);
+        var result = await _handler.Handle(new GetCustomizationBySlugQuery("romeo-juliet"), CancellationToken.None);
 
-        var query = new GetCustomizationBySlugQuery("romeo-juliet");
-
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.Slug.Should().Be("romeo-juliet");
-        result.Value.Title.Should().Be("Romeo & Juliet");
-        result.Value.TemplateName.Should().Be("Elegance Blossom");
+        result.Value.Id.Should().Be(siteId);
+        result.Value.VersionId.Should().Be(versionId);
+        result.Value.VersionNumber.Should().Be(1);
+        result.Value.ConfigJson.Should().Be(configJson);
+        result.Value.PublicUrl.Should().Be("/p/romeo-juliet");
+        _customizationRepositoryMock.Verify(r => r.GetPublicAsync("romeo-juliet", null, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_Should_ReturnNotFound_WhenSlugDoesNotExist()
+    public async Task Handle_Should_ReturnNotFound_WhenNoPublicVersionExists()
     {
-        // Arrange
-        _customizationRepositoryMock.Setup(r => r.GetBySlugAsync("non-existent-slug", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((UserCustomization?)null);
+        _customizationRepositoryMock.Setup(r => r.GetPublicAsync("private-site", null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PublishedCustomization?)null);
 
-        var query = new GetCustomizationBySlugQuery("non-existent-slug");
+        var result = await _handler.Handle(new GetCustomizationBySlugQuery("private-site"), CancellationToken.None);
 
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(CustomizationErrors.NotFound);
+    }
+
+    [Fact]
+    public async Task Handle_Should_BuildVersionUrlForExplicitPublishedVersion()
+    {
+        var version = new PublishedCustomization(Guid.NewGuid(), Guid.NewGuid(), 4, Guid.NewGuid(), "Snapshot", "renamed-slug", "{}");
+        _customizationRepositoryMock.Setup(r => r.GetPublicAsync("old-alias", 4, It.IsAny<CancellationToken>())).ReturnsAsync(version);
+
+        var result = await _handler.Handle(new GetCustomizationBySlugQuery("old-alias", 4), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.PublicUrl.Should().Be("/p/renamed-slug/v/4");
     }
 }

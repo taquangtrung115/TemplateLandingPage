@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Routing;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Templates;
 using TemplateLandingPage.Presentation.Abstractions;
+using TemplateLandingPage.Presentation.Authorization;
+using System.Security.Claims;
 
 public sealed class TemplateApi : IEndpoint
 {
@@ -15,36 +17,53 @@ public sealed class TemplateApi : IEndpoint
         var group = app.MapGroup("/api/v1/templates")
             .WithTags("Templates");
 
-        group.MapGet(string.Empty, async (string? category, Guid? categoryId, string? badge, string? search, bool? isActiveOnly, bool? isCommunity, ISender sender) =>
+        group.MapGet(string.Empty, async (string? category, Guid? categoryId, string? badge, string? search, bool? isActiveOnly, bool? isCommunity, ClaimsPrincipal user, ISender sender) =>
         {
-            var result = await sender.Send(new GetTemplatesQuery(category, categoryId, badge, search, isActiveOnly, isCommunity));
+            var includeInactive = isActiveOnly == false && user.IsInRole("Admin");
+            var result = await sender.Send(new GetTemplatesQuery(category, categoryId, badge, search, !includeInactive, isCommunity));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetTemplates")
-        .Produces<Result<List<TemplateResponse>>>(StatusCodes.Status200OK);
+        .Produces<Result<List<TemplateSummaryResponse>>>(StatusCodes.Status200OK);
 
-        group.MapPost("community", async (CreateCommunityTemplateCommand command, ISender sender) =>
+        group.MapPost("community", async (CreateCommunityTemplateRequest request, ClaimsPrincipal user, ISender sender) =>
         {
+            var userIdValue = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+            if (!Guid.TryParse(userIdValue, out var userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var command = new CreateCommunityTemplateCommand(
+                request.SourceCustomizationId,
+                request.CustomizationVersionId,
+                request.CategoryId,
+                request.Name,
+                request.Slug,
+                request.Description,
+                request.ThumbnailUrl,
+                userId,
+                user.IsInRole("Admin"));
             var result = await sender.Send(command);
             return HandleResult(result, () => Results.Created($"/api/v1/templates/{result.Value}", result));
         })
-        .AllowAnonymous()
+        .RequireAuthorization()
         .WithName("CreateCommunityTemplate")
         .Produces<Result<Guid>>(StatusCodes.Status201Created)
         .Produces<ValidationResult>(StatusCodes.Status400BadRequest);
 
-        group.MapGet("{id:guid}", async (Guid id, ISender sender) =>
+        group.MapGet("{id:guid}", async (Guid id, ClaimsPrincipal user, ISender sender) =>
         {
-            var result = await sender.Send(new GetTemplateByIdQuery(id));
+            var result = await sender.Send(new GetTemplateByIdQuery(id, user.IsInRole("Admin")));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetTemplateById")
         .Produces<Result<TemplateResponse>>(StatusCodes.Status200OK)
         .Produces<Error>(StatusCodes.Status404NotFound);
 
-        group.MapGet("slug/{slug}", async (string slug, ISender sender) =>
+        group.MapGet("slug/{slug}", async (string slug, ClaimsPrincipal user, ISender sender) =>
         {
-            var result = await sender.Send(new GetTemplateBySlugQuery(slug));
+            var result = await sender.Send(new GetTemplateBySlugQuery(slug, user.IsInRole("Admin")));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetTemplateBySlug")
@@ -56,7 +75,7 @@ public sealed class TemplateApi : IEndpoint
             var result = await sender.Send(command);
             return HandleResult(result, () => Results.Created($"/api/v1/templates/{result.Value}", result));
         })
-        .RequireAuthorization()
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("CreateTemplate")
         .Produces<Result<Guid>>(StatusCodes.Status201Created)
         .Produces<ValidationResult>(StatusCodes.Status400BadRequest);
@@ -82,7 +101,7 @@ public sealed class TemplateApi : IEndpoint
             var result = await sender.Send(command);
             return HandleResult(result, () => Results.Ok(result));
         })
-        .RequireAuthorization()
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("UpdateTemplate")
         .Produces<Result>(StatusCodes.Status200OK)
         .Produces<ValidationResult>(StatusCodes.Status400BadRequest)
@@ -93,7 +112,7 @@ public sealed class TemplateApi : IEndpoint
             var result = await sender.Send(new DeleteTemplateCommand(id));
             return HandleResult(result, () => Results.Ok(result));
         })
-        .RequireAuthorization()
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("DeleteTemplate")
         .Produces<Result>(StatusCodes.Status200OK)
         .Produces<Error>(StatusCodes.Status404NotFound);
@@ -126,6 +145,11 @@ public sealed class TemplateApi : IEndpoint
             });
         }
 
+        if (result.Error == TemplateErrors.AccessDenied)
+        {
+            return Results.Forbid();
+        }
+
         return Results.BadRequest(new
         {
             Title = "Bad Request",
@@ -149,3 +173,12 @@ public record UpdateTemplateRequest(
     string? MusicTitle,
     string DefaultConfigJson,
     bool IsActive);
+
+public record CreateCommunityTemplateRequest(
+    Guid SourceCustomizationId,
+    Guid CustomizationVersionId,
+    Guid CategoryId,
+    string Name,
+    string Slug,
+    string? Description,
+    string ThumbnailUrl);

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { readAuthToken } from '../utils/authStorage';
 
 const rawBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const baseURL = rawBaseUrl
@@ -15,7 +16,7 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = readAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,14 +32,6 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-        window.location.href = '/login';
-      }
-    }
-
     let errorMessage = 'Đã có lỗi xảy ra. Vui lòng thử lại!';
 
     if (error.response) {
@@ -59,6 +52,8 @@ axiosInstance.interceptors.response.use(
     const enhancedError = new Error(errorMessage);
     enhancedError.originalError = error;
     enhancedError.response = error.response;
+    enhancedError.status = error.response?.status;
+    enhancedError.data = error.response?.data;
 
     return Promise.reject(enhancedError);
   }

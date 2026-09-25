@@ -17,14 +17,15 @@ public record CreateTemplateCommand(
     string DefaultConfigJson) : ICommand<Guid>;
 
 public record CreateCommunityTemplateCommand(
+    Guid SourceCustomizationId,
+    Guid CustomizationVersionId,
+    Guid CategoryId,
     string Name,
     string Slug,
     string? Description,
-    string Category,
     string ThumbnailUrl,
-    string DefaultConfigJson,
-    string? AuthorName,
-    Guid? CreatedByUserId = null) : ICommand<Guid>;
+    Guid CurrentUserId,
+    bool IsAdmin) : ICommand<Guid>;
 
 public record UpdateTemplateCommand(
     Guid Id,

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Routing;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Products;
 using TemplateLandingPage.Presentation.Abstractions;
+using TemplateLandingPage.Presentation.Authorization;
+using System.Security.Claims;
 
 public sealed class ProductApi : IEndpoint
 {
@@ -20,21 +22,22 @@ public sealed class ProductApi : IEndpoint
             var result = await sender.Send(command);
             return HandleResult(result, () => Results.Created($"/api/v1/products/{result.Value}", result));
         })
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("CreateProduct")
         .Produces<Result<Guid>>(StatusCodes.Status201Created)
         .Produces<ValidationResult>(StatusCodes.Status400BadRequest);
 
-        group.MapGet(string.Empty, async (ISender sender) =>
+        group.MapGet(string.Empty, async (bool? includeInactive, ClaimsPrincipal user, ISender sender) =>
         {
-            var result = await sender.Send(new GetProductsQuery());
+            var result = await sender.Send(new GetProductsQuery(includeInactive == true && user.IsInRole("Admin")));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetProducts")
         .Produces<Result<List<ProductResponse>>>(StatusCodes.Status200OK);
 
-        group.MapGet("{id:guid}", async (Guid id, ISender sender) =>
+        group.MapGet("{id:guid}", async (Guid id, ClaimsPrincipal user, ISender sender) =>
         {
-            var result = await sender.Send(new GetProductByIdQuery(id));
+            var result = await sender.Send(new GetProductByIdQuery(id, user.IsInRole("Admin")));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetProductById")
@@ -47,6 +50,7 @@ public sealed class ProductApi : IEndpoint
             var result = await sender.Send(command);
             return HandleResult(result, () => Results.Ok(result));
         })
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("UpdateProduct")
         .Produces<Result>(StatusCodes.Status200OK)
         .Produces<ValidationResult>(StatusCodes.Status400BadRequest)
@@ -57,6 +61,7 @@ public sealed class ProductApi : IEndpoint
             var result = await sender.Send(new DeleteProductCommand(id));
             return HandleResult(result, () => Results.Ok(result));
         })
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("DeleteProduct")
         .Produces<Result>(StatusCodes.Status200OK)
         .Produces<Error>(StatusCodes.Status404NotFound);

@@ -28,49 +28,6 @@ const HERO_IMAGE =
 const SECTION2_IMAGE =
   'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1920&q=80';
 
-const FALLBACK_TEMPLATES = [
-  {
-    id: 'wedding-classic',
-    name: 'Hôn Lễ Hoàng Gia (Royal Wedding)',
-    slug: 'royal-wedding',
-    category: 'Wedding',
-    badge: 'HOT',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80',
-    longPreviewUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1600&q=80',
-    musicTitle: 'A Thousand Years',
-  },
-  {
-    id: 'birthday-sweet',
-    name: 'Sinh Nhật Ngọt Ngào (Sweet Birthday)',
-    slug: 'sweet-birthday',
-    category: 'Birthday',
-    badge: 'NEW',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80',
-    longPreviewUrl: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1600&q=80',
-    musicTitle: 'Happy Birthday Acoustic',
-  },
-  {
-    id: 'wedding-modern',
-    name: 'Đám Cưới Tối Giản (Modern Minimalist)',
-    slug: 'modern-minimalist',
-    category: 'Wedding',
-    badge: 'POPULAR',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80',
-    longPreviewUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1600&q=80',
-    musicTitle: 'Until I Found You',
-  },
-  {
-    id: 'anniversary-gold',
-    name: 'Kỷ Niệm Ngày Cưới Vàng (Golden Anniversary)',
-    slug: 'golden-anniversary',
-    category: 'Anniversary',
-    badge: 'PREMIUM',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80',
-    longPreviewUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=1600&q=80',
-    musicTitle: "Can't Help Falling in Love",
-  },
-];
-
 export default function HomePage() {
   const navigate = useNavigate();
   const [showSplash, setShowSplash] = useState(() => {
@@ -83,6 +40,8 @@ export default function HomePage() {
 
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [templateLoadError, setTemplateLoadError] = useState(false);
+  const [templateRetryCount, setTemplateRetryCount] = useState(0);
   const [previewTemplate, setPreviewTemplate] = useState(null);
 
   // Section 1: Hero Mask hook (3 feature bars + 1 main hero card)
@@ -101,18 +60,17 @@ export default function HomePage() {
   useEffect(() => {
     let isMounted = true;
     const fetchTemplates = async () => {
+      setLoading(true);
+      setTemplateLoadError(false);
       try {
         const data = await templateApi.getTemplates({ isActiveOnly: true });
         if (isMounted) {
-          if (Array.isArray(data) && data.length > 0) {
-            setTemplates(data.slice(0, 4));
-          } else {
-            setTemplates(FALLBACK_TEMPLATES);
-          }
+          setTemplates(Array.isArray(data) ? data.slice(0, 4) : []);
         }
-      } catch (err) {
+      } catch {
         if (isMounted) {
-          setTemplates(FALLBACK_TEMPLATES);
+          setTemplates([]);
+          setTemplateLoadError(true);
         }
       } finally {
         if (isMounted) {
@@ -124,7 +82,7 @@ export default function HomePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [templateRetryCount]);
 
   // IntersectionObserver for Section 3 step cards
   useEffect(() => {
@@ -159,7 +117,7 @@ export default function HomePage() {
     };
   }, []);
 
-  const displayedTemplates = templates.length > 0 ? templates : FALLBACK_TEMPLATES;
+  const displayedTemplates = templates;
 
   // Staggered reveal hook for Mosaic Showcase
   const { isItemVisible } = useStaggeredReveal({
@@ -314,7 +272,7 @@ export default function HomePage() {
                 </div>
                 <div className="text-center p-3 rounded-2xl bg-white/60 backdrop-blur-sm border border-gray-100/60">
                   <span className="block text-2xl sm:text-3xl font-black text-gray-900">1 Click</span>
-                  <span className="text-xs text-gray-500 font-medium">Xuất Offline HTML</span>
+                  <span className="text-xs text-gray-500 font-medium">Xuất HTML</span>
                 </div>
                 <div className="text-center p-3 rounded-2xl bg-white/60 backdrop-blur-sm border border-gray-100/60">
                   <span className="block text-2xl sm:text-3xl font-black text-gray-900">RSVP</span>
@@ -370,14 +328,31 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+          ) : templateLoadError ? (
+            <div className="rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-sm" role="alert">
+              <h3 className="text-lg font-bold text-gray-900">Chưa tải được kho mẫu</h3>
+              <p className="mt-2 text-sm text-gray-600">Kết nối đang gặp sự cố. Hãy thử tải lại để xem các mẫu hiện có.</p>
+              <button
+                type="button"
+                onClick={() => setTemplateRetryCount((count) => count + 1)}
+                className="mt-5 inline-flex items-center justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-rose-700"
+              >
+                Thử tải lại
+              </button>
+            </div>
+          ) : displayedTemplates.length === 0 ? (
+            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm" role="status">
+              <h3 className="text-lg font-bold text-gray-900">Chưa có mẫu để hiển thị</h3>
+              <p className="mt-2 text-sm text-gray-600">Kho mẫu hiện chưa có nội dung. Bạn có thể quay lại xem sau.</p>
+              <Link to="/templates" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-rose-50 px-5 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100">
+                Xem kho mẫu <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {displayedTemplates.map((template, idx) => {
                 const isVisible = isItemVisible(idx);
-                const previewImg =
-                  template.thumbnailUrl ||
-                  template.longPreviewUrl ||
-                  'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80';
+                const previewImg = template.thumbnailUrl || template.longPreviewUrl;
 
                 return (
                   <div
@@ -400,11 +375,15 @@ export default function HomePage() {
 
                       {/* Top Masked Card Preview Banner */}
                       <div className="relative h-72 sm:h-80 overflow-hidden bg-gray-100 m-3 rounded-[24px]">
-                        <img
-                          src={previewImg}
-                          alt={template.name}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
+                        {previewImg ? (
+                          <img
+                            src={previewImg}
+                            alt={template.name}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-rose-100 via-white to-amber-100" aria-hidden="true" />
+                        )}
                         {/* Gradient Mask Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
@@ -510,8 +489,8 @@ export default function HomePage() {
               <div className="space-y-3">
                 {[
                   { title: 'Khám Phá Mẫu Đẹp', desc: 'Khám phá kho thiệp cưới, sinh nhật' },
-                  { title: 'Tùy Biến Trực Quan', desc: 'Chỉnh sửa hình ảnh, nhạc nền và thông tin' },
-                  { title: 'Lan Tỏa & Kết Nối', desc: 'Gửi link thiệp và nhận phản hồi khách mời' },
+                  { title: 'Tạo bản nháp', desc: 'Tự lưu trên thiết bị, rồi đăng nhập để lưu lên tài khoản' },
+                  { title: 'Tạo phiên bản & xuất bản', desc: 'Chọn phiên bản muốn công khai và chia sẻ liên kết' },
                 ].map((step, idx) => (
                   <button
                     key={idx}
@@ -581,13 +560,13 @@ export default function HomePage() {
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-6">
                   <Zap className="w-7 h-7" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Tùy Biến Trực Quan</h3>
+                <h3 className="text-2xl font-bold mb-4 text-white">Tạo và lưu bản nháp</h3>
                 <p className="text-sm text-gray-400 leading-relaxed max-w-lg mb-6">
-                  Nhập tên, ngày giờ, tải ảnh cưới/sinh nhật, link Google Maps và danh mục quà mừng VietQR thông qua Live Customizer 60fps.
+                  Bắt đầu thiết kế và bản nháp tự lưu trên trình duyệt. Khi muốn lưu bản làm việc lên tài khoản, hãy đăng nhập; nội dung chưa tự động công khai.
                 </p>
                 <div className="pt-6 border-t border-gray-800/60 text-xs text-amber-400 font-semibold flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4" />
-                  <span>Xem trước kết quả ngay lập tức trên mobile & desktop</span>
+                  <span>Tiếp tục chỉnh sửa đúng bản nháp trên mobile & desktop</span>
                 </div>
               </div>
 
@@ -604,13 +583,13 @@ export default function HomePage() {
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-6">
                   <Download className="w-7 h-7" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Chia Sẻ & Thu RSVP</h3>
+                <h3 className="text-2xl font-bold mb-4 text-white">Tạo phiên bản và xuất bản</h3>
                 <p className="text-sm text-gray-400 leading-relaxed max-w-lg mb-6">
-                  Gửi link online cho bạn bè qua Zalo, Facebook hoặc xuất Single Offline HTML độc lập mang theo mở trên bất cứ thiết bị nào.
+                  Đăng nhập để lưu lên server, chủ động tạo phiên bản rồi chọn phiên bản làm bản công khai. Sau đó chia sẻ liên kết để nhận RSVP.
                 </p>
                 <div className="pt-6 border-t border-gray-800/60 text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4" />
-                  <span>Dễ dàng xuất file offline HTML hoặc chia sẻ đường dẫn link</span>
+                  <span>Xuất HTML để tải xuống; ảnh và font có thể cần kết nối mạng</span>
                 </div>
               </div>
             </div>

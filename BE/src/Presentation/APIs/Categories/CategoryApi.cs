@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Routing;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Categories;
 using TemplateLandingPage.Presentation.Abstractions;
+using TemplateLandingPage.Presentation.Authorization;
+using System.Security.Claims;
 
 public sealed class CategoryApi : IEndpoint
 {
@@ -15,26 +17,27 @@ public sealed class CategoryApi : IEndpoint
         var group = app.MapGroup("/api/v1/categories")
             .WithTags("Categories");
 
-        group.MapGet(string.Empty, async (bool? isActiveOnly, ISender sender) =>
+        group.MapGet(string.Empty, async (bool? isActiveOnly, ClaimsPrincipal user, ISender sender) =>
         {
-            var result = await sender.Send(new GetCategoriesQuery(isActiveOnly));
+            var includeInactive = isActiveOnly == false && user.IsInRole("Admin");
+            var result = await sender.Send(new GetCategoriesQuery(!includeInactive));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetCategories")
         .Produces<Result<List<CategoryResponse>>>(StatusCodes.Status200OK);
 
-        group.MapGet("{id:guid}", async (Guid id, ISender sender) =>
+        group.MapGet("{id:guid}", async (Guid id, ClaimsPrincipal user, ISender sender) =>
         {
-            var result = await sender.Send(new GetCategoryByIdQuery(id));
+            var result = await sender.Send(new GetCategoryByIdQuery(id, user.IsInRole("Admin")));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetCategoryById")
         .Produces<Result<CategoryResponse>>(StatusCodes.Status200OK)
         .Produces<Error>(StatusCodes.Status404NotFound);
 
-        group.MapGet("slug/{slug}", async (string slug, ISender sender) =>
+        group.MapGet("slug/{slug}", async (string slug, ClaimsPrincipal user, ISender sender) =>
         {
-            var result = await sender.Send(new GetCategoryBySlugQuery(slug));
+            var result = await sender.Send(new GetCategoryBySlugQuery(slug, user.IsInRole("Admin")));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetCategoryBySlug")
@@ -46,7 +49,7 @@ public sealed class CategoryApi : IEndpoint
             var result = await sender.Send(command);
             return HandleResult(result, () => Results.Created($"/api/v1/categories/{result.Value}", result));
         })
-        .RequireAuthorization()
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("CreateCategory")
         .Produces<Result<Guid>>(StatusCodes.Status201Created)
         .Produces<ValidationResult>(StatusCodes.Status400BadRequest);
@@ -65,7 +68,7 @@ public sealed class CategoryApi : IEndpoint
             var result = await sender.Send(command);
             return HandleResult(result, () => Results.Ok(result));
         })
-        .RequireAuthorization()
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("UpdateCategory")
         .Produces<Result>(StatusCodes.Status200OK)
         .Produces<ValidationResult>(StatusCodes.Status400BadRequest)
@@ -76,7 +79,7 @@ public sealed class CategoryApi : IEndpoint
             var result = await sender.Send(new DeleteCategoryCommand(id));
             return HandleResult(result, () => Results.Ok(result));
         })
-        .RequireAuthorization()
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("DeleteCategory")
         .Produces<Result>(StatusCodes.Status200OK)
         .Produces<Error>(StatusCodes.Status404NotFound)

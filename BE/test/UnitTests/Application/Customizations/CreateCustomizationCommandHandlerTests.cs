@@ -12,17 +12,13 @@ using Xunit;
 
 public class CreateCustomizationCommandHandlerTests
 {
-    private readonly Mock<ICustomizationRepository> _customizationRepositoryMock;
-    private readonly Mock<ITemplateRepository> _templateRepositoryMock;
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<ICustomizationRepository> _customizationRepositoryMock = new();
+    private readonly Mock<ITemplateRepository> _templateRepositoryMock = new();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly CreateCustomizationCommandHandler _handler;
 
     public CreateCustomizationCommandHandlerTests()
     {
-        _customizationRepositoryMock = new Mock<ICustomizationRepository>();
-        _templateRepositoryMock = new Mock<ITemplateRepository>();
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
-
         _handler = new CreateCustomizationCommandHandler(
             _customizationRepositoryMock.Object,
             _templateRepositoryMock.Object,
@@ -30,94 +26,62 @@ public class CreateCustomizationCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_CreateCustomization_WhenValid()
+    public async Task Handle_Should_CreatePrivateWorkingDraft_WhenValid()
     {
-        // Arrange
+        var userId = Guid.NewGuid();
         var templateId = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
         var template = Template.Create("T", "slug", null, "Wedding", "thumb", null, "{}");
-
+        _customizationRepositoryMock.Setup(r => r.GetByClientDraftIdAsync(userId, draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserCustomization?)null);
         _templateRepositoryMock.Setup(r => r.GetByIdAsync(templateId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(template);
-        _customizationRepositoryMock.Setup(r => r.ExistsBySlugAsync("my-wedding", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
+        _customizationRepositoryMock.Setup(r => r.FindSlugOwnerAsync("my-wedding", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid?)null);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var command = new CreateCustomizationCommand(
-            Guid.NewGuid(),
-            templateId,
-            "My Wedding",
-            "my-wedding",
-            "{}",
-            true);
+        // The legacy flag is ignored: creating a draft does not publish it.
+        var command = new CreateCustomizationCommand(userId, templateId, "My Wedding", "my-wedding", "{}", true, draftId);
 
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().NotBeEmpty();
-
-        _customizationRepositoryMock.Verify(r => r.Add(It.Is<UserCustomization>(c => c.Slug == "my-wedding")), Times.Once);
+        result.Value.Id.Should().NotBe(Guid.Empty);
+        result.Value.Revision.Should().Be(1);
+        _customizationRepositoryMock.Verify(r => r.Add(It.Is<UserCustomization>(c =>
+            c.UserId == userId && c.ClientDraftId == draftId && c.Slug == "my-wedding" &&
+            !c.IsPublished && c.PublishedVersionId == null)), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_Should_Succeed_WhenGuestCreatesCustomization_WithNullUserId()
+    public async Task Handle_Should_RejectGuestCustomizationCreation()
     {
-        // Arrange
-        var templateId = Guid.NewGuid();
-        var template = Template.Create("T", "slug", null, "Wedding", "thumb", null, "{}");
+        var command = new CreateCustomizationCommand(null, Guid.NewGuid(), "Guest", "guest", "{}", false, Guid.NewGuid());
 
-        _templateRepositoryMock.Setup(r => r.GetByIdAsync(templateId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(template);
-        _customizationRepositoryMock.Setup(r => r.ExistsBySlugAsync("guest-slug", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
-        var command = new CreateCustomizationCommand(
-            null, // Guest user without authentication
-            templateId,
-            "Guest Wedding Invitation",
-            "guest-slug",
-            "{\"theme\":{}}",
-            true);
-
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().NotBeEmpty();
-
-        _customizationRepositoryMock.Verify(r => r.Add(It.Is<UserCustomization>(c => 
-            c.UserId == null && 
-            c.Slug == "guest-slug" && 
-            c.Title == "Guest Wedding Invitation")), Times.Once);
-        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be(CustomizationErrors.Unauthorized);
+        _customizationRepositoryMock.Verify(r => r.Add(It.IsAny<UserCustomization>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task Handle_Should_ReturnNotFound_WhenTemplateDoesNotExist()
     {
-        // Arrange
+        var userId = Guid.NewGuid();
         var templateId = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        _customizationRepositoryMock.Setup(r => r.GetByClientDraftIdAsync(userId, draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserCustomization?)null);
         _templateRepositoryMock.Setup(r => r.GetByIdAsync(templateId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Template?)null);
 
-        var command = new CreateCustomizationCommand(
-            null,
-            templateId,
-            "Title",
-            "some-slug",
-            "{}",
-            true);
+        var result = await _handler.Handle(
+            new CreateCustomizationCommand(userId, templateId, "Title", "some-slug", "{}", false, draftId),
+            CancellationToken.None);
 
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(TemplateErrors.NotFound);
         _customizationRepositoryMock.Verify(r => r.Add(It.IsAny<UserCustomization>()), Times.Never);
@@ -125,32 +89,46 @@ public class CreateCustomizationCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_ReturnDuplicateSlug_WhenSlugAlreadyExists()
+    public async Task Handle_Should_ReturnDuplicateSlug_WhenSlugAliasAlreadyExists()
     {
-        // Arrange
+        var userId = Guid.NewGuid();
         var templateId = Guid.NewGuid();
-        var template = Template.Create("T", "slug", null, "Wedding", "thumb", null, "{}");
-
+        var draftId = Guid.NewGuid();
+        _customizationRepositoryMock.Setup(r => r.GetByClientDraftIdAsync(userId, draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserCustomization?)null);
         _templateRepositoryMock.Setup(r => r.GetByIdAsync(templateId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(template);
-        _customizationRepositoryMock.Setup(r => r.ExistsBySlugAsync("existing-slug", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(Template.Create("T", "template", null, "Wedding", "thumb", null, "{}"));
+        _customizationRepositoryMock.Setup(r => r.FindSlugOwnerAsync("existing-slug", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
 
-        var command = new CreateCustomizationCommand(
-            null,
-            templateId,
-            "Title",
-            "existing-slug",
-            "{}",
-            true);
+        var result = await _handler.Handle(
+            new CreateCustomizationCommand(userId, templateId, "Title", "existing-slug", "{}", false, draftId),
+            CancellationToken.None);
 
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(CustomizationErrors.DuplicateSlug);
         _customizationRepositoryMock.Verify(r => r.Add(It.IsAny<UserCustomization>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnExistingDraft_WhenClientRetryRepeatsSameCreate()
+    {
+        var userId = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var existing = UserCustomization.Create(userId, Guid.NewGuid(), "My Wedding", "my-wedding", "{}");
+        existing.SetClientDraftId(draftId);
+        _customizationRepositoryMock.Setup(r => r.GetByClientDraftIdAsync(userId, draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await _handler.Handle(
+            new CreateCustomizationCommand(userId, existing.TemplateId, "My Wedding", "my-wedding", "{}", false, draftId),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(existing.Id);
+        result.Value.Revision.Should().Be(1);
+        _templateRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

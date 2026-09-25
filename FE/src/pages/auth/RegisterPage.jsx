@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
+import { getPendingAuthAction, locationToPath } from '../../contexts/AuthContext';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register } = useAuth();
 
   const [fullName, setFullName] = useState('');
@@ -12,6 +14,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const pendingAction = getPendingAuthAction();
+  const from = locationToPath(location.state?.from || pendingAction?.returnTo || '/templates');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,8 +23,8 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(email, password, fullName);
-      navigate('/templates', { replace: true });
+      const user = await register(email, password, fullName);
+      navigate(from === '/' && user?.role === 'Admin' ? '/admin' : from, { replace: true });
     } catch (err) {
       setError(err.message || 'Đăng ký không thành công. Vui lòng kiểm tra lại thông tin!');
     } finally {
@@ -121,7 +125,7 @@ export default function RegisterPage() {
 
           <div className="mt-6 text-center text-xs text-gray-500">
             Đã có tài khoản?{' '}
-            <Link to="/login" className="font-bold text-rose-600 hover:underline">
+            <Link to="/login" state={{ from }} className="font-bold text-rose-600 hover:underline">
               Đăng nhập ngay
             </Link>
           </div>

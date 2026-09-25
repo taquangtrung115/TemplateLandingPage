@@ -14,6 +14,12 @@ public sealed class GuestbookEntryConfiguration : IEntityTypeConfiguration<Guest
         builder.HasKey(g => g.Id);
 
         builder.Property(g => g.CustomizationId);
+        builder.Property(g => g.CustomizationVersionId);
+        builder.HasOne<CustomizationVersion>()
+            .WithMany()
+            .HasForeignKey(g => g.CustomizationVersionId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(g => new { g.CustomizationVersionId, g.CreatedAtUtc });
 
         builder.Property(g => g.SenderName)
             .HasMaxLength(150)

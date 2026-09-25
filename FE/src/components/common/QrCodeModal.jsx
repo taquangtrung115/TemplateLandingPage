@@ -23,10 +23,14 @@ export default function QrCodeModal({ isOpen, onClose, url, title = 'Mã QR Tran
       textArea.value = targetUrl;
       document.body.appendChild(textArea);
       textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      try {
+        setCopied(Boolean(document.execCommand('copy')));
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        setCopied(false);
+      } finally {
+        document.body.removeChild(textArea);
+      }
     }
   };
 
@@ -34,6 +38,7 @@ export default function QrCodeModal({ isOpen, onClose, url, title = 'Mã QR Tran
     try {
       setDownloading(true);
       const res = await fetch(qrCodeUrl);
+      if (!res.ok) throw new Error('QR download failed');
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -43,8 +48,7 @@ export default function QrCodeModal({ isOpen, onClose, url, title = 'Mã QR Tran
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error('Download QR failed', err);
+    } catch {
       window.open(qrCodeUrl, '_blank');
     } finally {
       setDownloading(false);

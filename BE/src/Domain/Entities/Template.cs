@@ -138,6 +138,20 @@ public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelet
         string? authorName,
         Guid? createdByUserId = null)
     {
+        return CreateCommunity(name, slug, description, null, category, thumbnailUrl, defaultConfigJson, authorName, createdByUserId);
+    }
+
+    public static Template CreateCommunity(
+        string name,
+        string slug,
+        string? description,
+        Guid? categoryId,
+        string category,
+        string thumbnailUrl,
+        string defaultConfigJson,
+        string? authorName,
+        Guid? createdByUserId = null)
+    {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Template name cannot be empty.", nameof(name));
         if (string.IsNullOrWhiteSpace(slug))
@@ -152,7 +166,7 @@ public sealed class Template : AggregateRoot<Guid>, IAuditableEntity, ISoftDelet
             name.Trim(),
             slug.Trim().ToLowerInvariant(),
             description?.Trim(),
-            null,
+            categoryId,
             category.Trim(),
             thumbnailUrl.Trim(),
             null,
