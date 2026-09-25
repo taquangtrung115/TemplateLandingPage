@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Layers, Users, Home, LogOut, ShieldCheck, FolderTree, Compass } from 'lucide-react';
+import { LayoutDashboard, Layers, Users, Home, LogOut, ShieldCheck, FolderTree, Compass, FileText } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 
 export const AdminLayout = () => {
@@ -18,6 +18,7 @@ export const AdminLayout = () => {
     { to: '/admin/categories', end: false, label: 'Quản Lý Danh Mục', icon: FolderTree },
     { to: '/admin/menus', end: false, label: 'Quản Lý Menu Động', icon: Compass },
     { to: '/admin/users', end: false, label: 'Quản Lý Người Dùng', icon: Users },
+    { to: '/admin/sites', end: false, label: 'Trang vô chủ', icon: FileText },
   ];
 
   return (

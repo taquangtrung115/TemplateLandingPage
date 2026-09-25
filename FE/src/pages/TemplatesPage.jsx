@@ -26,6 +26,8 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [reloadCount, setReloadCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [previewTemplate, setPreviewTemplate] = useState(null);
 
@@ -55,6 +57,7 @@ export default function TemplatesPage() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setLoadError('');
       try {
         const [templatesData, categoriesData] = await Promise.all([
           templateApi.getTemplates({ isActiveOnly: true }),
@@ -63,13 +66,13 @@ export default function TemplatesPage() {
         setTemplates(Array.isArray(templatesData) ? templatesData : []);
         setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } catch (err) {
-        console.error('Failed to load templates or categories:', err);
+        setLoadError(err.message || 'Không thể tải kho mẫu. Vui lòng thử lại.');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [reloadCount]);
 
   // Centralized Audio toggle function
   const handleToggleAudio = (template) => {
@@ -352,6 +355,21 @@ export default function TemplatesPage() {
         {loading ? (
           <div className="py-24 flex justify-center">
             <LoadingSpinner size="lg" message="Đang nạp kho mẫu thiệp Cinelove..." />
+          </div>
+        ) : loadError ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-rose-100 p-8 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3">
+              <Filter className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-800">Không tải được kho mẫu</h3>
+            <p className="text-xs text-gray-500 mt-2">{loadError}</p>
+            <button
+              type="button"
+              onClick={() => setReloadCount((count) => count + 1)}
+              className="mt-5 px-4 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800"
+            >
+              Thử tải lại
+            </button>
           </div>
         ) : filteredTemplates.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">

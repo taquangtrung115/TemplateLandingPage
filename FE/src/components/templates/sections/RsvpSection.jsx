@@ -2,51 +2,66 @@ import React, { useState } from 'react';
 import { CheckCircle2, Send } from 'lucide-react';
 import ScrollReveal from '../../common/ScrollReveal';
 import { interactionApi } from '../../../api/interactionApi';
+import { getSafeLinkUrl } from '../../../utils/safeUrl';
+
+const createEmptyRsvpForm = () => ({
+  guestName: '',
+  email: '',
+  phone: '',
+  attendingStatus: 'attending',
+  numberOfGuests: 1,
+  dietaryNotes: '',
+  wishes: '',
+});
 
 /**
  * @param {Object} props
  * @param {Object} props.rsvp
  * @param {string} props.primaryColor
  * @param {string|null} props.customizationId
+ * @param {string|null} props.customizationVersionId
+ * @param {boolean} props.isPreview
+ * @param {boolean} props.exportMode
+ * @param {string|null} props.responseUrl
  * @param {boolean} props.isHighlighted
  */
 export const RsvpSection = React.memo(function RsvpSection({
   rsvp = {},
   primaryColor = '#e11d48',
   customizationId = null,
+  customizationVersionId = null,
+  isPreview = false,
+  exportMode = false,
+  responseUrl = null,
   isHighlighted = false,
 }) {
-  const [rsvpForm, setRsvpForm] = useState({
-    guestName: '',
-    email: '',
-    phone: '',
-    attendingStatus: 'attending',
-    numberOfGuests: 1,
-    dietaryNotes: '',
-    wishes: '',
-  });
+  const [rsvpForm, setRsvpForm] = useState(createEmptyRsvpForm);
   const [rsvpSubmitted, setRsvpSubmitted] = useState(false);
   const [rsvpSubmitting, setRsvpSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const responseLink = getSafeLinkUrl(responseUrl);
+  const canSubmit = !isPreview && rsvp?.enabled === true && Boolean(customizationId && customizationVersionId);
 
-  if (rsvp?.enabled === false) return null;
+  if ((isPreview && rsvp?.enabled === false) || (!isPreview && rsvp?.enabled !== true)) return null;
 
   const handleRsvpSubmit = async (e) => {
     e.preventDefault();
+    if (rsvpSubmitting) return;
     if (!rsvpForm.guestName.trim()) return;
+    if (!canSubmit) return;
 
     setRsvpSubmitting(true);
+    setSubmitError('');
     try {
-      if (customizationId) {
-        await interactionApi.submitRsvp({
-          customizationId,
-          ...rsvpForm,
-          numberOfGuests: parseInt(rsvpForm.numberOfGuests, 10) || 1,
-        });
-      }
+      await interactionApi.submitRsvp({
+        customizationId,
+        customizationVersionId,
+        ...rsvpForm,
+        numberOfGuests: parseInt(rsvpForm.numberOfGuests, 10) || 1,
+      });
       setRsvpSubmitted(true);
     } catch {
-      // In preview or standalone mode, treat as simulated success
-      setRsvpSubmitted(true);
+      setSubmitError('Không gửi được phản hồi. Thông tin bạn đã nhập vẫn được giữ lại, vui lòng thử lại.');
     } finally {
       setRsvpSubmitting(false);
     }
@@ -71,7 +86,18 @@ export const RsvpSection = React.memo(function RsvpSection({
             )}
           </div>
 
-          {rsvpSubmitted ? (
+          {!canSubmit ? (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-center text-sm text-amber-900" role="status">
+              <p>{exportMode ? 'Phản hồi chỉ nhận trên trang công khai của phiên bản đã xuất bản.' : 'Bản xem trước không gửi phản hồi.'}</p>
+              {responseLink ? (
+                <a href={responseLink} className="inline-block mt-2 font-semibold underline" target="_blank" rel="noopener noreferrer">
+                  Mở trang công khai để phản hồi
+                </a>
+              ) : (
+                <p className="mt-1 text-xs">Phản hồi hiện chưa khả dụng trên trang này.</p>
+              )}
+            </div>
+          ) : rsvpSubmitted ? (
             <div className="text-center py-8 space-y-3">
               <CheckCircle2 className="w-14 h-14 mx-auto text-emerald-500 animate-bounce" />
               <h3 className="text-xl font-bold text-gray-900">Cảm ơn bạn đã phản hồi!</h3>
@@ -80,7 +106,10 @@ export const RsvpSection = React.memo(function RsvpSection({
               </p>
               <button
                 type="button"
-                onClick={() => setRsvpSubmitted(false)}
+                onClick={() => {
+                  setRsvpForm(createEmptyRsvpForm());
+                  setRsvpSubmitted(false);
+                }}
                 className="mt-4 text-xs font-semibold underline text-gray-500 hover:text-gray-800"
               >
                 Gửi phản hồi khác
@@ -88,6 +117,11 @@ export const RsvpSection = React.memo(function RsvpSection({
             </div>
           ) : (
             <form onSubmit={handleRsvpSubmit} className="space-y-4 text-left">
+              {submitError && (
+                <p className="rounded-xl bg-rose-50 border border-rose-200 p-3 text-sm text-rose-700" role="alert">
+                  {submitError}
+                </p>
+              )}
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Họ và tên của bạn *

@@ -16,7 +16,7 @@ public sealed class GetProductsQueryHandler : IQueryHandler<GetProductsQuery, Li
 
     public async Task<Result<List<ProductResponse>>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
     {
-        var products = await _productRepository.GetAllAsync(cancellationToken);
+        var products = await _productRepository.GetVisibleAsync(request.IncludeInactive, cancellationToken);
 
         var response = products
             .Select(p => new ProductResponse(

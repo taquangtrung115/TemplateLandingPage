@@ -26,7 +26,7 @@ public class GetProductsQueryHandlerTests
         var p1 = Product.Create("Product 1", "Desc 1", 100m);
         var p2 = Product.Create("Product 2", "Desc 2", 200m);
 
-        _productRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+        _productRepositoryMock.Setup(r => r.GetVisibleAsync(false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Product> { p1, p2 });
 
         var query = new GetProductsQuery();
@@ -45,7 +45,7 @@ public class GetProductsQueryHandlerTests
     public async Task Handle_Should_ReturnEmptyList_WhenNoProductsExist()
     {
         // Arrange
-        _productRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+        _productRepositoryMock.Setup(r => r.GetVisibleAsync(false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Product>());
 
         var query = new GetProductsQuery();

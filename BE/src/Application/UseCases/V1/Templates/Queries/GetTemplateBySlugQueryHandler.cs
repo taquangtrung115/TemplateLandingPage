@@ -16,7 +16,7 @@ public sealed class GetTemplateBySlugQueryHandler : IQueryHandler<GetTemplateByS
 
     public async Task<Result<TemplateResponse>> Handle(GetTemplateBySlugQuery request, CancellationToken cancellationToken)
     {
-        var template = await _templateRepository.GetBySlugAsync(request.Slug, cancellationToken);
+        var template = await _templateRepository.GetBySlugAsync(request.Slug, request.IncludeInactive, cancellationToken);
         if (template is null)
         {
             return Result.Failure<TemplateResponse>(TemplateErrors.NotFound);

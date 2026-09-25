@@ -14,6 +14,12 @@ public sealed class RsvpEntryConfiguration : IEntityTypeConfiguration<RsvpEntry>
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.CustomizationId);
+        builder.Property(r => r.CustomizationVersionId);
+        builder.HasOne<CustomizationVersion>()
+            .WithMany()
+            .HasForeignKey(r => r.CustomizationVersionId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(r => new { r.CustomizationVersionId, r.CreatedAtUtc });
 
         builder.Property(r => r.GuestName)
             .HasMaxLength(150)

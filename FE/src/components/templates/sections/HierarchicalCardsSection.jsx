@@ -1,6 +1,7 @@
 import React from 'react';
 import { Layers, ChevronRight, Sparkles, CheckCircle2 } from 'lucide-react';
 import { getAnimationClass } from '../../../utils/animationConstants';
+import { getSafeCssColor } from '../../../utils/safeUrl';
 
 /**
  * HierarchicalCardsSection Component
@@ -13,6 +14,8 @@ export default function HierarchicalCardsSection({
   secondaryColor = '#f43f5e',
   isHighlighted = false,
 }) {
+  primaryColor = getSafeCssColor(primaryColor, '#e11d48');
+  secondaryColor = getSafeCssColor(secondaryColor, '#f43f5e');
   const cards = Array.isArray(hierarchicalCards) ? hierarchicalCards : [];
 
   if (cards.length === 0) {
@@ -47,14 +50,16 @@ export default function HierarchicalCardsSection({
           const subCards = Array.isArray(card.subCards) ? card.subCards : [];
           const presetClass = getCardStyle(card.stylePreset, card.backgroundColor, card.textColor);
           const animationClass = getAnimationClass(card.animation || 'fade-up', true);
+          const cardBackgroundColor = getSafeCssColor(card.backgroundColor, '') || undefined;
+          const cardTextColor = getSafeCssColor(card.textColor, '') || undefined;
 
           return (
             <div
               key={card.id || idx}
               className={`rounded-3xl p-6 sm:p-8 transition-all duration-300 hover:shadow-2xl ${presetClass} ${animationClass}`}
               style={{
-                backgroundColor: card.backgroundColor || undefined,
-                color: card.textColor || undefined,
+                backgroundColor: cardBackgroundColor,
+                color: cardTextColor,
               }}
             >
               {/* Header Card Cha */}

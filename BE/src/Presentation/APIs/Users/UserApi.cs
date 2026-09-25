@@ -9,6 +9,7 @@ using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Auth;
 using TemplateLandingPage.Contract.Services.V1.Users;
 using TemplateLandingPage.Presentation.Abstractions;
+using TemplateLandingPage.Presentation.Authorization;
 
 public sealed class UserApi : IEndpoint
 {
@@ -16,7 +17,7 @@ public sealed class UserApi : IEndpoint
     {
         var group = app.MapGroup("/api/v1/users")
             .WithTags("Users")
-            .RequireAuthorization();
+            .RequireAuthorization(AuthorizationPolicies.AdminOnly);
 
         group.MapGet(string.Empty, async (ISender sender) =>
         {

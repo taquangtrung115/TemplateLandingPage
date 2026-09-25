@@ -16,7 +16,8 @@ public sealed class GetCategoriesQueryHandler : IQueryHandler<GetCategoriesQuery
 
     public async Task<Result<List<CategoryResponse>>> Handle(GetCategoriesQuery request, CancellationToken cancellationToken)
     {
-        var categories = await _categoryRepository.GetAllOrderedAsync(request.IsActiveOnly, cancellationToken);
+        var includeInactive = request.IsActiveOnly == false;
+        var categories = await _categoryRepository.GetSummariesAsync(includeInactive, cancellationToken);
 
         var response = categories.Select(c => new CategoryResponse(
             c.Id,
@@ -26,7 +27,7 @@ public sealed class GetCategoriesQueryHandler : IQueryHandler<GetCategoriesQuery
             c.Icon,
             c.OrderIndex,
             c.IsActive,
-            c.Templates?.Count(t => !t.IsDeleted) ?? 0,
+            c.TemplatesCount,
             c.CreatedAtUtc)).ToList();
 
         return Result.Success(response);

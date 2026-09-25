@@ -3,6 +3,7 @@ namespace TemplateLandingPage.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using TemplateLandingPage.Domain.Entities;
 using TemplateLandingPage.Domain.Repositories;
+using TemplateLandingPage.Domain.ReadModels;
 
 public sealed class TemplateRepository : RepositoryBase<Template, Guid>, ITemplateRepository
 {
@@ -11,11 +12,41 @@ public sealed class TemplateRepository : RepositoryBase<Template, Guid>, ITempla
     {
     }
 
-    public async Task<Template?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
+    public async Task<Template?> GetBySlugAsync(string slug, bool includeInactive, CancellationToken cancellationToken = default)
     {
-        return await DbSet
-            .Include(t => t.CategoryRef)
-            .FirstOrDefaultAsync(t => t.Slug == slug.ToLowerInvariant(), cancellationToken);
+        var query = DbSet.AsNoTracking()
+            .Where(t => !t.IsDeleted && t.Slug == slug.ToLowerInvariant());
+
+        if (!includeInactive)
+        {
+            query = query.Where(t => t.IsActive);
+        }
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<Template?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default) =>
+        GetBySlugAsync(slug, true, cancellationToken);
+
+    public async Task<Template?> GetVisibleByIdAsync(Guid id, bool includeInactive, CancellationToken cancellationToken = default)
+    {
+        var query = DbSet.AsNoTracking()
+            .Where(t => t.Id == id && !t.IsDeleted);
+
+        if (!includeInactive)
+        {
+            query = query.Where(t => t.IsActive);
+        }
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<string?> GetNameByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return DbSet.AsNoTracking()
+            .Where(template => template.Id == id && !template.IsDeleted)
+            .Select(template => template.Name)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsBySlugAsync(string slug, CancellationToken cancellationToken = default)
@@ -23,7 +54,7 @@ public sealed class TemplateRepository : RepositoryBase<Template, Guid>, ITempla
         return await DbSet.AnyAsync(t => t.Slug == slug.ToLowerInvariant(), cancellationToken);
     }
 
-    public async Task<List<Template>> GetListAsync(
+    public async Task<List<TemplateSummary>> GetListAsync(
         string? category = null,
         Guid? categoryId = null,
         string? badge = null,
@@ -32,7 +63,7 @@ public sealed class TemplateRepository : RepositoryBase<Template, Guid>, ITempla
         bool? isCommunity = null,
         CancellationToken cancellationToken = default)
     {
-        IQueryable<Template> query = DbSet.Include(t => t.CategoryRef);
+        IQueryable<Template> query = DbSet.AsNoTracking().Where(t => !t.IsDeleted);
 
         if (categoryId.HasValue)
         {
@@ -66,6 +97,23 @@ public sealed class TemplateRepository : RepositoryBase<Template, Guid>, ITempla
 
         return await query
             .OrderByDescending(t => t.CreatedAtUtc)
+            .Select(t => new TemplateSummary(
+                t.Id,
+                t.Name,
+                t.Slug,
+                t.Description,
+                t.CategoryId,
+                t.Category,
+                t.ThumbnailUrl,
+                t.PreviewUrl,
+                t.LongPreviewUrl,
+                t.Badge,
+                t.AudioUrl,
+                t.MusicTitle,
+                t.IsActive,
+                t.IsCommunity,
+                t.AuthorName,
+                t.CreatedAtUtc))
             .ToListAsync(cancellationToken);
     }
 }

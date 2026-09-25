@@ -5,6 +5,7 @@ using Moq;
 using TemplateLandingPage.Application.UseCases.V1.Templates.Queries;
 using TemplateLandingPage.Contract.Services.V1.Templates;
 using TemplateLandingPage.Domain.Entities;
+using TemplateLandingPage.Domain.ReadModels;
 using TemplateLandingPage.Domain.Repositories;
 using Xunit;
 
@@ -34,7 +35,7 @@ public class GetTemplatesQueryHandlerTests
             It.IsAny<bool?>(),
             It.IsAny<bool?>(),
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Template> { t1, t2 });
+            .ReturnsAsync(ToSummaries(t1, t2));
 
         var query = new GetTemplatesQuery();
 
@@ -60,7 +61,7 @@ public class GetTemplatesQueryHandlerTests
             It.IsAny<bool?>(),
             It.IsAny<bool?>(),
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Template> { t1 });
+            .ReturnsAsync(ToSummaries(t1));
 
         var query = new GetTemplatesQuery(Category: "Wedding");
 
@@ -85,7 +86,7 @@ public class GetTemplatesQueryHandlerTests
             It.IsAny<bool?>(),
             It.IsAny<bool?>(),
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Template>());
+            .ReturnsAsync(new List<TemplateSummary>());
 
         var query = new GetTemplatesQuery();
 
@@ -112,7 +113,7 @@ public class GetTemplatesQueryHandlerTests
             null,
             null,
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Template> { t1 });
+            .ReturnsAsync(ToSummaries(t1));
 
         var query = new GetTemplatesQuery(CategoryId: catId);
 
@@ -139,7 +140,7 @@ public class GetTemplatesQueryHandlerTests
             null,
             null,
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Template> { t1 });
+            .ReturnsAsync(ToSummaries(t1));
 
         var query = new GetTemplatesQuery(Badge: "PREMIUM");
 
@@ -166,7 +167,7 @@ public class GetTemplatesQueryHandlerTests
             null,
             null,
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Template> { t1 });
+            .ReturnsAsync(ToSummaries(t1));
 
         var query = new GetTemplatesQuery(Search: "Luxury");
 
@@ -193,7 +194,7 @@ public class GetTemplatesQueryHandlerTests
             null,
             true,
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Template> { t1 });
+            .ReturnsAsync(ToSummaries(t1));
 
         var query = new GetTemplatesQuery(IsCommunity: true);
 
@@ -221,7 +222,7 @@ public class GetTemplatesQueryHandlerTests
             null,
             false,
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Template> { t1 });
+            .ReturnsAsync(ToSummaries(t1));
 
         var query = new GetTemplatesQuery(IsCommunity: false);
 
@@ -249,7 +250,7 @@ public class GetTemplatesQueryHandlerTests
             null,
             null,
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Template> { tOfficial, tCommunity });
+            .ReturnsAsync(ToSummaries(tOfficial, tCommunity));
 
         var query = new GetTemplatesQuery(IsCommunity: null);
 
@@ -262,5 +263,12 @@ public class GetTemplatesQueryHandlerTests
         result.Value.Should().Contain(t => t.IsCommunity == false);
         result.Value.Should().Contain(t => t.IsCommunity == true && t.AuthorName == "Author B");
     }
+
+    private static List<TemplateSummary> ToSummaries(params Template[] templates) => templates
+        .Select(t => new TemplateSummary(
+            t.Id, t.Name, t.Slug, t.Description, t.CategoryId, t.Category, t.ThumbnailUrl,
+            t.PreviewUrl, t.LongPreviewUrl, t.Badge, t.AudioUrl, t.MusicTitle, t.IsActive,
+            t.IsCommunity, t.AuthorName, t.CreatedAtUtc))
+        .ToList();
 }
 

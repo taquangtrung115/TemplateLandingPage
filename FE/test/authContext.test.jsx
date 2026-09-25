@@ -289,7 +289,7 @@ describe('AuthContext and AuthProvider', () => {
       localStorage.setItem('token', 'expired-jwt-token');
       localStorage.setItem('user', JSON.stringify({ email: 'old@test.com' }));
 
-      authApi.getMe.mockRejectedValueOnce(new Error('Unauthorized 401'));
+      authApi.getMe.mockRejectedValueOnce({ status: 401 });
 
       render(
         <AuthProvider>
@@ -304,6 +304,30 @@ describe('AuthContext and AuthProvider', () => {
       expect(screen.getByTestId('auth-status')).toHaveTextContent('unauthenticated');
       expect(localStorage.getItem('token')).toBeNull();
       expect(localStorage.getItem('user')).toBeNull();
+    });
+
+    it('keeps the current session when profile refresh fails because the network is unavailable', async () => {
+      localStorage.setItem('token', 'temporary-network-outage-token');
+      localStorage.setItem('user', JSON.stringify({ id: 'u-network', email: 'network@test.com', role: 'User' }));
+      authApi.getMe.mockRejectedValueOnce(new Error('Network unavailable'));
+
+      render(
+        <AuthProvider>
+          <TestConsumer />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('auth-loading')).toHaveTextContent('ready');
+      });
+
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('authenticated');
+      expect(localStorage.getItem('token')).toBe('temporary-network-outage-token');
+      expect(JSON.parse(localStorage.getItem('user'))).toEqual({
+        id: 'u-network',
+        email: 'network@test.com',
+        role: 'User',
+      });
     });
   });
 
@@ -348,9 +372,8 @@ describe('AuthContext and AuthProvider', () => {
         expect(screen.getByTestId('auth-loading')).toHaveTextContent('ready');
       });
 
-      await act(async () => {
-        await authInstance.login('test@test.com', 'Password123!');
-      });
+      await expect(authInstance.login('test@test.com', 'Password123!'))
+        .rejects.toThrow('Máy chủ không trả về phiên đăng nhập hợp lệ.');
 
       expect(localStorage.getItem('token')).toBeNull();
       expect(localStorage.getItem('user')).toBeNull();

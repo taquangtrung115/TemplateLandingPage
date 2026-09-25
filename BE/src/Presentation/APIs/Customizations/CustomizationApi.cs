@@ -13,179 +13,74 @@ public sealed class CustomizationApi : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/v1/customizations")
-            .WithTags("Customizations");
+        var group = app.MapGroup("/api/v1/customizations").WithTags("Customizations");
 
-        group.MapGet("my", async (ClaimsPrincipal user, ISender sender) =>
-        {
-            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? user.FindFirst("sub")?.Value;
+        group.MapGet("slug/{slug}", async (string slug, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new GetCustomizationBySlugQuery(slug), ct))).AllowAnonymous();
 
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            {
-                return Results.Unauthorized();
-            }
+        group.MapGet("slug/{slug}/versions/{number:int}", async (string slug, int number, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new GetCustomizationBySlugQuery(slug, number), ct))).AllowAnonymous();
 
-            var result = await sender.Send(new GetMyCustomizationsQuery(userId));
-            return HandleResult(result, () => Results.Ok(result));
-        })
-        .RequireAuthorization()
-        .WithName("GetMyCustomizations")
-        .Produces<Result<List<CustomizationResponse>>>(StatusCodes.Status200OK);
+        group.MapGet("my", async (int? page, int? pageSize, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new GetMyCustomizationsQuery(UserId(user), page ?? 1, pageSize ?? 20), ct))).RequireAuthorization();
 
-        group.MapGet("{id:guid}", async (Guid id, ISender sender) =>
-        {
-            var result = await sender.Send(new GetCustomizationByIdQuery(id));
-            return HandleResult(result, () => Results.Ok(result));
-        })
-        .WithName("GetCustomizationById")
-        .Produces<Result<CustomizationResponse>>(StatusCodes.Status200OK)
-        .Produces<Error>(StatusCodes.Status404NotFound);
+        group.MapGet("{id:guid}", async (Guid id, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new GetCustomizationByIdQuery(id, UserId(user), Role(user)), ct))).RequireAuthorization();
 
-        group.MapGet("slug/{slug}", async (string slug, ISender sender) =>
-        {
-            var result = await sender.Send(new GetCustomizationBySlugQuery(slug));
-            return HandleResult(result, () => Results.Ok(result));
-        })
-        .WithName("GetCustomizationBySlug")
-        .Produces<Result<CustomizationResponse>>(StatusCodes.Status200OK)
-        .Produces<Error>(StatusCodes.Status404NotFound);
+        group.MapPost("", async (CreateCustomizationRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new CreateCustomizationCommand(UserId(user), request.TemplateId,
+                request.Title, request.Slug, request.ConfigJson, false, request.ClientDraftId), ct), StatusCodes.Status201Created)).RequireAuthorization();
 
-        group.MapPost(string.Empty, async (CreateCustomizationRequest request, ClaimsPrincipal user, ISender sender) =>
-        {
-            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? user.FindFirst("sub")?.Value;
+        group.MapPut("{id:guid}", async (Guid id, UpdateCustomizationRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new UpdateCustomizationCommand(id, request.Title, request.Slug, request.ConfigJson,
+                false, UserId(user), Role(user), request.ExpectedRevision, request.RequestId), ct))).RequireAuthorization();
 
-            Guid? userId = null;
-            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var parsedId))
-            {
-                userId = parsedId;
-            }
+        group.MapDelete("{id:guid}", async (Guid id, int? expectedRevision, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new DeleteCustomizationCommand(id, UserId(user), Role(user), expectedRevision), ct))).RequireAuthorization();
 
-            var command = new CreateCustomizationCommand(
-                userId,
-                request.TemplateId,
-                request.Title,
-                request.Slug,
-                request.ConfigJson,
-                request.IsPublished);
+        group.MapGet("{id:guid}/versions", async (Guid id, int? page, int? pageSize, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new GetCustomizationVersionsQuery(id, UserId(user), Role(user), page ?? 1, pageSize ?? 20), ct))).RequireAuthorization();
 
-            var result = await sender.Send(command);
-            return HandleResult(result, () => Results.Created($"/api/v1/customizations/{result.Value}", result));
-        })
-        .WithName("CreateCustomization")
-        .Produces<Result<Guid>>(StatusCodes.Status201Created)
-        .Produces<ValidationResult>(StatusCodes.Status400BadRequest);
+        group.MapGet("{id:guid}/versions/{versionId:guid}", async (Guid id, Guid versionId, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new GetCustomizationVersionQuery(id, versionId, UserId(user), Role(user)), ct))).RequireAuthorization();
 
-        group.MapPut("{id:guid}", async (Guid id, UpdateCustomizationRequest request, ClaimsPrincipal user, ISender sender) =>
-        {
-            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? user.FindFirst("sub")?.Value;
+        group.MapPost("{id:guid}/versions", async (Guid id, CreateVersionRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new CreateCustomizationVersionCommand(id, request.Title, request.Slug, request.ConfigJson,
+                request.ExpectedRevision, request.RequestId, UserId(user), Role(user)), ct), StatusCodes.Status201Created)).RequireAuthorization();
 
-            Guid? userId = null;
-            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var parsedId))
-            {
-                userId = parsedId;
-            }
+        group.MapPut("{id:guid}/publication", async (Guid id, PublicationRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new SetCustomizationPublicationCommand(id, request.VersionId,
+                request.ExpectedRevision, UserId(user), Role(user)), ct))).RequireAuthorization();
 
-            var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value ?? "User";
+        group.MapDelete("{id:guid}/publication", async (Guid id, int expectedRevision, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new RemoveCustomizationPublicationCommand(id, null, expectedRevision, UserId(user), Role(user)), ct))).RequireAuthorization();
 
-            var command = new UpdateCustomizationCommand(
-                id,
-                request.Title,
-                request.Slug,
-                request.ConfigJson,
-                request.IsPublished,
-                userId,
-                roleClaim);
+        group.MapDelete("{id:guid}/versions/{versionId:guid}/publication", async (Guid id, Guid versionId, int expectedRevision, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new RemoveCustomizationPublicationCommand(id, versionId, expectedRevision, UserId(user), Role(user)), ct))).RequireAuthorization();
 
-            var result = await sender.Send(command);
-            return HandleResult(result, () => Results.Ok(result));
-        })
-        .WithName("UpdateCustomization")
-        .Produces<Result>(StatusCodes.Status200OK)
-        .Produces<ValidationResult>(StatusCodes.Status400BadRequest)
-        .Produces<Error>(StatusCodes.Status404NotFound)
-        .Produces<Error>(StatusCodes.Status403Forbidden);
-
-        group.MapDelete("{id:guid}", async (Guid id, ClaimsPrincipal user, ISender sender) =>
-        {
-            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? user.FindFirst("sub")?.Value;
-
-            Guid? userId = null;
-            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var parsedId))
-            {
-                userId = parsedId;
-            }
-
-            var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value ?? "User";
-
-            var command = new DeleteCustomizationCommand(id, userId, roleClaim);
-            var result = await sender.Send(command);
-            return HandleResult(result, () => Results.Ok(result));
-        })
-        .RequireAuthorization()
-        .WithName("DeleteCustomization")
-        .Produces<Result>(StatusCodes.Status200OK)
-        .Produces<Error>(StatusCodes.Status404NotFound);
+        var admin = app.MapGroup("/api/v1/admin/customizations").WithTags("Administration").RequireAuthorization("Admin");
+        admin.MapGet("", async (bool? ownerless, int? page, int? pageSize, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new SearchAdminCustomizationsQuery(UserId(user), Role(user), ownerless ?? true, page ?? 1, pageSize ?? 20), ct)));
+        admin.MapPut("{id:guid}/owner", async (Guid id, AssignOwnerRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new AssignCustomizationOwnerCommand(id, request.UserId, request.ExpectedRevision, UserId(user), Role(user)), ct)));
     }
 
-    private static IResult HandleResult(Result result, Func<IResult> onSuccess)
+    private static Guid UserId(ClaimsPrincipal user) =>
+        Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
+
+    private static string Role(ClaimsPrincipal user) => user.FindFirstValue(ClaimTypes.Role) ?? "User";
+
+    private static IResult Respond<T>(Result<T> result, int status = StatusCodes.Status200OK) =>
+        result.IsSuccess ? Results.Json(result, statusCode: status) : Respond((Result)result);
+
+    private static IResult Respond(Result result)
     {
-        if (result.IsSuccess)
-        {
-            return onSuccess();
-        }
-
-        if (result is IValidationResult validationResult)
-        {
-            return Results.BadRequest(new
-            {
-                Title = "Validation Error",
-                Status = StatusCodes.Status400BadRequest,
-                Errors = validationResult.Errors
-            });
-        }
-
-        if (result.Error == CustomizationErrors.NotFound)
-        {
-            return Results.NotFound(new
-            {
-                Title = "Not Found",
-                Status = StatusCodes.Status404NotFound,
-                Error = result.Error
-            });
-        }
-
-        if (result.Error == CustomizationErrors.Unauthorized)
-        {
-            return Results.Json(new
-            {
-                Title = "Forbidden",
-                Status = StatusCodes.Status403Forbidden,
-                Error = result.Error
-            }, statusCode: StatusCodes.Status403Forbidden);
-        }
-
-        return Results.BadRequest(new
-        {
-            Title = "Bad Request",
-            Status = StatusCodes.Status400BadRequest,
-            Error = result.Error
-        });
+        if (result.IsSuccess) return Results.Ok(result);
+        if (result is IValidationResult validation)
+            return Results.BadRequest(new { title = "Validation Error", status = 400, errors = validation.Errors });
+        var status = result.Error == CustomizationErrors.NotFound ? 404 :
+            result.Error == CustomizationErrors.Unauthorized ? 403 :
+            result.Error == CustomizationErrors.Conflict || result.Error == CustomizationErrors.DuplicateSlug ? 409 : 400;
+        return Results.Json(new { title = "Request failed", status, error = result.Error }, statusCode: status);
     }
 }
-
-public record CreateCustomizationRequest(
-    Guid TemplateId,
-    string Title,
-    string Slug,
-    string ConfigJson,
-    bool IsPublished);
-
-public record UpdateCustomizationRequest(
-    string Title,
-    string Slug,
-    string ConfigJson,
-    bool IsPublished);

@@ -10,10 +10,12 @@ import {
   X,
   ChevronDown,
   ExternalLink,
+  FileText,
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import navigationMenuApi from '../api/navigationMenuApi';
 import { resolveIcon } from '../utils/iconResolver';
+import { flushActiveDraft } from '../utils/draftLifecycle';
 
 export default function Navbar() {
   const location = useLocation();
@@ -25,6 +27,8 @@ export default function Navbar() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState({}); // for mobile accordion { [menuId]: boolean }
   const [activeDropdown, setActiveDropdown] = useState(null); // for desktop hover { [menuId]: boolean }
+  const [logoutError, setLogoutError] = useState('');
+  const [logoutBusy, setLogoutBusy] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -50,10 +54,22 @@ export default function Navbar() {
     return location.pathname.startsWith(path);
   };
 
-  const handleLogout = () => {
-    logout();
-    setUserDropdownOpen(false);
-    navigate('/login');
+  const handleLogout = async () => {
+    if (logoutBusy) return false;
+    setLogoutBusy(true);
+    setLogoutError('');
+    try {
+      await flushActiveDraft();
+      logout();
+      setUserDropdownOpen(false);
+      navigate('/login');
+      return true;
+    } catch {
+      setLogoutError('Bản nháp chưa lưu được trên thiết bị. Hãy thử lại trước khi đăng xuất.');
+      return false;
+    } finally {
+      setLogoutBusy(false);
+    }
   };
 
   const toggleMobileSubmenu = (menuId) => {
@@ -97,13 +113,14 @@ export default function Navbar() {
         { id: 'bs', title: 'Thôi Nôi & Đầy Tháng', url: '/templates?category=baby-shower', icon: 'Baby' },
       ],
     },
-    { id: 'pricing', title: 'Bảng Giá', url: '/#pricing', icon: 'BadgePercent' },
-    { id: 'guide', title: 'Hướng Dẫn', url: '/#guide', icon: 'BookOpen' },
+    { id: 'pricing', title: 'Bảng Giá', url: '/products', icon: 'BadgePercent' },
+    { id: 'guide', title: 'Hướng Dẫn', url: '/#how-it-works', icon: 'BookOpen' },
   ];
 
   const displayedMenus = menus.length > 0 ? menus : fallbackMenus;
 
   return (
+    <>
     <header className="sticky top-0 z-40 backdrop-blur-md bg-white/80 border-b border-gray-100/60 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -266,6 +283,16 @@ export default function Navbar() {
               );
             })}
 
+            <Link
+              to="/drafts"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                location.pathname === '/drafts' ? 'text-rose-600 bg-rose-50' : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5 text-rose-500" />
+              <span>Bản nháp</span>
+            </Link>
+
             {isAuthenticated && (
               <Link
                 to="/my-sites"
@@ -342,12 +369,14 @@ export default function Navbar() {
                         <span>Bảng quản trị</span>
                       </Link>
                     )}
+                    {logoutError && <p role="alert" className="px-4 py-2 text-[10px] text-rose-700">{logoutError}</p>}
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 text-left border-t border-gray-100 mt-1"
+                      disabled={logoutBusy}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 text-left border-t border-gray-100 mt-1 disabled:opacity-50"
                     >
                       <LogOut className="w-3.5 h-3.5" />
-                      <span>Đăng xuất</span>
+                      <span>{logoutBusy ? 'Đang lưu…' : 'Đăng xuất'}</span>
                     </button>
                   </div>
                 )}
@@ -397,21 +426,25 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+    </header>
 
-      {/* Mobile Backdrop Overlay */}
-      {mobileMenuOpen && (
+      {/* The viewport-sized clip keeps the closed translated drawer from widening the document. */}
+      <div
+        className={`fixed inset-0 z-50 md:hidden overflow-hidden ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        aria-hidden={!mobileMenuOpen}
+        inert={!mobileMenuOpen}
+      >
         <div
-          className="fixed inset-0 bg-gray-950/50 backdrop-blur-sm z-50 md:hidden transition-opacity duration-300"
+          className={`absolute inset-0 bg-gray-950/50 backdrop-blur-sm transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100' : 'opacity-0'}`}
           onClick={() => setMobileMenuOpen(false)}
         />
-      )}
 
-      {/* Mobile Slide-in Drawer */}
-      <div
-        className={`fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-white z-50 shadow-2xl flex flex-col justify-between transition-transform duration-300 ease-out md:hidden ${
-          mobileMenuOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
-        }`}
-      >
+        {/* Mobile Slide-in Drawer */}
+        <div
+          className={`absolute top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-white z-10 shadow-2xl flex flex-col justify-between transition-transform duration-300 ease-out ${
+            mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
         {/* Drawer Header */}
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <Link
@@ -586,6 +619,15 @@ export default function Navbar() {
             );
           })}
 
+          <Link
+            to="/drafts"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
+          >
+            <FileText className="w-4 h-4 text-rose-500" />
+            <span>Bản nháp</span>
+          </Link>
+
           {isAuthenticated && (
             <Link
               to="/my-sites"
@@ -611,16 +653,17 @@ export default function Navbar() {
         {/* Drawer Footer / Auth */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/70">
           {isAuthenticated ? (
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleLogout();
-              }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Đăng xuất ({user?.fullName})</span>
-            </button>
+            <>
+              {logoutError && <p role="alert" className="mb-2 text-[10px] text-rose-700">{logoutError}</p>}
+              <button
+                disabled={logoutBusy}
+                onClick={async () => { if (await handleLogout()) setMobileMenuOpen(false); }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors disabled:opacity-50"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>{logoutBusy ? 'Đang lưu bản nháp…' : `Đăng xuất (${user?.fullName})`}</span>
+              </button>
+            </>
           ) : (
             <div className="grid grid-cols-2 gap-2">
               <Link
@@ -640,7 +683,8 @@ export default function Navbar() {
             </div>
           )}
         </div>
+        </div>
       </div>
-    </header>
+    </>
   );
 }

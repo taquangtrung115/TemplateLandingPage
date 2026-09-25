@@ -16,7 +16,7 @@ public sealed class GetCategoryByIdQueryHandler : IQueryHandler<GetCategoryByIdQ
 
     public async Task<Result<CategoryResponse>> Handle(GetCategoryByIdQuery request, CancellationToken cancellationToken)
     {
-        var category = await _categoryRepository.GetByIdAsync(request.Id, cancellationToken);
+        var category = await _categoryRepository.GetSummaryByIdAsync(request.Id, request.IncludeInactive, cancellationToken);
         if (category is null)
         {
             return Result.Failure<CategoryResponse>(CategoryErrors.NotFound);
@@ -30,7 +30,7 @@ public sealed class GetCategoryByIdQueryHandler : IQueryHandler<GetCategoryByIdQ
             category.Icon,
             category.OrderIndex,
             category.IsActive,
-            category.Templates?.Count(t => !t.IsDeleted) ?? 0,
+            category.TemplatesCount,
             category.CreatedAtUtc);
 
         return Result.Success(response);

@@ -91,7 +91,7 @@ describe('API Layer Result Unwrapping', () => {
 
       const result = await userApi.getUsers();
       expect(result).toEqual(usersList);
-      expect(axiosInstance.get).toHaveBeenCalledWith('/users');
+      expect(axiosInstance.get).toHaveBeenCalledWith('/users', { params: {} });
     });
 
     it('getUserById unwraps Result<UserResponse> with .value', async () => {
@@ -215,6 +215,17 @@ describe('API Layer Result Unwrapping', () => {
       });
       const getRes = await interactionApi.getGuestbook('cust-1');
       expect(getRes).toEqual(messages);
+    });
+
+    it('rejects explicit failed RSVP and guestbook Result envelopes', async () => {
+      axiosInstance.post
+        .mockResolvedValueOnce({ data: { isSuccess: false, error: 'RSVP disabled for this version' } })
+        .mockResolvedValueOnce({ data: { isSuccess: false, error: 'Guestbook disabled for this version' } });
+
+      await expect(interactionApi.submitRsvp({ customizationVersionId: 'private-version' }))
+        .rejects.toThrow('The interaction request was rejected.');
+      await expect(interactionApi.submitGuestbook({ customizationVersionId: 'private-version' }))
+        .rejects.toThrow('The interaction request was rejected.');
     });
   });
 });

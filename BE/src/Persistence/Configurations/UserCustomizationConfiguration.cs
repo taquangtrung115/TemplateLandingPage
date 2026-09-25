@@ -14,6 +14,11 @@ public sealed class UserCustomizationConfiguration : IEntityTypeConfiguration<Us
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.UserId);
+        builder.Property(c => c.Revision).IsConcurrencyToken().HasDefaultValue(1);
+        builder.Property(c => c.LastSaveRequestHash).HasMaxLength(64);
+        builder.HasIndex(c => new { c.UserId, c.ClientDraftId }).IsUnique();
+        builder.HasOne<CustomizationVersion>().WithMany().HasForeignKey(c => c.PublishedVersionId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(c => c.TemplateId)
             .IsRequired();

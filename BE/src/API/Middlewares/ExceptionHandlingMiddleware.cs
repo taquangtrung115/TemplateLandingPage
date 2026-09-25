@@ -1,9 +1,11 @@
 namespace TemplateLandingPage.API.Middlewares;
 
 using System.Net;
+using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using TemplateLandingPage.Domain.Exceptions;
 
 public sealed class ExceptionHandlingMiddleware
 {
@@ -22,26 +24,61 @@ public sealed class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
+        catch (WriteConflictException)
+        {
+            await WriteErrorAsync(
+                context,
+                (int)HttpStatusCode.Conflict,
+                "Conflict",
+                "The request conflicts with the current data. Refresh and retry.");
+        }
+        catch (BadHttpRequestException)
+        {
+            await WriteErrorAsync(
+                context,
+                (int)HttpStatusCode.BadRequest,
+                "Bad Request",
+                "The request body or parameters are invalid.");
+        }
+        catch (JsonException)
+        {
+            await WriteErrorAsync(
+                context,
+                (int)HttpStatusCode.BadRequest,
+                "Bad Request",
+                "The request body contains invalid JSON.");
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception occurred: {Message}", ex.Message);
-            await HandleExceptionAsync(context, ex);
+            var operationId = GetOperationId(context);
+            _logger.LogError(
+                "Unhandled request failure for operation {OperationId} ({ExceptionType}).",
+                operationId,
+                ex.GetType().Name);
+            await WriteErrorAsync(
+                context,
+                (int)HttpStatusCode.InternalServerError,
+                "Server Error",
+                "An unexpected error occurred on the server.");
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static Task WriteErrorAsync(HttpContext context, int statusCode, string title, string detail)
     {
         context.Response.ContentType = "application/json";
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        context.Response.StatusCode = statusCode;
 
         var response = new
         {
-            Status = context.Response.StatusCode,
-            Title = "Server Error",
-            Detail = "An unexpected error occurred on the server.",
-            Errors = new[] { exception.Message }
+            Status = statusCode,
+            Title = title,
+            Detail = detail,
+            OperationId = GetOperationId(context),
+            Errors = Array.Empty<string>()
         };
 
         return context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
+
+    private static string GetOperationId(HttpContext context) => Activity.Current?.Id ?? context.TraceIdentifier;
 }

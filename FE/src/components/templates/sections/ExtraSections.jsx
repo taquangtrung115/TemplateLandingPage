@@ -9,6 +9,7 @@ import {
   FileText,
 } from 'lucide-react';
 import ScrollReveal from '../../common/ScrollReveal';
+import { getSafeResourceUrl } from '../../../utils/safeUrl';
 
 /**
  * @param {Object} props
@@ -30,6 +31,7 @@ export const ExtraSections = React.memo(function ExtraSections({
   handleCopyStk,
   isHighlighted = false,
   activeEditSection = null,
+  exportMode = false,
 }) {
   const visibleSections = extraSections.filter((sec) => sec.enabled !== false);
   if (visibleSections.length === 0) return null;
@@ -45,7 +47,7 @@ export const ExtraSections = React.memo(function ExtraSections({
           activeEditSection === `extra-${sec.id}`;
 
         // VietQR Code auto-generated link
-        const vietQrUrl = sec.qrBank?.qrImageUrl
+        const vietQrUrlCandidate = sec.qrBank?.qrImageUrl
           ? sec.qrBank.qrImageUrl
           : sec.qrBank?.accountNumber
           ? `https://img.vietqr.io/image/${encodeURIComponent(
@@ -54,10 +56,16 @@ export const ExtraSections = React.memo(function ExtraSections({
               sec.qrBank.accountHolder || ''
             )}&amount=0`
           : null;
+        const vietQrUrl = getSafeResourceUrl(vietQrUrlCandidate);
+        const sectionImageUrl = getSafeResourceUrl(sec.imageUrl);
+        const sectionAnchorId = typeof sec.id === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(sec.id)
+          ? sec.id
+          : undefined;
 
         return (
           <section
             key={sec.id || idx}
+            id={sectionAnchorId}
             className={`py-20 px-4 sm:px-6 max-w-4xl mx-auto relative z-20 transition-all duration-300 ${
               isSecHighlighted ? 'animate-live-edit rounded-3xl' : ''
             }`}
@@ -73,9 +81,9 @@ export const ExtraSections = React.memo(function ExtraSections({
                   <h2 className="text-3xl sm:text-4xl font-bold" style={{ color: primaryColor }}>
                     {sec.title || 'Lời Cảm Ơn'}
                   </h2>
-                  {sec.imageUrl && (
+                  {sectionImageUrl && (
                     <img
-                      src={sec.imageUrl}
+                      src={sectionImageUrl}
                       alt="Thank you"
                       className="max-h-64 w-auto object-cover rounded-2xl mx-auto shadow-md"
                     />
@@ -122,7 +130,7 @@ export const ExtraSections = React.memo(function ExtraSections({
                           <span className="font-mono font-bold text-gray-900">
                             {sec.qrBank?.accountNumber || 'N/A'}
                           </span>
-                          {sec.qrBank?.accountNumber && (
+                          {!exportMode && sec.qrBank?.accountNumber && (
                             <button
                               type="button"
                               onClick={() => handleCopyStk?.(sec.qrBank.accountNumber)}
@@ -167,24 +175,30 @@ export const ExtraSections = React.memo(function ExtraSections({
 
                   <div className="space-y-3 pt-4">
                     {(sec.items || []).map((item, qIdx) => {
-                      const isOpen = openQaIndex[`${sec.id || idx}-${qIdx}`];
+                      const isOpen = exportMode || openQaIndex[`${sec.id || idx}-${qIdx}`];
                       return (
                         <div
                           key={qIdx}
                           className="border border-gray-200/80 rounded-2xl overflow-hidden bg-white/90 shadow-sm transition-all"
                         >
-                          <button
-                            type="button"
-                            onClick={() => toggleQa?.(sec.id || idx, qIdx)}
-                            className="w-full px-5 py-4 text-left flex items-center justify-between gap-3 font-bold text-sm text-gray-800 hover:bg-gray-50/70"
-                          >
+                          {exportMode ? (
+                            <div className="w-full px-5 py-4 text-left flex items-center justify-between gap-3 font-bold text-sm text-gray-800">
+                              <span>{item.question}</span>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => toggleQa?.(sec.id || idx, qIdx)}
+                              className="w-full px-5 py-4 text-left flex items-center justify-between gap-3 font-bold text-sm text-gray-800 hover:bg-gray-50/70"
+                            >
                             <span>{item.question}</span>
                             <ChevronDown
                               className={`w-4 h-4 text-gray-500 transition-transform ${
                                 isOpen ? 'rotate-180' : ''
                               }`}
                             />
-                          </button>
+                            </button>
+                          )}
                           {isOpen && (
                             <div className="px-5 pb-4 pt-1 text-xs sm:text-sm text-gray-600 leading-relaxed border-t border-gray-100 bg-gray-50/40">
                               {item.answer}
@@ -207,9 +221,9 @@ export const ExtraSections = React.memo(function ExtraSections({
                   <h2 className="text-3xl sm:text-4xl font-bold" style={{ color: primaryColor }}>
                     {sec.title || 'Nội Dung Tùy Biến'}
                   </h2>
-                  {sec.imageUrl && (
+                  {sectionImageUrl && (
                     <img
-                      src={sec.imageUrl}
+                      src={sectionImageUrl}
                       alt={sec.title || 'Custom image'}
                       className="max-h-72 w-auto object-cover rounded-2xl mx-auto shadow-md"
                     />

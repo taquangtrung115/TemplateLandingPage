@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Routing;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.NavigationMenus;
 using TemplateLandingPage.Presentation.Abstractions;
+using TemplateLandingPage.Presentation.Authorization;
+using System.Security.Claims;
 
 public sealed class NavigationMenuApi : IEndpoint
 {
@@ -15,17 +17,18 @@ public sealed class NavigationMenuApi : IEndpoint
         var group = app.MapGroup("/api/v1/menus")
             .WithTags("NavigationMenus");
 
-        group.MapGet(string.Empty, async (bool? isActiveOnly, ISender sender) =>
+        group.MapGet(string.Empty, async (bool? isActiveOnly, ClaimsPrincipal user, ISender sender) =>
         {
-            var result = await sender.Send(new GetNavigationMenusQuery(isActiveOnly));
+            var includeInactive = isActiveOnly == false && user.IsInRole("Admin");
+            var result = await sender.Send(new GetNavigationMenusQuery(!includeInactive));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetNavigationMenus")
         .Produces<Result<List<NavigationMenuResponse>>>(StatusCodes.Status200OK);
 
-        group.MapGet("{id:guid}", async (Guid id, ISender sender) =>
+        group.MapGet("{id:guid}", async (Guid id, ClaimsPrincipal user, ISender sender) =>
         {
-            var result = await sender.Send(new GetNavigationMenuByIdQuery(id));
+            var result = await sender.Send(new GetNavigationMenuByIdQuery(id, user.IsInRole("Admin")));
             return HandleResult(result, () => Results.Ok(result));
         })
         .WithName("GetNavigationMenuById")
@@ -37,7 +40,7 @@ public sealed class NavigationMenuApi : IEndpoint
             var result = await sender.Send(command);
             return HandleResult(result, () => Results.Created($"/api/v1/menus/{result.Value}", result));
         })
-        .RequireAuthorization()
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("CreateNavigationMenu")
         .Produces<Result<Guid>>(StatusCodes.Status201Created)
         .Produces<ValidationResult>(StatusCodes.Status400BadRequest);
@@ -59,7 +62,7 @@ public sealed class NavigationMenuApi : IEndpoint
             var result = await sender.Send(command);
             return HandleResult(result, () => Results.Ok(result));
         })
-        .RequireAuthorization()
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("UpdateNavigationMenu")
         .Produces<Result>(StatusCodes.Status200OK)
         .Produces<ValidationResult>(StatusCodes.Status400BadRequest)
@@ -70,7 +73,7 @@ public sealed class NavigationMenuApi : IEndpoint
             var result = await sender.Send(new DeleteNavigationMenuCommand(id));
             return HandleResult(result, () => Results.Ok(result));
         })
-        .RequireAuthorization()
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("DeleteNavigationMenu")
         .Produces<Result>(StatusCodes.Status200OK)
         .Produces<Error>(StatusCodes.Status404NotFound)

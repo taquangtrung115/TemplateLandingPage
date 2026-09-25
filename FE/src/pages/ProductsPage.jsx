@@ -4,9 +4,11 @@ import { useProducts } from '../hooks/useProducts';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Modal from '../components/Modal';
 import { formatCurrency, formatDate } from '../utils/formatters';
+import useAuth from '../hooks/useAuth';
 
 export default function ProductsPage() {
-  const { products, isLoading, error, createProduct, updateProduct, deleteProduct } = useProducts();
+  const { products, isLoading, error, fetchProducts, createProduct, updateProduct, deleteProduct } = useProducts();
+  const { isAdmin } = useAuth();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -48,6 +50,7 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isAdmin || isSubmitting) return;
     setFormError(null);
 
     const priceNum = parseFloat(formData.price);
@@ -88,7 +91,7 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async () => {
-    if (!currentProduct) return;
+    if (!isAdmin || isSubmitting || !currentProduct) return;
     setIsSubmitting(true);
     setFormError(null);
 
@@ -108,16 +111,16 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quản lý Sản phẩm</h1>
-          <p className="text-gray-500 text-sm mt-1">Danh sách sản phẩm được đồng bộ với Backend API (.NET 10 CQRS).</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{isAdmin ? 'Quản lý gói dịch vụ' : 'Gói dịch vụ'}</h1>
+          <p className="text-gray-500 text-sm mt-1">Thông tin và mức giá các gói dịch vụ hiện có.</p>
         </div>
-        <button
+        {isAdmin && <button
           onClick={handleOpenCreateModal}
           className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 shadow-md hover:shadow-indigo-500/20 transition"
         >
           <Plus className="w-5 h-5" />
           <span>Thêm sản phẩm</span>
-        </button>
+        </button>}
       </div>
 
       {/* Global Error Banner */}
@@ -134,6 +137,19 @@ export default function ProductsPage() {
       {/* Content */}
       {isLoading ? (
         <LoadingSpinner text="Đang tải danh sách sản phẩm..." />
+      ) : error ? (
+        <div className="text-center py-16 px-4 bg-white rounded-2xl border border-red-100 shadow-sm space-y-3">
+          <PackageSearch className="w-10 h-10 text-red-400 mx-auto" />
+          <h3 className="text-lg font-semibold text-gray-900">Không tải được danh sách sản phẩm</h3>
+          <p className="text-sm text-gray-500">{error}</p>
+          <button
+            type="button"
+            onClick={fetchProducts}
+            className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800"
+          >
+            Thử tải lại
+          </button>
+        </div>
       ) : products.length === 0 ? (
         /* Empty State */
         <div className="text-center py-16 px-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
@@ -142,15 +158,15 @@ export default function ProductsPage() {
           </div>
           <h3 className="text-lg font-semibold text-gray-900">Chưa có sản phẩm nào</h3>
           <p className="text-gray-500 max-w-md mx-auto text-sm">
-            Hãy tạo sản phẩm mới để trải nghiệm quy trình Command & Query trong kiến trúc Clean Architecture!
+            Danh sách gói dịch vụ sẽ được hiển thị khi có thông tin.
           </p>
-          <button
+          {isAdmin && <button
             onClick={handleOpenCreateModal}
             className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition"
           >
             <Plus className="w-4 h-4" />
             <span>Tạo sản phẩm đầu tiên</span>
-          </button>
+          </button>}
         </div>
       ) : (
         /* Product Grid */
@@ -185,7 +201,7 @@ export default function ProductsPage() {
 
               <div className="pt-6 mt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
                 <span>{formatDate(product.createdAtUtc)}</span>
-                <div className="flex items-center space-x-1">
+                {isAdmin && <div className="flex items-center space-x-1">
                   <button
                     onClick={() => handleOpenEditModal(product)}
                     className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 transition"
@@ -200,7 +216,7 @@ export default function ProductsPage() {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                </div>
+                </div>}
               </div>
             </div>
           ))}
@@ -209,7 +225,7 @@ export default function ProductsPage() {
 
       {/* Create / Edit Modal */}
       <Modal
-        isOpen={isModalOpen}
+        isOpen={isAdmin && isModalOpen}
         onClose={() => !isSubmitting && setIsModalOpen(false)}
         title={currentProduct ? 'Chỉnh sửa Sản phẩm' : 'Thêm Sản phẩm Mới'}
       >
@@ -304,13 +320,13 @@ export default function ProductsPage() {
 
       {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={isDeleteModalOpen}
+        isOpen={isAdmin && isDeleteModalOpen}
         onClose={() => !isSubmitting && setIsDeleteModalOpen(false)}
         title="Xác nhận Xóa Sản phẩm"
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Bạn có chắc chắn muốn xóa sản phẩm <span className="font-semibold text-gray-900">"{currentProduct?.name}"</span>? Thao tác này sẽ áp dụng cơ chế Soft Delete.
+            Bạn có chắc chắn muốn gỡ sản phẩm <span className="font-semibold text-gray-900">"{currentProduct?.name}"</span> khỏi danh sách?
           </p>
 
           {formError && (

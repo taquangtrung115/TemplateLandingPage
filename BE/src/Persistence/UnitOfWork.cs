@@ -1,6 +1,9 @@
 namespace TemplateLandingPage.Persistence;
 
 using TemplateLandingPage.Domain.Abstractions.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using TemplateLandingPage.Domain.Exceptions;
 
 public sealed class UnitOfWork : IUnitOfWork
 {
@@ -11,8 +14,19 @@ public sealed class UnitOfWork : IUnitOfWork
         _dbContext = dbContext;
     }
 
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return _dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            return await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new WriteConflictException();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" })
+        {
+            throw new WriteConflictException();
+        }
     }
 }

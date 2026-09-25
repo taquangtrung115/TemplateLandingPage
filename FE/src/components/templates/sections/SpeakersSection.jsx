@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mic, Linkedin, Twitter, Globe, Building2 } from 'lucide-react';
+import { getSafeCssColor, getSafeResourceUrl } from '../../../utils/safeUrl';
 
 /**
  * SpeakersSection Component
@@ -13,9 +14,12 @@ import { Mic, Linkedin, Twitter, Globe, Building2 } from 'lucide-react';
  */
 export default function SpeakersSection({
   speakers = [],
+  headings = {},
   primaryColor = '#2563eb',
   isHighlighted = false,
 }) {
+  primaryColor = getSafeCssColor(primaryColor, '#2563eb');
+
   if (!speakers || speakers.length === 0) {
     return null;
   }
@@ -39,19 +43,21 @@ export default function SpeakersSection({
             }}
           >
             <Mic className="w-3.5 h-3.5" />
-            <span>Keynote Speakers Lineup</span>
+            <span>{headings?.eyebrow || 'Đội ngũ chuyên môn'}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">
-            Gặp Gỡ Đội Ngũ Diễn Giả Hàng Đầu
+            {headings?.title || 'Gặp gỡ những người đồng hành'}
           </h2>
           <p className="text-sm sm:text-base text-gray-400 font-normal max-w-xl mx-auto">
-            Các chuyên gia, nhà khoa học và lãnh đạo công nghệ tiên phong chia sẻ tầm nhìn tương lai về trí tuệ nhân tạo.
+            {headings?.subtitle || 'Tìm hiểu kinh nghiệm và vai trò của đội ngũ.'}
           </p>
         </div>
 
         {/* Speakers Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {speakers.map((speaker, idx) => (
+          {speakers.map((speaker, idx) => {
+            const avatarUrl = getSafeResourceUrl(speaker.avatarUrl) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80';
+            return (
             <div
               key={speaker.id || idx}
               className="group bg-gray-900/80 border border-gray-800/80 hover:border-gray-700 rounded-3xl p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 flex flex-col justify-between"
@@ -60,10 +66,7 @@ export default function SpeakersSection({
                 {/* Speaker Avatar */}
                 <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-5 bg-gray-800 shadow-inner">
                   <img
-                    src={
-                      speaker.avatarUrl ||
-                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80'
-                    }
+                    src={avatarUrl}
                     alt={speaker.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
@@ -107,7 +110,8 @@ export default function SpeakersSection({
                 </span>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

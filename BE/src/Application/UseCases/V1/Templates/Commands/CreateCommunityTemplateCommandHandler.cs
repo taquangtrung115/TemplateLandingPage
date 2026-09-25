@@ -10,18 +10,59 @@ using TemplateLandingPage.Domain.Repositories;
 public sealed class CreateCommunityTemplateCommandHandler : ICommandHandler<CreateCommunityTemplateCommand, Guid>
 {
     private readonly ITemplateRepository _templateRepository;
+    private readonly ICustomizationRepository _customizationRepository;
+    private readonly ICategoryRepository _categoryRepository;
+    private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateCommunityTemplateCommandHandler(
         ITemplateRepository templateRepository,
+        ICustomizationRepository customizationRepository,
+        ICategoryRepository categoryRepository,
+        IUserRepository userRepository,
         IUnitOfWork unitOfWork)
     {
         _templateRepository = templateRepository;
+        _customizationRepository = customizationRepository;
+        _categoryRepository = categoryRepository;
+        _userRepository = userRepository;
         _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(CreateCommunityTemplateCommand request, CancellationToken cancellationToken)
     {
+        var source = await _customizationRepository.ReadAccessAsync(request.SourceCustomizationId, cancellationToken);
+        if (source is null)
+        {
+            return Result.Failure<Guid>(TemplateErrors.NotFound);
+        }
+
+        if (!request.IsAdmin && source.UserId != request.CurrentUserId)
+        {
+            return Result.Failure<Guid>(TemplateErrors.AccessDenied);
+        }
+
+        var version = await _customizationRepository.ReadVersionAsync(
+            request.SourceCustomizationId,
+            request.CustomizationVersionId,
+            cancellationToken);
+        if (version is null)
+        {
+            return Result.Failure<Guid>(TemplateErrors.NotFound);
+        }
+
+        var category = await _categoryRepository.GetActiveByIdAsync(request.CategoryId, cancellationToken);
+        if (category is null)
+        {
+            return Result.Failure<Guid>(TemplateErrors.NotFound);
+        }
+
+        var author = await _userRepository.GetActiveByIdAsync(request.CurrentUserId, cancellationToken);
+        if (author is null)
+        {
+            return Result.Failure<Guid>(TemplateErrors.AccessDenied);
+        }
+
         var finalSlug = request.Slug.Trim().ToLowerInvariant();
 
         if (await _templateRepository.ExistsBySlugAsync(finalSlug, cancellationToken))
@@ -36,11 +77,12 @@ public sealed class CreateCommunityTemplateCommandHandler : ICommandHandler<Crea
             request.Name,
             finalSlug,
             request.Description,
-            request.Category,
+            category.Id,
+            category.Name,
             request.ThumbnailUrl,
-            request.DefaultConfigJson,
-            request.AuthorName,
-            request.CreatedByUserId);
+            version.ConfigJson,
+            author.FullName,
+            request.CurrentUserId);
 
         _templateRepository.Add(template);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

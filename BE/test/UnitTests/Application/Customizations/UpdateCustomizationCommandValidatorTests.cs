@@ -23,7 +23,11 @@ public class UpdateCustomizationCommandValidatorTests
             "Title",
             "slug",
             "{}",
-            true);
+            false,
+            Guid.NewGuid(),
+            "User",
+            1,
+            Guid.NewGuid());
 
         // Act
         var result = _validator.Validate(command);
@@ -41,7 +45,11 @@ public class UpdateCustomizationCommandValidatorTests
             "Title",
             "slug",
             "{}",
-            true);
+            false,
+            Guid.NewGuid(),
+            "User",
+            1,
+            Guid.NewGuid());
 
         // Act
         var result = _validator.Validate(command);
@@ -63,7 +71,11 @@ public class UpdateCustomizationCommandValidatorTests
             title!,
             "slug",
             "{}",
-            true);
+            false,
+            Guid.NewGuid(),
+            "User",
+            1,
+            Guid.NewGuid());
 
         // Act
         var result = _validator.Validate(command);
@@ -85,7 +97,11 @@ public class UpdateCustomizationCommandValidatorTests
             "Title",
             slug!,
             "{}",
-            true);
+            false,
+            Guid.NewGuid(),
+            "User",
+            1,
+            Guid.NewGuid());
 
         // Act
         var result = _validator.Validate(command);
@@ -107,7 +123,11 @@ public class UpdateCustomizationCommandValidatorTests
             "Title",
             "slug",
             json!,
-            true);
+            false,
+            Guid.NewGuid(),
+            "User",
+            1,
+            Guid.NewGuid());
 
         // Act
         var result = _validator.Validate(command);

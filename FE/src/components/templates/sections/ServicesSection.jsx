@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Stethoscope, Sparkles, CheckCircle2, Calendar, Phone, Clock, ArrowRight } from 'lucide-react';
+import React from 'react';
+import { Compass, Sparkles, ArrowRight } from 'lucide-react';
+import { getSafeCssColor, getSafeLinkUrl } from '../../../utils/safeUrl';
 
 /**
  * ServicesSection Component
  * Dành cho Landing Page Phòng Khám Nha Khoa, Trung Tâm Y Tế & Chăm Sóc Sức Khỏe
  * Hiển thị danh mục dịch vụ điều trị (Veneers, Bọc răng sứ, Tẩy trắng, Implant)
- * kèm quy trình điều trị chuẩn y khoa và form đặt hẹn tư vấn nhanh.
+ * kèm quy trình điều trị chuẩn y khoa và liên kết đặt hẹn.
  *
  * @param {Object} props
  * @param {Array} [props.servicesGrid] Danh sách 4 dịch vụ nha khoa
@@ -13,29 +14,21 @@ import { Stethoscope, Sparkles, CheckCircle2, Calendar, Phone, Clock, ArrowRight
  * @param {Object} [props.booking] Cấu hình đặt hẹn tư vấn
  * @param {string} [props.primaryColor='#0ea5e9'] Màu chủ đạo
  * @param {boolean} [props.isHighlighted=false] Trạng thái đang chỉnh sửa
- * @param {Function} [props.onBookService] Callback khi đặt lịch
  */
 export default function ServicesSection({
   servicesGrid = [],
   treatmentProcess = [],
   booking = {},
+  headings = {},
   primaryColor = '#0ea5e9',
   isHighlighted = false,
-  onBookService,
 }) {
-  const [bookingForm, setBookingForm] = useState({ name: '', phone: '', service: '' });
-  const [isBooked, setIsBooked] = useState(false);
+  primaryColor = getSafeCssColor(primaryColor, '#0ea5e9');
+  const bookingCtaUrl = getSafeLinkUrl(booking?.ctaUrl);
+  const hasServices = Array.isArray(servicesGrid) && servicesGrid.length > 0;
+  const canShowBooking = booking?.enabled !== false && Boolean(bookingCtaUrl);
 
-  if (!servicesGrid || servicesGrid.length === 0) {
-    return null;
-  }
-
-  const handleSubmitBooking = (e) => {
-    e.preventDefault();
-    if (!bookingForm.name || !bookingForm.phone) return;
-    setIsBooked(true);
-    onBookService?.(bookingForm);
-  };
+  if (!hasServices && !canShowBooking) return null;
 
   return (
     <section
@@ -55,24 +48,26 @@ export default function ServicesSection({
               backgroundColor: `${primaryColor}10`,
             }}
           >
-            <Stethoscope className="w-3.5 h-3.5" />
-            <span>Chuyên Khoa Răng Hàm Mặt Cao Cấp</span>
+            <Compass className="w-3.5 h-3.5" />
+            <span>{headings?.eyebrow || 'Dịch vụ'}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900">
-            Dịch Vụ Nha Khoa Thẩm Mỹ Toàn Diện
+            {headings?.title || 'Giải pháp dành cho bạn'}
           </h2>
           <p className="text-sm sm:text-base text-gray-600 font-normal max-w-xl mx-auto">
-            Công nghệ Scan 3D không xâm lấn, bảo tồn men răng tối đa cùng đội ngũ bác sĩ chuyên khoa đầu ngành.
+            {headings?.subtitle || 'Khám phá các dịch vụ và chọn lựa phù hợp với nhu cầu của bạn.'}
           </p>
         </div>
 
         {/* 4 Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
-          {servicesGrid.map((srv, idx) => (
-            <div
-              key={srv.id || idx}
-              className="group bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
-            >
+        {hasServices && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+          {servicesGrid.map((srv, idx) => {
+            const ctaUrl = getSafeLinkUrl(srv.ctaUrl);
+            return (
+              <div
+                key={srv.id || idx}
+                className="group bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+              >
               <div>
                 <div
                   className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
@@ -100,21 +95,23 @@ export default function ServicesSection({
                     {srv.priceFrom || 'Liên hệ'}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBookingForm((prev) => ({ ...prev, service: srv.name }));
-                    document.getElementById('booking-form-box')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="p-2 rounded-xl text-gray-400 hover:text-white transition-colors"
-                  style={{ ':hover': { backgroundColor: primaryColor } }}
-                >
-                  <ArrowRight className="w-4 h-4 text-gray-600" />
-                </button>
+                {ctaUrl && (
+                  <a
+                    href={ctaUrl}
+                    target={/^https?:/i.test(ctaUrl) ? '_blank' : undefined}
+                    rel={/^https?:/i.test(ctaUrl) ? 'noopener noreferrer' : undefined}
+                    aria-label={`${srv.ctaText || 'Tìm hiểu thêm'}: ${srv.name || ''}`}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-sky-700"
+                  >
+                    <span>{srv.ctaText || 'Tìm hiểu thêm'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                )}
               </div>
-            </div>
-          ))}
-        </div>
+              </div>
+            );
+          })}
+        </div>}
 
         {/* Treatment Process Steps (4 steps) */}
         {treatmentProcess.length > 0 && (
@@ -124,10 +121,10 @@ export default function ServicesSection({
                 className="text-xs font-bold uppercase tracking-widest block mb-1"
                 style={{ color: primaryColor }}
               >
-                Tiêu Chuẩn Châu Âu
+                {headings?.processEyebrow || 'Quy trình'}
               </span>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-                Quy Trình 4 Bước Điều Trị Nhẹ Nhàng
+                {headings?.processTitle || 'Các bước triển khai'}
               </h3>
             </div>
 
@@ -149,7 +146,7 @@ export default function ServicesSection({
         )}
 
         {/* Appointment Booking Box */}
-        {booking?.enabled !== false && (
+        {canShowBooking && (
           <div
             id="booking-form-box"
             className="rounded-3xl p-8 sm:p-12 text-white relative overflow-hidden shadow-2xl"
@@ -162,42 +159,19 @@ export default function ServicesSection({
                 {booking.title || 'Đặt Lịch Hẹn Tư Vấn Miễn Phí'}
               </h3>
               <p className="text-sm opacity-90 mb-8 font-light leading-relaxed">
-                Nhận ngay phác đồ nụ cười 3D Digital Smile Design và bảng dự toán chi phí chi tiết từ bác sĩ chuyên khoa.
+                {booking.description || 'Xem lựa chọn phù hợp và liên hệ qua đường dẫn đặt lịch.'}
               </p>
 
-              {isBooked ? (
-                <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-md flex items-center gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-300" />
-                  <div>
-                    <h5 className="font-bold text-sm">Đặt lịch thành công!</h5>
-                    <p className="text-xs opacity-90">Bác sĩ tư vấn sẽ gọi lại cho bạn trong vòng 15 phút.</p>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmitBooking} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Họ và tên của bạn"
-                    value={bookingForm.name}
-                    onChange={(e) => setBookingForm({ ...bookingForm, name: e.target.value })}
-                    className="px-4 py-3 rounded-xl bg-white text-gray-900 text-xs font-medium focus:outline-none shadow-sm"
-                  />
-                  <input
-                    type="tel"
-                    required
-                    placeholder="Số điện thoại"
-                    value={bookingForm.phone}
-                    onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
-                    className="px-4 py-3 rounded-xl bg-white text-gray-900 text-xs font-medium focus:outline-none shadow-sm"
-                  />
-                  <button
-                    type="submit"
-                    className="px-6 py-3 rounded-xl bg-gray-950 text-white font-bold text-xs shadow-lg hover:bg-black transition-all"
-                  >
-                    Gửi Thông Tin
-                  </button>
-                </form>
+              {bookingCtaUrl && (
+                <a
+                  href={bookingCtaUrl}
+                  target={/^https?:/i.test(bookingCtaUrl) ? '_blank' : undefined}
+                  rel={/^https?:/i.test(bookingCtaUrl) ? 'noopener noreferrer' : undefined}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-950 text-white font-bold text-xs shadow-lg hover:bg-black transition-all"
+                >
+                  <span>{booking.ctaText || 'Đặt lịch tư vấn'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </a>
               )}
             </div>
           </div>

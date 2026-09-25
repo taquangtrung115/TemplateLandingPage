@@ -1,110 +1,113 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { customizationApi } from '../api/customizationApi';
-import { templateApi } from '../api/templateApi';
 import LandingPageRenderer from '../components/templates/LandingPageRenderer';
 import QrCodeModal from '../components/common/QrCodeModal';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { getDefaultConfigByCategory } from '../utils/defaultTemplates';
-import { 
-  Share2, Copy, Check, QrCode, Sparkles, ExternalLink, Home, Heart
-} from 'lucide-react';
+import { Check, Copy, Home, QrCode, Share2, Sparkles } from 'lucide-react';
+
+const getConfigObject = (configJson) => {
+  const parsed = typeof configJson === 'string' ? JSON.parse(configJson) : configJson;
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Invalid public page configuration');
+  }
+  return parsed;
+};
 
 export default function PublicLandingPage() {
-  const { slug } = useParams();
-  const [config, setConfig] = useState(null);
-  const [customizationId, setCustomizationId] = useState(null);
-  const [pageTitle, setPageTitle] = useState('');
+  const { slug, versionNumber: routeVersionNumber } = useParams();
+  const requestedVersionNumber = routeVersionNumber ? Number(routeVersionNumber) : null;
+  const [publicPage, setPublicPage] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
+  const [unavailable, setUnavailable] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    let isCurrentRequest = true;
+
     const fetchLandingData = async () => {
       setLoading(true);
-      setError(null);
+      setUnavailable(false);
+      setPublicPage(null);
+
       try {
-        if (!slug) {
-          throw new Error('Đường dẫn không hợp lệ');
+        if (!slug || (routeVersionNumber && (!Number.isSafeInteger(requestedVersionNumber) || requestedVersionNumber < 1))) {
+          throw new Error('Invalid public page route');
         }
 
-        let parsedConfig = null;
-        let title = '';
+        const data = requestedVersionNumber
+          ? await customizationApi.getPublicCustomizationVersionBySlug(slug, requestedVersionNumber)
+          : await customizationApi.getPublicCustomizationBySlug(slug);
 
-        // Attempt 1: Fetch customization by slug
-        try {
-          const customData = await customizationApi.getCustomizationBySlug(slug);
-          setCustomizationId(customData.id);
-          title = customData.title;
-          parsedConfig = typeof customData.configJson === 'string'
-            ? JSON.parse(customData.configJson)
-            : customData.configJson;
-        } catch {
-          // Attempt 2: Fetch template by slug (fallback)
-          const tmpl = await templateApi.getTemplateBySlug(slug);
-          title = tmpl.name;
-          parsedConfig = typeof tmpl.defaultConfigJson === 'string'
-            ? JSON.parse(tmpl.defaultConfigJson)
-            : (tmpl.defaultConfigJson || getDefaultConfigByCategory(tmpl.category));
+        const config = getConfigObject(data?.configJson);
+        if (!data?.id || !data?.versionId || !data?.slug || !data?.templateId) {
+          throw new Error('Public page response is incomplete');
         }
 
-        setConfig(parsedConfig);
-        setPageTitle(title);
-        if (title) {
-          document.title = `${title} | Landing Page`;
+        if (isCurrentRequest) {
+          setPublicPage({ ...data, config });
+          document.title = `${data.title || 'Trang của tôi'} | Landing Page`;
         }
-      } catch (err) {
-        console.error('Failed to load public landing page:', err);
-        setError(err.message || 'Không tìm thấy trang này.');
+      } catch {
+        if (isCurrentRequest) setUnavailable(true);
       } finally {
-        setLoading(false);
+        if (isCurrentRequest) setLoading(false);
       }
     };
 
     fetchLandingData();
-  }, [slug]);
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [slug, routeVersionNumber, requestedVersionNumber]);
 
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const canonicalUrl = useMemo(() => {
+    if (!publicPage?.slug || typeof window === 'undefined') return '';
+    const path = requestedVersionNumber
+      ? `/p/${encodeURIComponent(publicPage.slug)}/v/${publicPage.versionNumber || requestedVersionNumber}`
+      : `/p/${encodeURIComponent(publicPage.slug)}`;
+    return `${window.location.origin}${path}`;
+  }, [publicPage?.slug, publicPage?.versionNumber, requestedVersionNumber]);
 
   const handleCopy = async () => {
+    if (!canonicalUrl) return;
     try {
-      await navigator.clipboard.writeText(currentUrl);
+      await navigator.clipboard.writeText(canonicalUrl);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      window.setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
     }
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: pageTitle || 'Landing Page',
-          text: `Khám phá trang thiệp & landing page: ${pageTitle}`,
-          url: currentUrl,
-        });
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          setIsQrOpen(true);
-        }
-      }
-    } else {
+    if (!canonicalUrl) return;
+    if (!navigator.share) {
       setIsQrOpen(true);
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: publicPage?.title || 'Landing Page',
+        text: `Khám phá trang: ${publicPage?.title || 'Landing Page'}`,
+        url: canonicalUrl,
+      });
+    } catch (error) {
+      if (error.name !== 'AbortError') setIsQrOpen(true);
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <LoadingSpinner size="lg" message="Đang nạp trang của bạn..." />
+        <LoadingSpinner size="lg" message="Đang tải trang..." />
       </div>
     );
   }
 
-  if (error || !config) {
+  if (unavailable || !publicPage) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4 text-center">
         <div className="w-16 h-16 rounded-3xl bg-rose-100 text-rose-600 flex items-center justify-center mb-4 font-black text-2xl shadow-inner">
@@ -112,7 +115,7 @@ export default function PublicLandingPage() {
         </div>
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Trang không khả dụng</h2>
         <p className="text-sm text-slate-500 max-w-md mb-6">
-          {error || 'Đường dẫn landing page này không tồn tại hoặc đã hết hạn.'}
+          Đường dẫn này không tồn tại, chưa được công khai hoặc đã bị gỡ.
         </p>
         <Link
           to="/"
@@ -127,30 +130,26 @@ export default function PublicLandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white selection:bg-rose-500 selection:text-white">
-      {/* Floating Action Menu (Share, Copy, QR Code) */}
       <aside aria-label="Công cụ chia sẻ trang" className="fixed top-4 right-4 z-40 flex items-center gap-2 bg-slate-900/80 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-2xl">
         <button
+          type="button"
           onClick={handleCopy}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-            copied
-              ? 'bg-emerald-500 text-white'
-              : 'text-slate-200 hover:text-white hover:bg-white/10'
-          }`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${copied ? 'bg-emerald-500 text-white' : 'text-slate-200 hover:text-white hover:bg-white/10'}`}
           title="Sao chép liên kết"
         >
           {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
           <span className="hidden sm:inline">{copied ? 'Đã chép' : 'Sao chép'}</span>
         </button>
-
         <button
+          type="button"
           onClick={() => setIsQrOpen(true)}
           className="p-1.5 rounded-xl text-slate-200 hover:text-white hover:bg-white/10 transition"
           title="Xem mã QR"
         >
           <QrCode className="w-4 h-4" />
         </button>
-
         <button
+          type="button"
           onClick={handleShare}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shadow-md"
           title="Chia sẻ trang"
@@ -160,16 +159,15 @@ export default function PublicLandingPage() {
         </button>
       </aside>
 
-      {/* Main Landing Page Content */}
       <main className="flex-1">
         <LandingPageRenderer
-          config={config}
-          customizationId={customizationId}
+          config={publicPage.config}
+          customizationId={publicPage.id}
+          customizationVersionId={publicPage.versionId}
           isPreview={false}
         />
       </main>
 
-      {/* Sticky Watermark & Web License Footer */}
       <footer className="relative z-30 bg-slate-950 text-slate-400 py-4 px-4 sm:px-8 border-t border-slate-800/80 shadow-2xl">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
@@ -178,7 +176,6 @@ export default function PublicLandingPage() {
               Được thiết kế trên nền tảng <strong className="text-white font-semibold">Template Landing Page</strong>
             </span>
           </div>
-
           <div className="flex items-center gap-3">
             <Link
               to="/?ref=watermark"
@@ -187,20 +184,16 @@ export default function PublicLandingPage() {
               <Sparkles className="w-3 h-3" />
               <span>Tạo trang tương tự miễn phí</span>
             </Link>
-
-            <span className="text-slate-500 text-[11px] hidden md:inline">
-              © {new Date().getFullYear()} All Rights Reserved
-            </span>
+            <span className="text-slate-500 text-[11px] hidden md:inline">© {new Date().getFullYear()}</span>
           </div>
         </div>
       </footer>
 
-      {/* QR Code Modal */}
       <QrCodeModal
         isOpen={isQrOpen}
         onClose={() => setIsQrOpen(false)}
-        url={currentUrl}
-        title={pageTitle ? `Mã QR: ${pageTitle}` : 'Mã QR Trang Landing Page'}
+        url={canonicalUrl}
+        title={publicPage.title ? `Mã QR: ${publicPage.title}` : 'Mã QR Trang Landing Page'}
       />
     </div>
   );

@@ -70,7 +70,7 @@ public class NavigationMenuQueryHandlerTests
     {
         // Arrange
         var menu = NavigationMenu.Create("Trang Chủ", "/", null, 1, "_self", "HOT", "rose", "Home", true);
-        _menuRepositoryMock.Setup(r => r.GetByIdAsync(menu.Id, It.IsAny<CancellationToken>()))
+        _menuRepositoryMock.Setup(r => r.GetVisibleByIdAsync(menu.Id, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(menu);
 
         var handler = new GetNavigationMenuByIdQueryHandler(_menuRepositoryMock.Object);
@@ -93,7 +93,7 @@ public class NavigationMenuQueryHandlerTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _menuRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        _menuRepositoryMock.Setup(r => r.GetVisibleByIdAsync(id, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync((NavigationMenu?)null);
 
         var handler = new GetNavigationMenuByIdQueryHandler(_menuRepositoryMock.Object);

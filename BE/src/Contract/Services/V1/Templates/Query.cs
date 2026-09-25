@@ -8,8 +8,8 @@ public record GetTemplatesQuery(
     string? Badge = null,
     string? Search = null,
     bool? IsActiveOnly = null,
-    bool? IsCommunity = null) : IQuery<List<TemplateResponse>>;
+    bool? IsCommunity = null) : IQuery<List<TemplateSummaryResponse>>;
 
-public record GetTemplateByIdQuery(Guid Id) : IQuery<TemplateResponse>;
+public record GetTemplateByIdQuery(Guid Id, bool IncludeInactive = false) : IQuery<TemplateResponse>;
 
-public record GetTemplateBySlugQuery(string Slug) : IQuery<TemplateResponse>;
+public record GetTemplateBySlugQuery(string Slug, bool IncludeInactive = false) : IQuery<TemplateResponse>;

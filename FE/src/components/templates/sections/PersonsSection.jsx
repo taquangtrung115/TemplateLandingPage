@@ -1,5 +1,6 @@
 import React from 'react';
 import ScrollReveal from '../../common/ScrollReveal';
+import { getSafeResourceUrl } from '../../../utils/safeUrl';
 
 const FALLBACK_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80';
 
@@ -58,18 +59,20 @@ export const PersonsSection = React.memo(function PersonsSection({
 
       {/* Dynamic Persons Grid */}
       <div className={getPersonsGridClass(personsList.length)}>
-        {personsList.map((person, idx) => (
-          <ScrollReveal
-            key={person.key || idx}
-            animation={person.animation || 'fade-up'}
-            delay={idx * 150}
-            className="h-full"
-          >
+          {personsList.map((person, idx) => {
+            const avatarUrl = getSafeResourceUrl(person.avatarUrl) || FALLBACK_AVATAR;
+            return (
+              <ScrollReveal
+                key={person.key || idx}
+                animation={person.animation || 'fade-up'}
+                delay={idx * 150}
+                className="h-full"
+              >
             <div className="h-full bg-white/75 backdrop-blur-md border border-gray-100/60 rounded-3xl p-6 sm:p-8 text-center shadow-xl hover:shadow-2xl transition-all flex flex-col justify-between">
               <div>
                 <div className="relative inline-block mb-6">
                   <img
-                    src={person.avatarUrl || FALLBACK_AVATAR}
+                    src={avatarUrl}
                     alt={person.name || 'Person'}
                     onError={(e) => {
                       e.target.src = FALLBACK_AVATAR;
@@ -96,8 +99,9 @@ export const PersonsSection = React.memo(function PersonsSection({
                 </div>
               )}
             </div>
-          </ScrollReveal>
-        ))}
+              </ScrollReveal>
+            );
+          })}
       </div>
     </section>
   );

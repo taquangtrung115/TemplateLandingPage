@@ -1,0 +1,6 @@
+namespace TemplateLandingPage.Presentation.Authorization;
+
+public static class AuthorizationPolicies
+{
+    public const string AdminOnly = "Admin";
+}

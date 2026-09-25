@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useDeferredValue, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { templateApi } from '../api/templateApi';
 import { customizationApi } from '../api/customizationApi';
+import categoryApi from '../api/categoryApi';
 import CustomizerToolbar from '../components/customizer/CustomizerToolbar';
 import CustomizerSidebar from '../components/customizer/CustomizerSidebar';
 import LandingPageRenderer from '../components/templates/LandingPageRenderer';
@@ -10,469 +11,1119 @@ import Modal from '../components/Modal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getDefaultConfigByCategory } from '../utils/defaultTemplates';
 import { exportStandaloneHtml } from '../utils/htmlExporter';
+import { registerDraftFlush } from '../utils/draftLifecycle';
 import useAuth from '../hooks/useAuth';
-import { Edit3, Eye, Globe, Check, AlertCircle } from 'lucide-react';
+import {
+  createDraftId,
+  DraftConflictError,
+  duplicateDraft,
+  getDraft,
+  migrateLegacyDrafts,
+  saveDraft,
+  subscribeDraftChanges,
+} from '../utils/draftStore';
+import {
+  clearPendingAuthAction,
+  getPendingAuthAction,
+  locationToPath,
+  storePendingAuthAction,
+} from '../contexts/AuthContext';
+import { Edit3, Eye, AlertCircle, Check, X } from 'lucide-react';
+
+const parseConfig = (value) => {
+  const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Cấu hình bản thiết kế phải là một JSON object.');
+  }
+  return parsed;
+};
+
+const editableSignature = (draft) => JSON.stringify({ config: draft.config, metadata: draft.metadata });
+
+const createMemoryDraft = (draft, error) => ({
+  ...draft,
+  accountId: draft.accountId || null,
+  serverId: draft.serverId || null,
+  serverRevision: draft.serverRevision ?? null,
+  localRevision: 0,
+  updatedAt: new Date().toISOString(),
+  storageUnavailable: true,
+  storageError: error.message,
+});
+
+const saveInitialDraft = async (draft) => {
+  try {
+    return await saveDraft(draft, 0);
+  } catch (error) {
+    if (error instanceof DraftConflictError) throw error;
+    return createMemoryDraft(draft, error);
+  }
+};
+
+const publicVersionUrl = (slug, versionNumber) => `${window.location.origin}/p/${encodeURIComponent(slug)}/v/${versionNumber}`;
+
+const toAbsoluteHttpUrl = (value) => {
+  if (!value) return '';
+  try {
+    const url = new URL(value, window.location.origin);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+  } catch {
+    return '';
+  }
+};
 
 export default function CustomizerPage() {
-  const { templateId, customizationId } = useParams();
+  const { templateId, customizationId, draftId: routeDraftId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const location = useLocation();
+  const { user, accountId, isAuthenticated, loading: authLoading } = useAuth();
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [viewport, setViewport] = useState('desktop'); // 'desktop' | 'mobile'
-  const [mobileTab, setMobileTab] = useState('edit'); // 'edit' | 'preview'
-
-  // Community publish modal state
-  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
-  const [publishForm, setPublishForm] = useState({
-    name: '',
-    slug: '',
-    description: '',
-    category: 'Wedding',
-    authorName: '',
-  });
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [publishSuccess, setPublishSuccess] = useState(false);
-  const [publishError, setPublishError] = useState('');
-
+  const [localSaveState, setLocalSaveState] = useState('saved');
+  const [dirty, setDirty] = useState(false);
+  const [serverMessage, setServerMessage] = useState('');
+  const [serverConflict, setServerConflict] = useState(false);
+  const [localConflict, setLocalConflict] = useState(null);
+  const [viewport, setViewport] = useState('desktop');
+  const [mobileTab, setMobileTab] = useState('edit');
   const [template, setTemplate] = useState(null);
   const [config, setConfig] = useState(null);
-  const [metadata, setMetadata] = useState({
-    title: 'Thiệp Mời Của Tôi',
-    slug: `thiep-${Date.now().toString().slice(-6)}`,
-    isPublished: true,
-  });
-  const [currentCustomizationId, setCurrentCustomizationId] = useState(customizationId || null);
+  const [metadata, setMetadata] = useState({ title: '', slug: '' });
+  const [currentCustomizationId, setCurrentCustomizationId] = useState(null);
+  const [publishedVersionId, setPublishedVersionId] = useState(null);
+  const [serverRevision, setServerRevision] = useState(null);
+  const [versions, setVersions] = useState([]);
+  const [versionsTotal, setVersionsTotal] = useState(0);
+  const [versionsPage, setVersionsPage] = useState(1);
+  const [versionsLoadingMore, setVersionsLoadingMore] = useState(false);
+  const [versionsError, setVersionsError] = useState('');
+  const [selectedVersionId, setSelectedVersionId] = useState(null);
+  const [previewVersion, setPreviewVersion] = useState(null);
+  const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
+  const [communityForm, setCommunityForm] = useState({ name: '', slug: '', description: '', categoryId: '', thumbnailUrl: '' });
+  const [communityCategories, setCommunityCategories] = useState([]);
+  const [communityError, setCommunityError] = useState('');
+  const [communitySuccess, setCommunitySuccess] = useState(false);
+  const [communitySaving, setCommunitySaving] = useState(false);
 
-  // Smooth typing & live visual feedback highlight
   const deferredConfig = useDeferredValue(config);
   const [activeEditSection, setActiveEditSection] = useState(null);
   const [editFeedbackKey, setEditFeedbackKey] = useState(0);
   const highlightTimeoutRef = useRef(null);
+  const generatedDraftIdRef = useRef(null);
+  const initializationRef = useRef({ key: null, promise: null });
+  const appliedInitializationKeyRef = useRef(null);
+  const loadVersionsRef = useRef(null);
+  const draftRecordRef = useRef(null);
+  const configRef = useRef(null);
+  const metadataRef = useRef({ title: '', slug: '' });
+  const localRevisionRef = useRef(0);
+  const draftStorageErrorRef = useRef(false);
+  const localSavePromiseRef = useRef(null);
+  const dirtyRef = useRef(false);
+  const serverBusyRef = useRef(false);
+  const handledPendingActionRef = useRef(null);
+
+  if (!generatedDraftIdRef.current) generatedDraftIdRef.current = createDraftId();
+
+  const markDirty = useCallback(() => {
+    dirtyRef.current = true;
+    setDirty(true);
+    setLocalSaveState('pending');
+  }, []);
+
+  const applyDraftRecord = useCallback((record) => {
+    draftRecordRef.current = record;
+    localRevisionRef.current = record.localRevision || 0;
+    draftStorageErrorRef.current = !!record.storageUnavailable;
+    configRef.current = record.config;
+    metadataRef.current = record.metadata || {};
+    setConfig(record.config);
+    setMetadata(record.metadata || {});
+    setCurrentCustomizationId(record.serverId || null);
+    setPublishedVersionId(record.publishedVersionId || null);
+    setServerRevision(record.serverRevision ?? null);
+    dirtyRef.current = false;
+    setDirty(false);
+    setLocalSaveState('saved');
+  }, []);
 
   const handleSectionEdit = useCallback((sectionKey) => {
     setActiveEditSection(sectionKey);
-    setEditFeedbackKey((k) => k + 1);
+    setEditFeedbackKey((key) => key + 1);
+    if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+    highlightTimeoutRef.current = setTimeout(() => setActiveEditSection(null), 900);
+  }, []);
 
-    if (highlightTimeoutRef.current) {
-      clearTimeout(highlightTimeoutRef.current);
+  useEffect(() => () => {
+    if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+  }, []);
+
+  const loadVersions = useCallback(async (rootId = currentCustomizationId) => {
+    if (!rootId) {
+      setVersions([]);
+      setVersionsTotal(0);
+      setVersionsPage(1);
+      return [];
     }
-    highlightTimeoutRef.current = setTimeout(() => {
-      setActiveEditSection(null);
-    }, 900);
+    setVersionsError('');
+    try {
+      const result = await customizationApi.getVersions(rootId, { page: 1, pageSize: 50 });
+      const items = Array.isArray(result?.data) ? result.data : [];
+      setVersions(items);
+      setVersionsTotal(result?.total ?? items.length);
+      setVersionsPage(result?.page ?? 1);
+      setSelectedVersionId((previous) => previous || items.find((item) => item.isPublic)?.id || items[0]?.id || null);
+      return items;
+    } catch (error) {
+      setVersionsError(error.message || 'Không thể tải danh sách phiên bản.');
+      return [];
+    }
+  }, [currentCustomizationId]);
+  loadVersionsRef.current = loadVersions;
+
+  const handleLoadMoreVersions = useCallback(async () => {
+    if (!currentCustomizationId || versionsLoadingMore || versions.length >= versionsTotal) return;
+    setVersionsLoadingMore(true);
+    setVersionsError('');
+    try {
+      const nextPage = versionsPage + 1;
+      const result = await customizationApi.getVersions(currentCustomizationId, { page: nextPage, pageSize: 50 });
+      const items = Array.isArray(result?.data) ? result.data : [];
+      setVersions((current) => {
+        const knownIds = new Set(current.map((version) => version.id));
+        return [...current, ...items.filter((version) => !knownIds.has(version.id))];
+      });
+      setVersionsTotal(result?.total ?? versionsTotal);
+      setVersionsPage(result?.page ?? nextPage);
+    } catch (error) {
+      setVersionsError(error.message || 'Không thể tải thêm phiên bản.');
+    } finally {
+      setVersionsLoadingMore(false);
+    }
+  }, [currentCustomizationId, versions.length, versionsLoadingMore, versionsPage, versionsTotal]);
+
+  useEffect(() => {
+    if (authLoading) return undefined;
+    const key = `${routeDraftId || ''}|${customizationId || ''}|${templateId || ''}`;
+    // Query/hash navigation must keep the current in-memory draft and autosave lifecycle alive.
+    if (appliedInitializationKeyRef.current === key) return undefined;
+    let active = true;
+    setLoading(true);
+    setLoadError('');
+    setReady(false);
+    if (initializationRef.current.key !== key) initializationRef.current = { key, promise: null };
+
+    if (!initializationRef.current.promise) {
+      initializationRef.current.promise = (async () => {
+        await migrateLegacyDrafts().catch(() => null);
+        if (routeDraftId) {
+          const record = await getDraft(routeDraftId);
+          if (!record) throw new Error('Không tìm thấy bản nháp trên thiết bị này.');
+          if (record.accountId && record.accountId !== accountId) {
+            throw new Error('Bản nháp này thuộc một tài khoản khác. Đăng nhập đúng tài khoản để tiếp tục chỉnh sửa.');
+          }
+          let templateRecord = null;
+          try { templateRecord = await templateApi.getTemplateById(record.templateId); } catch { /* Existing draft content remains usable offline. */ }
+          return { record, templateRecord, shouldNavigate: false };
+        }
+
+        if (customizationId) {
+          const serverDraft = await customizationApi.getCustomizationById(customizationId);
+          const parsedConfig = parseConfig(serverDraft.configJson);
+          let templateRecord = null;
+          try { templateRecord = await templateApi.getTemplateById(serverDraft.templateId); } catch { /* The server draft contains its complete editable content. */ }
+          const record = await saveInitialDraft({
+            draftId: createDraftId(),
+            templateId: serverDraft.templateId,
+            templateName: serverDraft.templateName || templateRecord?.name || '',
+            config: parsedConfig,
+            metadata: { title: serverDraft.title || '', slug: serverDraft.slug || '' },
+            accountId,
+            serverId: serverDraft.id,
+            serverRevision: serverDraft.revision,
+            publishedVersionId: serverDraft.publishedVersionId || null,
+          });
+          return { record, templateRecord, shouldNavigate: true };
+        }
+
+        if (!templateId) throw new Error('Không xác định được mẫu cần tùy biến.');
+        const templateRecord = await templateApi.getTemplateById(templateId);
+        const initialConfig = templateRecord.defaultConfigJson
+          ? parseConfig(templateRecord.defaultConfigJson)
+          : getDefaultConfigByCategory(templateRecord.category);
+        const record = await saveInitialDraft({
+          draftId: generatedDraftIdRef.current,
+          templateId: templateRecord.id || templateId,
+          templateName: templateRecord.name || '',
+          config: initialConfig,
+          metadata: {
+            title: `${templateRecord.name || 'Thiết kế mới'} - ${user?.fullName || 'Bản nháp'}`,
+            slug: `${templateRecord.slug || 'thiet-ke'}-${Date.now().toString().slice(-6)}`,
+          },
+          accountId: accountId || null,
+          serverId: null,
+          serverRevision: null,
+        });
+        return { record, templateRecord, shouldNavigate: true };
+      })();
+    }
+
+    initializationRef.current.promise
+      .then(({ record, templateRecord, shouldNavigate }) => {
+        if (!active) return;
+        if (appliedInitializationKeyRef.current === key) {
+          setLoading(false);
+          return;
+        }
+        appliedInitializationKeyRef.current = key;
+        setTemplate(templateRecord);
+        applyDraftRecord(record);
+        setReady(true);
+        setLoading(false);
+        if (record.serverId) void loadVersionsRef.current?.(record.serverId);
+        if (record.storageUnavailable) {
+          dirtyRef.current = true;
+          setDirty(true);
+          setLocalSaveState('error');
+        }
+        if (shouldNavigate && !record.storageUnavailable) navigate(`/customize/draft/${record.draftId}`, { replace: true });
+      })
+      .catch((error) => {
+        if (!active) return;
+        if (error.status === 401) {
+          navigate('/login', { state: { from: locationToPath(location) } });
+          return;
+        }
+        setLoadError(error.message || 'Không thể mở bản thiết kế.');
+        setReady(false);
+        setLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [applyDraftRecord, authLoading, customizationId, location, navigate, routeDraftId, templateId]);
+
+  const flushLocal = useCallback(async () => {
+    if (!draftRecordRef.current) return;
+    let attempts = 0;
+    while (dirtyRef.current) {
+      attempts += 1;
+      if (attempts > 5) throw new Error('Bản nháp vẫn đang thay đổi. Hãy thử lưu lại sau khi chỉnh sửa xong.');
+      if (localSavePromiseRef.current) {
+        await localSavePromiseRef.current;
+        continue;
+      }
+
+      const base = draftRecordRef.current;
+      const candidate = { ...base, config: configRef.current, metadata: metadataRef.current };
+      const savedSignature = editableSignature(candidate);
+      setLocalSaveState('saving');
+      const operation = saveDraft(candidate, localRevisionRef.current);
+      localSavePromiseRef.current = operation;
+      try {
+        const saved = await operation;
+        draftRecordRef.current = saved;
+        localRevisionRef.current = saved.localRevision;
+        draftStorageErrorRef.current = false;
+        setLocalSaveState('saved');
+        const currentSignature = JSON.stringify({ config: configRef.current, metadata: metadataRef.current });
+        if (currentSignature === savedSignature) {
+          dirtyRef.current = false;
+          setDirty(false);
+        }
+      } catch (error) {
+        if (error instanceof DraftConflictError) {
+          setLocalConflict(error);
+          setLocalSaveState('conflict');
+        } else {
+          draftStorageErrorRef.current = true;
+          setLocalSaveState('error');
+        }
+        throw error;
+      } finally {
+        localSavePromiseRef.current = null;
+      }
+    }
+    if (!dirtyRef.current) setLocalSaveState('saved');
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (highlightTimeoutRef.current) {
-        clearTimeout(highlightTimeoutRef.current);
+    if (!ready) return undefined;
+    return registerDraftFlush(flushLocal);
+  }, [flushLocal, ready]);
+
+  useEffect(() => {
+    if (!ready || !dirty) return undefined;
+    const timer = setTimeout(() => { void flushLocal().catch(() => {}); }, 500);
+    return () => clearTimeout(timer);
+  }, [dirty, flushLocal, ready, config, metadata]);
+
+  useEffect(() => {
+    const activeDraftId = draftRecordRef.current?.draftId;
+    if (!activeDraftId) return undefined;
+    return subscribeDraftChanges(activeDraftId, async (change) => {
+      if ((change.localRevision || 0) <= localRevisionRef.current) return;
+      const remoteDraft = await getDraft(activeDraftId).catch(() => null);
+      if (remoteDraft && remoteDraft.localRevision > localRevisionRef.current) {
+        setLocalConflict(new DraftConflictError('Bản nháp vừa được lưu ở một cửa sổ khác.', { remoteDraft }));
+        setLocalSaveState('conflict');
+      }
+    });
+  }, [ready, routeDraftId]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (!dirtyRef.current) return;
+      void flushLocal().catch(() => {});
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    const handlePageHide = () => { if (dirtyRef.current) void flushLocal().catch(() => {}); };
+    const handlePopState = () => { if (dirtyRef.current) void flushLocal().catch(() => {}); };
+    const handleAuthStorageChange = (event) => {
+      if ((event.key === 'token' || event.key === 'user') && dirtyRef.current) {
+        void flushLocal().catch(() => setServerMessage('Đổi tài khoản trong cửa sổ khác nhưng bản nháp chưa lưu được. Hãy giữ trang này mở và thử lại.'));
       }
     };
-  }, []);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('storage', handleAuthStorageChange);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('storage', handleAuthStorageChange);
+    };
+  }, [flushLocal]);
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      setLoading(true);
-      try {
-        if (customizationId) {
-          // Edit existing customization
-          const customData = await customizationApi.getCustomizationById(customizationId);
-          setCurrentCustomizationId(customData.id);
-          setMetadata({
-            title: customData.title,
-            slug: customData.slug,
-            isPublished: customData.isPublished,
-          });
-          const parsed = typeof customData.configJson === 'string'
-            ? JSON.parse(customData.configJson)
-            : customData.configJson;
-          setConfig(parsed);
+    const handleInternalNavigation = (event) => {
+      if (!dirtyRef.current || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = event.target.closest?.('a[href]');
+      if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+      const destination = new URL(anchor.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      const nextPath = `${destination.pathname}${destination.search}${destination.hash}`;
+      if (nextPath === locationToPath(location)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      void flushLocal()
+        .then(() => navigate(nextPath))
+        .catch(() => setServerMessage('Bản nháp chưa lưu được vào thiết bị nên vẫn ở lại trang này.'));
+    };
+    document.addEventListener('click', handleInternalNavigation, true);
+    return () => document.removeEventListener('click', handleInternalNavigation, true);
+  }, [flushLocal, location, navigate]);
 
-          // also get template details
-          const tmpl = await templateApi.getTemplateById(customData.templateId);
-          setTemplate(tmpl);
-        } else if (templateId) {
-          // Create new customization from master template
-          const tmpl = await templateApi.getTemplateById(templateId);
-          setTemplate(tmpl);
+  const saveLocalRecordFields = useCallback(async (changes) => {
+    const base = draftRecordRef.current;
+    if (!base) throw new Error('Bản nháp chưa sẵn sàng để lưu.');
+    const candidate = {
+      ...base,
+      ...changes,
+      config: configRef.current,
+      metadata: metadataRef.current,
+    };
+    try {
+      const saved = await saveDraft(candidate, localRevisionRef.current);
+      draftRecordRef.current = saved;
+      localRevisionRef.current = saved.localRevision;
+      draftStorageErrorRef.current = false;
+      setLocalSaveState('saved');
+      return saved;
+    } catch (error) {
+      if (error instanceof DraftConflictError) {
+        setLocalConflict(error);
+        setLocalSaveState('conflict');
+      } else {
+        draftStorageErrorRef.current = true;
+        draftRecordRef.current = candidate;
+        setLocalSaveState('error');
+      }
+      throw error;
+    }
+  }, []);
 
-          let initialConfig;
+  const flushLocalForServer = useCallback(async () => {
+    try {
+      await flushLocal();
+    } catch (error) {
+      if (error instanceof DraftConflictError || !draftStorageErrorRef.current) throw error;
+    }
+  }, [flushLocal]);
+
+  const saveServerWorking = useCallback(async () => {
+    await flushLocalForServer();
+    const base = draftRecordRef.current;
+    if (!base) throw new Error('Bản nháp chưa sẵn sàng để lưu.');
+    if (base.accountId && base.accountId !== accountId) throw new Error('Bản nháp thuộc tài khoản khác; không thể ghi lên máy chủ bằng tài khoản hiện tại.');
+
+    const content = { title: metadataRef.current.title, slug: metadataRef.current.slug, configJson: JSON.stringify(configRef.current) };
+    let response;
+    let requestId = base.pendingSaveRequestId;
+    if (base.serverId) {
+      if (!requestId) {
+        requestId = createDraftId();
+        try {
+          await saveLocalRecordFields({ pendingSaveRequestId: requestId });
+        } catch (error) {
+          if (error instanceof DraftConflictError || !draftStorageErrorRef.current) throw error;
+        }
+      }
+      response = await customizationApi.updateCustomization(base.serverId, {
+        ...content,
+        expectedRevision: base.serverRevision,
+        requestId,
+      });
+    } else {
+      response = await customizationApi.saveCustomization({
+        templateId: base.templateId,
+        ...content,
+        clientDraftId: base.draftId,
+      });
+    }
+
+    const rootId = response?.id || base.serverId;
+    if (!rootId || !Number.isInteger(response?.revision)) {
+      throw new Error('Máy chủ trả về kết quả lưu không hợp lệ. Bản nháp trên thiết bị vẫn còn nguyên.');
+    }
+    try {
+      await saveLocalRecordFields({
+        serverId: rootId,
+        serverRevision: response.revision,
+        accountId,
+        pendingSaveRequestId: null,
+      });
+    } catch (error) {
+      if (error instanceof DraftConflictError || !draftStorageErrorRef.current) throw error;
+    }
+    setCurrentCustomizationId(rootId);
+    setServerRevision(response.revision);
+    setServerConflict(false);
+    setServerMessage(draftStorageErrorRef.current
+      ? 'Đã lưu bản nháp làm việc trên máy chủ; kho trên thiết bị vẫn báo lỗi nên chưa ghi được bản cục bộ.'
+      : 'Đã lưu bản nháp làm việc trên máy chủ.');
+    return { id: rootId, revision: response.revision };
+  }, [accountId, flushLocalForServer, saveLocalRecordFields]);
+
+  const requestLoginForAction = useCallback(async (type, actionData = {}) => {
+    try {
+      await flushLocal();
+    } catch {
+      return;
+    }
+    const returnTo = locationToPath(location);
+    storePendingAuthAction({
+      type,
+      draftId: draftRecordRef.current?.draftId,
+      expectedAccountId: draftRecordRef.current?.accountId || null,
+      ...actionData,
+    }, returnTo);
+    navigate('/login', { state: { from: returnTo } });
+  }, [flushLocal, location, navigate]);
+
+  const withServerBusy = useCallback(async (operation) => {
+    if (serverBusyRef.current) return;
+    serverBusyRef.current = true;
+    setSaving(true);
+    try {
+      await operation();
+    } finally {
+      serverBusyRef.current = false;
+      setSaving(false);
+    }
+  }, []);
+
+  const handleSaveServer = useCallback(async () => {
+    if (serverBusyRef.current) return;
+    if (!isAuthenticated) {
+      await requestLoginForAction('save');
+      return;
+    }
+    setServerMessage('');
+    try {
+      await withServerBusy(async () => {
+        await saveServerWorking();
+        if (draftRecordRef.current?.serverId) void loadVersions(draftRecordRef.current.serverId);
+      });
+    } catch (error) {
+      if (error.status === 401) {
+        await requestLoginForAction('save');
+        return;
+      }
+      if (error.status === 409) {
+        setServerConflict(true);
+        setServerMessage('Bản trên máy chủ đã thay đổi. Nội dung cục bộ vẫn được giữ.');
+      } else {
+        setServerMessage(error.message || 'Không thể lưu lên máy chủ. Bản nháp trên thiết bị vẫn được giữ.');
+      }
+    }
+  }, [isAuthenticated, loadVersions, requestLoginForAction, saveServerWorking, withServerBusy]);
+
+  const handleCreateVersion = useCallback(async () => {
+    if (serverBusyRef.current) return;
+    if (!isAuthenticated) {
+      await requestLoginForAction('createVersion');
+      return;
+    }
+    if (draftRecordRef.current?.accountId && draftRecordRef.current.accountId !== accountId) {
+      setServerMessage('Bản nháp thuộc một tài khoản khác. Hãy đổi lại tài khoản để tạo phiên bản.');
+      return;
+    }
+    setServerMessage('');
+    try {
+      await withServerBusy(async () => {
+        await flushLocalForServer();
+        let current = draftRecordRef.current;
+        if (!current.serverId) {
+          await saveServerWorking();
+          current = draftRecordRef.current;
+        }
+        let requestId = current.pendingVersionRequestId;
+        if (!requestId) {
+          requestId = createDraftId();
           try {
-            const localDraftStr = localStorage.getItem(`guest_draft_${templateId}`);
-            if (localDraftStr) {
-              const localDraft = JSON.parse(localDraftStr);
-              if (localDraft?.config) {
-                initialConfig = localDraft.config;
-                if (localDraft?.metadata) {
-                  setMetadata(localDraft.metadata);
-                }
-              }
-            }
-          } catch {}
-
-          if (!initialConfig) {
-            try {
-              initialConfig = typeof tmpl.defaultConfigJson === 'string'
-                ? JSON.parse(tmpl.defaultConfigJson)
-                : (tmpl.defaultConfigJson || getDefaultConfigByCategory(tmpl.category));
-            } catch {
-              initialConfig = getDefaultConfigByCategory(tmpl.category);
-            }
-          }
-          setConfig(initialConfig);
-          if (!metadata?.title || metadata.title === 'Thiệp Mời Của Tôi') {
-            setMetadata({
-              title: `${tmpl.name} - ${user?.fullName || 'Thiệp Mời'}`,
-              slug: `${tmpl.slug}-${Date.now().toString().slice(-6)}`,
-              isPublished: true,
-            });
+            current = await saveLocalRecordFields({ pendingVersionRequestId: requestId });
+          } catch (error) {
+            if (error instanceof DraftConflictError || !draftStorageErrorRef.current) throw error;
+            current = draftRecordRef.current;
           }
         }
-      } catch (err) {
-        console.error('Failed to load customizer data:', err);
-        // Check local storage draft fallback
+        const result = await customizationApi.createVersion(current.serverId, {
+          title: metadataRef.current.title,
+          slug: metadataRef.current.slug,
+          configJson: JSON.stringify(configRef.current),
+          expectedRevision: current.serverRevision,
+          requestId,
+        });
+        if (!Number.isInteger(result?.revision) || !result?.versionId) {
+          throw new Error('Máy chủ không trả về phiên bản đã tạo. Bản nháp cục bộ vẫn được giữ.');
+        }
         try {
-          const localDraftStr = localStorage.getItem(`guest_draft_${templateId}`);
-          if (localDraftStr) {
-            const localDraft = JSON.parse(localDraftStr);
-            if (localDraft?.config) {
-              setConfig(localDraft.config);
-              if (localDraft?.metadata) setMetadata(localDraft.metadata);
-              return;
-            }
-          }
-        } catch {}
-        // Fallback default
-        setConfig(getDefaultConfigByCategory('Wedding'));
-      } finally {
-        setLoading(false);
+          await saveLocalRecordFields({ serverRevision: result.revision, pendingVersionRequestId: null });
+        } catch (error) {
+          if (error instanceof DraftConflictError || !draftStorageErrorRef.current) throw error;
+        }
+        setServerRevision(result.revision);
+        setCurrentCustomizationId(result.id || current.serverId);
+        setSelectedVersionId(result.versionId);
+        setServerMessage(draftStorageErrorRef.current
+          ? `Đã tạo phiên bản v${result.versionNumber}; kho trên thiết bị vẫn báo lỗi.`
+          : `Đã tạo phiên bản v${result.versionNumber}.`);
+        await loadVersions(current.serverId);
+        setSelectedVersionId(result.versionId);
+      });
+    } catch (error) {
+      if (error.status === 401) {
+        await requestLoginForAction('createVersion');
+        return;
       }
-    };
-
-    loadInitialData();
-  }, [templateId, customizationId, user]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    const targetTemplateId = template?.id || templateId;
-
-    // Backup to local storage draft immediately
-    try {
-      localStorage.setItem(`guest_draft_${targetTemplateId}`, JSON.stringify({
-        metadata,
-        config,
-        savedAt: new Date().toISOString(),
-      }));
-    } catch {}
-
-    try {
-      const payload = {
-        templateId: targetTemplateId,
-        title: metadata.title,
-        slug: metadata.slug,
-        configJson: JSON.stringify(config),
-        isPublished: metadata.isPublished,
-      };
-
-      if (currentCustomizationId) {
-        await customizationApi.updateCustomization(currentCustomizationId, payload);
-        alert('Cập nhật thiệp thành công! Bạn có thể xem trước trực tiếp hoặc xuất HTML để lưu trữ.');
+      if (error.status === 409) {
+        setServerConflict(true);
+        setServerMessage('Máy chủ đã nhận thay đổi khác. Nội dung cục bộ vẫn được giữ; hãy tải bản máy chủ hoặc giữ bản sao.');
       } else {
-        const newId = await customizationApi.saveCustomization(payload);
-        setCurrentCustomizationId(newId);
-        alert('Lưu thiệp mới thành công!');
-        navigate(`/customize/${templateId}/${newId}`, { replace: true });
+        setServerMessage(error.message || 'Không thể tạo phiên bản. Bản nháp trên thiết bị vẫn được giữ.');
       }
-    } catch (err) {
-      alert(err.message || 'Không thể lưu lên máy chủ. Bản nháp đã được tự động lưu an toàn trong trình duyệt của bạn!');
+    }
+  }, [accountId, flushLocalForServer, isAuthenticated, loadVersions, requestLoginForAction, saveLocalRecordFields, saveServerWorking, withServerBusy]);
+
+  const updateServerRevision = useCallback(async (response, successMessage, extraLocalFields = {}) => {
+    if (!Number.isInteger(response?.revision)) throw new Error('Máy chủ trả về revision không hợp lệ.');
+    let localStorageFailed = false;
+    try {
+      await saveLocalRecordFields({ serverRevision: response.revision, ...extraLocalFields });
+    } catch (error) {
+      if (error instanceof DraftConflictError || !draftStorageErrorRef.current) throw error;
+      localStorageFailed = true;
+    }
+    setServerRevision(response.revision);
+    setServerMessage(localStorageFailed ? `${successMessage} Kho trên thiết bị vẫn báo lỗi.` : successMessage);
+    setServerConflict(false);
+  }, [saveLocalRecordFields]);
+
+  const handlePublishVersion = useCallback(async (versionId) => {
+    if (!isAuthenticated) {
+      await requestLoginForAction('publishVersion', { versionId });
+      return;
+    }
+    if (!currentCustomizationId || saving) return;
+    try {
+      await withServerBusy(async () => {
+        await flushLocalForServer();
+        const result = await customizationApi.publishVersion(currentCustomizationId, {
+          versionId,
+          expectedRevision: draftRecordRef.current?.serverRevision,
+        });
+        await updateServerRevision(result, 'Đã chọn phiên bản làm bản công khai chính.', { publishedVersionId: versionId });
+        setPublishedVersionId(versionId);
+        await loadVersions(currentCustomizationId);
+      });
+    } catch (error) {
+      if (error.status === 401) {
+        await requestLoginForAction('publishVersion', { versionId });
+        return;
+      }
+      if (error.status === 409) setServerConflict(true);
+      setServerMessage(error.message || 'Không thể xuất bản phiên bản.');
+    }
+  }, [currentCustomizationId, flushLocalForServer, isAuthenticated, loadVersions, saving, requestLoginForAction, updateServerRevision, withServerBusy]);
+
+  const handleUnpublishVersion = useCallback(async (versionId) => {
+    if (!isAuthenticated) {
+      await requestLoginForAction('unpublishVersion', { versionId });
+      return;
+    }
+    if (!currentCustomizationId || saving) return;
+    try {
+      await withServerBusy(async () => {
+        await flushLocalForServer();
+        const result = await customizationApi.unpublishVersion(currentCustomizationId, versionId, draftRecordRef.current?.serverRevision);
+        const removesMainVersion = publishedVersionId === versionId;
+        await updateServerRevision(result, 'Đã gỡ phiên bản khỏi công khai.', removesMainVersion ? { publishedVersionId: null } : {});
+        if (removesMainVersion) setPublishedVersionId(null);
+        await loadVersions(currentCustomizationId);
+      });
+    } catch (error) {
+      if (error.status === 401) {
+        await requestLoginForAction('unpublishVersion', { versionId });
+        return;
+      }
+      if (error.status === 409) setServerConflict(true);
+      setServerMessage(error.message || 'Không thể gỡ phiên bản khỏi công khai.');
+    }
+  }, [currentCustomizationId, flushLocalForServer, isAuthenticated, loadVersions, publishedVersionId, requestLoginForAction, saving, updateServerRevision, withServerBusy]);
+
+  const handleUnpublishSite = useCallback(async () => {
+    if (!isAuthenticated) {
+      await requestLoginForAction('unpublishSite');
+      return;
+    }
+    if (!currentCustomizationId || saving) return;
+    try {
+      await withServerBusy(async () => {
+        await flushLocalForServer();
+        const result = await customizationApi.unpublishSite(currentCustomizationId, draftRecordRef.current?.serverRevision);
+        await updateServerRevision(result, 'Đã gỡ toàn bộ trang khỏi công khai.', { publishedVersionId: null });
+        setPublishedVersionId(null);
+        await loadVersions(currentCustomizationId);
+      });
+    } catch (error) {
+      if (error.status === 401) {
+        await requestLoginForAction('unpublishSite');
+        return;
+      }
+      if (error.status === 409) setServerConflict(true);
+      setServerMessage(error.message || 'Không thể gỡ trang khỏi công khai.');
+    }
+  }, [currentCustomizationId, flushLocalForServer, isAuthenticated, loadVersions, requestLoginForAction, saving, updateServerRevision, withServerBusy]);
+
+  const handlePreviewVersion = useCallback(async (version) => {
+    if (!currentCustomizationId) return;
+    try {
+      const detail = await customizationApi.getVersion(currentCustomizationId, version.id);
+      setSelectedVersionId(version.id);
+      setPreviewVersion({ ...version, config: parseConfig(detail.configJson) });
+    } catch (error) {
+      setServerMessage(error.message || 'Không thể mở bản xem trước của phiên bản này.');
+    }
+  }, [currentCustomizationId]);
+
+  const handleContinueFromVersion = useCallback(async (version) => {
+    if (!currentCustomizationId) return;
+    try {
+      await flushLocal();
+      const detail = await customizationApi.getVersion(currentCustomizationId, version.id);
+      const copy = await duplicateDraft(draftRecordRef.current.draftId, {
+        config: parseConfig(detail.configJson),
+        metadata: { ...metadataRef.current, title: version.title || metadataRef.current.title },
+        preserveServerLink: true,
+      });
+      navigate(`/customize/draft/${copy.draftId}`);
+    } catch (error) {
+      setServerMessage(error.message || 'Không thể tiếp tục chỉnh sửa từ phiên bản này.');
+    }
+  }, [currentCustomizationId, flushLocal, navigate]);
+
+  const handleCopyVersionUrl = useCallback(async (version) => {
+    try {
+      const url = new URL(version.publicUrl || publicVersionUrl(metadataRef.current.slug, version.versionNumber), window.location.origin).href;
+      await navigator.clipboard.writeText(url);
+      setServerMessage('Đã sao chép liên kết phiên bản công khai.');
+    } catch {
+      setServerMessage('Không thể sao chép liên kết. Hãy mở trang công khai và sao chép địa chỉ trên trình duyệt.');
+    }
+  }, []);
+
+  const openCommunityModal = useCallback(async (versionId = selectedVersionId, initialForm = null) => {
+    if (!versions.length) {
+      setServerMessage('Hãy tạo ít nhất một phiên bản trước khi chia sẻ vào thư viện cộng đồng.');
+      return;
+    }
+    if (!isAuthenticated) {
+      await requestLoginForAction('communityShare', { versionId });
+      return;
+    }
+    setCommunityError('');
+    setCommunitySuccess(false);
+    try {
+      const response = await categoryApi.getCategories({ page: 1, pageSize: 100 });
+      const categories = Array.isArray(response) ? response : (response?.data || []);
+      setCommunityCategories(categories);
+      setCommunityForm(initialForm || {
+        name: metadataRef.current.title || template?.name || '',
+        slug: `${(metadataRef.current.slug || 'community').replace(/[^a-z0-9-]/gi, '-')}-${Date.now().toString().slice(-4)}`,
+        description: template?.description || '',
+        categoryId: categories[0]?.id || '',
+        thumbnailUrl: toAbsoluteHttpUrl(template?.thumbnailUrl || configRef.current?.hero?.imageUrl || ''),
+      });
+      setSelectedVersionId(versionId || versions[0]?.id || null);
+      setIsCommunityModalOpen(true);
+    } catch (error) {
+      setServerMessage(error.message || 'Không thể tải danh mục cộng đồng.');
+    }
+  }, [isAuthenticated, requestLoginForAction, selectedVersionId, template, versions]);
+
+  const submitCommunityShare = async (form, versionId) => {
+    if (communitySaving) return;
+    if (!versionId || !currentCustomizationId) {
+      setCommunityError('Chọn một phiên bản đã tạo để chia sẻ.');
+      return;
+    }
+    if (!isAuthenticated) {
+      await requestLoginForAction('communityShare', { versionId, form, submitAfterLogin: true });
+      return;
+    }
+    setCommunitySaving(true);
+    setCommunityError('');
+    try {
+      await templateApi.publishCommunityTemplate({
+        sourceCustomizationId: currentCustomizationId,
+        customizationVersionId: versionId,
+        categoryId: form.categoryId,
+        name: form.name.trim(),
+        slug: form.slug.trim(),
+        description: form.description.trim(),
+        thumbnailUrl: form.thumbnailUrl.trim(),
+      });
+      setCommunitySuccess(true);
+    } catch (error) {
+      if (error.status === 401) {
+        await requestLoginForAction('communityShare', { versionId, form, submitAfterLogin: true });
+        return;
+      }
+      setCommunityError(error.message || 'Không thể chia sẻ mẫu. Nội dung biểu mẫu vẫn được giữ để thử lại.');
     } finally {
-      setSaving(false);
+      setCommunitySaving(false);
+    }
+  };
+
+  const handleCommunitySubmit = async (event) => {
+    event.preventDefault();
+    await submitCommunityShare(communityForm, selectedVersionId);
+  };
+
+  useEffect(() => {
+    if (!ready || !routeDraftId || !isAuthenticated) return;
+    const pending = getPendingAuthAction();
+    if (!pending || pending.draftId !== routeDraftId || handledPendingActionRef.current === routeDraftId) return;
+    if (pending.expectedAccountId && pending.expectedAccountId !== accountId) {
+      setServerMessage('Phiên đăng nhập thuộc tài khoản khác. Bản nháp chưa bị thay đổi.');
+      return;
+    }
+    handledPendingActionRef.current = routeDraftId;
+    clearPendingAuthAction();
+    if (pending.type === 'save') void handleSaveServer();
+    if (pending.type === 'createVersion') void handleCreateVersion();
+    if (pending.type === 'communityShare') {
+      void (async () => {
+        await openCommunityModal(pending.versionId, pending.form || null);
+        if (pending.submitAfterLogin && pending.form) await submitCommunityShare(pending.form, pending.versionId);
+      })();
+    }
+    if (pending.type === 'publishVersion') void handlePublishVersion(pending.versionId);
+    if (pending.type === 'unpublishVersion') void handleUnpublishVersion(pending.versionId);
+    if (pending.type === 'unpublishSite') void handleUnpublishSite();
+  }, [accountId, handleCreateVersion, handlePublishVersion, handleSaveServer, handleUnpublishSite, handleUnpublishVersion, isAuthenticated, openCommunityModal, ready, routeDraftId]);
+
+  const handleReloadServer = async () => {
+    if (!currentCustomizationId) return;
+    try {
+      const serverDraft = await customizationApi.getCustomizationById(currentCustomizationId);
+      const nextConfig = parseConfig(serverDraft.configJson);
+      const nextMetadata = { title: serverDraft.title || '', slug: serverDraft.slug || '' };
+      configRef.current = nextConfig;
+      metadataRef.current = nextMetadata;
+      setConfig(nextConfig);
+      setMetadata(nextMetadata);
+      const saved = await saveDraft({
+        ...draftRecordRef.current,
+        config: nextConfig,
+        metadata: nextMetadata,
+        serverRevision: serverDraft.revision,
+        publishedVersionId: serverDraft.publishedVersionId || null,
+        pendingSaveRequestId: null,
+        pendingVersionRequestId: null,
+      }, localRevisionRef.current);
+      draftRecordRef.current = saved;
+      localRevisionRef.current = saved.localRevision;
+      setServerRevision(serverDraft.revision);
+      setPublishedVersionId(serverDraft.publishedVersionId || null);
+      setDirty(false);
+      dirtyRef.current = false;
+      setServerConflict(false);
+      setLocalConflict(null);
+      setLocalSaveState('saved');
+      setServerMessage('Đã tải lại bản làm việc từ máy chủ.');
+    } catch (error) {
+      if (error.status === 401) {
+        await requestLoginForAction('save');
+        return;
+      }
+      setServerMessage(error.message || 'Không thể tải lại bản máy chủ.');
+    }
+  };
+
+  const handleKeepLocalCopy = async () => {
+    try {
+      const copyId = localConflict?.copyDraftId;
+      if (copyId) {
+        navigate(`/customize/draft/${copyId}`);
+        return;
+      }
+      const copy = await duplicateDraft(draftRecordRef.current.draftId, {
+        config: configRef.current,
+        metadata: metadataRef.current,
+      });
+      navigate(`/customize/draft/${copy.draftId}`);
+    } catch (error) {
+      setServerMessage(error.message || 'Không thể giữ nội dung thành bản sao.');
+    }
+  };
+
+  const handleReloadLocalConflict = () => {
+    const remote = localConflict?.remoteDraft;
+    if (!remote) return;
+    draftRecordRef.current = remote;
+    localRevisionRef.current = remote.localRevision;
+    configRef.current = remote.config;
+    metadataRef.current = remote.metadata;
+    setConfig(remote.config);
+    setMetadata(remote.metadata);
+    setLocalConflict(null);
+    setLocalSaveState('saved');
+    dirtyRef.current = false;
+    setDirty(false);
+  };
+
+  const handleBack = async () => {
+    try {
+      await flushLocal();
+      navigate('/drafts');
+    } catch {
+      setServerMessage('Bản nháp chưa lưu được vào thiết bị nên vẫn ở lại trang này.');
     }
   };
 
   const handleDownloadJson = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(config, null, 2));
+    const data = { metadata: metadataRef.current, config: configRef.current };
     const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `${metadata.slug || 'template-config'}.json`);
+    downloadAnchor.href = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+    downloadAnchor.download = `${metadataRef.current.slug || 'template-config'}.json`;
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
   };
 
   const handleExportHtml = () => {
-    exportStandaloneHtml(config, metadata.title);
+    const publishedUrl = versions.find((version) => version.isPublic)?.publicUrl
+      || (versions.some((version) => version.isPublic) ? `${window.location.origin}/p/${metadataRef.current.slug}` : null);
+    exportStandaloneHtml(configRef.current, metadataRef.current.title, { publicUrl: publishedUrl });
   };
 
   const handleOpenLivePreview = () => {
-    if (metadata.slug) {
-      window.open(`/view/${metadata.slug}`, '_blank');
-    }
+    const publicVersion = versions.find((version) => version.isPublic);
+    if (publicVersion) window.open(publicVersion.publicUrl || `${window.location.origin}/p/${metadataRef.current.slug}`, '_blank', 'noopener,noreferrer');
   };
 
-  const handleOpenPublishModal = () => {
-    const baseSlug = (metadata?.slug || template?.slug || 'community')
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, '-')
-      .replace(/-+/g, '-');
-    setPublishForm({
-      name: metadata?.title || template?.name || 'Mẫu thiết kế cộng đồng',
-      slug: `${baseSlug}-${Date.now().toString().slice(-4)}`,
-      description: template?.description || 'Mẫu thiết kế sáng tạo đóng góp từ cộng đồng người dùng.',
-      category: template?.category || 'Wedding',
-      authorName: user?.fullName || 'Tác giả cộng đồng',
-    });
-    setPublishSuccess(false);
-    setPublishError('');
-    setIsPublishModalOpen(true);
+  const handleConfigChange = (nextConfig) => {
+    configRef.current = nextConfig;
+    setConfig(nextConfig);
+    markDirty();
   };
 
-  const handlePublishSubmit = async (e) => {
-    e.preventDefault();
-    setIsPublishing(true);
-    setPublishError('');
-    try {
-      const payload = {
-        name: publishForm.name.trim(),
-        slug: publishForm.slug.trim(),
-        description: publishForm.description?.trim() || null,
-        category: publishForm.category,
-        thumbnailUrl: template?.thumbnailUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&auto=format&fit=crop&q=80',
-        defaultConfigJson: JSON.stringify(config),
-        authorName: publishForm.authorName.trim(),
-      };
-      await templateApi.publishCommunityTemplate(payload);
-      setPublishSuccess(true);
-    } catch (err) {
-      setPublishError(err.response?.data?.message || err.message || 'Không thể chia sẻ mẫu vào cộng đồng.');
-    } finally {
-      setIsPublishing(false);
-    }
+  const handleMetadataChange = (nextMetadata) => {
+    metadataRef.current = nextMetadata;
+    setMetadata(nextMetadata);
+    markDirty();
   };
 
-  if (loading) {
+  if (authLoading || loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><LoadingSpinner size="lg" message="Đang mở bản thiết kế..." /></div>;
+  }
+
+  if (loadError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <LoadingSpinner size="lg" message="Đang nạp không gian tùy biến..." />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-5">
+        <div className="max-w-lg w-full bg-white border border-rose-200 rounded-2xl p-6 text-center">
+          <AlertCircle className="w-8 h-8 text-rose-600 mx-auto" />
+          <p role="alert" className="mt-3 text-sm text-gray-700">{loadError}</p>
+          <button onClick={() => navigate('/drafts')} className="mt-5 px-4 py-2 rounded-lg bg-rose-600 text-white text-sm">Mở danh sách bản nháp</button>
+        </div>
       </div>
     );
   }
 
+  const localStatusText = localSaveState === 'saving'
+    ? 'Đang lưu trên thiết bị…'
+    : localSaveState === 'pending' || dirty
+      ? 'Có thay đổi chưa lưu'
+      : localSaveState === 'error'
+        ? 'Lỗi lưu trên thiết bị'
+        : localSaveState === 'conflict'
+          ? 'Có xung đột bản nháp'
+          : 'Đã lưu trên thiết bị';
+  const hasPublishedVersion = versions.some((version) => version.isPublic);
+
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gray-100">
-      {/* Topbar */}
       <CustomizerToolbar
         viewport={viewport}
         setViewport={setViewport}
-        onSave={handleSave}
+        onSave={handleSaveServer}
         saving={saving}
+        onCreateVersion={handleCreateVersion}
+        localSaveStatus={localStatusText}
         onDownloadJson={handleDownloadJson}
         onExportHtml={handleExportHtml}
-        onOpenLivePreview={currentCustomizationId ? handleOpenLivePreview : null}
-        onPublishCommunity={handleOpenPublishModal}
+        onOpenLivePreview={hasPublishedVersion ? handleOpenLivePreview : null}
+        onPublishCommunity={() => openCommunityModal()}
+        canShareCommunity={versions.length > 0}
         title={metadata.title}
+        onBack={handleBack}
       />
 
-      {/* Main Workspace (Split View on desktop, tabbed on mobile) */}
+      {(serverMessage || versionsError || localSaveState === 'error' || localConflict || serverConflict) && (
+        <div className="px-3 sm:px-6 py-2 bg-white border-b border-gray-200 space-y-2">
+          {serverMessage && <div role="status" className="text-xs text-gray-700">{serverMessage}</div>}
+          {versionsError && <div role="alert" className="text-xs text-amber-700">{versionsError}</div>}
+          {localSaveState === 'error' && <div role="alert" className="text-xs text-rose-700">Không lưu được vào thiết bị. Nội dung vẫn đang mở trong bộ nhớ trình duyệt; thử lại trước khi rời trang.</div>}
+          {(serverConflict || localConflict) && (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-amber-800">
+              <span>{localConflict ? 'Bản nháp đã thay đổi ở cửa sổ khác.' : 'Bản máy chủ đã thay đổi kể từ lần đồng bộ gần nhất.'}</span>
+              {localConflict?.remoteDraft && <button onClick={handleReloadLocalConflict} className="px-2 py-1 border rounded">Tải bản ở cửa sổ khác</button>}
+              {serverConflict && <button onClick={handleReloadServer} className="px-2 py-1 border rounded">Tải bản máy chủ</button>}
+              <button onClick={handleKeepLocalCopy} className="px-2 py-1 border rounded">Giữ nội dung này thành bản sao</button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Left: Interactive Sidebar */}
         <div className={`w-full md:w-auto ${mobileTab === 'edit' ? 'flex' : 'hidden'} md:flex flex-col h-full z-10`}>
-          <CustomizerSidebar
+          {config && <CustomizerSidebar
             config={config}
-            onChange={setConfig}
+            onChange={handleConfigChange}
             metadata={metadata}
-            onMetadataChange={setMetadata}
+            onMetadataChange={handleMetadataChange}
             onSectionEdit={handleSectionEdit}
-          />
+            versions={versions}
+            versionsTotal={versionsTotal}
+            versionsLoadingMore={versionsLoadingMore}
+            onLoadMoreVersions={handleLoadMoreVersions}
+            selectedVersionId={selectedVersionId}
+            onSelectVersion={setSelectedVersionId}
+            onPreviewVersion={handlePreviewVersion}
+            onContinueFromVersion={handleContinueFromVersion}
+            onPublishVersion={handlePublishVersion}
+            onUnpublishVersion={handleUnpublishVersion}
+            onUnpublishSite={handleUnpublishSite}
+            onCopyVersionUrl={handleCopyVersionUrl}
+            hasServerSite={!!currentCustomizationId}
+            publishedVersionId={publishedVersionId}
+            saving={saving}
+          />}
         </div>
 
-        {/* Right: Live Interactive Canvas */}
-        <div
-          className={`flex-1 bg-gray-900/95 overflow-y-auto ${
-            mobileTab === 'preview' ? 'flex' : 'hidden'
-          } md:flex items-center justify-center p-2 sm:p-6 transition-all duration-300 pb-20 md:pb-6`}
-        >
-          {viewport === 'desktop' ? (
+        <div className={`flex-1 bg-gray-900/95 overflow-y-auto ${mobileTab === 'preview' ? 'flex' : 'hidden'} md:flex items-center justify-center p-2 sm:p-6 transition-all duration-300 pb-20 md:pb-6`}>
+          {config && (viewport === 'desktop' ? (
             <div className="w-full h-full rounded-2xl overflow-y-auto shadow-2xl bg-white no-scrollbar">
-              <LandingPageRenderer
-                config={deferredConfig}
-                customizationId={currentCustomizationId}
-                isPreview={true}
-                activeEditSection={activeEditSection}
-                editFeedbackKey={editFeedbackKey}
-              />
+              <LandingPageRenderer config={deferredConfig} customizationId={currentCustomizationId} isPreview={true} activeEditSection={activeEditSection} editFeedbackKey={editFeedbackKey} />
             </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <DeviceSimulator initialOs="ios" showToolbar={true}>
-                <LandingPageRenderer
-                  config={deferredConfig}
-                  customizationId={currentCustomizationId}
-                  isPreview={true}
-                  activeEditSection={activeEditSection}
-                  editFeedbackKey={editFeedbackKey}
-                />
+                <LandingPageRenderer config={deferredConfig} customizationId={currentCustomizationId} isPreview={true} activeEditSection={activeEditSection} editFeedbackKey={editFeedbackKey} />
               </DeviceSimulator>
             </div>
-          )}
+          ))}
         </div>
 
-        {/* Mobile Floating Bottom Navigation Bar */}
         <div className="md:hidden fixed bottom-3 left-3 right-3 z-40 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 p-1.5 flex items-center justify-around gap-2">
-          <button
-            onClick={() => setMobileTab('edit')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              mobileTab === 'edit'
-                ? 'bg-rose-600 text-white shadow-md'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Edit3 className="w-4 h-4" />
-            <span>Chỉnh Sửa</span>
+          <button onClick={() => setMobileTab('edit')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold ${mobileTab === 'edit' ? 'bg-rose-600 text-white shadow-md' : 'text-gray-600'}`}>
+            <Edit3 className="w-4 h-4" /> Chỉnh sửa
           </button>
-          <button
-            onClick={() => setMobileTab('preview')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              mobileTab === 'preview'
-                ? 'bg-rose-600 text-white shadow-md'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Eye className="w-4 h-4" />
-            <span>Xem Trước</span>
+          <button onClick={() => setMobileTab('preview')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold ${mobileTab === 'preview' ? 'bg-rose-600 text-white shadow-md' : 'text-gray-600'}`}>
+            <Eye className="w-4 h-4" /> Xem trước
           </button>
         </div>
       </div>
 
-      {/* Community Publish Modal */}
-      <Modal
-        isOpen={isPublishModalOpen}
-        onClose={() => setIsPublishModalOpen(false)}
-        title="Chia Sẻ Mẫu Thiết Kế Cộng Đồng"
-      >
-        {publishSuccess ? (
+      <Modal isOpen={isCommunityModalOpen} onClose={() => setIsCommunityModalOpen(false)} title="Chia sẻ phiên bản vào thư viện cộng đồng">
+        {communitySuccess ? (
           <div className="py-6 text-center space-y-4">
-            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-              <Check className="w-7 h-7" />
-            </div>
-            <div>
-              <h4 className="text-lg font-bold text-gray-900">Đã công khai mẫu thành công!</h4>
-              <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
-                Mẫu thiết kế của bạn đã được đóng góp vào Thư Viện Mẫu Cộng Đồng và sẵn sàng để mọi người cùng khám phá.
-              </p>
-            </div>
-            <div className="pt-2 flex justify-center gap-3">
-              <button
-                onClick={() => setIsPublishModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 rounded-xl"
-              >
-                Đóng
-              </button>
-              <button
-                onClick={() => navigate('/templates?tab=community')}
-                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition"
-              >
-                Xem Kho Cộng Đồng
-              </button>
-            </div>
+            <Check className="w-10 h-10 text-emerald-600 mx-auto" />
+            <p className="font-semibold text-gray-900">Đã chia sẻ phiên bản thiết kế.</p>
+            <button onClick={() => setIsCommunityModalOpen(false)} className="px-4 py-2 rounded-lg bg-rose-600 text-white text-sm">Đóng</button>
           </div>
         ) : (
-          <form onSubmit={handlePublishSubmit} className="space-y-4 text-xs">
-            {publishError && (
-              <div className="p-3 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{publishError}</span>
-              </div>
-            )}
-
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Tên Mẫu Thiết Kế *</label>
-              <input
-                type="text"
-                required
-                value={publishForm.name}
-                onChange={(e) => setPublishForm({ ...publishForm, name: e.target.value })}
-                placeholder="VD: Thiệp Cưới Hoa Sen Tinh Tế"
-                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-semibold text-gray-700 mb-1">Đường Dẫn Slug *</label>
-                <input
-                  type="text"
-                  required
-                  value={publishForm.slug}
-                  onChange={(e) => setPublishForm({ ...publishForm, slug: e.target.value })}
-                  placeholder="thiep-cuoi-hoa-sen"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-gray-700 mb-1">Danh Mục *</label>
-                <select
-                  value={publishForm.category}
-                  onChange={(e) => setPublishForm({ ...publishForm, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none bg-white"
-                >
-                  <option value="Wedding">Wedding (Cưới)</option>
-                  <option value="Birthday">Birthday (Sinh nhật)</option>
-                  <option value="Event">Event (Sự kiện)</option>
-                  <option value="Business">Business (Doanh nghiệp)</option>
-                  <option value="spa-beauty">Spa & Làm Đẹp</option>
-                  <option value="podcast-music">Podcast & Âm Nhạc</option>
-                  <option value="tech-startup">Công Nghệ & Startup</option>
-                  <option value="photography">Nhiếp Ảnh Studio</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Tên Tác Giả / Người Đóng Góp *</label>
-              <input
-                type="text"
-                required
-                value={publishForm.authorName}
-                onChange={(e) => setPublishForm({ ...publishForm, authorName: e.target.value })}
-                placeholder="VD: Alex Quang Trung"
-                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Mô Tả Giới Thiệu (Tùy chọn)</label>
-              <textarea
-                rows={2}
-                value={publishForm.description}
-                onChange={(e) => setPublishForm({ ...publishForm, description: e.target.value })}
-                placeholder="Giới thiệu phong cách, tone màu hoặc ý tưởng của mẫu..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none resize-none"
-              />
-            </div>
-
-            <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsPublishModalOpen(false)}
-                className="px-4 py-2 font-semibold text-gray-600 hover:text-gray-800 rounded-xl transition"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                disabled={isPublishing}
-                className="px-5 py-2 font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition disabled:opacity-50 flex items-center gap-1.5"
-              >
-                <Globe className="w-3.5 h-3.5" />
-                <span>{isPublishing ? 'Đang xuất bản...' : 'Công Khai Ngay'}</span>
-              </button>
+          <form onSubmit={handleCommunitySubmit} className="space-y-4 text-sm">
+            {communityError && <div role="alert" className="p-3 rounded-lg bg-rose-50 text-rose-700">{communityError}</div>}
+            <label className="block text-xs font-semibold text-gray-700">Tên mẫu
+              <input required value={communityForm.name} onChange={(event) => setCommunityForm({ ...communityForm, name: event.target.value })} className="mt-1 w-full p-2 border rounded-lg" />
+            </label>
+            <label className="block text-xs font-semibold text-gray-700">Slug
+              <input required value={communityForm.slug} onChange={(event) => setCommunityForm({ ...communityForm, slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })} className="mt-1 w-full p-2 border rounded-lg" />
+            </label>
+            <label className="block text-xs font-semibold text-gray-700">Phiên bản
+              <select required value={selectedVersionId || ''} onChange={(event) => setSelectedVersionId(event.target.value)} className="mt-1 w-full p-2 border rounded-lg bg-white">
+                {versions.map((version) => <option key={version.id} value={version.id}>v{version.versionNumber} · {version.title}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs font-semibold text-gray-700">Danh mục
+              <select required value={communityForm.categoryId} onChange={(event) => setCommunityForm({ ...communityForm, categoryId: event.target.value })} className="mt-1 w-full p-2 border rounded-lg bg-white">
+                <option value="">Chọn danh mục</option>
+                {communityCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs font-semibold text-gray-700">URL ảnh thumbnail
+              <input required type="url" value={communityForm.thumbnailUrl} onChange={(event) => setCommunityForm({ ...communityForm, thumbnailUrl: event.target.value })} className="mt-1 w-full p-2 border rounded-lg" />
+            </label>
+            <label className="block text-xs font-semibold text-gray-700">Mô tả
+              <textarea rows={3} value={communityForm.description} onChange={(event) => setCommunityForm({ ...communityForm, description: event.target.value })} className="mt-1 w-full p-2 border rounded-lg resize-y" />
+            </label>
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={() => setIsCommunityModalOpen(false)} className="px-4 py-2 rounded-lg border text-sm">Hủy</button>
+              <button type="submit" disabled={communitySaving || !communityCategories.length} className="px-4 py-2 rounded-lg bg-rose-600 text-white text-sm disabled:opacity-50">{communitySaving ? 'Đang chia sẻ…' : 'Chia sẻ phiên bản'}</button>
             </div>
           </form>
         )}
       </Modal>
+
+      {previewVersion && (
+        <div className="fixed inset-0 z-[70] bg-gray-950 flex flex-col">
+          <div className="h-14 shrink-0 px-4 flex items-center justify-between bg-white border-b">
+            <div className="text-sm font-semibold">Xem trước v{previewVersion.versionNumber} · {previewVersion.title}</div>
+            <button onClick={() => setPreviewVersion(null)} className="p-2 rounded-lg hover:bg-gray-100" aria-label="Đóng xem trước"><X className="w-5 h-5" /></button>
+          </div>
+          <div className="flex-1 overflow-y-auto bg-white">
+            <LandingPageRenderer config={previewVersion.config} customizationId={currentCustomizationId} customizationVersionId={previewVersion.id} isPreview={true} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

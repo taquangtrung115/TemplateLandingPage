@@ -7,6 +7,9 @@ public sealed class SubmitGuestbookCommandValidator : AbstractValidator<SubmitGu
 {
     public SubmitGuestbookCommandValidator()
     {
+        RuleFor(x => x.CustomizationVersionId)
+            .NotNull().WithMessage("CustomizationVersionId is required.")
+            .NotEqual(Guid.Empty).WithMessage("CustomizationVersionId is required.");
         RuleFor(x => x.SenderName).NotEmpty().WithMessage("Tên người gửi không được để trống.");
         RuleFor(x => x.Message).NotEmpty().WithMessage("Lời chúc không được để trống.");
     }

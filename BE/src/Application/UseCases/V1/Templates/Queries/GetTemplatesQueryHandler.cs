@@ -3,10 +3,10 @@ namespace TemplateLandingPage.Application.UseCases.V1.Templates.Queries;
 using TemplateLandingPage.Application.Abstractions;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Templates;
-using TemplateLandingPage.Domain.Entities;
 using TemplateLandingPage.Domain.Repositories;
+using TemplateLandingPage.Domain.ReadModels;
 
-public sealed class GetTemplatesQueryHandler : IQueryHandler<GetTemplatesQuery, List<TemplateResponse>>
+public sealed class GetTemplatesQueryHandler : IQueryHandler<GetTemplatesQuery, List<TemplateSummaryResponse>>
 {
     private readonly ITemplateRepository _templateRepository;
 
@@ -15,7 +15,7 @@ public sealed class GetTemplatesQueryHandler : IQueryHandler<GetTemplatesQuery, 
         _templateRepository = templateRepository;
     }
 
-    public async Task<Result<List<TemplateResponse>>> Handle(GetTemplatesQuery request, CancellationToken cancellationToken)
+    public async Task<Result<List<TemplateSummaryResponse>>> Handle(GetTemplatesQuery request, CancellationToken cancellationToken)
     {
         var templates = await _templateRepository.GetListAsync(
             request.Category,
@@ -26,7 +26,7 @@ public sealed class GetTemplatesQueryHandler : IQueryHandler<GetTemplatesQuery, 
             request.IsCommunity,
             cancellationToken);
 
-        var response = (templates ?? new List<Template>()).Select(t => new TemplateResponse(
+        var response = (templates ?? new List<TemplateSummary>()).Select(t => new TemplateSummaryResponse(
             t.Id,
             t.Name,
             t.Slug,
@@ -39,7 +39,6 @@ public sealed class GetTemplatesQueryHandler : IQueryHandler<GetTemplatesQuery, 
             t.Badge,
             t.AudioUrl,
             t.MusicTitle,
-            t.DefaultConfigJson,
             t.IsActive,
             t.IsCommunity,
             t.AuthorName,

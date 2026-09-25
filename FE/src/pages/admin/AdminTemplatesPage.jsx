@@ -26,6 +26,7 @@ export default function AdminTemplatesPage() {
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [loadingTemplateId, setLoadingTemplateId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -86,28 +87,43 @@ export default function AdminTemplatesPage() {
     setModalOpen(true);
   };
 
-  const openEditModal = (tmpl) => {
-    setEditingTemplate(tmpl);
-    setFormData({
-      name: tmpl.name,
-      slug: tmpl.slug,
-      description: tmpl.description || '',
-      categoryId: tmpl.categoryId || '',
-      category: tmpl.category || 'Wedding',
-      thumbnailUrl: tmpl.thumbnailUrl || '',
-      previewUrl: tmpl.previewUrl || '',
-      longPreviewUrl: tmpl.longPreviewUrl || '',
-      badge: tmpl.badge || 'Basic',
-      audioUrl: tmpl.audioUrl || '',
-      musicTitle: tmpl.musicTitle || '',
-      defaultConfigJson:
-        typeof tmpl.defaultConfigJson === 'string'
-          ? tmpl.defaultConfigJson
-          : JSON.stringify(tmpl.defaultConfigJson, null, 2),
-      isActive: tmpl.isActive,
-    });
-    setJsonError(null);
-    setModalOpen(true);
+  const openEditModal = async (tmpl) => {
+    if (loadingTemplateId) return;
+
+    setLoadingTemplateId(tmpl.id);
+    try {
+      // Catalog rows intentionally omit the large JSON config; fetch the editable detail on demand.
+      const detail = await templateApi.getTemplateById(tmpl.id);
+      if (!detail || !detail.defaultConfigJson) {
+        throw new Error('Không tải được cấu hình chi tiết của template');
+      }
+
+      setEditingTemplate(detail);
+      setFormData({
+        name: detail.name,
+        slug: detail.slug,
+        description: detail.description || '',
+        categoryId: detail.categoryId || '',
+        category: detail.category || 'Wedding',
+        thumbnailUrl: detail.thumbnailUrl || '',
+        previewUrl: detail.previewUrl || '',
+        longPreviewUrl: detail.longPreviewUrl || '',
+        badge: detail.badge || 'Basic',
+        audioUrl: detail.audioUrl || '',
+        musicTitle: detail.musicTitle || '',
+        defaultConfigJson:
+          typeof detail.defaultConfigJson === 'string'
+            ? detail.defaultConfigJson
+            : JSON.stringify(detail.defaultConfigJson, null, 2),
+        isActive: detail.isActive,
+      });
+      setJsonError(null);
+      setModalOpen(true);
+    } catch (err) {
+      alert(err.message || 'Lỗi khi tải chi tiết template');
+    } finally {
+      setLoadingTemplateId(null);
+    }
   };
 
   const handleCategorySelect = (catId) => {
@@ -321,7 +337,8 @@ export default function AdminTemplatesPage() {
                         </a>
                         <button
                           onClick={() => openEditModal(tmpl)}
-                          className="p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                          disabled={loadingTemplateId !== null}
+                          className="p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-wait"
                           title="Chỉnh sửa mẫu & JSON"
                         >
                           <Edit3 className="w-4 h-4" />

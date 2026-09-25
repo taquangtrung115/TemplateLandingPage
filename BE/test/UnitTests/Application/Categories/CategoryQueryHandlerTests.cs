@@ -5,6 +5,7 @@ using Moq;
 using TemplateLandingPage.Application.UseCases.V1.Categories.Queries;
 using TemplateLandingPage.Contract.Services.V1.Categories;
 using TemplateLandingPage.Domain.Entities;
+using TemplateLandingPage.Domain.ReadModels;
 using TemplateLandingPage.Domain.Repositories;
 using Xunit;
 
@@ -24,8 +25,12 @@ public class CategoryQueryHandlerTests
         var cat1 = Category.Create("Đám Cưới", "wedding", "Mẫu đám cưới", "Heart", 1, true);
         var cat2 = Category.Create("Sinh Nhật", "birthday", "Mẫu sinh nhật", "Cake", 2, true);
 
-        _categoryRepositoryMock.Setup(r => r.GetAllOrderedAsync(null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Category> { cat1, cat2 });
+        _categoryRepositoryMock.Setup(r => r.GetSummariesAsync(false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CategorySummary>
+            {
+                new(cat1.Id, cat1.Name, cat1.Slug, cat1.Description, cat1.Icon, cat1.OrderIndex, cat1.IsActive, 0, cat1.CreatedAtUtc),
+                new(cat2.Id, cat2.Name, cat2.Slug, cat2.Description, cat2.Icon, cat2.OrderIndex, cat2.IsActive, 0, cat2.CreatedAtUtc)
+            });
 
         var handler = new GetCategoriesQueryHandler(_categoryRepositoryMock.Object);
         var query = new GetCategoriesQuery();
@@ -47,8 +52,11 @@ public class CategoryQueryHandlerTests
     {
         // Arrange
         var cat = Category.Create("Đám Cưới", "wedding", null, null, 1, true);
-        _categoryRepositoryMock.Setup(r => r.GetAllOrderedAsync(true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Category> { cat });
+        _categoryRepositoryMock.Setup(r => r.GetSummariesAsync(false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CategorySummary>
+            {
+                new(cat.Id, cat.Name, cat.Slug, cat.Description, cat.Icon, cat.OrderIndex, cat.IsActive, 0, cat.CreatedAtUtc)
+            });
 
         var handler = new GetCategoriesQueryHandler(_categoryRepositoryMock.Object);
         var query = new GetCategoriesQuery(IsActiveOnly: true);
@@ -59,7 +67,7 @@ public class CategoryQueryHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().HaveCount(1);
-        _categoryRepositoryMock.Verify(r => r.GetAllOrderedAsync(true, It.IsAny<CancellationToken>()), Times.Once);
+        _categoryRepositoryMock.Verify(r => r.GetSummariesAsync(false, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -67,8 +75,8 @@ public class CategoryQueryHandlerTests
     {
         // Arrange
         var cat = Category.Create("Đám Cưới", "wedding", "Mô tả", "Heart", 1, true);
-        _categoryRepositoryMock.Setup(r => r.GetByIdAsync(cat.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(cat);
+        _categoryRepositoryMock.Setup(r => r.GetSummaryByIdAsync(cat.Id, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CategorySummary(cat.Id, cat.Name, cat.Slug, cat.Description, cat.Icon, cat.OrderIndex, cat.IsActive, 0, cat.CreatedAtUtc));
 
         var handler = new GetCategoryByIdQueryHandler(_categoryRepositoryMock.Object);
         var query = new GetCategoryByIdQuery(cat.Id);
@@ -88,8 +96,8 @@ public class CategoryQueryHandlerTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _categoryRepositoryMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Category?)null);
+        _categoryRepositoryMock.Setup(r => r.GetSummaryByIdAsync(id, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CategorySummary?)null);
 
         var handler = new GetCategoryByIdQueryHandler(_categoryRepositoryMock.Object);
         var query = new GetCategoryByIdQuery(id);
@@ -107,8 +115,8 @@ public class CategoryQueryHandlerTests
     {
         // Arrange
         var cat = Category.Create("Đám Cưới", "wedding", "Mô tả", "Heart", 1, true);
-        _categoryRepositoryMock.Setup(r => r.GetBySlugAsync("wedding", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(cat);
+        _categoryRepositoryMock.Setup(r => r.GetSummaryBySlugAsync("wedding", false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CategorySummary(cat.Id, cat.Name, cat.Slug, cat.Description, cat.Icon, cat.OrderIndex, cat.IsActive, 0, cat.CreatedAtUtc));
 
         var handler = new GetCategoryBySlugQueryHandler(_categoryRepositoryMock.Object);
         var query = new GetCategoryBySlugQuery("wedding");
@@ -126,8 +134,8 @@ public class CategoryQueryHandlerTests
     public async Task GetCategoryBySlug_Should_ReturnNotFound_WhenMissing()
     {
         // Arrange
-        _categoryRepositoryMock.Setup(r => r.GetBySlugAsync("non-existent", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Category?)null);
+        _categoryRepositoryMock.Setup(r => r.GetSummaryBySlugAsync("non-existent", false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CategorySummary?)null);
 
         var handler = new GetCategoryBySlugQueryHandler(_categoryRepositoryMock.Object);
         var query = new GetCategoryBySlugQuery("non-existent");

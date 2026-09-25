@@ -1,18 +1,21 @@
+import 'fake-indexeddb/auto';
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import CustomizerPage from '../src/pages/CustomizerPage';
-import AppRoutes from '../src/routes';
+import DraftsPage from '../src/pages/DraftsPage';
 import { templateApi } from '../src/api/templateApi';
 import { customizationApi } from '../src/api/customizationApi';
 import useAuth from '../src/hooks/useAuth';
 import * as htmlExporter from '../src/utils/htmlExporter';
+import { clearPendingAuthAction } from '../src/contexts/AuthContext';
+import { deleteDraft, getDraft, listDrafts, saveDraft } from '../src/utils/draftStore';
 
-// Mock APIs
 vi.mock('../src/api/templateApi', () => ({
   templateApi: {
     getTemplateById: vi.fn(),
+    publishCommunityTemplate: vi.fn(),
   },
 }));
 
@@ -21,288 +24,223 @@ vi.mock('../src/api/customizationApi', () => ({
     saveCustomization: vi.fn(),
     updateCustomization: vi.fn(),
     getCustomizationById: vi.fn(),
+    getVersions: vi.fn(),
   },
 }));
 
-// Mock useAuth
-vi.mock('../src/hooks/useAuth', () => ({
-  default: vi.fn(),
-}));
+vi.mock('../src/hooks/useAuth', () => ({ default: vi.fn() }));
 
-describe('Guest Customization Flow (Happy Paths & Error Handling)', () => {
-  const mockTemplate = {
-    id: 'tpl-wedding-01',
-    name: 'Đám Cưới Hoàng Gia',
-    slug: 'dam-cuoi-hoang-gia',
-    category: 'Wedding',
-    defaultConfigJson: JSON.stringify({
-      theme: { primaryColor: '#e11d48', defaultAnimation: 'fade-up' },
-      hero: { title: 'Tuấn & Hương', badge: 'SAVE THE DATE' },
-      coupleOrCelebrant: {
-        type: 'wedding',
-        person1: { name: 'Tuấn', title: 'Chú Rể' },
-        person2: { name: 'Hương', title: 'Cô Dâu' },
-      },
-    }),
-  };
+const mockTemplate = {
+  id: 'tpl-wedding-01',
+  name: 'Đám Cưới Hoàng Gia',
+  slug: 'dam-cuoi-hoang-gia',
+  category: 'Wedding',
+  defaultConfigJson: JSON.stringify({
+    theme: { primaryColor: '#e11d48', defaultAnimation: 'fade-up' },
+    hero: { title: 'Tuấn & Hương', badge: 'SAVE THE DATE' },
+    coupleOrCelebrant: {
+      type: 'wedding',
+      person1: { name: 'Tuấn', title: 'Chú Rể' },
+      person2: { name: 'Hương', title: 'Cô Dâu' },
+    },
+  }),
+};
 
-  const renderCustomizer = (initialRoute = '/customize/tpl-wedding-01') => {
-    return render(
-      <MemoryRouter initialEntries={[initialRoute]}>
-        <Routes>
-          <Route path="/customize/:templateId" element={<CustomizerPage />} />
-          <Route path="/customize/:templateId/:customizationId" element={<CustomizerPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
-  };
+const guestAuth = { user: null, accountId: null, isAuthenticated: false, loading: false };
 
-  beforeEach(() => {
+function TestRouteControls() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return (
+    <>
+      <output data-testid="current-route">{`${location.pathname}${location.search}${location.hash}`}</output>
+      <button type="button" onClick={() => navigate('/customize/tpl-wedding-01')}>Start another copy of the same template</button>
+      <button type="button" onClick={() => navigate(`${location.pathname}?panel=versions#history`, { replace: true })}>Change query and hash on this draft</button>
+    </>
+  );
+}
+
+const renderCustomizer = (initialRoute = '/customize/tpl-wedding-01') => render(
+  <MemoryRouter initialEntries={[initialRoute]}>
+    <TestRouteControls />
+    <Routes>
+      <Route path="/drafts" element={<DraftsPage />} />
+      <Route path="/customize/draft/:draftId" element={<CustomizerPage />} />
+      <Route path="/customize/:templateId" element={<CustomizerPage />} />
+      <Route path="/customize/:templateId/:customizationId" element={<CustomizerPage />} />
+      <Route path="/login" element={<h1>Login screen</h1>} />
+    </Routes>
+  </MemoryRouter>
+);
+
+describe('guest local drafts and account-only server actions', () => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     localStorage.clear();
-    // Default: guest user (not logged in)
-    useAuth.mockReturnValue({
-      user: null,
-      isAuthenticated: false,
-    });
+    clearPendingAuthAction();
+    for (const accountId of [null, 'owner-1', 'owner-2']) {
+      for (const draft of await listDrafts(accountId)) await deleteDraft(draft.draftId);
+    }
+    useAuth.mockReturnValue(guestAuth);
     templateApi.getTemplateById.mockResolvedValue(mockTemplate);
-    window.alert = vi.fn();
+    customizationApi.getVersions.mockResolvedValue({ data: [], total: 0 });
   });
 
-  it('allows guest to access /customize/:templateId without redirection to login', async () => {
-    render(
-      <MemoryRouter initialEntries={['/customize/tpl-wedding-01']}>
-        <AppRoutes />
-      </MemoryRouter>
-    );
-
-    // Wait for customizer to load template
-    await waitFor(() => {
-      expect(screen.getByText('Đám Cưới Hoàng Gia - Thiệp Mời')).toBeInTheDocument();
-    });
-
-    // Verify it stayed on CustomizerPage and did NOT redirect to login
-    expect(screen.queryByText(/đăng nhập vào tài khoản/i)).not.toBeInTheDocument();
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('allows guest to create new customization (UserId == null) and redirects to new customization URL', async () => {
-    const newCustomizationId = 'cust-new-999';
-    customizationApi.saveCustomization.mockResolvedValueOnce(newCustomizationId);
+  it('lets a guest edit and reopen a local draft without creating a server customization', async () => {
+    renderCustomizer();
 
-    renderCustomizer('/customize/tpl-wedding-01');
+    expect(await screen.findByRole('heading', { name: 'Đám Cưới Hoàng Gia - Bản nháp' })).toBeInTheDocument();
+    expect(await screen.findByText('Đã lưu trên thiết bị')).toBeInTheDocument();
+    expect(await listDrafts(null)).toHaveLength(1);
+    expect(customizationApi.saveCustomization).not.toHaveBeenCalled();
+    expect(customizationApi.updateCustomization).not.toHaveBeenCalled();
 
-    await waitFor(() => {
-      expect(screen.getByText('Đám Cưới Hoàng Gia - Thiệp Mời')).toBeInTheDocument();
-    });
+    const firstDraft = (await listDrafts(null))[0];
+    fireEvent.click(screen.getByTitle('Lưu bản nháp và mở danh sách'));
+    expect(await screen.findByRole('heading', { name: 'Bản nháp trên thiết bị này' })).toBeInTheDocument();
+    expect(await screen.findByText('Đám Cưới Hoàng Gia - Bản nháp')).toBeInTheDocument();
 
-    // Click "Lưu" button in toolbar
-    const saveBtn = screen.getByRole('button', { name: /^lưu$/i });
-    fireEvent.click(saveBtn);
+    fireEvent.click(screen.getByRole('button', { name: 'Start another copy of the same template' }));
+    expect(await screen.findByRole('heading', { name: 'Đám Cưới Hoàng Gia - Bản nháp' })).toBeInTheDocument();
+    await waitFor(async () => expect(await listDrafts(null)).toHaveLength(2));
 
-    await waitFor(() => {
-      expect(customizationApi.saveCustomization).toHaveBeenCalledTimes(1);
-      const callArg = customizationApi.saveCustomization.mock.calls[0][0];
-      expect(callArg.templateId).toBe('tpl-wedding-01');
-      expect(callArg.title).toBe('Đám Cưới Hoàng Gia - Thiệp Mời');
-      expect(callArg.isPublished).toBe(true);
-      expect(callArg.configJson).toContain('Tuấn & Hương');
-    });
-
-    // Check localStorage guest backup was written
-    const savedDraftStr = localStorage.getItem('guest_draft_tpl-wedding-01');
-    expect(savedDraftStr).toBeDefined();
-    const savedDraft = JSON.parse(savedDraftStr);
-    expect(savedDraft.config).toBeDefined();
-
-    expect(window.alert).toHaveBeenCalledWith('Lưu thiệp mới thành công!');
+    const savedDrafts = await listDrafts(null);
+    expect(savedDrafts.map((draft) => draft.draftId)).toContain(firstDraft.draftId);
+    expect(new Set(savedDrafts.map((draft) => draft.draftId)).size).toBe(2);
+    expect(savedDrafts.every((draft) => draft.templateId === 'tpl-wedding-01')).toBe(true);
+    expect(customizationApi.saveCustomization).not.toHaveBeenCalled();
   });
 
-  it('allows guest to update existing customization via PUT without login', async () => {
-    const existingCustomizationId = 'cust-guest-888';
-    const mockCustomization = {
-      id: existingCustomizationId,
+  it('keeps the requested draft and full query/hash when a guest starts server save', async () => {
+    await saveDraft({
+      draftId: 'guest-auth-resume',
       templateId: 'tpl-wedding-01',
-      title: 'Thiệp Cưới Của Tuấn & Hương',
-      slug: 'tuan-huong-wedding',
-      isPublished: true,
-      configJson: JSON.stringify({
-        theme: { primaryColor: '#e11d48' },
-        hero: { title: 'Tuấn & Hương 2026' },
-        coupleOrCelebrant: {
-          person1: { name: 'Tuấn', title: 'Chú Rể' },
-        },
-      }),
-    };
+      config: JSON.parse(mockTemplate.defaultConfigJson),
+      metadata: { title: 'Requested draft', slug: 'requested-draft' },
+      accountId: null,
+      serverId: null,
+      serverRevision: null,
+    }, 0);
 
-    customizationApi.getCustomizationById.mockResolvedValueOnce(mockCustomization);
-    customizationApi.updateCustomization.mockResolvedValueOnce({ success: true });
+    renderCustomizer('/customize/draft/guest-auth-resume?source=invite#rsvp');
+    expect(await screen.findByRole('heading', { name: 'Requested draft' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /lưu server/i }));
 
-    renderCustomizer(`/customize/tpl-wedding-01/${existingCustomizationId}`);
-
-    await waitFor(() => {
-      expect(screen.getByText('Thiệp Cưới Của Tuấn & Hương')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Login screen' })).toBeInTheDocument();
+    const pending = JSON.parse(localStorage.getItem('pending_auth_action_v1'));
+    expect(pending).toMatchObject({
+      type: 'save',
+      draftId: 'guest-auth-resume',
+      returnTo: '/customize/draft/guest-auth-resume?source=invite#rsvp',
     });
-
-    // Click "Lưu" button
-    const saveBtn = screen.getByRole('button', { name: /^lưu$/i });
-    fireEvent.click(saveBtn);
-
-    await waitFor(() => {
-      expect(customizationApi.updateCustomization).toHaveBeenCalledTimes(1);
-      expect(customizationApi.updateCustomization).toHaveBeenCalledWith(
-        existingCustomizationId,
-        expect.objectContaining({
-          templateId: 'tpl-wedding-01',
-          title: 'Thiệp Cưới Của Tuấn & Hương',
-          slug: 'tuan-huong-wedding',
-          isPublished: true,
-        })
-      );
-    });
-
-    expect(window.alert).toHaveBeenCalledWith(
-      expect.stringContaining('Cập nhật thiệp thành công')
-    );
+    expect(customizationApi.saveCustomization).not.toHaveBeenCalled();
+    expect((await listDrafts(null)).map((draft) => draft.draftId)).toEqual(['guest-auth-resume']);
   });
 
-  it('safely handles API save failure by notifying user of local browser backup', async () => {
-    customizationApi.saveCustomization.mockRejectedValueOnce(new Error('Network disconnected'));
+  it('continues autosaving after query/hash navigation within the same draft route', async () => {
+    await saveDraft({
+      draftId: 'same-draft-navigation',
+      templateId: 'tpl-wedding-01',
+      templateName: mockTemplate.name,
+      config: JSON.parse(mockTemplate.defaultConfigJson),
+      metadata: { title: 'Same draft navigation', slug: 'same-draft-navigation' },
+      accountId: null,
+      serverId: null,
+      serverRevision: null,
+    }, 0);
+    const initialDraft = await getDraft('same-draft-navigation');
 
-    renderCustomizer('/customize/tpl-wedding-01');
+    renderCustomizer('/customize/draft/same-draft-navigation?panel=initial#hero');
+    expect(await screen.findByRole('heading', { name: 'Same draft navigation' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Change query and hash on this draft' }));
+    expect(await screen.findByTestId('current-route')).toHaveTextContent('/customize/draft/same-draft-navigation?panel=versions#history');
 
-    await waitFor(() => {
-      expect(screen.getByText('Đám Cưới Hoàng Gia - Thiệp Mời')).toBeInTheDocument();
-    });
+    fireEvent.click(screen.getByRole('button', { name: /màn hình đầu/i }));
+    fireEvent.change(screen.getByDisplayValue('Tuấn & Hương'), { target: { value: 'Edited after URL change' } });
 
-    const saveBtn = screen.getByRole('button', { name: /^lưu$/i });
-    fireEvent.click(saveBtn);
-
-    await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith('Network disconnected');
-    });
-
-    // Ensure local backup was saved even though network call failed
-    const draft = localStorage.getItem('guest_draft_tpl-wedding-01');
-    expect(draft).not.toBeNull();
+    await waitFor(async () => {
+      const saved = await getDraft('same-draft-navigation');
+      expect(saved.localRevision).toBeGreaterThan(initialDraft.localRevision);
+      expect(saved.config.hero.title).toBe('Edited after URL change');
+    }, { timeout: 2500 });
   });
 
-  it('restores draft from localStorage when reopening customizer for that template', async () => {
-    const draftData = {
-      metadata: {
-        title: 'Bản Nháp Khôi Phục',
-        slug: 'ban-nhap-khoi-phuc',
-        isPublished: true,
-      },
+  it('migrates legacy data into IndexedDB, retains the original and skips a corrupt entry', async () => {
+    const legacy = {
+      metadata: { title: 'Bản Nháp Khôi Phục', slug: 'ban-nhap-khoi-phuc' },
       config: {
         theme: { primaryColor: '#2563eb' },
         hero: { title: 'Tiệc Khôi Phục' },
-        coupleOrCelebrant: {
-          person1: { name: 'Người Khôi Phục', title: 'Chủ Tiệc' },
-        },
+        coupleOrCelebrant: { person1: { name: 'Người Khôi Phục', title: 'Chủ Tiệc' } },
       },
     };
-    localStorage.setItem('guest_draft_tpl-wedding-01', JSON.stringify(draftData));
+    localStorage.setItem('guest_draft_tpl-wedding-01', JSON.stringify(legacy));
+    localStorage.setItem('guest_draft_corrupt-entry', '{broken');
 
-    renderCustomizer('/customize/tpl-wedding-01');
+    renderCustomizer('/drafts');
+    expect(await screen.findByText('Bản Nháp Khôi Phục')).toBeInTheDocument();
+    expect(localStorage.getItem('guest_draft_tpl-wedding-01')).toBe(JSON.stringify(legacy));
+    expect(localStorage.getItem('guest_draft_corrupt-entry')).toBe('{broken');
 
-    await waitFor(() => {
-      expect(screen.getByText('Tiệc Khôi Phục')).toBeInTheDocument();
-      expect(screen.getByText('Người Khôi Phục')).toBeInTheDocument();
-    }, { timeout: 3000 });
+    fireEvent.click(screen.getByRole('button', { name: /tiếp tục/i }));
+    expect(await screen.findByRole('heading', { name: 'Bản Nháp Khôi Phục' })).toBeInTheDocument();
+    expect(await screen.findByText('Tiệc Khôi Phục')).toBeInTheDocument();
+    expect((await listDrafts(null)).filter((draft) => draft.legacyKey === 'guest_draft_tpl-wedding-01'))
+      .toHaveLength(1);
   });
 
-  it('triggers standalone HTML export when "Xuất HTML" button is clicked', async () => {
+  it('exports the current local draft as HTML without issuing a server write', async () => {
     const exportSpy = vi.spyOn(htmlExporter, 'exportStandaloneHtml').mockImplementation(() => {});
+    renderCustomizer();
 
-    renderCustomizer('/customize/tpl-wedding-01');
+    expect(await screen.findByRole('heading', { name: 'Đám Cưới Hoàng Gia - Bản nháp' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /xuất html/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText('Đám Cưới Hoàng Gia - Thiệp Mời')).toBeInTheDocument();
-    });
-
-    const exportBtn = screen.getByRole('button', { name: /html/i });
-    fireEvent.click(exportBtn);
-
-    expect(exportSpy).toHaveBeenCalledTimes(1);
     expect(exportSpy).toHaveBeenCalledWith(
-      expect.any(Object),
-      'Đám Cưới Hoàng Gia - Thiệp Mời'
+      expect.objectContaining({ hero: expect.objectContaining({ title: 'Tuấn & Hương' }) }),
+      'Đám Cưới Hoàng Gia - Bản nháp',
+      expect.any(Object)
     );
+    expect(customizationApi.saveCustomization).not.toHaveBeenCalled();
+    expect(customizationApi.updateCustomization).not.toHaveBeenCalled();
   });
 
-  describe('Failure Paths & Access Control (Kiểm soát quyền & Lỗi nghiệp vụ)', () => {
-    it('handles 403 Forbidden when Guest tries to update another user customization', async () => {
-      const unauthorizedCustomizationId = 'cust-registered-user-111';
-      const mockCustomization = {
-        id: unauthorizedCustomizationId,
-        templateId: 'tpl-wedding-01',
-        title: 'Thiệp Của Người Khác',
-        slug: 'other-user-slug',
-        isPublished: true,
-        configJson: JSON.stringify({
-          hero: { title: 'Thiệp Của Người Khác' },
-        }),
-      };
-
-      customizationApi.getCustomizationById.mockResolvedValueOnce(mockCustomization);
-      // Simulate backend rejecting with 403 Forbidden
-      customizationApi.updateCustomization.mockRejectedValueOnce(
-        new Error('Bạn không có quyền chỉnh sửa thiệp này (403 Forbidden)')
-      );
-
-      renderCustomizer(`/customize/tpl-wedding-01/${unauthorizedCustomizationId}`);
-
-      await waitFor(() => {
-        expect(screen.getByText('Thiệp Của Người Khác')).toBeInTheDocument();
-      });
-
-      const saveBtn = screen.getByRole('button', { name: /^lưu$/i });
-      fireEvent.click(saveBtn);
-
-      await waitFor(() => {
-        expect(window.alert).toHaveBeenCalledWith(
-          expect.stringContaining('403 Forbidden')
-        );
-      });
-
-      // Ensure local draft is still preserved for user safety
-      const draft = localStorage.getItem('guest_draft_tpl-wedding-01');
-      expect(draft).not.toBeNull();
+  it('keeps the local draft and reports a failed server save without showing success', async () => {
+    useAuth.mockReturnValue({
+      user: { id: 'owner-1', email: 'owner@test.invalid', fullName: 'Owner' },
+      accountId: 'owner-1',
+      isAuthenticated: true,
+      loading: false,
     });
+    customizationApi.saveCustomization.mockRejectedValueOnce(Object.assign(new Error('Network disconnected'), { status: 503 }));
+    renderCustomizer();
 
-    it('handles DuplicateSlug validation error when saving customization', async () => {
-      customizationApi.saveCustomization.mockRejectedValueOnce(
-        new Error('Đường dẫn tùy biến (Slug) đã tồn tại, vui lòng chọn đường dẫn khác')
-      );
+    expect(await screen.findByRole('heading', { name: /Đám Cưới Hoàng Gia/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /lưu server/i }));
 
-      renderCustomizer('/customize/tpl-wedding-01');
+    expect(await screen.findByText('Network disconnected')).toBeInTheDocument();
+    expect(customizationApi.saveCustomization).toHaveBeenCalledTimes(1);
+    expect(await listDrafts('owner-1')).toHaveLength(1);
+    expect(screen.queryByText('Đã lưu bản nháp làm việc trên máy chủ.')).not.toBeInTheDocument();
+  });
 
-      await waitFor(() => {
-        expect(screen.getByText('Đám Cưới Hoàng Gia - Thiệp Mời')).toBeInTheDocument();
-      });
-
-      const saveBtn = screen.getByRole('button', { name: /^lưu$/i });
-      fireEvent.click(saveBtn);
-
-      await waitFor(() => {
-        expect(window.alert).toHaveBeenCalledWith(
-          expect.stringContaining('Đường dẫn tùy biến (Slug) đã tồn tại')
-        );
-      });
+  it('shows an authorization/load error for an inaccessible server draft instead of a default template', async () => {
+    useAuth.mockReturnValue({
+      user: { id: 'owner-1', email: 'owner@test.invalid', fullName: 'Owner' },
+      accountId: 'owner-1',
+      isAuthenticated: true,
+      loading: false,
     });
+    customizationApi.getCustomizationById.mockRejectedValueOnce(Object.assign(new Error('Forbidden'), { status: 403 }));
+    renderCustomizer('/customize/tpl-wedding-01/server-draft-from-another-owner');
 
-    it('handles 404 NotFound error gracefully by falling back to default template without crashing', async () => {
-      customizationApi.getCustomizationById.mockRejectedValueOnce(
-        new Error('Customization not found (404)')
-      );
-
-      renderCustomizer('/customize/tpl-wedding-01/non-existent-id');
-
-      // Should not crash, and should load default wedding config
-      await waitFor(() => {
-        expect(screen.getByText('Thiệp Mời Của Tôi')).toBeInTheDocument();
-      });
-    });
+    expect(await screen.findByRole('alert')).toHaveTextContent('Forbidden');
+    expect(screen.queryByText('Thiệp Mời Của Tôi')).not.toBeInTheDocument();
+    expect(customizationApi.saveCustomization).not.toHaveBeenCalled();
+    expect(templateApi.getTemplateById).not.toHaveBeenCalled();
   });
 });
-

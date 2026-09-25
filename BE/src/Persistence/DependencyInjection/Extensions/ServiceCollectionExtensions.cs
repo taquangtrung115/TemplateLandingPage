@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICustomizationRepository, CustomizationRepository>();
         services.AddScoped<IRsvpRepository, RsvpRepository>();
         services.AddScoped<IGuestbookRepository, GuestbookRepository>();
+        services.AddScoped<IAdminOverviewRepository, AdminOverviewRepository>();
 
         return services;
     }

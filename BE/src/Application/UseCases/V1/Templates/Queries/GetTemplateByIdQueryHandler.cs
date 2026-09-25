@@ -16,7 +16,7 @@ public sealed class GetTemplateByIdQueryHandler : IQueryHandler<GetTemplateByIdQ
 
     public async Task<Result<TemplateResponse>> Handle(GetTemplateByIdQuery request, CancellationToken cancellationToken)
     {
-        var template = await _templateRepository.GetByIdAsync(request.Id, cancellationToken);
+        var template = await _templateRepository.GetVisibleByIdAsync(request.Id, request.IncludeInactive, cancellationToken);
         if (template is null)
         {
             return Result.Failure<TemplateResponse>(TemplateErrors.NotFound);

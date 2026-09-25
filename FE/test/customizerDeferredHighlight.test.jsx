@@ -52,7 +52,7 @@ describe('Customizer Live Highlight & useDeferredValue Behavior', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Mẫu Thử Highlight - Thiệp Mời')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Mẫu Thử Highlight - Bản nháp' })).toBeInTheDocument();
     });
 
     // Navigate to Hero tab ("Màn hình đầu")
@@ -96,7 +96,7 @@ describe('Customizer Live Highlight & useDeferredValue Behavior', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Mẫu Thử Highlight - Thiệp Mời')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Mẫu Thử Highlight - Bản nháp' })).toBeInTheDocument();
     });
 
     // Navigate to Hero tab ("Màn hình đầu")
@@ -145,7 +145,7 @@ describe('Customizer Live Highlight & useDeferredValue Behavior', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Mẫu Thử Highlight - Thiệp Mời')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Mẫu Thử Highlight - Bản nháp' })).toBeInTheDocument();
     });
 
     // Trigger an edit so highlightTimeoutRef is active

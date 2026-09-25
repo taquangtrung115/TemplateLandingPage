@@ -16,7 +16,7 @@ public sealed class GetCategoryBySlugQueryHandler : IQueryHandler<GetCategoryByS
 
     public async Task<Result<CategoryResponse>> Handle(GetCategoryBySlugQuery request, CancellationToken cancellationToken)
     {
-        var category = await _categoryRepository.GetBySlugAsync(request.Slug, cancellationToken);
+        var category = await _categoryRepository.GetSummaryBySlugAsync(request.Slug, request.IncludeInactive, cancellationToken);
         if (category is null)
         {
             return Result.Failure<CategoryResponse>(CategoryErrors.NotFound);
@@ -30,7 +30,7 @@ public sealed class GetCategoryBySlugQueryHandler : IQueryHandler<GetCategoryByS
             category.Icon,
             category.OrderIndex,
             category.IsActive,
-            category.Templates?.Count(t => !t.IsDeleted) ?? 0,
+            category.TemplatesCount,
             category.CreatedAtUtc);
 
         return Result.Success(response);

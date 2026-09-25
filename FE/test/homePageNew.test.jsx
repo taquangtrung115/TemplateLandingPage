@@ -84,7 +84,8 @@ describe('HomePage Component (Full-Screen Sections & Showcase)', () => {
       expect(screen.getByText(/3 bước sở hữu trang thiệp mơ ước/i)).toBeInTheDocument();
       expect(screen.getByText(/chọn mẫu thiết kế/i)).toBeInTheDocument();
       expect(screen.getAllByText(/tùy biến trực quan/i).length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText(/chia sẻ & thu rsvp/i)).toBeInTheDocument();
+      expect(screen.getByText(/tạo phiên bản và xuất bản/i)).toBeInTheDocument();
+      expect(screen.getByText(/đăng nhập để lưu lên server/i)).toBeInTheDocument();
 
       // High-Impact CTA Banner
       expect(
@@ -136,7 +137,7 @@ describe('HomePage Component (Full-Screen Sections & Showcase)', () => {
   });
 
   describe('Edge Cases (Trường hợp biên & An toàn giao diện)', () => {
-    it('safely falls back to default templates when templateApi returns empty array []', async () => {
+    it('shows an honest empty state when templateApi returns an empty array', async () => {
       templateApi.getTemplates.mockResolvedValueOnce([]);
 
       render(
@@ -145,15 +146,14 @@ describe('HomePage Component (Full-Screen Sections & Showcase)', () => {
         </MemoryRouter>
       );
 
-      // Should display fallback templates without blank screen or crash
-      await waitFor(() => {
-        expect(screen.getByText('Hôn Lễ Hoàng Gia (Royal Wedding)')).toBeInTheDocument();
-      });
-      expect(screen.getByText('Sinh Nhật Ngọt Ngào (Sweet Birthday)')).toBeInTheDocument();
+      expect(await screen.findByRole('status')).toHaveTextContent('Chưa có mẫu để hiển thị');
+      expect(screen.queryByText('Hôn Lễ Hoàng Gia (Royal Wedding)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Sinh Nhật Ngọt Ngào (Sweet Birthday)')).not.toBeInTheDocument();
     });
 
-    it('safely falls back to default templates when templateApi throws network error', async () => {
+    it('shows a retry state on catalog failure and loads real results after retry', async () => {
       templateApi.getTemplates.mockRejectedValueOnce(new Error('Network error 500'));
+      templateApi.getTemplates.mockResolvedValueOnce(mockApiTemplates);
 
       render(
         <MemoryRouter>
@@ -161,10 +161,14 @@ describe('HomePage Component (Full-Screen Sections & Showcase)', () => {
         </MemoryRouter>
       );
 
-      await waitFor(() => {
-        expect(screen.getByText('Hôn Lễ Hoàng Gia (Royal Wedding)')).toBeInTheDocument();
-      });
-      expect(screen.getByText('Đám Cưới Tối Giản (Modern Minimalist)')).toBeInTheDocument();
+      expect(await screen.findByRole('alert')).toHaveTextContent('Chưa tải được kho mẫu');
+      expect(screen.queryByText('Hôn Lễ Hoàng Gia (Royal Wedding)')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Thử tải lại' }));
+
+      expect(await screen.findByText('Hôn Lễ Pha Lê Tinh Khiết')).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(templateApi.getTemplates).toHaveBeenCalledTimes(2);
     });
 
     it('shows SplashScreen when session does not have splash_shown flag', () => {

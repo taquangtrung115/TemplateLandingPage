@@ -1,0 +1,202 @@
+[
+  {
+    "primary": "#9f4052",
+    "secondary": "#cc7d91",
+    "background": "#fff7f6",
+    "text": "#302229",
+    "accent": "#f4d8ad",
+    "font": "Playfair Display",
+    "layout": "center",
+    "motif": "floral"
+  },
+  {
+    "primary": "#446b50",
+    "secondary": "#8db99a",
+    "background": "#f5f8ef",
+    "text": "#253528",
+    "accent": "#e5cf90",
+    "font": "Lora",
+    "layout": "split",
+    "motif": "botanical"
+  },
+  {
+    "primary": "#8b6841",
+    "secondary": "#cba978",
+    "background": "#fffaf1",
+    "text": "#352a20",
+    "accent": "#f1ddba",
+    "font": "Cormorant Garamond",
+    "layout": "editorial",
+    "motif": "arch"
+  },
+  {
+    "primary": "#244976",
+    "secondary": "#7cadd0",
+    "background": "#f3f8fd",
+    "text": "#202f44",
+    "accent": "#c6dcf5",
+    "font": "Montserrat",
+    "layout": "left",
+    "motif": "stars"
+  },
+  {
+    "primary": "#bc642e",
+    "secondary": "#dca46a",
+    "background": "#fff6e8",
+    "text": "#462c21",
+    "accent": "#f2cf8e",
+    "font": "Lora",
+    "layout": "split",
+    "motif": "sun"
+  },
+  {
+    "primary": "#704981",
+    "secondary": "#b094c4",
+    "background": "#fcf6ff",
+    "text": "#33223d",
+    "accent": "#e8d1ef",
+    "font": "Playfair Display",
+    "layout": "editorial",
+    "motif": "rings"
+  },
+  {
+    "primary": "#357b71",
+    "secondary": "#88bfb1",
+    "background": "#effaf5",
+    "text": "#193e36",
+    "accent": "#bce4d3",
+    "font": "Nunito",
+    "layout": "left",
+    "motif": "leaves"
+  },
+  {
+    "primary": "#b94767",
+    "secondary": "#e39aab",
+    "background": "#fff3f6",
+    "text": "#4a2432",
+    "accent": "#f6d4e0",
+    "font": "Cormorant Garamond",
+    "layout": "center",
+    "motif": "lotus"
+  },
+  {
+    "primary": "#a93436",
+    "secondary": "#d66a5f",
+    "background": "#fff7ee",
+    "text": "#452222",
+    "accent": "#edbb71",
+    "font": "Lora",
+    "layout": "editorial",
+    "motif": "ribbons"
+  },
+  {
+    "primary": "#5a628b",
+    "secondary": "#9ea8ce",
+    "background": "#f7f7ff",
+    "text": "#292d43",
+    "accent": "#d9dff7",
+    "font": "Playfair Display",
+    "layout": "split",
+    "motif": "window"
+  },
+  {
+    "primary": "#ad593f",
+    "secondary": "#cf967a",
+    "background": "#fbf3e9",
+    "text": "#43281e",
+    "accent": "#eac8a6",
+    "font": "DM Sans",
+    "layout": "left",
+    "motif": "terrace"
+  },
+  {
+    "primary": "#82732e",
+    "secondary": "#c3b772",
+    "background": "#fffdf0",
+    "text": "#39331c",
+    "accent": "#efe5aa",
+    "font": "Nunito",
+    "layout": "center",
+    "motif": "daisy"
+  },
+  {
+    "primary": "#476277",
+    "secondary": "#8daabd",
+    "background": "#f4f8fa",
+    "text": "#253641",
+    "accent": "#d4e4ec",
+    "font": "Inter",
+    "layout": "editorial",
+    "motif": "lines"
+  },
+  {
+    "primary": "#744ba0",
+    "secondary": "#ac88cf",
+    "background": "#fcf7ff",
+    "text": "#38214e",
+    "accent": "#dbc7eb",
+    "font": "Lora",
+    "layout": "split",
+    "motif": "petals"
+  },
+  {
+    "primary": "#b75450",
+    "secondary": "#de9583",
+    "background": "#fff8f2",
+    "text": "#452824",
+    "accent": "#f1c7a7",
+    "font": "Montserrat",
+    "layout": "left",
+    "motif": "horizon"
+  },
+  {
+    "primary": "#655149",
+    "secondary": "#ac8d7f",
+    "background": "#fbf5ed",
+    "text": "#372d29",
+    "accent": "#e6cbb6",
+    "font": "Cormorant Garamond",
+    "layout": "editorial",
+    "motif": "letter"
+  },
+  {
+    "primary": "#377a92",
+    "secondary": "#83b9c5",
+    "background": "#f0fbfb",
+    "text": "#20404a",
+    "accent": "#b8dce5",
+    "font": "DM Sans",
+    "layout": "center",
+    "motif": "moon"
+  },
+  {
+    "primary": "#426943",
+    "secondary": "#89ad78",
+    "background": "#f6faef",
+    "text": "#2a3c25",
+    "accent": "#d4e6bb",
+    "font": "Playfair Display",
+    "layout": "split",
+    "motif": "garden"
+  },
+  {
+    "primary": "#8c693c",
+    "secondary": "#c4a974",
+    "background": "#fffaf0",
+    "text": "#3a2d1c",
+    "accent": "#ecdab4",
+    "font": "Lora",
+    "layout": "editorial",
+    "motif": "sparkles"
+  },
+  {
+    "primary": "#41786f",
+    "secondary": "#85b5a3",
+    "background": "#f3faf5",
+    "text": "#213c32",
+    "accent": "#c9e3cb",
+    "font": "Nunito",
+    "layout": "left",
+    "motif": "waves"
+  }
+]

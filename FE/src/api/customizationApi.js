@@ -1,35 +1,49 @@
 import axiosInstance from './axios';
 
+const unwrap = (response) => response.data?.value ?? response.data;
+
 export const customizationApi = {
-  saveCustomization: async (data) => {
-    const response = await axiosInstance.post('/customizations', data);
-    return response.data?.value ?? response.data;
-  },
+  saveCustomization: async (data) => unwrap(await axiosInstance.post('/customizations', data)),
 
-  updateCustomization: async (id, data) => {
-    const response = await axiosInstance.put(`/customizations/${id}`, data);
-    return response.data?.value ?? response.data;
-  },
+  updateCustomization: async (id, data) => unwrap(await axiosInstance.put(`/customizations/${id}`, data)),
 
-  getCustomizationById: async (id) => {
-    const response = await axiosInstance.get(`/customizations/${id}`);
-    return response.data?.value ?? response.data;
-  },
+  getCustomizationById: async (id) => unwrap(await axiosInstance.get(`/customizations/${id}`)),
 
-  getCustomizationBySlug: async (slug) => {
-    const response = await axiosInstance.get(`/customizations/slug/${slug}`);
-    return response.data?.value ?? response.data;
-  },
+  getPublicCustomizationBySlug: async (slug) => unwrap(await axiosInstance.get(`/customizations/slug/${encodeURIComponent(slug)}`)),
 
-  getMyCustomizations: async () => {
-    const response = await axiosInstance.get('/customizations/my');
-    return response.data?.value ?? response.data;
-  },
+  getPublicCustomizationVersionBySlug: async (slug, versionNumber) => unwrap(await axiosInstance.get(
+    `/customizations/slug/${encodeURIComponent(slug)}/versions/${versionNumber}`
+  )),
 
-  deleteCustomization: async (id) => {
-    const response = await axiosInstance.delete(`/customizations/${id}`);
-    return response.data?.value ?? response.data;
-  },
+  getCustomizationBySlug: async (slug) => unwrap(await axiosInstance.get(`/customizations/slug/${encodeURIComponent(slug)}`)),
+
+  getMyCustomizations: async ({ page = 1, pageSize = 12 } = {}) => unwrap(await axiosInstance.get('/customizations/my', {
+    params: { page, pageSize },
+  })),
+
+  getVersions: async (id, { page = 1, pageSize = 20 } = {}) => unwrap(await axiosInstance.get(`/customizations/${id}/versions`, {
+    params: { page, pageSize },
+  })),
+
+  getVersion: async (id, versionId) => unwrap(await axiosInstance.get(`/customizations/${id}/versions/${versionId}`)),
+
+  createVersion: async (id, data) => unwrap(await axiosInstance.post(`/customizations/${id}/versions`, data)),
+
+  publishVersion: async (id, data) => unwrap(await axiosInstance.put(`/customizations/${id}/publication`, data)),
+
+  unpublishVersion: async (id, versionId, expectedRevision) => unwrap(await axiosInstance.delete(
+    `/customizations/${id}/versions/${versionId}/publication`,
+    { params: { expectedRevision } }
+  )),
+
+  unpublishSite: async (id, expectedRevision) => unwrap(await axiosInstance.delete(
+    `/customizations/${id}/publication`,
+    { params: { expectedRevision } }
+  )),
+
+  deleteCustomization: async (id, expectedRevision) => unwrap(await axiosInstance.delete(`/customizations/${id}`, {
+    params: { expectedRevision },
+  })),
 };
 
 export default customizationApi;

@@ -11,8 +11,8 @@ export function useProducts() {
     setError(null);
     try {
       const response = await productApi.getProducts();
-      const data = response.data?.value || response.data || [];
-      setProducts(data);
+      const data = response.data?.value ?? response.data ?? [];
+      setProducts(Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []);
     } catch (err) {
       setError(err.message || 'Không thể tải danh sách sản phẩm');
     } finally {

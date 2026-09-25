@@ -434,13 +434,17 @@ describe('Standalone HTML Exporter (exportStandaloneHtml)', () => {
     vi.restoreAllMocks();
   });
 
-  it('exports standalone HTML containing keyframes, offline scripts, dynamic persons, and extra sections', () => {
+  it('exports rendered content with escaped text, safe links, and preview-only response forms', () => {
     const testConfig = {
       hero: {
-        title: 'Hải & Yến',
+        title: 'Hải & Yến <script>alert("x")</script>',
         subtitle: 'Ngày hạnh phúc',
         coverImageUrl: 'https://images.unsplash.com/photo-1',
+        ctaLabel: 'Open event details',
+        ctaUrl: 'javascript:alert(1)',
       },
+      rsvp: { enabled: true },
+      wishes: { enabled: true },
       coupleOrCelebrant: {
         type: 'wedding',
         person1: { name: 'Thanh Hải', title: 'Chú Rể' },
@@ -468,23 +472,21 @@ describe('Standalone HTML Exporter (exportStandaloneHtml)', () => {
     exportStandaloneHtml(testConfig, 'Hải & Yến Wedding');
 
     expect(capturedHtml).toContain('<!DOCTYPE html>');
-    // Keyframe animations
-    expect(capturedHtml).toContain('@keyframes fade-up');
-    expect(capturedHtml).toContain('@keyframes zoom-in');
-    expect(capturedHtml).toContain('@keyframes bounce-subtle');
-    // Offline script
-    expect(capturedHtml).toContain('function initScrollReveal()');
-    expect(capturedHtml).toContain('IntersectionObserver');
-    // Dynamic persons
+    expect(capturedHtml).toContain('<title>Hải &amp; Yến &lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;</title>');
+    expect(capturedHtml).toContain('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;');
+    expect(capturedHtml).not.toContain('<script>alert("x")</script>');
+    expect(capturedHtml).not.toContain('javascript:alert(1)');
+    expect(capturedHtml).toContain('Ảnh, video, bản đồ, âm thanh, font và Tailwind CDN bên ngoài file cần kết nối mạng.');
+    expect(capturedHtml).toContain('Phản hồi chỉ nhận trên trang công khai của phiên bản đã xuất bản.');
+    expect(capturedHtml).toContain('Lời chúc chỉ nhận trên trang công khai của phiên bản đã xuất bản.');
+    expect(capturedHtml).not.toContain('Cảm ơn bạn đã phản hồi!');
+    expect(capturedHtml).not.toContain('const CONFIG = {');
     expect(capturedHtml).toContain('Thanh Hải');
     expect(capturedHtml).toContain('Bạch Yến');
     expect(capturedHtml).toContain('Bé Gấu');
-    // Extra sections
     expect(capturedHtml).toContain('Hộp Quà Cưới');
     expect(capturedHtml).toContain('1234567890');
     expect(capturedHtml).toContain('Có xe đưa đón không?');
-    // Escaped config
-    expect(capturedHtml).toContain('const CONFIG = {');
   });
 });
 

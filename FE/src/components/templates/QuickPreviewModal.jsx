@@ -3,13 +3,46 @@ import { X, Monitor, Smartphone, ExternalLink, Play, Pause, Music, Edit3 } from 
 import { useNavigate } from 'react-router-dom';
 import LandingPageRenderer from './LandingPageRenderer';
 import DeviceSimulator from '../common/DeviceSimulator';
-import { getDefaultConfigByCategory } from '../../utils/defaultTemplates';
+import { templateApi } from '../../api/templateApi';
+import { getSafeResourceUrl } from '../../utils/safeUrl';
 
 export const QuickPreviewModal = ({ template, isOpen, onClose }) => {
   const navigate = useNavigate();
   const [viewport, setViewport] = useState('mobile'); // default mobile preview like Cinelove
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
+  const [previewConfig, setPreviewConfig] = useState(null);
+  const [configLoading, setConfigLoading] = useState(false);
+  const [configError, setConfigError] = useState(false);
   const audioRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen || !template) return undefined;
+
+    let isCurrentRequest = true;
+    const loadPreviewConfig = async () => {
+      setPreviewConfig(null);
+      setConfigError(false);
+      setConfigLoading(true);
+      try {
+        const detail = template.id ? await templateApi.getTemplateById(template.id) : template;
+        const rawConfig = detail?.defaultConfigJson;
+        const parsedConfig = typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig;
+        if (!parsedConfig || typeof parsedConfig !== 'object' || Array.isArray(parsedConfig)) {
+          throw new Error('Template detail has no valid configuration.');
+        }
+        if (isCurrentRequest) setPreviewConfig(parsedConfig);
+      } catch {
+        if (isCurrentRequest) setConfigError(true);
+      } finally {
+        if (isCurrentRequest) setConfigLoading(false);
+      }
+    };
+
+    void loadPreviewConfig();
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [isOpen, template?.id]);
 
   useEffect(() => {
     // Reset audio when template changes or modal closes
@@ -36,19 +69,8 @@ export const QuickPreviewModal = ({ template, isOpen, onClose }) => {
   };
 
   if (!isOpen || !template) return null;
-
-  let parsedConfig;
-  try {
-    parsedConfig =
-      typeof template.defaultConfigJson === 'string'
-        ? JSON.parse(template.defaultConfigJson)
-        : template.defaultConfigJson || getDefaultConfigByCategory(template.category);
-  } catch {
-    parsedConfig = getDefaultConfigByCategory(template.category);
-  }
-
-  const audioUrl = template.audioUrl || parsedConfig?.music?.audioUrl;
-  const musicTitle = template.musicTitle || parsedConfig?.music?.title || 'Nhạc Nền Preview';
+  const audioUrl = getSafeResourceUrl(template.audioUrl || previewConfig?.music?.audioUrl);
+  const musicTitle = template.musicTitle || previewConfig?.music?.title || 'Nhạc Nền Preview';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-sm">
@@ -155,14 +177,21 @@ export const QuickPreviewModal = ({ template, isOpen, onClose }) => {
 
         {/* Modal Canvas Body */}
         <div className="flex-1 bg-gray-950 overflow-y-auto flex items-center justify-center p-2 sm:p-6">
-          {viewport === 'desktop' ? (
+          {configLoading ? (
+            <div className="text-sm text-gray-300" role="status">Đang tải bản xem trước…</div>
+          ) : configError || !previewConfig ? (
+            <div className="max-w-md px-6 text-center text-gray-300" role="alert">
+              <h2 className="font-bold text-white">Không tải được bản xem trước</h2>
+              <p className="mt-2 text-sm text-gray-400">Cấu hình của mẫu không khả dụng. Hãy thử lại sau.</p>
+            </div>
+          ) : viewport === 'desktop' ? (
             <div className="w-full h-full rounded-2xl overflow-y-auto shadow-2xl bg-white no-scrollbar border border-gray-800">
-              <LandingPageRenderer config={parsedConfig} isPreview={true} />
+              <LandingPageRenderer config={previewConfig} isPreview={true} />
             </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <DeviceSimulator initialOs="ios" showToolbar={true}>
-                <LandingPageRenderer config={parsedConfig} isPreview={true} />
+                <LandingPageRenderer config={previewConfig} isPreview={true} />
               </DeviceSimulator>
             </div>
           )}

@@ -26,7 +26,7 @@ public class GetProductByIdQueryHandlerTests
         var product = Product.Create("Smart Watch", "Fitness tracker", 199.99m);
         var query = new GetProductByIdQuery(product.Id);
 
-        _productRepositoryMock.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<CancellationToken>()))
+        _productRepositoryMock.Setup(r => r.GetVisibleByIdAsync(product.Id, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
 
         // Act
@@ -49,7 +49,7 @@ public class GetProductByIdQueryHandlerTests
         var nonExistentId = Guid.NewGuid();
         var query = new GetProductByIdQuery(nonExistentId);
 
-        _productRepositoryMock.Setup(r => r.GetByIdAsync(nonExistentId, It.IsAny<CancellationToken>()))
+        _productRepositoryMock.Setup(r => r.GetVisibleByIdAsync(nonExistentId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
 
         // Act
