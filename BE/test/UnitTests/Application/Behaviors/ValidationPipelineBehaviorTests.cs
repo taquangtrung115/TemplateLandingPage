@@ -6,7 +6,7 @@ using MediatR;
 using Moq;
 using TemplateLandingPage.Application.Behaviors;
 using TemplateLandingPage.Application.UseCases.V1.Auth.Validators;
-using TemplateLandingPage.Application.UseCases.V1.Categories.Validators;
+using TemplateLandingPage.Application.UseCases.V1.Categories.Commands.Validators;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Auth;
 using TemplateLandingPage.Contract.Services.V1.Categories;

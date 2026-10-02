@@ -1,7 +1,7 @@
 namespace TemplateLandingPage.UnitTests.Application.Interactions;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Interactions.Validators;
+using TemplateLandingPage.Application.UseCases.V1.Interactions.Commands.Validators;
 using TemplateLandingPage.Contract.Services.V1.Interactions;
 using Xunit;
 

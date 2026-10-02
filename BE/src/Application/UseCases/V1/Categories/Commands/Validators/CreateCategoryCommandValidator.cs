@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Categories.Validators;
+namespace TemplateLandingPage.Application.UseCases.V1.Categories.Commands.Validators;
 
 using FluentValidation;
 using TemplateLandingPage.Contract.Services.V1.Categories;
