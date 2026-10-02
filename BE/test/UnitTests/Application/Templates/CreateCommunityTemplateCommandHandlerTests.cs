@@ -3,7 +3,7 @@ namespace TemplateLandingPage.UnitTests.Application.Templates;
 using FluentAssertions;
 using Moq;
 using TemplateLandingPage.Application.UseCases.V1.Templates.Commands;
-using TemplateLandingPage.Application.UseCases.V1.Templates.Validators;
+using TemplateLandingPage.Application.UseCases.V1.Templates.Commands.Validators;
 using TemplateLandingPage.Contract.Services.V1.Templates;
 using TemplateLandingPage.Domain.Abstractions.Repositories;
 using TemplateLandingPage.Domain.Entities;

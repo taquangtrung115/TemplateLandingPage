@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Validators;
+namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Commands.Validators;
 using FluentValidation;
 using TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
 using TemplateLandingPage.Contract.Services.V1.Customizations;
