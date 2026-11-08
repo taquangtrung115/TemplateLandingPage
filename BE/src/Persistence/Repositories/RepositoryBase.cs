@@ -33,7 +33,11 @@ public abstract class RepositoryBase<TEntity, TKey> : IRepositoryBase<TEntity, T
 
     public virtual void Update(TEntity entity)
     {
-        DbSet.Update(entity);
+        var entry = DbContext.Entry(entity);
+        if (entry.State == EntityState.Detached)
+        {
+            DbSet.Update(entity);
+        }
     }
 
     public virtual void Remove(TEntity entity)

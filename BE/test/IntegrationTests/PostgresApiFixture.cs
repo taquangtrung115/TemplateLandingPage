@@ -6,11 +6,14 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
+using Xunit;
 using TemplateLandingPage.Domain.Entities;
 using TemplateLandingPage.Persistence;
 
@@ -36,6 +39,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
             Host = Environment.GetEnvironmentVariable("TEMPLATE_TEST_PGHOST") ?? "127.0.0.1",
             Port = int.TryParse(Environment.GetEnvironmentVariable("TEMPLATE_TEST_PGPORT"), out var port) ? port : 55432,
             Username = Environment.GetEnvironmentVariable("TEMPLATE_TEST_PGUSER") ?? "template_test",
+            Password = Environment.GetEnvironmentVariable("TEMPLATE_TEST_PGPASSWORD") ?? string.Empty,
             Database = "postgres",
             Pooling = false,
             Timeout = 5,
@@ -56,7 +60,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
         await using (var connection = new NpgsqlConnection(_adminConnectionString))
         {
             await connection.OpenAsync();
-            await using var create = new NpgsqlCommand($"CREATE DATABASE {NpgsqlCommandBuilder.QuoteIdentifier(DatabaseName)}", connection);
+            await using var create = new NpgsqlCommand($"CREATE DATABASE {new NpgsqlCommandBuilder().QuoteIdentifier(DatabaseName)}", connection);
             await create.ExecuteNonQueryAsync();
             _databaseCreated = true;
         }
@@ -82,6 +86,14 @@ public sealed class PostgresApiFixture : IAsyncLifetime
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
             "Bearer", CreateToken(userId, claimedRole));
         return client;
+    }
+
+    public HttpClient CreateAnonymousClient() => _factory!.CreateClient();
+
+    public async Task<T> WithDatabaseAsync<T>(Func<ApplicationDbContext, Task<T>> action)
+    {
+        await using var scope = _factory!.Services.CreateAsyncScope();
+        return await action(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>());
     }
 
     public string CreateToken(Guid userId, string claimedRole)
@@ -184,7 +196,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
             terminate.Parameters.AddWithValue("database", DatabaseName);
             await terminate.ExecuteNonQueryAsync();
         }
-        await using var drop = new NpgsqlCommand($"DROP DATABASE {NpgsqlCommandBuilder.QuoteIdentifier(DatabaseName)}", connection);
+        await using var drop = new NpgsqlCommand($"DROP DATABASE {new NpgsqlCommandBuilder().QuoteIdentifier(DatabaseName)}", connection);
         await drop.ExecuteNonQueryAsync();
         _databaseCreated = false;
     }
@@ -194,6 +206,14 @@ public sealed class PostgresApiFixture : IAsyncLifetime
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Development");
+            // Program validates startup settings before WebApplicationFactory applies late configuration.
+            // Override the test key, preserving the production JWT handler and account/role validation.
+            builder.ConfigureTestServices(services => services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+                options.TokenValidationParameters.ValidIssuer = Issuer;
+                options.TokenValidationParameters.ValidAudience = Audience;
+            }));
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
                 new Dictionary<string, string?>
                 {
@@ -201,7 +221,13 @@ public sealed class PostgresApiFixture : IAsyncLifetime
                     ["Jwt:SecretKey"] = secretKey,
                     ["Jwt:Issuer"] = Issuer,
                     ["Jwt:Audience"] = Audience,
-                    ["SeedData:Enabled"] = "false"
+                    ["SeedData:Enabled"] = "false",
+                    ["Supabase:Url"] = "",
+                    ["Supabase:ServiceRoleKey"] = "",
+                    ["Supabase:Key"] = "",
+                    ["SupabaseStorage:Url"] = "",
+                    ["SupabaseStorage:ServiceRoleKey"] = "",
+                    ["Quoting:Storage:LocalPath"] = Path.Combine(AppContext.BaseDirectory, "quoting-test-files", new NpgsqlConnectionStringBuilder(connectionString).Database!)
                 }));
         }
     }
@@ -209,6 +235,14 @@ public sealed class PostgresApiFixture : IAsyncLifetime
 
 public static class ApiTestJson
 {
+    public static Task<HttpResponseMessage> SendJsonAsync(HttpClient client, HttpMethod method, string uri, object value) =>
+        client.SendAsync(new HttpRequestMessage(method, uri) { Content = Json(value) });
+
+    public static string StringValue(System.Text.Json.JsonElement root, params string[] path)
+    {
+        foreach (var segment in path) root = root.GetProperty(segment);
+        return root.GetString()!;
+    }
     public static readonly System.Text.Json.JsonSerializerOptions Options = new(System.Text.Json.JsonSerializerDefaults.Web);
 
     public static System.Net.Http.Json.JsonContent Json(object value) => System.Net.Http.Json.JsonContent.Create(value, options: Options);

@@ -1,0 +1,31 @@
+{
+  "xl/worksheets/sheet1.xml": [
+    "A1: #VALUE! | B1: CÔNG TY TNHH MARVISION",
+    "B2: ĐC: 19 NGÔ VĂN NĂM, PHƯỜNG PHÚ THẠNH, TPHCM",
+    "B3: MST: 0319645690",
+    "A4: THÔNG TIN GỬI KẾ TOÁN",
+    "A5: STT | B5: Tên sản phẩm | C5: ĐVT\n( Gói) | D5: Đơn giá\n(VNĐ) | E5: Hình ảnh ",
+    "A6: A/DÒNG COMBO",
+    "A7: 1 | B7: COMBO NGUYÊN BẢN BAO NGON\n(Surimi Hải sản, Surimi mực, Cá viên, Bò viên, Chả cá cốm, Hải sản tàu hủ, Khoai tây chiên) | C7: GÓI | D7: 18000 | E7: #VALUE!",
+    "A8: 2 | B8: SURIMI HẢI SẢN BAO NGON\n(Surimi tôm tươi cuộn rong biển, Surimi Hải sản, Surimi mực, Cá viên, Bò viên, Chả cá cốm, Hải sản tàu hủ, Khoai tây chiên) | C8: GÓI | D8: 18000 | E8: #VALUE!",
+    "A9: 3 | B9: SURIMI TÔM TƯƠI + KHOAI TÂY\n(Surimi tôm tươi cuộn rong biển, Surimi Hải sản, Surimi mực, Cá viên, Bò viên, Hải sản tàu hủ, Khoai tây chiên) | C9: GÓI | D9: 23500 | E9: #VALUE!",
+    "A10: 4 | B10: SURIMI TÔM TÍCH + KHOAI TÂY\n(Surimi tôm tích cuộn rong biển, Surimi Hải sản, Surimi mực, Cá viên, Bò viên, Hải sản tàu hủ, Khoai tây chiên) | C10: GÓI | D10: 31500 | E10: #VALUE!",
+    "A11: 5 | B11: TERI-YAKI ĐẶC SẢN SIZE S\n(Surimi tôm tích cuộn rong biển, Surimi tôm tươi cuộn rong biển, Surimi Hải sản, Surimi mực, Khoai tây chiên) | C11: GÓI | D11: 23500 | E11: #VALUE!",
+    "A12: 6 | B12: TERI-YAKI ĐẶC SẢN SIZE M\n(Surimi tôm tích cuộn rong biển, Surimi tôm tươi cuộn rong biển, Surimi Hải sản, Surimi mực, Khoai tây chiên) | C12: GÓI | D12: 31500 | E12: #VALUE!",
+    "A13: B/DÒNG SẢN PHẨM XIÊN QUE",
+    "A14: 1 | B14: XIÊN QUE SURIMI HẢI SẢN  | C14: 10 QUE/GÓI | D14: 25000 | E14: #VALUE!",
+    "A15: 2 | B15: XIÊN QUE SURIMI TÔM TƯƠI  | C15: 10 QUE/GÓI | D15: 30000 | E15: #VALUE!",
+    "A16: 3 | B16: XIÊN QUE SURIMI TÔM TÍCH | C16: 10 QUE/GÓI | D16: 75000 | E16: #VALUE!",
+    "A17: 4 | B17: SURIMI TÔM TƯƠI CUỘN RONG BIỂN | C17: 10 CUỘN/GÓI | D17: 50000 | E17: #VALUE!",
+    "A18: 5 | B18: SURIMI TÔM TÍCH CUỘN RONG BIỂN | C18: 10 CUỘN/GÓI | D18: 75000 | E18: #VALUE!",
+    "A20: • Giá bán nêu trên đã bao gồm VAT.",
+    "A21: • Giao hàng tại TP.HCM",
+    "A22: • Thanh toán sau khi nhận hàng.",
+    "B23: Thông tin chuyển khoản",
+    "B24: ***TÊN: CTY TNHH MARVISION",
+    "B25: ***SỐ TK: 68681068",
+    "B26: ***NH: AB BANK",
+    "A28: Trân trọng kính chào. | C28: TP.HCM, ngày 22 tháng 10 năm 2026",
+    "C29: PHÒNG KINH DOANH"
+  ]
+}

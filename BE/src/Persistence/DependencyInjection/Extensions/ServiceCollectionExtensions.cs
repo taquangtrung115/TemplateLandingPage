@@ -5,8 +5,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TemplateLandingPage.Domain.Abstractions.Repositories;
 using TemplateLandingPage.Domain.Repositories;
+using TemplateLandingPage.Domain.Repositories.Quoting;
 using TemplateLandingPage.Persistence.Interceptors;
 using TemplateLandingPage.Persistence.Repositories;
+using TemplateLandingPage.Persistence.Repositories.Quoting;
+using TemplateLandingPage.Application.Abstractions;
 
 public static class ServiceCollectionExtensions
 {
@@ -28,6 +31,7 @@ public static class ServiceCollectionExtensions
                 npgsqlOptions.CommandTimeout(60);
                 npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
             })
+            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning))
             .AddInterceptors(interceptor);
         });
 
@@ -41,6 +45,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRsvpRepository, RsvpRepository>();
         services.AddScoped<IGuestbookRepository, GuestbookRepository>();
         services.AddScoped<IAdminOverviewRepository, AdminOverviewRepository>();
+
+        // Quoting Repositories
+        services.AddScoped<IQuotingProductRepository, QuotingProductRepository>();
+        services.AddScoped<IQuotingCustomerRepository, QuotingCustomerRepository>();
+        services.AddScoped<IQuotationTemplateRepository, QuotationTemplateRepository>();
+        services.AddScoped<IQuotationRepository, QuotationRepository>();
+        services.AddScoped<IQuotationSummaryService, QuotationSummaryService>();
+        services.AddScoped<IQuotingSupportRepository, QuotingSupportRepository>();
 
         return services;
     }

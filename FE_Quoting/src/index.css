@@ -1,0 +1,58 @@
+@import "../node_modules/@astryxdesign/core/src/reset.css";
+@import "../node_modules/@astryxdesign/core/dist/astryx.css";
+@import "../node_modules/@astryxdesign/theme-gothic/dist/theme.css";
+@import "../node_modules/@astryxdesign/theme-gothic/fonts.css";
+
+@layer tw-preflight {
+  @tailwind base;
+}
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--color-background-body, #101314);
+  color: var(--color-text-primary, #e8f1f6);
+}
+
+/* Spinner keyframes for loading states */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Layout only. Controls and interaction states are owned by Astryx themes. */
+.quoting-content { min-width: 0; min-height: 100dvh; padding: 24px 32px; box-sizing: border-box; background: var(--color-background-body); color: var(--color-text-primary); }
+.quoting-toolbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+.quotation-editor { display: flex; align-items: flex-start; gap: 24px; width: 100%; min-width: 0; }
+.quotation-summary { width: 380px; flex-shrink: 0; position: sticky; top: 20px; max-height: calc(100dvh - 40px); overflow-y: auto; }
+.quoting-table-scroll, .quotation-tabs { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; }
+.quoting-table-scroll > * { min-width: 720px; }
+.quotation-product-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.quotation-product-picker > * { max-width: 100%; height: auto; min-height: 40px; white-space: normal; }
+.quoting-content img { max-width: 100%; }
+.quoting-content h1 { overflow-wrap: anywhere; }
+@media (max-width: 1279px) {
+  .quotation-editor { flex-direction: column; }
+  .quotation-editor > div { width: 100%; }
+  .quotation-summary { position: static; max-height: none; overflow-y: visible; }
+}
+@media (max-width: 640px) {
+  .quoting-content { padding: 16px 12px; }
+  .quoting-toolbar { margin-bottom: 12px; }
+  .quoting-content .quoting-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .quoting-content .astryx-grid-span { grid-column: span 1 !important; }
+  .quotation-settings { flex-direction: column; }
+  .quotation-item-fields { width: 100%; }
+  .quotation-item-fields > * { flex: 1 1 90px; }
+  .quotation-tabs > * { min-width: 600px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
