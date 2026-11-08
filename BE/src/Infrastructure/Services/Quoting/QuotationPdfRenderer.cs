@@ -1,6 +1,7 @@
 namespace TemplateLandingPage.Infrastructure.Services.Quoting;
 
 using System.Globalization;
+using System.Text;
 using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Fonts;
@@ -28,9 +29,10 @@ internal static class QuotationPdfRenderer
         document.Info.Title = $"{version.Title} - {quotation.QuotationNumber}";
         var content = QuotationTemplateContent.From(version);
         document.Info.Author = content.SellerName;
-        var options = new XPdfFontOptions(PdfFontEncoding.Unicode);
+        var options = new XPdfFontOptions(PdfFontEncoding.Unicode, PdfFontEmbedding.EmbedCompleteFontFile);
         var body = new XFont("QuotationSans", 9, XFontStyleEx.Regular, options);
         var strong = new XFont("QuotationSans", 9, XFontStyleEx.Bold, options);
+        var headerFont = new XFont("QuotationSans", 8, XFontStyleEx.Bold, options);
         var title = new XFont("QuotationSans", 18, XFontStyleEx.Bold, options);
         var ink = XBrushes.Black;
         var accent = new XSolidBrush(XColor.FromArgb(3, 105, 161));
@@ -58,7 +60,7 @@ internal static class QuotationPdfRenderer
         List<string> Wrap(string text, XFont font, double width)
         {
             var lines = new List<string>();
-            foreach (var paragraph in text.Replace("\r", "").Split('\n'))
+            foreach (var paragraph in text.Normalize(NormalizationForm.FormC).Replace("\r", "").Split('\n'))
             {
                 var line = "";
                 foreach (var word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
@@ -97,7 +99,7 @@ internal static class QuotationPdfRenderer
             {
                 graphics.DrawRectangle(new XSolidBrush(XColor.FromArgb(224, 242, 254)), x, y, widths[index], 26);
                 graphics.DrawRectangle(rule, x, y, widths[index], 26);
-                graphics.DrawString(labels[index], strong, ink, new XRect(x + 3, y + 3, widths[index] - 6, 20), XStringFormats.Center);
+                graphics.DrawString(labels[index], headerFont, ink, new XRect(x + 3, y + 3, widths[index] - 6, 20), XStringFormats.Center);
                 x += widths[index];
             }
             y += 26;

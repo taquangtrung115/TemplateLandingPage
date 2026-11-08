@@ -1,5 +1,7 @@
+import { resolveApiAssetUrl } from '../../api/apiUrl';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Banner } from '@astryxdesign/core/Banner';
+import { useMediaQuery } from '@astryxdesign/core/hooks';
 import { Card } from '@astryxdesign/core/Card';
 import { QuotingTable as Table, pixel, proportional } from '../../components/common/QuotingTable';
 import { Badge } from '@astryxdesign/core/Badge';
@@ -40,6 +42,7 @@ function formatVnd(amount) {
 
 export default function ProductCatalogPage() {
   const { isAdmin } = useAuth();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [loadError, setLoadError] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [products, setProducts] = useState([]);
@@ -229,7 +232,7 @@ export default function ProductCatalogPage() {
               content={
                 <div style={{ padding: 12, width: 220, textAlign: 'center' }}>
                   <img
-                    src={row.imageUrl}
+                    src={resolveApiAssetUrl(row.imageUrl)}
                     alt={row.name}
                     style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }}
                   />
@@ -243,7 +246,7 @@ export default function ProductCatalogPage() {
               }
             >
               <img
-                src={row.imageUrl}
+                src={resolveApiAssetUrl(row.imageUrl)}
                 alt={row.name}
                 style={{
                   width: 44,
@@ -274,7 +277,7 @@ export default function ProductCatalogPage() {
       },
       {
         key: 'code',
-        header: 'Mã SP',
+        header: 'Mã sản phẩm',
         width: pixel(110),
         renderCell: (row) => (
           <Text type="body" weight="semibold">
@@ -284,7 +287,7 @@ export default function ProductCatalogPage() {
       },
       {
         key: 'name',
-        header: 'Tên Sản Phẩm & Mô Tả',
+        header: 'Tên sản phẩm và mô tả',
         width: proportional(1, { minWidth: 220 }),
         renderCell: (row) => (
           <HoverCard
@@ -598,13 +601,34 @@ export default function ProductCatalogPage() {
           </div>
         ) : (
           <>
-            <Table
-              data={paginatedProducts}
-              columns={columns}
-              idKey="id"
-              density="balanced"
-              hasHover
-            />
+            {isMobile ? (
+              <VStack gap={3} className="product-mobile-list" aria-label="Danh sách sản phẩm trên điện thoại">
+                {paginatedProducts.map((product) => (
+                  <Card key={product.id} padding={4} aria-label={`Sản phẩm ${product.code}`}>
+                    <VStack gap={3}>
+                      <HStack gap={3} vAlign="start">
+                        {product.imageUrl && <img src={resolveApiAssetUrl(product.imageUrl)} alt={product.name} className="product-mobile-image" />}
+                        <VStack gap={1} className="product-mobile-title">
+                          <Text type="supporting" color="secondary">{product.code}</Text>
+                          <Heading level={2}>{product.name}</Heading>
+                          <Badge label={product.isActive ? 'Đang bán' : 'Tạm ngưng'} variant={product.isActive ? 'success' : 'neutral'} />
+                        </VStack>
+                      </HStack>
+                      <Text type="body">{product.description || 'Chưa có mô tả.'}</Text>
+                      <VStack gap={1}>
+                        <Text type="body"><strong>Nhóm sản phẩm:</strong> {product.category || 'Chưa phân loại'}</Text>
+                        <Text type="body"><strong>Đơn vị tính:</strong> {product.unit || '—'}</Text>
+                        <Text type="body" weight="semibold">Giá danh mục: {formatVnd(product.price)}</Text>
+                      </VStack>
+                      <HStack gap={2} wrap="wrap">
+                        <Button label="Sửa sản phẩm" aria-label={`Sửa ${product.name}`} icon={<Icon icon={PencilSquareIcon} size="sm" />} variant="secondary" onClick={() => handleOpenEdit(product)} />
+                        {isAdmin && <Button label="Xóa sản phẩm" aria-label={`Xóa ${product.name}`} icon={<Icon icon={TrashIcon} size="sm" />} variant="destructive" onClick={() => handleConfirmDelete(product.id)} />}
+                      </HStack>
+                    </VStack>
+                  </Card>
+                ))}
+              </VStack>
+            ) : <Table data={paginatedProducts} columns={columns} idKey="id" density="balanced" hasHover />}
             {visibleProducts.length > 0 && (
               <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--color-border)' }}>
                 <Pagination

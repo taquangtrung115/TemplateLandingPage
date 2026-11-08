@@ -1,0 +1,5 @@
+/runtime/
+/playwright/
+/playwright-report/
+/retest/playwright/
+/retest/playwright-report/

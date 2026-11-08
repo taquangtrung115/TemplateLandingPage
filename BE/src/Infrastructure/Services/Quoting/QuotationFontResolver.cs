@@ -4,10 +4,12 @@ using PdfSharp.Fonts;
 
 internal sealed class QuotationFontResolver : IFontResolver
 {
+    #region Embedded typefaces
     public byte[] GetFont(string faceName)
     {
+        var fileName = faceName == "QuotationSans-Bold" ? "NotoSans-Bold.ttf" : "NotoSans-Regular.ttf";
         using var stream = typeof(QuotationFontResolver).Assembly.GetManifestResourceStream(
-            "TemplateLandingPage.Infrastructure.Assets.Fonts.NotoSans-Regular.ttf")
+            $"TemplateLandingPage.Infrastructure.Assets.Fonts.{fileName}")
             ?? throw new InvalidOperationException("The quotation font resource is missing.");
         using var output = new MemoryStream();
         stream.CopyTo(output);
@@ -15,5 +17,6 @@ internal sealed class QuotationFontResolver : IFontResolver
     }
 
     public FontResolverInfo ResolveTypeface(string familyName, bool isBold, bool isItalic) =>
-        new("QuotationSans", isBold, isItalic);
+        new(isBold ? "QuotationSans-Bold" : "QuotationSans-Regular", false, isItalic);
+    #endregion
 }

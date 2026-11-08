@@ -24,11 +24,11 @@ Trang chi tiết có **Thêm VAT khi xuất**. Tùy chọn này cập nhật b�
 
 Chỉ báo giá nháp được sửa. **Đánh dấu đã gửi** chỉ ghi nhận trạng thái, không tự gửi email. Các thao tác xóa có xác nhận và dùng xóa mềm. Sản phẩm/mẫu chỉ quản trị viên được thay đổi; BE kiểm tra quyền thực tế từ tài khoản.
 
-Yêu cầu hỗ trợ được lưu tại `quo.SupportRequests`, gắn người dùng đã xác thực. Màn hình chỉ báo thành công sau khi API lưu; không tự gửi email hay cam kết thời gian xử lý.
+Yêu cầu hỗ trợ được lưu tại `quo.SupportRequests`, gắn người dùng đã xác thực. Quản trị viên xử lý tại `/support` bằng Kanban Mới → Đang xử lý → Đã xử lý, có thể mở lại; lưu người/thời điểm thay đổi và revision để ngăn ghi đè cập nhật đồng thời. Mỗi cột có tìm kiếm/lọc mức ưu tiên và phân trang 20. Trên mobile, chọn cột qua thanh trạng thái. Migration `AddQuotingSupportWorkflow` bổ sung dữ liệu trạng thái; các yêu cầu cũ mặc định Mới. Màn hình chỉ báo thành công sau khi API lưu; không tự gửi email hay cam kết thời gian xử lý.
 
 ## Giao diện
 
-Theme tối dựa trên Gothic, theme sáng dựa trên Neutral; màu nút theo hành động, badge trạng thái và nhãn tiếng Việt. SideNav chia nhóm nghiệp vụ/danh mục/cấu hình/hỗ trợ, chuyển thành điều hướng mobile. Drawer tạo/sửa danh mục; bảng cuộn ngang bên trong vùng riêng, mặc định 20 dòng. Tóm tắt báo giá ở bên phải từ 1280px, chuyển dưới nội dung trên màn hình hẹp. Control ngày dùng Calendar, thông báo dùng Toast, form có nhãn/validation/loading.
+Theme tối dựa trên Gothic, theme sáng dựa trên Neutral; màu nút theo hành động, badge trạng thái và nhãn tiếng Việt. SideNav chia nhóm nghiệp vụ/danh mục/cấu hình/hỗ trợ, chuyển thành điều hướng mobile. Drawer tạo/sửa danh mục; bảng dùng vùng cuộn ngang của Astryx, mặc định 20 dòng. Riêng sản phẩm trên mobile dùng thẻ hiển thị đủ mã, mô tả, nhóm, ĐVT, giá, trạng thái và thao tác. Tóm tắt báo giá ở bên phải từ 1280px, chuyển dưới nội dung trên màn hình hẹp. Control ngày dùng Calendar, thông báo dùng Toast, form có nhãn/validation/loading.
 
 ## Chạy local
 
@@ -42,7 +42,7 @@ FE mặc định cổng 5174, proxy `/api` đến `http://127.0.0.1:54611`. Có 
 
 BE cần cấu hình `ConnectionStrings__DefaultConnection`, `Jwt__SecretKey`, issuer/audience theo môi trường. Áp dụng EF migrations bằng quy trình deploy của dự án. `SeedData__Enabled=true` chỉ dành cho development được bật rõ ràng; `SeedData__IncludeCatalog=false` tránh seed catalog landing page không liên quan. Review các tài khoản demo của seeder trước khi dùng ngoài môi trường kiểm thử.
 
-PDF dùng PDFsharp và font Noto Sans nhúng (kèm giấy phép OFL), giữ tiếng Việt, hình sản phẩm gốc và ngắt nhiều trang. Tệp báo giá được lưu ở thư mục riêng `App_Data/quotations` hoặc `Quoting:Storage:LocalPath`, tải qua endpoint JWT `/{quotationId}/files/{fileId}/download`. Không công khai thư mục xuất qua static files. Endpoint có xác thực đọc được file ở thư mục cũ `wwwroot/exports/quotations` (hoặc `Quoting:Storage:LegacyPath`); đường dẫn static mặc định của thư mục này bị chặn.
+HTML nhúng ảnh của các sản phẩm gốc thành data URI để mở offline. Ảnh URL ngoài vẫn cần kết nối mạng. PDF chuẩn hóa Unicode NFC để ký tự ghép dấu hiển thị đúng, dùng PDFsharp và font Noto Sans thường/đậm nhúng (kèm giấy phép OFL), giữ tiếng Việt, hình sản phẩm gốc và ngắt nhiều trang. Tệp báo giá được lưu ở thư mục riêng `App_Data/quotations` hoặc `Quoting:Storage:LocalPath`, tải qua endpoint JWT `/{quotationId}/files/{fileId}/download`. Không công khai thư mục xuất qua static files. Endpoint có xác thực đọc được file ở thư mục cũ `wwwroot/exports/quotations` (hoặc `Quoting:Storage:LegacyPath`); đường dẫn static mặc định của thư mục này bị chặn.
 
 Supabase Storage được hỗ trợ nếu có `Supabase:Url`, `Supabase:ServiceRoleKey`, `Supabase:Bucket` phía BE. Khi chưa cấu hình hoặc upload lỗi, lưu local; file không bị mất bytes sau fallback. Dùng private bucket, service key chỉ ở BE. Cấu hình local được kiểm tra chưa có thông tin Supabase; chưa xác minh upload trên tài khoản cloud thực tế.
 

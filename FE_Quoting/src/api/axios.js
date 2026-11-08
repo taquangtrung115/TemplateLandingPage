@@ -2,13 +2,10 @@ import axios from 'axios';
 import { readAuthToken, clearAuthSession } from '../utils/authStorage';
 import { readApiError } from './apiError';
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '');
-const baseURL = rawBaseUrl
-  ? (rawBaseUrl.endsWith('/api/v1') ? rawBaseUrl : `${rawBaseUrl.replace(/\/+$/, '')}/api/v1`)
-  : '/api/v1';
+import { apiBaseUrl } from './apiUrl';
 
 const axiosInstance = axios.create({
-  baseURL,
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },

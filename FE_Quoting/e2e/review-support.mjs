@@ -1,0 +1,11 @@
+import {chromium,request} from '@playwright/test';
+const api=await request.newContext({baseURL:'http://127.0.0.1:5184'});
+const login=await(await api.post('/api/v1/auth/login',{data:{email:process.env.QUOTING_E2E_EMAIL,password:process.env.QUOTING_E2E_PASSWORD}})).json();const session=login.value;const headers={Authorization:`Bearer ${session.token}`};
+for(const [index,status] of ['New','InProgress','Resolved'].entries()){
+ const r=await api.post('/api/v1/quoting/support-requests',{headers,data:{fullName:['Nguyễn Thị Hồng','Trần Minh Phát','Lê Thu Hà'][index],email:'qa@example.test',topic:`Kiểm tra Kanban: ${['Ảnh HTML','Font PDF','Danh mục mobile'][index]}`,priority:['urgent','high','normal'][index],message:['Ảnh sản phẩm cần hiển thị khi tải HTML về máy.','Kiểm tra dấu tiếng Việt trong báo giá PDF.','Cần nhìn đủ đơn giá, đơn vị tính và nút thao tác trên điện thoại.'][index]}});const body=await r.json();if(!r.ok())throw new Error(JSON.stringify(body));if(status!=='New'){const updated=await api.put(`/api/v1/quoting/support-requests/${body.value.id}/status`,{headers,data:{status,expectedRevision:0}});if(!updated.ok())throw new Error(await updated.text());}
+}
+const browser=await chromium.launch();
+for(const [mode,width] of [['dark',1440],['light',1440],['light',375]]){
+ const context=await browser.newContext({viewport:{width,height:1000}});await context.addInitScript(({session,mode})=>{if(window.top!==window.self)return;localStorage.setItem('token',session.token);localStorage.setItem('user',JSON.stringify(session.user));localStorage.setItem('quoting.colorMode',mode);},{session,mode});const page=await context.newPage();await page.goto('http://127.0.0.1:5184/support');await page.getByLabel('Tìm yêu cầu hỗ trợ',{exact:true}).fill('Kiểm tra Kanban:');await page.getByText('Nguyễn Thị Hồng',{exact:true}).first().waitFor();await page.waitForTimeout(350);await page.screenshot({path:`../PromtAI/.codex/results/quoting-mobile-export-support-20261108/kanban-${mode}-${width}.png`,fullPage:true});if(width<768){await page.goto('http://127.0.0.1:5184/products');await page.getByLabel('Sản phẩm CB-01',{exact:true}).waitFor();await page.screenshot({path:`../PromtAI/.codex/results/quoting-mobile-export-support-20261108/products-${width}.png`,fullPage:true});}await context.close();
+}
+await browser.close();await api.dispose();

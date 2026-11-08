@@ -273,4 +273,29 @@ public class QuotationExportServiceTests
         var html = QuotationHtmlExportService.BuildHtmlContent(quote, CreateTestTemplateVersion());
         html.Should().Contain("Sản phẩm số 40").And.NotContain("Thuế VAT (").And.NotContain("Hiệu lực báo giá:").And.NotContain("30 ngày kể từ ngày lập");
     }
+    [Fact]
+    public async Task Pdf_NormalizesDecomposedVietnameseToTheSameGlyphsAsComposedText()
+    {
+        var version = CreateTestTemplateVersion();
+        var quote = Quotation.Create("BG-NORMALIZE", null, null, null, null, null, null, null, Guid.NewGuid(), 1, DateTime.UtcNow, null, 0, 0, null, Guid.NewGuid());
+        var text = "Ắ Ằ Ẳ Ẵ Ặ Ế Ề Ể Ễ Ệ Ớ Ờ Ở Ỡ Ợ Ứ Ừ Ử Ữ Ự Đặng Nguyễn";
+        quote.SetItems(new[] { QuotationItem.Create(quote.Id, null, null, text, text, "Gói", null, null, 1, 18000, 0, null, 1) }, Guid.NewGuid());
+        var composed = await _exportService.GeneratePdfAsync(quote, version);
+        quote.SetItems(new[] { QuotationItem.Create(quote.Id, null, null, text.Normalize(NormalizationForm.FormD), text.Normalize(NormalizationForm.FormD), "Gói", null, null, 1, 18000, 0, null, 1) }, Guid.NewGuid());
+        var decomposed = await _exportService.GeneratePdfAsync(quote, version);
+        using var first = PdfSharp.Pdf.IO.PdfReader.Open(new MemoryStream(composed), PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import);
+        using var second = PdfSharp.Pdf.IO.PdfReader.Open(new MemoryStream(decomposed), PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import);
+        first.Pages[0].Contents.CreateSingleContent().Stream.UnfilteredValue.Should().Equal(second.Pages[0].Contents.CreateSingleContent().Stream.UnfilteredValue);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/quoting/product-images/CB-01.png")]
+    [InlineData("https://api.example.test/api/v1/quoting/product-images/CB-01.png")]
+    public void Html_EmbedsSourceImageBytesInsteadOfDependingOnApiOrigin(string imageUrl)
+    {
+        var quote = Quotation.Create("BG-IMAGE", null, null, null, null, null, null, null, Guid.NewGuid(), 1, DateTime.UtcNow, null, 0, 0, null, Guid.NewGuid());
+        quote.SetItems(new[] { QuotationItem.Create(quote.Id, null, "CB-01", "Combo", null, "Gói", imageUrl, null, 1, 18000, 0, null, 1) }, Guid.NewGuid());
+        var html = QuotationHtmlExportService.BuildHtmlContent(quote, CreateTestTemplateVersion());
+        html.Should().Contain("src=\"data:image/png;base64,").And.NotContain("src=\"/api/").And.NotContain("src=\"https://api.example.test");
+    }
 }

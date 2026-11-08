@@ -1,0 +1,57 @@
+{
+  "verifiedAtUtc": "2026-11-08T13:59:58.562289+00:00",
+  "backend": {
+    "unit": 531,
+    "architecture": 7,
+    "postgresIntegration": 39,
+    "total": 577
+  },
+  "frontend": {
+    "tests": 192,
+    "coverage": {
+      "lines": 84.29,
+      "statements": 80.82,
+      "branches": 69.54,
+      "functions": 73.45
+    }
+  },
+  "e2e": {
+    "combinedUniqueCases": 60,
+    "finalStatusCounts": {
+      "skipped": 2,
+      "passed": 58
+    },
+    "fullRun": "playwright-results.json",
+    "correctedEmptyStateRetest": "retest/playwright-results.json",
+    "note": "Two desktop all-routes tests originally assumed nonempty lists; their corrected assertions passed in the separate retest."
+  },
+  "pdf": {
+    "before": {
+      "renderMatches": false
+    },
+    "after": {
+      "renderMatches": true
+    },
+    "fonts": [
+      {
+        "name": "/FTDBVI+Noto Sans,Bold",
+        "embedded": true,
+        "hasToUnicode": true
+      },
+      {
+        "name": "/HTXHOY+Noto Sans Regular",
+        "embedded": true,
+        "hasToUnicode": true
+      }
+    ],
+    "htmlHasEmbeddedImage": true
+  },
+  "build": {
+    "frontend": "passed; existing large chunk warning",
+    "backendReleasePublish": "passed; both font faces embedded",
+    "migrationModel": "no pending changes"
+  },
+  "productionDatabaseChanged": false,
+  "deployed": false,
+  "localTestServices": "stopped"
+}
