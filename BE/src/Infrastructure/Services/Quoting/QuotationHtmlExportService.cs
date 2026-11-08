@@ -29,6 +29,7 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
     {
         var sb = new StringBuilder();
 
+        var imageSources = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var config = QuotationTemplateContent.From(templateVersion);
         var sellerName = Html(config.SellerName);
         var sellerAddress = Html(config.Address);
@@ -251,6 +252,7 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
 
             foreach (var item in group)
             {
+                var imageSource = ImageSource(item.ImageUrl, imageSources);
                 sb.Append($@"
       <tr>
         <td class=""text-center"">{stt++}</td>
@@ -263,7 +265,7 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
         <td class=""text-right"">{item.UnitPrice.ToString("N2", VnCulture)}</td>
         <td class=""text-center"">{(item.DiscountPercent > 0 ? $"{item.DiscountPercent}%" : "0%")}</td>
         <td class=""text-right""><strong>{item.TotalAmount.ToString("N2", VnCulture)}</strong></td>
-        <td>{(string.IsNullOrEmpty(ImageUrl(item.ImageUrl)) ? "" : $"<img src=\"{ImageUrl(item.ImageUrl)}\" alt=\"{Html(item.ProductName)}\" style=\"max-width:90px;max-height:70px;object-fit:contain\">")}</td>
+        <td>{(string.IsNullOrEmpty(imageSource) ? "" : $"<img src=\"{imageSource}\" alt=\"{Html(item.ProductName)}\" style=\"max-width:90px;max-height:70px;object-fit:contain\">")}</td>
       </tr>");
             }
         }
@@ -339,9 +341,26 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
     private static readonly HtmlEncoder ContentEncoder = HtmlEncoder.Create(UnicodeRanges.All);
     private static string Html(string? value) => ContentEncoder.Encode(value ?? string.Empty);
 
-    private static string ImageUrl(string? value)
+    private static string ImageSource(string? value, Dictionary<string, string> cache)
     {
-        if (value?.StartsWith("/api/v1/quoting/product-images/", StringComparison.Ordinal) == true) return Html(value);
-        return Uri.TryCreate(value, UriKind.Absolute, out var uri) && (uri.Scheme == "https" || uri.Scheme == "http") ? Html(value) : "";
+        if (string.IsNullOrWhiteSpace(value)) return "";
+        var path = Uri.TryCreate(value, UriKind.Absolute, out var absolute) ? absolute.AbsolutePath : value;
+        if (path.StartsWith("/api/v1/quoting/product-images/", StringComparison.Ordinal))
+        {
+            var code = Path.GetFileNameWithoutExtension(path);
+            if (cache.TryGetValue(code, out var cached)) return cached;
+            if (code.Length > 0 && code.All(character => char.IsAsciiLetterOrDigit(character) || character == '-'))
+            {
+                using var stream = typeof(QuotationHtmlExportService).Assembly.GetManifestResourceStream($"TemplateLandingPage.Infrastructure.Assets.Products.{code}.png");
+                if (stream is not null)
+                {
+                    using var buffer = new MemoryStream();
+                    stream.CopyTo(buffer);
+                    return cache[code] = "data:image/png;base64," + Convert.ToBase64String(buffer.ToArray());
+                }
+            }
+            return cache[code] = "";
+        }
+        return absolute is not null && (absolute.Scheme == "https" || absolute.Scheme == "http") ? Html(value) : "";
     }
 }

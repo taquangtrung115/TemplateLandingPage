@@ -38,7 +38,7 @@ describe('QuotingLayout - Kiểm thử cấu trúc Shell, Menu & Điều hướn
   // 1. HAPPY PATH (Đường chạy thuận lợi)
   // ==========================================
   describe('1. Đường chạy thuận lợi (Happy Path)', () => {
-    it('hiển thị đầy đủ thương hiệu, tiêu đề các nhóm nghiệp vụ và 7 mục menu', () => {
+    it('hiển thị đầy đủ thương hiệu, tiêu đề các nhóm nghiệp vụ và 8 mục menu', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <QuotingLayout />
@@ -54,13 +54,14 @@ describe('QuotingLayout - Kiểm thử cấu trúc Shell, Menu & Điều hướn
       expect(screen.getByText('Cấu hình')).toBeInTheDocument();
       expect(screen.getAllByText('Hỗ trợ').length).toBeGreaterThan(0);
 
-      // 7 mục menu nghiệp vụ chính thức
+      // Menu nghiệp vụ và xử lý hỗ trợ của quản trị viên
       expect(screen.getByText('Tổng quan')).toBeInTheDocument();
       expect(screen.getByText('Báo giá')).toBeInTheDocument();
       expect(screen.getByText('Tạo báo giá')).toBeInTheDocument();
       expect(screen.getByText('Danh mục sản phẩm')).toBeInTheDocument();
       expect(screen.getByText('Khách hàng')).toBeInTheDocument();
       expect(screen.getByText('Mẫu báo giá')).toBeInTheDocument();
+      expect(screen.getByText('Xử lý hỗ trợ')).toBeInTheDocument();
       expect(screen.getAllByText('Hỗ trợ').length).toBeGreaterThan(0);
     });
 
@@ -98,8 +99,10 @@ describe('QuotingLayout - Kiểm thử cấu trúc Shell, Menu & Điều hướn
       fireEvent.click(screen.getByText('Mẫu báo giá'));
       expect(mockNavigate).toHaveBeenCalledWith('/templates');
 
-      fireEvent.click(screen.getByRole('button', { name: 'Hỗ trợ' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu hỗ trợ' }));
       expect(mockNavigate).toHaveBeenCalledWith('/contact');
+      fireEvent.click(screen.getByRole('button', { name: 'Xử lý hỗ trợ' }));
+      expect(mockNavigate).toHaveBeenCalledWith('/support');
     });
 
     it('thực hiện logout và điều hướng về /login khi nhấn nút Đăng xuất', () => {

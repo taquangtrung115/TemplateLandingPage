@@ -1,0 +1,21 @@
+{
+  "before": {
+    "renderMatches": false
+  },
+  "after": {
+    "renderMatches": true
+  },
+  "fonts": [
+    {
+      "name": "/FTDBVI+Noto Sans,Bold",
+      "embedded": true,
+      "hasToUnicode": true
+    },
+    {
+      "name": "/HTXHOY+Noto Sans Regular",
+      "embedded": true,
+      "hasToUnicode": true
+    }
+  ],
+  "htmlHasEmbeddedImage": true
+}

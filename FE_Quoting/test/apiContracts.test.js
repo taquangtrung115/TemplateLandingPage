@@ -32,6 +32,7 @@ describe('Real FE service request contracts', () => {
     ['template version', () => quotingTemplateApi.createVersion('t', body), 'post', '/quoting/templates/t/versions', body],
     ['update template', () => quotingTemplateApi.updateTemplate('t', body), 'put', '/quoting/templates/t', body],
     ['support', () => quotingSupportApi.submitRequest(body), 'post', '/quoting/support-requests', body],
+    ['support status', () => quotingSupportApi.changeStatus('s', 'Resolved', 2), 'put', '/quoting/support-requests/s/status', { status: 'Resolved', expectedRevision: 2 }],
   ])('%s sends the flat DTO and unwraps Result.Value once', async (_, call, method, url, payload) => {
     expect(await call()).toBe('result-id');
     expect(requests[0].method).toBe(method);
@@ -46,6 +47,7 @@ describe('Real FE service request contracts', () => {
     [() => quotationApi.getHistories('q'), '/quoting/quotations/q/histories'],
     [() => quotationApi.getFiles('q'), '/quoting/quotations/q/files'],
     [() => quotingProductApi.getProducts(), '/quoting/products'],
+    [() => quotingSupportApi.searchRequests({ status: 'New', page: 2, pageSize: 20 }), '/quoting/support-requests'],
     [() => quotingProductApi.getProductById('p'), '/quoting/products/p'],
     [() => quotingCustomerApi.getCustomers(), '/quoting/customers'],
     [() => quotingCustomerApi.getCustomerById('c'), '/quoting/customers/c'],

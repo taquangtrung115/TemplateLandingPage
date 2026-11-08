@@ -18,6 +18,9 @@ public sealed class QuotingSupportRequestConfiguration : IEntityTypeConfiguratio
         builder.Property(request => request.Topic).HasMaxLength(100).IsRequired();
         builder.Property(request => request.Priority).HasMaxLength(20).IsRequired();
         builder.Property(request => request.Message).HasMaxLength(4000).IsRequired();
+        builder.Property(request => request.Status).HasConversion<int>().HasDefaultValue(QuotingSupportStatus.New);
+        builder.Property(request => request.Revision).IsConcurrencyToken().HasDefaultValue(0);
+        builder.HasIndex(request => new { request.Status, request.CreatedAtUtc, request.Id });
         builder.HasIndex(request => new { request.CreatedByUserId, request.CreatedAtUtc });
     }
 }

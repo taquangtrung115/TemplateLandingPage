@@ -1,3 +1,4 @@
+import { resolveApiAssetUrl } from '../../api/apiUrl';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Switch } from '@astryxdesign/core/Switch';
@@ -197,7 +198,7 @@ export default function QuotationDetailPage() {
             <div style={{ padding: 12, maxWidth: 260, textAlign: 'center' }}>
               {row.imageUrl && (
                 <img
-                  src={row.imageUrl}
+                  src={resolveApiAssetUrl(row.imageUrl)}
                   alt={row.productName}
                   style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 6, marginBottom: 8 }}
                 />

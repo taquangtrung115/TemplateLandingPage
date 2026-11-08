@@ -13,6 +13,7 @@ import { Divider } from '@astryxdesign/core/Divider';
 import { Badge } from '@astryxdesign/core/Badge';
 import { ToastViewport } from '@astryxdesign/core/Toast';
 import {
+  ViewColumnsIcon,
   ChartBarIcon,
   DocumentTextIcon,
   PlusCircleIcon,
@@ -52,7 +53,8 @@ const MENU_SECTIONS = [
   {
     title: 'Hỗ trợ',
     items: [
-      { label: 'Hỗ trợ', path: '/contact', icon: QuestionMarkCircleIcon },
+      { label: 'Gửi yêu cầu hỗ trợ', path: '/contact', icon: QuestionMarkCircleIcon },
+      { label: 'Xử lý hỗ trợ', path: '/support', icon: ViewColumnsIcon, adminOnly: true },
     ],
   },
 ];
@@ -118,7 +120,7 @@ export default function QuotingLayout() {
             <React.Fragment key={section.title}>
               {idx > 0 && <Divider />}
               <SideNavSection title={section.title}>
-                {section.items.map((item) => (
+                {section.items.filter((item) => !item.adminOnly || isAdmin).map((item) => (
                   <SideNavItem
                     key={item.path}
                     label={item.label}

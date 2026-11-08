@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-const results = '../PromtAI/.codex/results/fe-quoting-review-20261108';
+const results = process.env.QUOTING_TEST_RESULTS || '../PromtAI/.codex/results/fe-quoting-review-20261108';
 export default defineConfig({
   testDir: './e2e', testMatch: '**/*.spec.js', timeout: 60000,
   expect: { timeout: 10000 }, workers: 2, fullyParallel: false,

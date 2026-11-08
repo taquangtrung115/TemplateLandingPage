@@ -39,7 +39,10 @@ async function open(page, route, heading) {
 }
 
 async function ready(page, route) {
-  if (['/products', '/customers', '/quotations'].includes(route)) await expect(main(page).getByRole('table')).toBeVisible();
+  if (route === '/products' && page.viewportSize().width < 768) await expect(main(page).getByLabel('Danh sách sản phẩm trên điện thoại')).toBeVisible();
+  else if (route === '/products') await expect(main(page).getByRole('table')).toBeVisible();
+  else if (route === '/customers') await expect(main(page).getByRole('table').or(main(page).getByText('Chưa có khách hàng nào', { exact: true }))).toBeVisible();
+  else if (route === '/quotations') await expect(main(page).getByRole('table').or(main(page).getByText('Chưa có báo giá nào', { exact: true }))).toBeVisible();
   if (route === '/quotations/create') await expect(main(page).getByRole('heading', { name: 'Tóm tắt báo giá' })).toBeVisible();
   if (route === '/templates') await expect(main(page).getByLabel('Tên đơn vị bán hàng', { exact: true })).toBeEnabled();
 }
@@ -52,7 +55,7 @@ async function noPageOverflow(page) {
 test('all routes render without runtime errors or horizontal page overflow', async ({ page }, testInfo) => {
   for (const [route, heading] of [
     ['/', 'Tổng quan báo giá'], ['/quotations', 'Báo giá'], ['/quotations/create', 'Tạo báo giá'],
-    ['/products', 'Danh mục sản phẩm'], ['/customers', 'Khách hàng'], ['/templates', 'Mẫu báo giá'], ['/contact', 'Hỗ trợ'],
+    ['/products', 'Danh mục sản phẩm'], ['/customers', 'Khách hàng'], ['/templates', 'Mẫu báo giá'], ['/contact', 'Hỗ trợ'], ['/support', 'Xử lý hỗ trợ'],
   ]) {
     await page.goto(route, { waitUntil: 'domcontentloaded' });
     await expect(main(page)).toBeVisible();
@@ -213,7 +216,7 @@ test('generic quotation omits the customer block and template copies keep indepe
 });
 
 test('core pages have no serious accessibility violations', async ({ page }, testInfo) => {
-  for (const route of ['/products', '/quotations/create', '/templates', '/contact']) {
+  for (const route of ['/products', '/quotations/create', '/templates', '/contact', '/support']) {
     await page.goto(route, { waitUntil: 'domcontentloaded' });
     await expect(main(page).getByRole('heading', { level: 1 })).toBeVisible();
     await ready(page, route);
@@ -259,4 +262,54 @@ test('VAT is appended to export only when selected and saved amounts are preserv
   expect(content).not.toContain('Thuế VAT ('); expect(content).not.toContain('<div class="customer-box">');
   const saved = await api(request, 'GET', `/quoting/quotations/${id}`);
   expect(saved.taxPercent).toBe(0); expect(saved.totalAmount).toBe(36000);
+});
+
+
+test('mobile products show every field and usable actions without horizontal columns', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.startsWith('desktop'));
+  await open(page, '/products', 'Danh mục sản phẩm');
+  const item = main(page).getByLabel('Sản phẩm CB-01', { exact: true });
+  await expect(item).toBeVisible();
+  for (const text of ['Nhóm sản phẩm:', 'Đơn vị tính:', 'Giá danh mục:', 'Đang bán']) await expect(item).toContainText(text);
+  await expect(item.getByRole('button', { name: 'Sửa COMBO NGUYÊN BẢN BAO NGON', exact: true })).toBeVisible();
+  const image = item.locator('img'); await expect(image).toHaveJSProperty('complete', true); await expect(image).not.toHaveJSProperty('naturalWidth', 0);
+  await page.screenshot({ path: testInfo.outputPath('mobile-products.png'), fullPage: true });
+  await noPageOverflow(page);
+});
+
+test('support request reaches Kanban and can be processed, completed and reopened', async ({ page, request }, testInfo) => {
+  const topic = `Hỗ trợ ${unique()}`;
+  const created = await api(request, 'POST', '/quoting/support-requests', { fullName: 'Nguyễn Thị Hồng', email: 'kanban@example.test', phone: '0901234567', topic, priority: 'urgent', message: 'Cần kiểm tra ảnh HTML và tiếng Việt trong PDF.' });
+  await open(page, '/support', 'Xử lý hỗ trợ');
+  await main(page).getByLabel('Tìm yêu cầu hỗ trợ', { exact: true }).fill(topic);
+  let card = page.getByRole('region', { name: 'Mới', exact: true }).getByLabel('Yêu cầu của Nguyễn Thị Hồng');
+  await expect(card).toContainText(topic);
+  await card.getByRole('button', { name: 'Bắt đầu xử lý', exact: true }).click();
+  if (!testInfo.project.name.startsWith('desktop')) await main(page).getByRole('radio', { name: /Đang xử lý/ }).click();
+  card = page.getByRole('region', { name: 'Đang xử lý', exact: true }).getByLabel('Yêu cầu của Nguyễn Thị Hồng');
+  await expect(card).toContainText(topic);
+  await card.getByRole('button', { name: 'Đánh dấu đã xử lý', exact: true }).click();
+  if (!testInfo.project.name.startsWith('desktop')) await main(page).getByRole('radio', { name: /Đã xử lý/ }).click();
+  card = page.getByRole('region', { name: 'Đã xử lý', exact: true }).getByLabel('Yêu cầu của Nguyễn Thị Hồng');
+  await expect(card).toContainText('Đã xử lý:');
+  const saved = await api(request, 'GET', `/quoting/support-requests?status=Resolved&searchTerm=${encodeURIComponent(topic)}`);
+  expect(saved.data[0].id).toBe(created.id); expect(saved.data[0].resolvedByUserId).toBeTruthy(); expect(saved.data[0].revision).toBe(2);
+  await page.screenshot({ path: testInfo.outputPath('support-board.png'), fullPage: true });
+  await card.getByRole('button', { name: 'Xem chi tiết', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Chi tiết yêu cầu hỗ trợ' })).toContainText('0901234567');
+  await page.getByRole('dialog').getByRole('button', { name: 'Đóng', exact: true }).click();
+  await card.getByRole('button', { name: 'Mở lại yêu cầu', exact: true }).click();
+  if (!testInfo.project.name.startsWith('desktop')) await main(page).getByRole('radio', { name: /Mới/ }).click();
+  await expect(page.getByRole('region', { name: 'Mới', exact: true })).toContainText(topic);
+  await noPageOverflow(page);
+});
+
+test('downloaded HTML opens with product image while offline', async ({ page, request, browser }) => {
+  const product = (await api(request, 'GET', '/quoting/products')).find((product) => product.code === 'CB-01');
+  const id = await api(request, 'POST', '/quoting/quotations', { issueDate: new Date().toISOString(), items: [{ productCode: product.code, productName: product.name, imageUrl: product.imageUrl, unit: product.unit, quantity: 1, unitPrice: product.price }] });
+  const file = await api(request, 'POST', `/quoting/quotations/${id}/export`, { fileType: 'html' });
+  const response = await request.get(`/api/v1/quoting/quotations/${id}/files/${file.id}/download`, { headers: { Authorization: `Bearer ${token}` } });
+  const html = await response.text(); expect(html).toContain('src="data:image/png;base64,');
+  const context = await browser.newContext({ offline: true });
+  try { const filePage = await context.newPage(); await filePage.setContent(html); const image = filePage.locator('img').first(); await expect(image).toHaveJSProperty('complete', true); await expect(image).not.toHaveJSProperty('naturalWidth', 0); } finally { await context.close(); }
 });

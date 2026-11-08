@@ -11,6 +11,7 @@ const QuotationDetailPage = lazy(() => import('../pages/quotations/QuotationDeta
 const ProductCatalogPage = lazy(() => import('../pages/products/ProductCatalogPage'));
 const CustomerListPage = lazy(() => import('../pages/customers/CustomerListPage'));
 const TemplateListPage = lazy(() => import('../pages/templates/TemplateListPage'));
+const SupportBoardPage = lazy(() => import('../pages/support/SupportBoardPage'));
 const ContactPage = lazy(() => import('../pages/contact/ContactPage'));
 
 function ProtectedRoute({ children }) {
@@ -61,6 +62,7 @@ export default function AppRoutes() {
         <Route path="products" element={<ProductCatalogPage />} />
         <Route path="customers" element={<CustomerListPage />} />
         <Route path="templates" element={<TemplateListPage />} />
+        <Route path="support" element={<SupportBoardPage />} />
         <Route path="contact" element={<ContactPage />} />
       </Route>
 

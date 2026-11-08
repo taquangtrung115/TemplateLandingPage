@@ -1,0 +1,10 @@
+{
+  "combinedUniqueCases": 60,
+  "finalStatusCounts": {
+    "skipped": 2,
+    "passed": 58
+  },
+  "fullRun": "playwright-results.json",
+  "correctedEmptyStateRetest": "retest/playwright-results.json",
+  "note": "Two desktop all-routes tests originally assumed nonempty lists; their corrected assertions passed in the separate retest."
+}

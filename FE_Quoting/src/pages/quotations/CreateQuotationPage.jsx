@@ -1,3 +1,4 @@
+import { resolveApiAssetUrl } from '../../api/apiUrl';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Stepper, Step } from '@astryxdesign/core/Stepper';
@@ -307,7 +308,7 @@ export default function CreateQuotationPage() {
               <HStack gap={2} vAlign="center">
                 {it.imageUrl ? (
                   <img
-                    src={it.imageUrl}
+                    src={resolveApiAssetUrl(it.imageUrl)}
                     alt={it.productName}
                     style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
                   />
@@ -573,7 +574,7 @@ export default function CreateQuotationPage() {
                             <HStack gap={3} vAlign="center">
                               {it.imageUrl && (
                                 <img
-                                  src={it.imageUrl}
+                                  src={resolveApiAssetUrl(it.imageUrl)}
                                   alt={it.productName}
                                   style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }}
                                 />
