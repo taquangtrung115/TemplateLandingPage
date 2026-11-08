@@ -1,6 +1,12 @@
 import axiosInstance from './axios';
 
 export const quotingProductApi = {
+  uploadImage: async (file) => {
+    const data = new FormData();
+    data.append('file', file);
+    const response = await axiosInstance.post('/quoting/products/images', data, { headers: { 'Content-Type': undefined } });
+    return response.data?.value ?? response.data;
+  },
   getProducts: async (params = {}) => {
     const response = await axiosInstance.get('/quoting/products', { params });
     return response.data?.value ?? response.data;

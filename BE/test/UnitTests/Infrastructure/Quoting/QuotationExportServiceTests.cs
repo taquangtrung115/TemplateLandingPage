@@ -2,6 +2,9 @@ namespace TemplateLandingPage.UnitTests.Infrastructure.Quoting;
 
 using System.Text;
 using FluentAssertions;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.Advanced;
+using PdfSharp.Pdf.IO;
 using TemplateLandingPage.Domain.Entities.Quoting;
 using TemplateLandingPage.Infrastructure.Services.Quoting;
 using Xunit;
@@ -176,6 +179,21 @@ public class QuotationExportServiceTests
     #endregion
 
     #region 2. Edge Cases (Các trường hợp biên)
+
+    [Theory]
+    [InlineData(null, 0)]
+    [InlineData("", 0)]
+    [InlineData("/api/v1/quoting/product-images/CB-01.png", 1)]
+    public async Task Pdf_RespectsRemovedImage_EvenWhenTheProductHasABundledPhoto(string? imageUrl, int expectedImages)
+    {
+        var quotation = Quotation.Create("BG-IMAGE", null, null, null, null, null, null, null,
+            Guid.NewGuid(), 1, DateTime.UtcNow, null, 0, 0, null, Guid.NewGuid());
+        quotation.SetItems([QuotationItem.Create(quotation.Id, null, "CB-01", "Sản phẩm", null, "Gói", imageUrl, "Combo", 1, 18000, 0, null, 1)], Guid.NewGuid());
+        using var pdf = PdfReader.Open(new MemoryStream(await _exportService.GeneratePdfAsync(quotation, CreateTestTemplateVersion())), PdfDocumentOpenMode.Import);
+        var resources = pdf.Pages[0].Resources.Elements.GetDictionary("/XObject");
+        var count = resources?.Elements.Values.OfType<PdfReference>().Count(reference => reference.Value is PdfDictionary image && image.Elements.GetName("/Subtype") == "/Image") ?? 0;
+        count.Should().Be(expectedImages);
+    }
 
     [Fact]
     public void BuildHtmlContent_WithGroupedItems_ShouldRenderBothGroupHeaders()

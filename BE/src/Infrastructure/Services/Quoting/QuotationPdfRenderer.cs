@@ -21,7 +21,7 @@ internal static class QuotationPdfRenderer
     #endregion
 
     #region PDF rendering
-    public static byte[] Render(Quotation quotation, QuotationTemplateVersion version, CancellationToken cancellationToken)
+    public static byte[] Render(Quotation quotation, QuotationTemplateVersion version, CancellationToken cancellationToken, IReadOnlyDictionary<string, byte[]>? uploadedImages = null)
     {
         EnsureFont();
         using var document = new PdfDocument();
@@ -163,9 +163,10 @@ internal static class QuotationPdfRenderer
                         x += widths[column];
                     }
                     var imageCode = item.ProductCode;
-                    if (firstSegment && imageCode is not null && imageCode.All(character => char.IsAsciiLetterOrDigit(character) || character == '-'))
+                    var uploadedImage = item.ImageUrl is not null && uploadedImages?.TryGetValue(item.ImageUrl, out _) == true ? uploadedImages[item.ImageUrl] : null;
+                    if (firstSegment && !string.IsNullOrWhiteSpace(item.ImageUrl) && (uploadedImage is not null || (imageCode is not null && imageCode.All(character => char.IsAsciiLetterOrDigit(character) || character == '-'))))
                     {
-                        using var stream = typeof(QuotationPdfRenderer).Assembly.GetManifestResourceStream($"TemplateLandingPage.Infrastructure.Assets.Products.{imageCode}.png");
+                        using var stream = uploadedImage is not null ? new MemoryStream(uploadedImage) : typeof(QuotationPdfRenderer).Assembly.GetManifestResourceStream($"TemplateLandingPage.Infrastructure.Assets.Products.{imageCode}.png");
                         if (stream is not null)
                         {
                             using var image = XImage.FromStream(stream);

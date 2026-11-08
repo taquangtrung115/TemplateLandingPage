@@ -66,6 +66,12 @@ describe('Real FE service request contracts', () => {
     expect(requests[0]).toMatchObject({ url: '/quoting/quotations/q/files/f/download', responseType: 'blob' });
     expect(requests[0].headers.Authorization).toBe('Bearer test-token');
   });
+  it('uploads the native File through multipart without forcing a JSON content type', async () => {
+    const file = new File(['image'], 'photo.png', { type: 'image/png' });
+    await quotingProductApi.uploadImage(file);
+    expect(requests[0].url).toBe('/quoting/products/images'); expect(requests[0].data).toBeInstanceOf(FormData);
+    expect(requests[0].data.get('file').name).toBe('photo.png'); expect(requests[0].headers['Content-Type']).not.toBe('application/json');
+  });
   it('rejects an application failure carried by HTTP 200', async () => {
     client.defaults.adapter = async (config) => ({ config, status: 200, headers: {}, data: { isFailure: true, error: { message: 'Không thể lưu' } } });
     await expect(quotationApi.createQuotation({})).rejects.toThrow('Không thể lưu');

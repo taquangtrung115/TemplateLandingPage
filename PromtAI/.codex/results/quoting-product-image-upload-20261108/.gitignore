@@ -1,0 +1,5 @@
+/runtime/
+/playwright/
+/playwright-report/
+/retry/
+*.log
