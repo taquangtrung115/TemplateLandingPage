@@ -1,0 +1,34 @@
+namespace TemplateLandingPage.Contract.Services.V1.Quoting.Products;
+
+using TemplateLandingPage.Contract.Abstractions.Message;
+using TemplateLandingPage.Contract.Abstractions.Shared;
+
+public static class QuotingProductErrors
+{
+    public static readonly Error NotFound = new("QuotingProduct.NotFound", "Sản phẩm không tồn tại trong danh mục.");
+    public static readonly Error DuplicateCode = new("QuotingProduct.DuplicateCode", "Mã sản phẩm đã tồn tại trên hệ thống.");
+    public static readonly Error InvalidPrice = new("QuotingProduct.InvalidPrice", "Đơn giá sản phẩm không được là số âm.");
+}
+
+public record CreateQuotingProductCommand(
+    string Code,
+    string Name,
+    string? Description,
+    string Unit,
+    decimal Price,
+    string? ImageUrl,
+    string? Category,
+    bool IsActive = true) : ICommand<Guid>;
+
+public record UpdateQuotingProductCommand(
+    Guid Id,
+    string Code,
+    string Name,
+    string? Description,
+    string Unit,
+    decimal Price,
+    string? ImageUrl,
+    string? Category,
+    bool IsActive) : ICommand;
+
+public record DeleteQuotingProductCommand(Guid Id) : ICommand;

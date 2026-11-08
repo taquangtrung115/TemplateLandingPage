@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Npgsql;
@@ -58,7 +59,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Configure CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:5173", "http://localhost:3000" };
+    ?? new[] { "http://localhost:5173", "http://localhost:5174", "http://localhost:3000" };
 
 builder.Services.AddCors(options =>
 {
@@ -178,6 +179,7 @@ if (app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("See
         {
             await TemplateCatalogSeeder.SeedAsync(dbContext);
         }
+        await QuotingSeeder.SeedAsync(dbContext);
     }
     catch (NpgsqlException npgsqlEx)
     {
@@ -203,6 +205,16 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseWhen(context => !context.Request.Path.StartsWithSegments("/exports/quotations"), branch => branch.UseStaticFiles());
+var quotingImageDirectory = Path.Combine(AppContext.BaseDirectory, "wwwroot", "api", "v1", "quoting", "product-images");
+if (Directory.Exists(quotingImageDirectory))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(quotingImageDirectory),
+        RequestPath = "/api/v1/quoting/product-images"
+    });
+}
 app.UseCors("DefaultCorsPolicy");
 
 if (!app.Environment.IsDevelopment())

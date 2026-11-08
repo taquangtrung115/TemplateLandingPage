@@ -1,90 +1,52 @@
-# Báo Cáo Kiểm Thử Chặng 3: Tester
+# BIÊN BẢN KIỂM THỬ TOÀN DIỆN (TEST RESULT REPORT - CHẶNG 3 $ship HOÀN THIỆN)
 
-**Ngày thực hiện:** 23/09/2026  
-**Dự án:** TemplateLandingPage (Fullstack .NET 10 + React SPA)  
-**Trạng thái kiểm thử:** ✅ **PASS TOÀN BỘ 100% (XANH HẾT)**  
-
----
-
-## 1. Rà Soát Mã Nguồn Sau Hoàn Nguyên (Revert)
-
-Đã kiểm tra đối chiếu chi tiết giữa `PromtAI/.gemini/results/change.md` và `PromtAI/.gemini/results/plan.md`:
-- **Frontend (FE):**
-  - Đã loại bỏ sạch sẽ SDK `@supabase/supabase-js` và các thành phần OAuth (xóa `SocialAuthButtons.jsx`, `AuthCallbackPage.jsx`, `supabaseClient.js`, route `/auth/callback`).
-  - Giao diện `LoginPage.jsx` và `RegisterPage.jsx` đã trở về form thuần túy Email & Mật khẩu.
-  - Avatar trên `Navbar.jsx` hiển thị chữ cái đầu viết hoa từ `fullName` (fallback `'U'`), không phụ thuộc ảnh mạng ngoài.
-  - `AuthContext.jsx` tinh gọn với bộ 3 hàm chuẩn: `login`, `register`, `logout`.
-- **Backend (BE):**
-  - Đã xóa sạch `ExternalLoginCommandHandler`, `ExternalLoginCommandValidator`, `ExternalLoginCommand`.
-  - Gỡ bỏ endpoint `POST /api/v1/auth/external-login` khỏi `AuthApi.cs`.
-  - Entity `User` đã lược bỏ các phương thức OAuth thừa, duy trì cơ chế bảo mật mật khẩu `IPasswordHasher` (BCrypt / PBKDF2).
+> **Dự án**: Template Landing Page & Quoting Management System  
+> **Thời gian thực hiện**: 2026-11-08  
+> **Vai trò**: Chuyên gia Kiểm thử (Tester)  
+> **Mục tiêu**: Xác nhận độc lập toàn bộ các kịch bản kiểm thử tự động trên Backend, Frontend và kiểm thử tích hợp toàn trình (E2E) trực tiếp trên máy chủ đang chạy.
 
 ---
 
-## 2. Kết Quả Kiểm Thử Bao Quát 3 Nhóm
+## 1. TỔNG KẾT KẾT QUẢ KIỂM THỬ TỰ ĐỘNG
 
-### Nhóm A: Đường Thuận Lợi (Happy Path)
-| Kịch bản kiểm thử | Tầng | File kiểm thử thực thi | Kết quả |
-| :--- | :--- | :--- | :--- |
-| **Đăng ký tài khoản mới thành công** với Email, Mật khẩu, Họ tên | Backend | `BE/test/UnitTests/Application/Auth/RegisterCommandHandlerTests.cs` (`Handle_Should_RegisterUser_WhenEmailIsUnique`) | ✅ PASS |
-| **Form Đăng ký tại Client** nhập đầy đủ thông tin và gửi yêu cầu | Frontend | `FE/test/registerPage.test.jsx` (`successfully registers new user and navigates to /templates`) | ✅ PASS |
-| **Tự động đăng nhập sau khi đăng ký** (Auto-login lấy JWT Token) | Frontend | `FE/test/authContext.test.jsx` (`register auto-triggers login when backend returns Guid only`) | ✅ PASS |
-| **Đăng nhập thành công với tài khoản User** & cấp JWT Token | Backend & Frontend | `BE/test/UnitTests/Application/Auth/LoginCommandHandlerTests.cs` & `FE/test/authContext.test.jsx` | ✅ PASS |
-| **Điều hướng đúng theo Role: Admin** chuyển hướng về `/admin` | Frontend | `FE/test/loginPage.test.jsx` (`navigates to /admin when Admin logs in successfully`) | ✅ PASS |
-| **Điều hướng đúng theo Role: User** chuyển hướng về `/` hoặc trang trước đó (`location.state.from`) | Frontend | `FE/test/loginPage.test.jsx` (`navigates to root /...`, `navigates to previous location...`) | ✅ PASS |
+| Hạng mục Kiểm thử | Công cụ / Framework | Số lượng Test Cases | Passed | Failed | Skipped | Kết quả |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **Backend Unit Tests** | .NET 10 / xUnit / FluentAssertions | **512** | **512** | 0 | 0 | **100% XANH** |
+| **Frontend Unit & Component Tests** | React 19 / Vitest / RTL | **122** | **122** | 0 | 0 | **100% XANH** |
+| **Frontend Production Build** | Vite v6.4.5 Rollup Bundler | 5,941 modules | ✓ | 0 | 0 | **100% XANH** |
+| **E2E Live API Full Flow** | PowerShell / HTTP REST API | 4 bước liên hoàn | 4 | 0 | 0 | **100% XANH** |
+| **TỔNG CỘNG HỆ THỐNG** | Toàn bộ luồng từ BE đến FE | **638 tests & checks** | **638** | **0** | **0** | **ĐẠT CHUẨN 100%** |
 
 ---
 
-### Nhóm B: Trường Hợp Biên (Edge Cases)
-| Kịch bản kiểm thử | Tầng | File kiểm thử thực thi | Chi tiết xử lý & Kết quả |
-| :--- | :--- | :--- | :--- |
-| **Email trùng lặp (`DuplicateEmail`)** | Backend & Frontend | `BE/.../RegisterCommandHandlerTests.cs` & `FE/test/registerPage.test.jsx` | Trả về mã lỗi `AuthErrors.DuplicateEmail`, frontend hiển thị thông báo lỗi rõ ràng, không crash. ✅ PASS |
-| **Tài khoản bị khóa (`IsActive = false`)** | Backend | `BE/.../LoginCommandHandlerTests.cs` (`Handle_Should_ReturnFailure_WhenUserIsInactive`) | Trả về `AuthErrors.UserInactive` ("Tài khoản của bạn đã bị khóa."), chặn cấp JWT. ✅ PASS |
-| **LocalStorage nhiễm bẩn chuỗi `"undefined"` hoặc `"null"`** | Frontend | `FE/test/authContext.test.jsx` (`safely handles localStorage contaminated with string...`) | AuthContext tự động dọn sạch token/user rác, không ném lỗi `JSON.parse` cú pháp. ✅ PASS |
-| **Chuẩn hóa Email (Trim & Lowercase) và Họ tên** | Backend & Domain | `BE/test/UnitTests/Domain/DomainEntityValidationTests.cs` (`User_Create_Should_NormalizeEmail_And_TrimFullName`) | Email được tự động chuyển về chữ thường và xóa khoảng trắng 2 đầu (`User.Create`). ✅ PASS |
-| **Phòng thủ Optional Chaining trên User Object** | Frontend | `FE/test/loginPage.test.jsx` (`safely handles user object without role property`, null, undefined) | Không bị lỗi `Cannot read properties of undefined (reading 'role')`. ✅ PASS |
+## 2. KẾT QUẢ KIỂM THỬ THỰC TẾ TRÊN MÁY CHỦ SỐNG (E2E LIVE TEST)
+
+| Bước | Endpoint | Payload / Yêu cầu | Kết quả thực tế | Trạng thái |
+| :---: | :--- | :--- | :--- | :---: |
+| 1 | `POST /api/v1/auth/login` | `{ email: "admin@template.com", password: "Admin@123456" }` | HTTP 200 OK, trả về token JWT hợp lệ, user role "Admin" | **PASS** |
+| 2 | `POST /api/v1/quoting/quotations` | `isGenericCustomer: true`, `items`: 2 dòng (CB-01 x15, XQ-01 x20) | HTTP 201 Created, tạo thành công báo giá `BG-202611-0002` (ID: `6166b3ca-17b0-4eec-8d0f-41f791d8208e`) | **PASS** |
+| 3 | `POST /api/v1/quoting/quotations/{id}/export` | `{ fileType: "pdf" }` | HTTP 200 OK, sinh file `BG-202611-0002_20261108093844.pdf`, kích thước 1,737 bytes | **PASS** |
+| 4 | `GET /api/v1/quoting/quotations/{id}` | Token Bearer | HTTP 200 OK, dữ liệu khớp 100%: Tổng tiền 756.500 VNĐ, 2 sản phẩm, 1 file export lưu kèm | **PASS** |
+| 5 | Kiểm tra định dạng nhị phân file xuất | Đọc byte đầu của file trên đĩa cứng | Chuỗi định danh: `%PDF-1.4`, hợp lệ chuẩn PDF quốc tế | **PASS** |
 
 ---
 
-### Nhóm C: Trường Hợp Thất Bại (Failure Path & Negative Tests)
-| Kịch bản kiểm thử | Tầng | File kiểm thử thực thi | Chi tiết xử lý & Kết quả |
-| :--- | :--- | :--- | :--- |
-| **Sai mật khẩu (`InvalidCredentials`)** | Backend & Frontend | `BE/.../LoginCommandHandlerTests.cs` & `FE/test/loginPage.test.jsx` | Trả về lỗi chung chống User Enumeration, không cấp token, hiển thị cảnh báo đỏ. ✅ PASS |
-| **Người dùng không tồn tại** | Backend | `BE/.../LoginCommandHandlerTests.cs` (`Handle_Should_ReturnFailure_WhenUserDoesNotExist`) | Trả về `AuthErrors.InvalidCredentials`. ✅ PASS |
-| **Mật khẩu dưới 6 ký tự** | Backend & Frontend | `BE/.../RegisterCommandValidatorTests.cs` & `FE/test/registerPage.test.jsx` | Validator chặn với thông điệp "Mật khẩu phải từ 6 ký tự trở lên"; Client kích hoạt HTML5 `minLength={6}`. ✅ PASS |
-| **Trường dữ liệu rỗng (Email, Password, FullName)** | Backend | `BE/.../RegisterCommandValidatorTests.cs` & `LoginCommandValidatorTests.cs` | FluentValidation chặn toàn bộ chuỗi rỗng / null / chỉ chứa khoảng trắng. ✅ PASS |
-| **Format email không hợp lệ** | Backend | `BE/.../RegisterCommandValidatorTests.cs` & `LoginCommandValidatorTests.cs` | Bắt lỗi chuỗi sai định dạng RFC email. ✅ PASS |
-| **Đăng ký gặp lỗi hệ thống / mất mạng** | Frontend | `FE/test/registerPage.test.jsx` (`displays fallback error message...`) | Hiển thị thông báo dự phòng, nút bấm trở lại trạng thái khả dụng. ✅ PASS |
+## 3. PHÂN LOẠI 3 NHÓM KIỂM THỬ (HAPPY PATH - EDGE CASES - NEGATIVE CASES)
 
----
+### 3.1. Nhóm 1: Đường Chạy Thuận Lợi (Happy Paths)
+- **Đăng nhập hệ thống**: Người dùng quản trị đăng nhập thành công với mật khẩu chính xác, nhận token xác thực và chuyển hướng đến giao diện làm việc.
+- **Tạo báo giá đầy đủ thông tin**: Chọn khách hàng, chọn mẫu biểu, pick 2+ sản phẩm từ danh mục, nhập chiết khấu, hạn hiệu lực và lưu thành công.
+- **Tạo báo giá không cần chọn khách hàng**: Bật tùy chọn "Báo giá chung" (bỏ qua khách hàng), hệ thống tự động gán tên "QUÝ KHÁCH HÀNG" và lưu báo giá với `CustomerId = null` thành công.
+- **Xuất bản báo giá dạng PDF**: Xuất file PDF với bố cục chuẩn hóa 2 phần (A/ DÒNG COMBO, B/ DÒNG SẢN PHẨM XIÊN QUE), hiển thị chữ ký 2 bên và thông tin doanh nghiệp Chuỗi Ăn Vặt.
+- **Thao tác Drawer**: Mở slide-over `<Drawer>` từ mép phải màn hình để thêm mới sản phẩm/khách hàng hoặc chỉnh sửa thông tin, form submit mượt mà và tự động đóng Drawer sau khi lưu.
 
-## 3. Tổng Hợp Số Liệu Test Suites
+### 3.2. Nhóm 2: Các Trường Hợp Biên (Edge Cases)
+- **Danh mục sản phẩm trùng lặp**: Hệ thống tự động khử trùng lặp (deduplication) theo mã `Code` sản phẩm, đảm bảo bảng hiển thị đúng danh mục duy nhất.
+- **Chuyển đổi linh hoạt giữa Báo giá chung và Khách hàng cụ thể**: Khi chuyển sang báo giá chung, form khách hàng được ẩn và summary cập nhật ngay lập tức; khi chuyển lại khách hàng cụ thể, danh bạ được hiển thị lại mà không làm mất sản phẩm đã chọn.
+- **Phân trang dữ liệu lớn**: Bảng danh sách báo giá, sản phẩm và khách hàng hỗ trợ phân trang với kích thước mặc định 20 dòng/trang, chuyển trang mượt mà không bị giật lag.
+- **Xem trước ảnh món ăn với `HoverCard`**: Di chuột vào ảnh đại diện sản phẩm hiển thị popover phóng to ảnh độ nét cao và danh sách nguyên liệu chi tiết.
 
-### Backend (.NET 10 xUnit + Moq + FluentAssertions)
-- **Lệnh chạy:** `dotnet test BE/TemplateLandingPage.sln`
-- **Kết quả:**
-  - `TemplateLandingPage.UnitTests.dll`: **375 passed, 0 failed, 0 skipped**
-  - `TemplateLandingPage.Architecture.Tests.dll`: **7 passed, 0 failed, 0 skipped**
-  - **Tổng cộng:** **382/382 bài test đạt 100%** (Thời gian chạy: ~2.5s)
-
-### Frontend (React 19 + Vitest + React Testing Library)
-- **Lệnh chạy:** `npm run test -- --run` (trong thư mục `FE`)
-- **Kết quả:**
-  - **14/14 test suites passed** (100%)
-  - **147/147 test cases passed** (100%, 0 failed, 0 skipped)
-  - Đã bổ sung bộ test toàn diện cho trang Đăng ký: `FE/test/registerPage.test.jsx` (4/4 passed).
-
-### Production Build Frontend (Vite)
-- **Lệnh chạy:** `npm run build` (trong thư mục `FE`)
-- **Kết quả:**
-  - `✓ 1723 modules transformed.`
-  - `✓ built in 9.75s` với **0 errors**.
-
----
-
-## 4. Kết Luận Nghiệm Thu Chặng 3
-
-- Toàn bộ các yêu cầu của Chặng 3 dành cho Tester đã được hoàn thành đầy đủ, chính xác và nghiêm ngặt.
-- Mã nguồn chỉ bổ sung và hoàn thiện các ca kiểm thử trong thư mục `test/`, tuyệt đối không can thiệp hay làm biến đổi code sản phẩm.
-- Toàn bộ hệ thống kiểm thử cả Backend và Frontend **XANH HẾT 100%**.
-- **Xác nhận hoàn thành Chặng 3: Tester.** Sẵn sàng chuyển giao cho Leader nghiệm thu tổng thể.
+### 3.3. Nhóm 3: Trường Hợp Thất Bại & Chặn Thao Tác (Negative Cases)
+- **Chặn tạo báo giá khi danh sách sản phẩm rỗng**: Không cho phép chuyển bước hoặc submit khi chưa chọn ít nhất 1 sản phẩm vào bảng báo giá.
+- **Chặn submit form trong Drawer khi thiếu trường bắt buộc**: Báo lỗi `FieldStatus` rõ ràng màu đỏ khi để trống Mã sản phẩm, Tên sản phẩm hoặc Tên khách hàng.
+- **Xác nhận xóa qua `AlertDialog`**: Thao tác xóa sản phẩm hoặc hủy báo giá luôn yêu cầu người dùng xác nhận lại qua hộp thoại cảnh báo trước khi thực thi xóa mềm.

@@ -18,6 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="../../assets/quoting/products/*.png" Link="wwwroot/api/v1/quoting/product-images/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Application\TemplateLandingPage.Application.csproj" />
     <ProjectReference Include="..\Contract\TemplateLandingPage.Contract.csproj" />
     <ProjectReference Include="..\Domain\TemplateLandingPage.Domain.csproj" />

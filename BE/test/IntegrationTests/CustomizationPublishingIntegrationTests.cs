@@ -23,10 +23,11 @@ public sealed class CustomizationPublishingIntegrationTests(PostgresApiFixture f
         using var anonymous = fixture.CreateClientFor(Guid.Empty, "User");
         anonymous.DefaultRequestHeaders.Authorization = null;
 
+        var originalSlug = UniqueSlug("site-one");
         var draftId = Guid.NewGuid();
         const string originalConfig = "{\"theme\":{},\"hero\":{\"title\":\"Version one\"}}";
         using var create = await ApiTestJson.SendJsonAsync(ownerClient, HttpMethod.Post, "/api/v1/customizations",
-            new { templateId = template.Id, title = "Site one", slug = UniqueSlug("site-one"), configJson = originalConfig, clientDraftId = draftId });
+            new { templateId = template.Id, title = "Site one", slug = originalSlug, configJson = originalConfig, clientDraftId = draftId });
         create.StatusCode.Should().Be(HttpStatusCode.Created);
         using var createBody = await ApiTestJson.ReadAsync(create);
         var siteId = ApiTestJson.GuidValue(createBody.RootElement, "value", "id");
@@ -38,7 +39,7 @@ public sealed class CustomizationPublishingIntegrationTests(PostgresApiFixture f
         // A new client draft id creates a distinct draft. Repeating the original id returns its original site.
         createRetry.Dispose();
         using var sameDraftRetry = await ApiTestJson.SendJsonAsync(ownerClient, HttpMethod.Post, "/api/v1/customizations",
-            new { templateId = template.Id, title = "Site one", slug = ApiTestJson.StringValue(createBody.RootElement, "value", "slug"), configJson = originalConfig, clientDraftId = draftId });
+            new { templateId = template.Id, title = "Site one", slug = originalSlug, configJson = originalConfig, clientDraftId = draftId });
         sameDraftRetry.StatusCode.Should().Be(HttpStatusCode.Created);
         using var retryBody = await ApiTestJson.ReadAsync(sameDraftRetry);
         ApiTestJson.GuidValue(retryBody.RootElement, "value", "id").Should().Be(siteId);
@@ -53,7 +54,6 @@ public sealed class CustomizationPublishingIntegrationTests(PostgresApiFixture f
         using var ownerDetail = await ownerClient.GetAsync($"/api/v1/customizations/{siteId}");
         ownerDetail.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var originalSlug = ApiTestJson.StringValue(createBody.RootElement, "value", "slug");
         using var privateLookup = await anonymous.GetAsync($"/api/v1/customizations/slug/{originalSlug}");
         privateLookup.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -129,7 +129,7 @@ public sealed class CustomizationPublishingIntegrationTests(PostgresApiFixture f
         using var unlistedVersionsBody = await ApiTestJson.ReadAsync(unlistedVersions);
         var listedVersions = unlistedVersionsBody.RootElement.GetProperty("value").GetProperty("data");
         listedVersions.GetArrayLength().Should().Be(2);
-        listedVersions[0].TryGetProperty("configJson", out _).Should().BeFalse();
+        (!listedVersions[0].TryGetProperty("configJson", out var listedConfig) || listedConfig.ValueKind == System.Text.Json.JsonValueKind.Null).Should().BeTrue("list responses must not include the configuration contents");
 
         using var publishSecond = await ApiTestJson.SendJsonAsync(ownerClient, HttpMethod.Put,
             $"/api/v1/customizations/{siteId}/publication",

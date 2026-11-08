@@ -1,0 +1,20 @@
+{
+  "base": {
+    "pages": 2,
+    "hasVietnamese": true,
+    "hasAddedVatRow": false,
+    "hasLastItem": true,
+    "hasUnexpectedExpiry": false,
+    "usesVietnameseMoney": true,
+    "imageObjects": 11
+  },
+  "multipage": {
+    "pages": 7,
+    "hasVietnamese": true,
+    "hasAddedVatRow": false,
+    "hasLastItem": true,
+    "hasUnexpectedExpiry": false,
+    "usesVietnameseMoney": true,
+    "imageObjects": 35
+  }
+}

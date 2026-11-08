@@ -6,6 +6,7 @@ using TemplateLandingPage.Application.Abstractions;
 using TemplateLandingPage.Infrastructure.Abstractions;
 using TemplateLandingPage.Infrastructure.Authentication;
 using TemplateLandingPage.Infrastructure.Services;
+using TemplateLandingPage.Infrastructure.Services.Quoting;
 
 public static class ServiceCollectionExtensions
 {
@@ -16,6 +17,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+
+        // Quoting Services
+        services.AddHttpClient<SupabaseStorageService>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+        services.AddSingleton<LocalStorageService>();
+        services.AddSingleton<IQuotationFileStorageService, QuotationFileStorageResolver>();
+        services.AddSingleton<IQuotationExportService, QuotationHtmlExportService>();
 
         return services;
     }

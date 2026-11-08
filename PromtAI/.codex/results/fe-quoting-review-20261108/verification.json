@@ -1,0 +1,31 @@
+{
+  "verifiedAtUtc": "2026-11-08T12:02:23.645210+00:00",
+  "backend": {
+    "unit": 528,
+    "architecture": 7,
+    "postgresIntegration": 30
+  },
+  "frontend": {
+    "unitAndComponent": 180,
+    "coverage": {
+      "lines": 83.69,
+      "statements": 80.75,
+      "functions": 72.96,
+      "branches": 69.56,
+      "branchesTrue": 100
+    }
+  },
+  "browser": {
+    "fullMatrix": 45,
+    "loadedPagesRegression": 20,
+    "productionBuildSmoke": 4,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "productionBuild": "passed, large chunk warning remains",
+  "migrationModel": "no pending changes",
+  "database": "isolated local PostgreSQL only",
+  "cloudStorageLiveTested": false,
+  "deployed": false,
+  "testServices": "stopped; pre-existing user Vite process preserved"
+}
