@@ -1,0 +1,12 @@
+{
+  "restore": "passed: 7 API dependency projects only",
+  "publish": "passed: Release --no-restore",
+  "publishedImages": 11,
+  "embeddedImages": 11,
+  "embeddedVietnameseFont": true,
+  "anonymousQuotingApi": 401,
+  "productImage": 200,
+  "developmentSettingsPublished": false,
+  "dockerEngineAvailable": false,
+  "renderDeploymentPerformed": false
+}
