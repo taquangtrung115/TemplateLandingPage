@@ -5,14 +5,14 @@ import { quotingThemes } from '../quoting-theme';
 // #region Theme preference
 export const THEME_STORAGE_KEY = 'quoting.colorMode';
 const isColorMode = (value) => value === 'light' || value === 'dark';
-const ThemeContext = createContext({ colorMode: 'dark', toggleColorMode: () => {} });
+const ThemeContext = createContext({ colorMode: 'light', toggleColorMode: () => {} });
 
 function readColorMode() {
   try {
     const savedMode = localStorage.getItem(THEME_STORAGE_KEY);
     if (isColorMode(savedMode)) return savedMode;
   } catch { /* A blocked storage area must not prevent the app from opening. */ }
-  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  return 'light';
 }
 // #endregion
 

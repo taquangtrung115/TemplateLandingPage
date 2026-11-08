@@ -23,12 +23,12 @@ test.beforeEach(async ({ page, request }, testInfo) => {
   token = null;
   const session = await api(request, 'POST', '/auth/login', { email, password });
   token = session.token;
-  const mode = testInfo.project.name.includes('dark') ? 'dark' : 'light';
+  const mode = testInfo.title.startsWith('first visit') ? null : testInfo.project.name.includes('dark') ? 'dark' : 'light';
   await page.addInitScript(({ session, mode }) => {
     if (window.top !== window.self) return;
     localStorage.setItem('token', session.token);
     localStorage.setItem('user', JSON.stringify(session.user));
-    if (!localStorage.getItem('quoting.colorMode')) localStorage.setItem('quoting.colorMode', mode);
+    if (mode && !localStorage.getItem('quoting.colorMode')) localStorage.setItem('quoting.colorMode', mode);
   }, { session, mode });
 });
 test.afterEach(async () => expect(runtimeErrors).toEqual([]));
@@ -74,6 +74,15 @@ test('all routes render without runtime errors or horizontal page overflow', asy
   }
 });
 
+test('first visit defaults to light and preserves a later dark preference', async ({ page }) => {
+  await open(page, '/products', 'Danh mục sản phẩm');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.getByRole('button', { name: 'Giao diện tối', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
 test('switching theme persists across reload and keeps controls usable', async ({ page }, testInfo) => {
   await open(page, '/products', 'Danh mục sản phẩm');
   const initial = testInfo.project.name.includes('dark') ? 'dark' : 'light';
@@ -90,7 +99,7 @@ test('switching theme persists across reload and keeps controls usable', async (
 test('customer drawer creates and edits data with validation and delete confirmation', async ({ page }, testInfo) => {
   const name = `Khách hàng ${unique()}`;
   await open(page, '/customers', 'Khách hàng');
-  await main(page).getByRole('button', { name: 'Thêm khách hàng', exact: true }).click();
+  await main(page).getByRole('button', { name: 'Thêm khách hàng', exact: true }).first().click();
   const drawer = page.getByRole('dialog', { name: 'Thêm khách hàng', exact: true });
   await drawer.getByRole('button', { name: 'Lưu khách hàng' }).click();
   await expect(drawer.getByText('Tên khách hàng và Số điện thoại là bắt buộc.').first()).toBeVisible();
@@ -213,6 +222,60 @@ test('generic quotation omits the customer block and template copies keep indepe
   await page.waitForURL(/\/quotations\/[a-f0-9-]{36}$/);
   await expect(page.frameLocator('iframe').locator('.customer-box')).toHaveCount(0);
   await expect(page.frameLocator('iframe').getByText('Kính gửi: QUÝ KHÁCH HÀNG', { exact: true })).toBeVisible();
+});
+
+test('product image upload, replacement and quotation export preserve the saved image', async ({ page, request }, testInfo) => {
+  test.skip(!process.env.QUOTING_E2E_IMAGE_STORAGE, 'Requires image storage configured on the isolated test backend.');
+  const name = `Ảnh sản phẩm ${unique()}`;
+  await open(page, '/products', 'Danh mục sản phẩm');
+  await main(page).getByRole('button', { name: 'Thêm sản phẩm', exact: true }).click();
+  const drawer = page.getByRole('dialog', { name: 'Thêm sản phẩm', exact: true });
+  await drawer.getByLabel('Tên sản phẩm', { exact: true }).fill(name);
+  await drawer.locator('input[type="file"]').setInputFiles('../BE/assets/quoting/products/CB-01.png');
+  await expect(drawer.getByAltText('Ảnh sản phẩm đang chọn')).toHaveJSProperty('naturalWidth', 254);
+  await noPageOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('selected-image.png'), fullPage: true });
+  await drawer.getByRole('button', { name: 'Lưu sản phẩm', exact: true }).click();
+  await expect(drawer).not.toBeVisible();
+  await main(page).getByLabel('Tìm kiếm sản phẩm', { exact: true }).fill(name);
+  const product = (await api(request, 'GET', '/quoting/products')).find((item) => item.name === name);
+  expect(product.imageUrl).toMatch(/^\/api\/v1\/quoting\/product-images\/uploads\/[a-f0-9]{32}\.png$/);
+  const original = await request.get(product.imageUrl); expect(original.ok()).toBeTruthy();
+  const originalBytes = await original.body();
+  await expect(main(page).getByAltText(name)).toHaveJSProperty('naturalWidth', 254);
+  await open(page, '/quotations/create', 'Tạo báo giá');
+  await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
+  await main(page).getByRole('button', { name: new RegExp(`${name} ·`) }).click();
+  await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
+  await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
+  await main(page).getByRole('button', { name: 'Tạo báo giá', exact: true }).click();
+  await page.waitForURL(/\/quotations\/[a-f0-9-]{36}$/);
+  const quoteId = page.url().split('/').at(-1);
+  const quote = await api(request, 'GET', `/quoting/quotations/${quoteId}`);
+  expect(quote.items[0].imageUrl).toBe(product.imageUrl);
+  await expect(page.frameLocator('iframe').getByAltText(name)).toHaveJSProperty('naturalWidth', 254);
+  await open(page, '/products', 'Danh mục sản phẩm');
+  await main(page).getByLabel('Tìm kiếm sản phẩm', { exact: true }).fill(name);
+  await main(page).getByRole('button', { name: `Sửa ${name}`, exact: true }).click();
+  const edit = page.getByRole('dialog', { name: 'Sửa sản phẩm', exact: true });
+  await edit.locator('input[type="file"]').setInputFiles('../BE/assets/quoting/products/XQ-01.png');
+  await edit.getByRole('button', { name: 'Lưu sản phẩm', exact: true }).click();
+  await expect(edit).not.toBeVisible();
+  const updated = await api(request, 'GET', `/quoting/products/${product.id}`);
+  expect(updated.imageUrl).not.toBe(product.imageUrl);
+  expect((await api(request, 'GET', `/quoting/quotations/${quoteId}`)).items[0].imageUrl).toBe(product.imageUrl);
+  await page.goto(`/quotations/${quoteId}`, { waitUntil: 'domcontentloaded' });
+  await expect(main(page).getByRole('button', { name: 'Sửa báo giá', exact: true })).toBeVisible();
+  const htmlDownload = page.waitForEvent('download');
+  await main(page).getByRole('button', { name: 'Tải HTML', exact: true }).first().click();
+  const html = await htmlDownload; const htmlPath = testInfo.outputPath('uploaded-image-quotation.html'); await html.saveAs(htmlPath);
+  expect(await readFile(htmlPath, 'utf8')).toContain(`data:image/png;base64,${originalBytes.toString('base64')}`);
+  const pdfDownload = page.waitForEvent('download');
+  await main(page).getByRole('button', { name: 'Tải PDF', exact: true }).first().click();
+  const pdf = await pdfDownload; const pdfPath = testInfo.outputPath('uploaded-image-quotation.pdf'); await pdf.saveAs(pdfPath);
+  expect((await readFile(pdfPath)).subarray(0, 8).toString('ascii')).toBe('%PDF-1.4');
+  await testInfo.attach('Báo giá với ảnh upload', { path: pdfPath, contentType: 'application/pdf' });
+  await noPageOverflow(page);
 });
 
 test('core pages have no serious accessibility violations', async ({ page }, testInfo) => {

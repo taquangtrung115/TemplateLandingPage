@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TemplateLandingPage.Application.Abstractions;
+using TemplateLandingPage.Infrastructure.Services.Quoting;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using Xunit;
@@ -214,6 +216,8 @@ public sealed class PostgresApiFixture : IAsyncLifetime
                 options.TokenValidationParameters.ValidIssuer = Issuer;
                 options.TokenValidationParameters.ValidAudience = Audience;
             }));
+            builder.ConfigureTestServices(services => services.AddHttpClient<IQuotingProductImageService, SupabaseProductImageService>()
+                .ConfigurePrimaryHttpMessageHandler(() => new FakeSupabaseImageHandler()));
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
                 new Dictionary<string, string?>
                 {
@@ -222,6 +226,9 @@ public sealed class PostgresApiFixture : IAsyncLifetime
                     ["Jwt:Issuer"] = Issuer,
                     ["Jwt:Audience"] = Audience,
                     ["SeedData:Enabled"] = "false",
+                    ["Quoting:Images:SupabaseUrl"] = "https://storage.integration.test",
+                    ["Quoting:Images:SecretKey"] = "synthetic-image-key",
+                    ["Quoting:Images:ServiceRoleKey"] = "synthetic-image-key",
                     ["Supabase:Url"] = "",
                     ["Supabase:ServiceRoleKey"] = "",
                     ["Supabase:Key"] = "",

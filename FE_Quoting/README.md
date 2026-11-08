@@ -28,7 +28,7 @@ Yêu cầu hỗ trợ được lưu tại `quo.SupportRequests`, gắn người 
 
 ## Giao diện
 
-Theme tối dựa trên Gothic, theme sáng dựa trên Neutral; màu nút theo hành động, badge trạng thái và nhãn tiếng Việt. SideNav chia nhóm nghiệp vụ/danh mục/cấu hình/hỗ trợ, chuyển thành điều hướng mobile. Drawer tạo/sửa danh mục; bảng dùng vùng cuộn ngang của Astryx, mặc định 20 dòng. Riêng sản phẩm trên mobile dùng thẻ hiển thị đủ mã, mô tả, nhóm, ĐVT, giá, trạng thái và thao tác. Tóm tắt báo giá ở bên phải từ 1280px, chuyển dưới nội dung trên màn hình hẹp. Control ngày dùng Calendar, thông báo dùng Toast, form có nhãn/validation/loading.
+Theme sáng dựa trên Neutral và là mặc định khi chưa có lựa chọn hợp lệ; theme tối dựa trên Gothic. Lựa chọn sáng/tối đã lưu của người dùng được giữ lại. Màu nút theo hành động, badge trạng thái và nhãn tiếng Việt. SideNav chia nhóm nghiệp vụ/danh mục/cấu hình/hỗ trợ, chuyển thành điều hướng mobile. Drawer tạo/sửa danh mục; bảng dùng vùng cuộn ngang của Astryx, mặc định 20 dòng. Riêng sản phẩm trên mobile dùng thẻ hiển thị đủ mã, mô tả, nhóm, ĐVT, giá, trạng thái và thao tác. Tóm tắt báo giá ở bên phải từ 1280px, chuyển dưới nội dung trên màn hình hẹp. Control ngày dùng Calendar, thông báo dùng Toast, form có nhãn/validation/loading.
 
 ## Chạy local
 
@@ -42,9 +42,29 @@ FE mặc định cổng 5174, proxy `/api` đến `http://127.0.0.1:54611`. Có 
 
 BE cần cấu hình `ConnectionStrings__DefaultConnection`, `Jwt__SecretKey`, issuer/audience theo môi trường. Áp dụng EF migrations bằng quy trình deploy của dự án. `SeedData__Enabled=true` chỉ dành cho development được bật rõ ràng; `SeedData__IncludeCatalog=false` tránh seed catalog landing page không liên quan. Review các tài khoản demo của seeder trước khi dùng ngoài môi trường kiểm thử.
 
-HTML nhúng ảnh của các sản phẩm gốc thành data URI để mở offline. Ảnh URL ngoài vẫn cần kết nối mạng. PDF chuẩn hóa Unicode NFC để ký tự ghép dấu hiển thị đúng, dùng PDFsharp và font Noto Sans thường/đậm nhúng (kèm giấy phép OFL), giữ tiếng Việt, hình sản phẩm gốc và ngắt nhiều trang. Tệp báo giá được lưu ở thư mục riêng `App_Data/quotations` hoặc `Quoting:Storage:LocalPath`, tải qua endpoint JWT `/{quotationId}/files/{fileId}/download`. Không công khai thư mục xuất qua static files. Endpoint có xác thực đọc được file ở thư mục cũ `wwwroot/exports/quotations` (hoặc `Quoting:Storage:LegacyPath`); đường dẫn static mặc định của thư mục này bị chặn.
+HTML nhúng ảnh của các sản phẩm gốc và ảnh upload thành data URI để mở offline. Ảnh URL ngoài cũ vẫn cần kết nối mạng. PDF chuẩn hóa Unicode NFC để ký tự ghép dấu hiển thị đúng, dùng PDFsharp và font Noto Sans thường/đậm nhúng (kèm giấy phép OFL), giữ tiếng Việt, hình sản phẩm gốc/ảnh upload và ngắt nhiều trang. Tệp báo giá được lưu ở thư mục riêng `App_Data/quotations` hoặc `Quoting:Storage:LocalPath`, tải qua endpoint JWT `/{quotationId}/files/{fileId}/download`. Không công khai thư mục xuất qua static files. Endpoint có xác thực đọc được file ở thư mục cũ `wwwroot/exports/quotations` (hoặc `Quoting:Storage:LegacyPath`); đường dẫn static mặc định của thư mục này bị chặn.
 
-Supabase Storage được hỗ trợ nếu có `Supabase:Url`, `Supabase:ServiceRoleKey`, `Supabase:Bucket` phía BE. Khi chưa cấu hình hoặc upload lỗi, lưu local; file không bị mất bytes sau fallback. Dùng private bucket, service key chỉ ở BE. Cấu hình local được kiểm tra chưa có thông tin Supabase; chưa xác minh upload trên tài khoản cloud thực tế.
+Đối với **tệp báo giá xuất**, Supabase Storage được hỗ trợ nếu có `Supabase:Url`, `Supabase:ServiceRoleKey`, `Supabase:Bucket` phía BE. Khi chưa cấu hình hoặc upload lỗi, lưu local; file không bị mất bytes sau fallback. Dùng private bucket, service key chỉ ở BE. Khi deploy Render, cần Supabase hoặc persistent disk cho tệp báo giá local.
+
+## Upload ảnh sản phẩm trên Render
+
+Quản trị viên mở **Danh mục sản phẩm → Thêm/Sửa sản phẩm → Ảnh sản phẩm**, chọn ảnh trên máy/điện thoại, xem trước rồi **Lưu sản phẩm**. FE dùng `FileInput` Astryx; không yêu cầu nhập URL hay đăng nhập Supabase. Ảnh chỉ upload khi lưu. Lỗi upload giữ nguyên file đang chọn; lỗi lưu sản phẩm sau khi upload cho phép lưu lại mà không upload trùng.
+
+Cấu hình một lần trong **Render → backend service → Environment**, sau đó redeploy backend và frontend đã cập nhật:
+
+| Biến backend | Giá trị |
+| --- | --- |
+| `Quoting__Images__SupabaseUrl` | `https://<project-ref>.supabase.co` |
+| `Quoting__Images__SecretKey` | Secret key `sb_secret_...` của project, chỉ nhập trong Render |
+| `Quoting__Images__Bucket` | `product-images` (mặc định, có thể bỏ qua) |
+
+Lấy URL từ Connect và secret key từ **Supabase → Settings → API Keys**. Không dùng publishable/anon key, không đưa secret vào `VITE_*` hoặc chat. Secret key chỉ gửi qua `apikey`; service_role JWT cũ vẫn được hỗ trợ qua `Quoting__Images__ServiceRoleKey`. Có thể dùng lại cấu hình `Supabase:Url` và `Supabase:ServiceRoleKey` hiện hữu. Tham khảo [API keys của Supabase](https://supabase.com/docs/guides/getting-started/api-keys).
+
+BE tự tạo bucket riêng tư khi upload đầu tiên; không cần mở policy upload cho trình duyệt. `POST /api/v1/quoting/products/images` yêu cầu Admin thực tế. BE nhận JPG/PNG tối đa 5 MB, kiểm tra nội dung thật và giới hạn 16 triệu pixel, xoay theo EXIF, bỏ metadata, thu nhỏ cạnh dài về tối đa 1600px. Chưa cấu hình/lỗi storage trả 503 với thông báo dễ hiểu; không báo upload thành công và không fallback sang ổ đĩa tạm.
+
+URL lưu vào sản phẩm là `/api/v1/quoting/product-images/uploads/<guid>.png` hoặc `.jpg`; FE tự dùng API origin đã cấu hình. Bucket vẫn riêng tư; **ảnh sản phẩm** được đọc công khai qua BE để hiển thị trên báo giá. Tệp báo giá có thông tin khách hàng vẫn tải qua JWT như trước. Thay/xóa ảnh khỏi sản phẩm không xóa object cũ, để báo giá đã lưu giữ đúng ảnh. Export chỉ đọc object thuộc bucket đã cấu hình, không fetch URL ngoài tùy ý; ảnh bị thiếu làm export thất bại thay vì xuất nhầm ảnh.
+
+Cloud Supabase thật chưa được xác minh do backend Render chưa có cấu hình; integration/E2E dùng giao thức storage mô phỏng, DB và API ứng dụng thật.
 
 ## Kiểm thử
 
@@ -70,6 +90,8 @@ $env:QUOTING_E2E_PASSWORD='<mật khẩu kiểm thử>'
 npm run test:e2e
 ```
 
-Playwright dùng FE cổng 5184, kiểm tra desktop sáng/tối và mobile 320/375/390px, CRUD, tạo/sửa/xuất PDF, VAT tùy chọn, đăng nhập, phiên bản mẫu, overflow và Axe accessibility. Các request và dữ liệu đều là thật, không dùng mock API. E2E làm thay đổi dữ liệu nên chỉ chạy với database kiểm thử.
+Playwright dùng FE cổng 5184, kiểm tra desktop sáng/tối và mobile 320/375/390px, CRUD, tạo/sửa/xuất PDF, VAT tùy chọn, đăng nhập, phiên bản mẫu, overflow và Axe accessibility. API ứng dụng và database chạy thật. E2E làm thay đổi dữ liệu nên chỉ chạy với database kiểm thử.
+
+Để chạy thêm E2E ảnh upload mà không dùng cloud: chạy `node e2e/fixtures/storage-server.mjs` ở terminal riêng, cấu hình BE kiểm thử `Quoting__Images__SupabaseUrl=http://127.0.0.1:55440` và `Quoting__Images__ServiceRoleKey=synthetic-image-key`, sau đó đặt `QUOTING_E2E_IMAGE_STORAGE=1` trước khi chạy Playwright. Fixture chỉ nghe loopback và lưu trong bộ nhớ. Khi không bật biến này, riêng ca upload được skip. Với máy hạn chế tài nguyên, chạy Vitest bằng `node node_modules/vitest/vitest.mjs run --maxWorkers=2 --coverage`.
 
 Bằng chứng và báo cáo nằm trong `PromtAI/.codex/results/fe-quoting-review-20261108`. Vitest là kiểm thử component, không được gọi là full E2E; bằng chứng full flow nằm ở Playwright và integration tests PostgreSQL.

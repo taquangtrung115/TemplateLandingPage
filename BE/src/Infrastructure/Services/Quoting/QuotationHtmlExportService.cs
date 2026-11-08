@@ -7,25 +7,53 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using TemplateLandingPage.Application.Abstractions;
 using TemplateLandingPage.Domain.Entities.Quoting;
+using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Helpers;
 
 public sealed class QuotationHtmlExportService : IQuotationExportService
 {
     private static readonly CultureInfo VnCulture = new("vi-VN");
 
-    public Task<byte[]> GenerateHtmlAsync(Quotation quotation, QuotationTemplateVersion templateVersion, CancellationToken cancellationToken = default)
+    private readonly IQuotingProductImageService? _imageService;
+    public QuotationHtmlExportService(IQuotingProductImageService? imageService = null) => _imageService = imageService;
+
+    public async Task<byte[]> GenerateHtmlAsync(Quotation quotation, QuotationTemplateVersion templateVersion, CancellationToken cancellationToken = default)
     {
-        var html = BuildHtmlContent(quotation, templateVersion);
-        return Task.FromResult(Encoding.UTF8.GetBytes(html));
+        var images = await LoadImagesAsync(quotation, cancellationToken);
+        return Encoding.UTF8.GetBytes(BuildHtmlContent(quotation, templateVersion, images));
     }
 
-    public Task<byte[]> GeneratePdfAsync(Quotation quotation, QuotationTemplateVersion templateVersion, CancellationToken cancellationToken = default)
+    public async Task<byte[]> GeneratePdfAsync(Quotation quotation, QuotationTemplateVersion templateVersion, CancellationToken cancellationToken = default)
     {
-        // Generate a standard PDF-1.4 file containing the quotation details
-        var pdfBytes = QuotationPdfRenderer.Render(quotation, templateVersion, cancellationToken);
-        return Task.FromResult(pdfBytes);
+        var images = await LoadImagesAsync(quotation, cancellationToken);
+        return QuotationPdfRenderer.Render(quotation, templateVersion, cancellationToken, images);
     }
 
-    public static string BuildHtmlContent(Quotation quotation, QuotationTemplateVersion templateVersion)
+    private async Task<IReadOnlyDictionary<string, byte[]>> LoadImagesAsync(Quotation quotation, CancellationToken cancellationToken)
+    {
+        var urls = quotation.Items.Select(item => item.ImageUrl).Where(url => QuotingProductImageAddress.FileName(url) is not null).Distinct().Cast<string>().ToArray();
+        var images = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        long totalBytes = 0;
+        // Bound parallel storage reads and deduplicate repeated product images in a document.
+        foreach (var batch in urls.Chunk(4))
+        {
+            var resolved = await Task.WhenAll(batch.Select(async url =>
+            {
+                if (_imageService is null) throw new InvalidOperationException("Product image storage is unavailable.");
+                var image = await _imageService.GetAsync(QuotingProductImageAddress.FileName(url)!, cancellationToken)
+                    ?? throw new InvalidOperationException("A saved product image could not be loaded.");
+                return (Url: url, image.Data);
+            }));
+            foreach (var image in resolved)
+            {
+                totalBytes += image.Data.Length;
+                if (totalBytes > 32 * 1024 * 1024) throw new InvalidOperationException("Quotation images exceed the document memory budget.");
+                images[image.Url] = image.Data;
+            }
+        }
+        return images;
+    }
+
+    public static string BuildHtmlContent(Quotation quotation, QuotationTemplateVersion templateVersion, IReadOnlyDictionary<string, byte[]>? uploadedImages = null)
     {
         var sb = new StringBuilder();
 
@@ -252,7 +280,7 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
 
             foreach (var item in group)
             {
-                var imageSource = ImageSource(item.ImageUrl, imageSources);
+                var imageSource = ImageSource(item.ImageUrl, imageSources, uploadedImages);
                 sb.Append($@"
       <tr>
         <td class=""text-center"">{stt++}</td>
@@ -341,9 +369,11 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
     private static readonly HtmlEncoder ContentEncoder = HtmlEncoder.Create(UnicodeRanges.All);
     private static string Html(string? value) => ContentEncoder.Encode(value ?? string.Empty);
 
-    private static string ImageSource(string? value, Dictionary<string, string> cache)
+    private static string ImageSource(string? value, Dictionary<string, string> cache, IReadOnlyDictionary<string, byte[]>? uploadedImages)
     {
         if (string.IsNullOrWhiteSpace(value)) return "";
+        if (uploadedImages?.TryGetValue(value, out var imageBytes) == true)
+            return "data:" + (imageBytes[0] == 0x89 ? "image/png" : "image/jpeg") + ";base64," + Convert.ToBase64String(imageBytes);
         var path = Uri.TryCreate(value, UriKind.Absolute, out var absolute) ? absolute.AbsolutePath : value;
         if (path.StartsWith("/api/v1/quoting/product-images/", StringComparison.Ordinal))
         {

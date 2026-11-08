@@ -1,6 +1,9 @@
 namespace TemplateLandingPage.Presentation.APIs.Quoting;
 
 using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
+using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Commands.UploadImage;
+using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Queries.GetImage;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -16,6 +19,22 @@ public sealed class QuotingProductApi : IEndpoint
     {
         var group = app.MapGroup("/api/v1/quoting/products")
             .WithTags("QuotingProducts");
+
+        group.MapPost("images", async (IFormFile file, ISender sender, CancellationToken ct) =>
+        {
+            await using var content = file.OpenReadStream();
+            return Respond(await sender.Send(new UploadQuotingProductImageCommand(content, file.ContentType, file.Length), ct), StatusCodes.Status201Created);
+        }).RequireAuthorization(AuthorizationPolicies.AdminOnly).DisableAntiforgery()
+            .WithMetadata(new RequestSizeLimitAttribute(6 * 1024 * 1024));
+
+        app.MapGet("/api/v1/quoting/product-images/uploads/{fileName}", async (string fileName, HttpContext context, ISender sender, CancellationToken ct) =>
+        {
+            var result = await sender.Send(new GetQuotingProductImageQuery(fileName), ct);
+            if (!result.IsSuccess) return Results.NotFound();
+            context.Response.Headers.CacheControl = "public,max-age=31536000,immutable";
+            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            return Results.File(result.Value.Data, result.Value.ContentType);
+        }).AllowAnonymous().WithTags("QuotingProducts");
 
         group.MapPost("", async (CreateQuotingProductRequest request, ISender sender, CancellationToken ct) =>
         {
@@ -85,7 +104,7 @@ public sealed class QuotingProductApi : IEndpoint
         if (result.IsSuccess) return Results.Ok(result);
         if (result is IValidationResult validation)
             return Results.BadRequest(new { title = "Validation Error", status = StatusCodes.Status400BadRequest, errors = validation.Errors });
-        var status = result.Error == QuotingProductErrors.NotFound ? StatusCodes.Status404NotFound :
+        var status = result.Error.Code == "QuotingProductImage.Unavailable" ? StatusCodes.Status503ServiceUnavailable : result.Error == QuotingProductErrors.NotFound ? StatusCodes.Status404NotFound :
                      result.Error == QuotingProductErrors.DuplicateCode ? StatusCodes.Status409Conflict :
                      StatusCodes.Status400BadRequest;
         return Results.Json(new { title = "Request failed", status, error = result.Error }, statusCode: status);

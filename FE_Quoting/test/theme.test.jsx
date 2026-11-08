@@ -5,6 +5,20 @@ import { ThemeProvider, THEME_STORAGE_KEY } from '../src/contexts/ThemeContext';
 import ThemeToggle from '../src/components/common/ThemeToggle';
 
 describe('Light and dark Astryx themes', () => {
+  it.each([null, 'invalid'])('defaults to light without a valid saved preference (%s), even on a dark device', (savedMode) => {
+    if (savedMode) localStorage.setItem(THEME_STORAGE_KEY, savedMode);
+    const media = vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      matches: false, media: query, onchange: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: () => false,
+    }));
+    try {
+      render(<ThemeProvider><ThemeToggle /></ThemeProvider>);
+      expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+      expect(document.documentElement).toHaveAttribute('data-astryx-theme', 'quoting-light');
+      expect(screen.getByRole('button', { name: 'Giao diện tối' })).toBeEnabled();
+      expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
+    } finally { media.mockRestore(); }
+  });
   it('switches and persists the preference, including portal theme attributes', async () => {
     localStorage.setItem(THEME_STORAGE_KEY, 'dark');
     const { unmount } = render(<ThemeProvider><ThemeToggle /></ThemeProvider>);
@@ -29,6 +43,7 @@ describe('Light and dark Astryx themes', () => {
     const get = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
     const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
     render(<ThemeProvider><ThemeToggle /></ThemeProvider>);
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light');
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByRole('button')).toBeEnabled();
     get.mockRestore(); set.mockRestore();

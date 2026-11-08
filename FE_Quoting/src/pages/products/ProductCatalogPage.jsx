@@ -2,6 +2,7 @@ import { resolveApiAssetUrl } from '../../api/apiUrl';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Banner } from '@astryxdesign/core/Banner';
 import { useMediaQuery } from '@astryxdesign/core/hooks';
+import { FileInput } from '@astryxdesign/core/FileInput';
 import { Card } from '@astryxdesign/core/Card';
 import { QuotingTable as Table, pixel, proportional } from '../../components/common/QuotingTable';
 import { Badge } from '@astryxdesign/core/Badge';
@@ -69,6 +70,9 @@ export default function ProductCatalogPage() {
   const [price, setPrice] = useState(25000);
   const [category, setCategory] = useState('A/ DÒNG COMBO');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -98,6 +102,26 @@ export default function ProductCatalogPage() {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    if (!imageFile || !URL.createObjectURL) { setImagePreview(''); return; }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
+
+  const handleImageChange = (file) => {
+    if (file && (!['image/png', 'image/jpeg'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+      setErrorMessage('Chọn ảnh JPG hoặc PNG, dung lượng tối đa 5 MB.'); return;
+    }
+    setErrorMessage(null); setImageFile(file);
+  };
+
+  const handleFormOpenChange = (open) => {
+    if (saving) return;
+    setIsFormOpen(open);
+    if (!open) setImageFile(null);
+  };
+
   const handleOpenAdd = () => {
     setEditingProduct(null);
     setCode(`SP-${Date.now().toString(36).toUpperCase()}`);
@@ -107,6 +131,7 @@ export default function ProductCatalogPage() {
     setPrice(25000);
     setCategory('A/ DÒNG COMBO');
     setImageUrl('');
+    setImageFile(null);
     setIsActive(true);
     setErrorMessage(null);
     setIsFormOpen(true);
@@ -121,6 +146,7 @@ export default function ProductCatalogPage() {
     setPrice(p.price);
     setCategory(p.category || 'A/ DÒNG COMBO');
     setImageUrl(p.imageUrl || '');
+    setImageFile(null);
     setIsActive(p.isActive);
     setErrorMessage(null);
     setIsFormOpen(true);
@@ -137,6 +163,16 @@ export default function ProductCatalogPage() {
     try {
       setSaving(true);
       setErrorMessage(null);
+      let savedImageUrl = imageUrl;
+      if (imageFile) {
+        setUploadingImage(true);
+        try {
+          const uploaded = await quotingProductApi.uploadImage(imageFile);
+          if (!uploaded?.image?.imageUrl) throw new Error('Chưa thể lưu ảnh sản phẩm. Vui lòng thử lại.');
+          savedImageUrl = uploaded.image.imageUrl;
+          setImageUrl(savedImageUrl); setImageFile(null);
+        } finally { setUploadingImage(false); }
+      }
       if (editingProduct) {
         await quotingProductApi.updateProduct(editingProduct.id, {
           code,
@@ -145,7 +181,7 @@ export default function ProductCatalogPage() {
           unit,
           price: Number(price) || 0,
           category,
-          imageUrl,
+          imageUrl: savedImageUrl,
           isActive,
         });
         toast({ body: `Cập nhật sản phẩm ${name} thành công.`, type: 'info' });
@@ -157,7 +193,7 @@ export default function ProductCatalogPage() {
           unit,
           price: Number(price) || 0,
           category,
-          imageUrl,
+          imageUrl: savedImageUrl,
           isActive,
         });
         toast({ body: `Thêm mới sản phẩm ${name} thành công.`, type: 'info' });
@@ -406,7 +442,7 @@ export default function ProductCatalogPage() {
       {/* Drawer Form thay thế Inline Card Form */}
       <Drawer
         isOpen={isFormOpen}
-        onOpenChange={(open) => { if (!saving) setIsFormOpen(open); }}
+        onOpenChange={handleFormOpenChange}
         side="end"
         width={520}
         label={editingProduct ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}
@@ -415,7 +451,7 @@ export default function ProductCatalogPage() {
           <VStack gap={5}>
             <DrawerHeader
               title={editingProduct ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}
-              onOpenChange={(open) => { if (!saving) setIsFormOpen(open); }}
+              onOpenChange={handleFormOpenChange}
             />
 
             {errorMessage && (
@@ -491,15 +527,12 @@ export default function ProductCatalogPage() {
                 />
               </Field>
 
-              <Field label="Đường dẫn ảnh" inputID="product-field-6" labelID="product-field-6-label">
-                <TextInput
-                  label="Đường dẫn ảnh" isLabelHidden
-                  id="product-field-6" aria-labelledby="product-field-6-label"
-                  value={imageUrl}
-                  onChange={setImageUrl}
-                  placeholder="https://example.com/san-pham.jpg"
-                />
-              </Field>
+              <FileInput label="Ảnh sản phẩm" value={imageFile} onChange={handleImageChange} accept="image/jpeg,image/png" maxSize={5 * 1024 * 1024}
+                mode="dropzone" isDisabled={saving || !isAdmin} isLoading={uploadingImage} description="Chọn ảnh JPG hoặc PNG, tối đa 5 MB. Ảnh được tải lên khi bạn lưu sản phẩm." placeholder="Chọn ảnh từ thiết bị" />
+              {(imagePreview || imageUrl) && <VStack gap={2}>
+                <img src={imagePreview || resolveApiAssetUrl(imageUrl)} alt="Ảnh sản phẩm đang chọn" className="product-image-preview" />
+                <Button label="Xóa ảnh" variant="secondary" isDisabled={saving || !isAdmin} onClick={() => { setImageFile(null); setImageUrl(''); }} />
+              </VStack>}
 
               <HStack vAlign="center" gap={3}>
                 <Switch
@@ -516,11 +549,11 @@ export default function ProductCatalogPage() {
               <Button
                 variant="secondary"
                 label="Hủy"
-                onClick={() => setIsFormOpen(false)}
+                onClick={() => handleFormOpenChange(false)}
               />
               <Button
                 variant="primary"
-                label={saving ? 'Đang lưu...' : 'Lưu sản phẩm'}
+                label={uploadingImage ? 'Đang tải ảnh...' : saving ? 'Đang lưu...' : 'Lưu sản phẩm'}
                 icon={<Icon icon={CheckIcon} size="sm" />}
                 onClick={handleSave}
                 isLoading={saving}
