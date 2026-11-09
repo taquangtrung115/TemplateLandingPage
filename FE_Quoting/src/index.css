@@ -35,6 +35,11 @@ body {
 .quotation-tabs { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; }
 .quotation-product-picker { display: flex; flex-wrap: wrap; gap: 8px; }
 .quotation-product-picker > * { max-width: 100%; height: auto; min-height: 40px; white-space: normal; }
+.quotation-item-identity { min-width: 0; max-width: 100%; }
+.quotation-item-description { min-width: 0; }
+.quotation-item-name, .quotation-item-category { overflow-wrap: anywhere; }
+.quotation-summary-product { min-width: 0; flex: 1; }
+.quotation-summary-product-info { min-width: 0; overflow-wrap: anywhere; }
 .quoting-content img { max-width: 100%; }
 .quoting-content h1 { overflow-wrap: anywhere; }
 @media (max-width: 1279px) {
@@ -50,6 +55,10 @@ body {
   .quotation-settings { flex-direction: column; }
   .quotation-item-fields { width: 100%; }
   .quotation-item-fields > * { flex: 1 1 90px; }
+  .quotation-item-fields > button { flex-basis: 100%; }
+  .quotation-item-identity { width: 100%; }
+  .quotation-item-description { flex: 1; }
+  .quotation-item-name { flex-basis: 100%; }
   .quotation-tabs > * { min-width: 600px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -69,3 +78,20 @@ body {
 @media (max-width: 1023px) { .support-board { grid-template-columns: minmax(0, 1fr); } }
 
 .product-image-preview { width: 100%; max-height: 220px; object-fit: contain; border-radius: 8px; background: var(--color-background-muted); }
+
+/* Keep sign-in controls ahead of supporting content on narrow screens. */
+.login-page { width: 100%; min-height: 100vh; min-height: 100dvh; padding: 24px; box-sizing: border-box; background: var(--color-background-body); color: var(--color-text-primary); }
+.login-card-wrap { width: 100%; max-width: 960px; min-width: 0; margin-inline: auto; }
+.login-split-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; width: 100%; padding: 32px; box-sizing: border-box; }
+.login-split-grid > *, .login-brand > * { min-width: 0; }
+.login-form, .login-form form { width: 100%; min-width: 0; }
+.login-split-image { width: 100%; }
+.login-promo-card { min-height: 340px; }
+@media (max-width: 640px) {
+  .login-page { padding: 16px 12px; }
+  .login-split-grid { grid-template-columns: minmax(0, 1fr); padding: 20px; }
+  .login-promo-card { min-height: 0; }
+  .login-brand h1 { overflow-wrap: anywhere; }
+  /* iOS zooms the viewport when focusing smaller form text. */
+  .login-page input, .quoting-content input, .quoting-content textarea, .quoting-content select { font-size: 16px; }
+}

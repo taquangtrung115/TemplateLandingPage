@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Center } from '@astryxdesign/core/Center';
 import { Card } from '@astryxdesign/core/Card';
-import { Grid } from '@astryxdesign/core/Grid';
 import { VStack, HStack } from '@astryxdesign/core/Layout';
 import { Heading, Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
@@ -12,6 +11,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Divider } from '@astryxdesign/core/Divider';
 import { Icon } from '@astryxdesign/core/Icon';
+import { Spinner } from '@astryxdesign/core/Spinner';
 import {
   BuildingStorefrontIcon,
   EyeIcon,
@@ -23,42 +23,22 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import ThemeToggle from '../../components/common/ThemeToggle';
 
-const LOGIN_SPLIT_CSS = `
-.login-split-grid {
-  container-type: inline-size;
-  container-name: login-split;
-  padding: var(--spacing-8);
+// #region Return location
+function getReturnLocation(location) {
+  const previous = location.state?.from;
+  const pathname = previous?.pathname;
+  if (typeof pathname !== 'string' || !pathname.startsWith('/') || pathname.startsWith('//')
+    || pathname.includes('\\') || pathname.replace(/\/+$/, '') === '/login') return '/';
+  return `${pathname}${previous.search || ''}${previous.hash || ''}`;
 }
-.login-split-image {
-  width: 100%;
-  order: 0;
-}
-@container login-split (max-width: 511px) {
-  .login-split-grid {
-    padding: var(--spacing-4);
-  }
-  .login-split-image {
-    order: -1;
-  }
-}
-`;
-
-const pageStyle = {
-  minHeight: '100vh',
-  backgroundColor: 'var(--color-background-body)',
-  color: 'var(--color-text-primary)',
-};
-
-const cardWrap = {
-  width: '100%',
-  maxWidth: 960,
-  marginInline: 'auto',
-};
+// #endregion
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  // #region State
+  const { login, loading: restoringSession, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const returnLocation = getReturnLocation(location);
 
   // Khởi tạo state rỗng, tuân thủ an toàn bảo mật OWASP (không prefill thông tin nhạy cảm)
   const [email, setEmail] = useState('');
@@ -66,7 +46,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // #endregion
 
+  // #region Handlers
   const handleSubmit = async (e) => {
     e?.preventDefault();
     if (loading) return;
@@ -79,32 +61,28 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
       await login(email.trim(), password);
-      const previousLocation = location.state?.from;
-      const from = previousLocation ? `${previousLocation.pathname}${previousLocation.search || ''}${previousLocation.hash || ''}` : '/';
-      navigate(from, { replace: true });
+      navigate(returnLocation, { replace: true });
     } catch (err) {
       setError(err?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
     } finally {
       setLoading(false);
     }
   };
+  // #endregion
+
+  if (restoringSession) return <Center className="login-page"><Spinner label="Đang kiểm tra phiên đăng nhập" /></Center>;
+  if (isAuthenticated) return <Navigate to={returnLocation} replace />;
 
   return (
-    <Center axis="both" padding={6} style={pageStyle}>
-      <style>{LOGIN_SPLIT_CSS}</style>
+    <Center axis="both" className="login-page">
       <VStack gap={4} width="100%">
-        <div className="quoting-toolbar" style={cardWrap}><ThemeToggle /></div>
-        <div style={cardWrap}>
+        <div className="quoting-toolbar login-card-wrap"><ThemeToggle /></div>
+        <div className="login-card-wrap">
           <Card padding={0} width="100%">
-            <Grid
-              columns={{ minWidth: 260, repeat: 'fit' }}
-              gap={6}
-              align="stretch"
-              className="login-split-grid"
-            >
+            <div className="login-split-grid">
               {/* Cột 1: Form Đăng Nhập */}
-              <VStack gap={5} height="100%" justify="center">
-                <HStack gap={3} vAlign="center">
+              <VStack gap={5} height="100%" width="100%" justify="center" className="login-form">
+                <HStack gap={3} vAlign="center" className="login-brand">
                   <div
                     style={{
                       padding: 10,
@@ -191,11 +169,11 @@ export default function LoginPage() {
                   padding={6}
                   width="100%"
                   height="100%"
+                  className="login-promo-card"
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    minHeight: 340,
                   }}
                 >
                   <VStack gap={4}>
@@ -230,7 +208,7 @@ export default function LoginPage() {
                   </VStack>
                 </Card>
               </div>
-            </Grid>
+            </div>
           </Card>
         </div>
 
