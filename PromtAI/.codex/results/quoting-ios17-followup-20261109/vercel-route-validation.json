@@ -1,0 +1,105 @@
+{
+  "errors": null,
+  "compiled": [
+    {
+      "src": "^(?:/((?!assets/|api/).*))$",
+      "headers": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "continue": true
+    },
+    {
+      "src": "^(?:/((?!assets/|api/).*))$",
+      "dest": "/index.html",
+      "check": true
+    }
+  ],
+  "cases": [
+    {
+      "path": "/",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/index.html",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/login",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/quotations",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/quotations/create",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/quotations/123/edit",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/products",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/customers",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/templates",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/contact",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/support",
+      "header": {
+        "Cache-Control": "no-store, max-age=0"
+      },
+      "destination": "/index.html"
+    },
+    {
+      "path": "/assets/missing.js"
+    },
+    {
+      "path": "/assets/index.css"
+    },
+    {
+      "path": "/api/v1/auth/login"
+    }
+  ]
+}

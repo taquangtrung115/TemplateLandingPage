@@ -46,6 +46,8 @@ Vercel project của app báo giá phải đặt **Root Directory = `FE_Quoting`
 
 Đặt `VITE_API_BASE_URL` là URL backend Render (có thể kèm `/api/v1`) tại môi trường build Vercel. Proxy trong Vite chỉ dành cho local; SPA rewrite không thay thế backend API. Sau khi đổi source/cấu hình cần deploy lại frontend để bản đang chạy nhận thay đổi. Cấu hình này theo [hướng dẫn Vite SPA của Vercel](https://vercel.com/docs/frameworks/frontend/vite#using-vite-to-make-spas).
 
+Các URL trang dùng `Cache-Control: no-store, max-age=0` để trình duyệt không lưu HTML trỏ vào bundle của bản deploy cũ. `/assets/` và `/api/` được loại khỏi SPA rewrite/header này; file JS/CSS bị thiếu phải trả lỗi thật thay vì `index.html`. Không xóa localStorage/cookie hoặc phiên đăng nhập để xử lý cache. Nếu máy đã giữ trang cũ từ trước thay đổi, mở một URL login có query mới để buộc tải lại, ví dụ `/login?verify=<mã bản deploy>`.
+
 Mọi route nghiệp vụ vẫn kiểm tra phiên đăng nhập. Chưa đăng nhập/hết phiên → `/login`; đăng nhập thành công quay lại đầy đủ pathname, query và hash, kể cả sau khi refresh trang login. Phiên hợp lệ mở `/login` được đưa về trang nghiệp vụ. Backend tiếp tục kiểm tra JWT và quyền Admin như trước.
 
 Login dùng lưới CSS có độ rộng rõ ràng, một cột trên màn hình ≤640px; form hiển thị trước phần giới thiệu. Không dùng container query để tính độ rộng form. Ô nhập trên mobile tối thiểu 16px để tránh iOS tự zoom khi focus.

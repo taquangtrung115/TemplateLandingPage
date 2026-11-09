@@ -1,0 +1,429 @@
+{
+  "version": "17.4",
+  "cases": [
+    {
+      "status": 200,
+      "url": "https://quoting-beta.vercel.app/login",
+      "width": 414,
+      "errors": [],
+      "layout": {
+        "viewport": 414,
+        "page": 414,
+        "styles": [
+          {
+            "tag": "DIV",
+            "class": "astryx-center x78zum5 x6s0dn4 xl56j7k login-page",
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 414,
+              "height": 1023,
+              "top": 0,
+              "right": 414,
+              "bottom": 1023,
+              "left": 0
+            },
+            "display": "flex",
+            "width": "414px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "16px 12px",
+            "alignItems": "center"
+          },
+          {
+            "tag": "DIV",
+            "class": "astryx-stack x78zum5 xdt5ytf xty4p9g xtx9w7w",
+            "rect": {
+              "x": 12,
+              "y": 16,
+              "width": 390,
+              "height": 991,
+              "top": 16,
+              "right": 402,
+              "bottom": 1007,
+              "left": 12
+            },
+            "display": "flex",
+            "width": "390px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "DIV",
+            "class": "quoting-toolbar login-card-wrap",
+            "rect": {
+              "x": 12,
+              "y": 16,
+              "width": 390,
+              "height": 32,
+              "top": 16,
+              "right": 402,
+              "bottom": 48,
+              "left": 12
+            },
+            "display": "flex",
+            "width": "390px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "DIV",
+            "class": "login-card-wrap",
+            "rect": {
+              "x": 12,
+              "y": 76,
+              "width": 390,
+              "height": 895,
+              "top": 76,
+              "right": 402,
+              "bottom": 971,
+              "left": 12
+            },
+            "display": "block",
+            "width": "390px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "DIV",
+            "class": "login-split-grid",
+            "rect": {
+              "x": 13,
+              "y": 77,
+              "width": 388,
+              "height": 893,
+              "top": 77,
+              "right": 401,
+              "bottom": 970,
+              "left": 13
+            },
+            "display": "grid",
+            "width": "388px",
+            "containerType": "normal",
+            "columns": "348px",
+            "padding": "20px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "DIV",
+            "class": "astryx-stack x78zum5 xdt5ytf x1eqhezk x1iu6piu xl56j7k login-form",
+            "rect": {
+              "x": 33,
+              "y": 97,
+              "width": 348,
+              "height": 489,
+              "top": 97,
+              "right": 381,
+              "bottom": 586,
+              "left": 33
+            },
+            "display": "flex",
+            "width": "348px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "FORM",
+            "class": "",
+            "rect": {
+              "x": 33,
+              "y": 269,
+              "width": 348,
+              "height": 192,
+              "top": 269,
+              "right": 381,
+              "bottom": 461,
+              "left": 33
+            },
+            "display": "block",
+            "width": "348px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "INPUT",
+            "class": "x1lliihq x98rzlu xeuugli xc342km xng3xce x1717udv x9ynric xjm74w1 xf9zqsd xw6l6zx x1tgivj0 xjbqb8w x1a2a7pz xeyghm5",
+            "rect": {
+              "x": 42,
+              "y": 303,
+              "width": 330,
+              "height": 24,
+              "top": 303,
+              "right": 372,
+              "bottom": 327,
+              "left": 42
+            },
+            "display": "block",
+            "width": "330px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "INPUT",
+            "class": "x1lliihq x98rzlu xeuugli xc342km xng3xce x1717udv x9ynric xjm74w1 xf9zqsd xw6l6zx x1tgivj0 xjbqb8w x1a2a7pz xeyghm5",
+            "rect": {
+              "x": 42,
+              "y": 381,
+              "width": 298,
+              "height": 24,
+              "top": 381,
+              "right": 340,
+              "bottom": 405,
+              "left": 42
+            },
+            "display": "block",
+            "width": "298px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "DIV",
+            "class": "login-split-image",
+            "rect": {
+              "x": 33,
+              "y": 610,
+              "width": 348,
+              "height": 340,
+              "top": 610,
+              "right": 381,
+              "bottom": 950,
+              "left": 33
+            },
+            "display": "block",
+            "width": "348px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          }
+        ]
+      }
+    },
+    {
+      "status": 200,
+      "url": "https://quoting-beta.vercel.app/login",
+      "width": 375,
+      "errors": [],
+      "layout": {
+        "viewport": 375,
+        "page": 375,
+        "styles": [
+          {
+            "tag": "DIV",
+            "class": "astryx-center x78zum5 x6s0dn4 xl56j7k login-page",
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 375,
+              "height": 1087,
+              "top": 0,
+              "right": 375,
+              "bottom": 1087,
+              "left": 0
+            },
+            "display": "flex",
+            "width": "375px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "16px 12px",
+            "alignItems": "center"
+          },
+          {
+            "tag": "DIV",
+            "class": "astryx-stack x78zum5 xdt5ytf xty4p9g xtx9w7w",
+            "rect": {
+              "x": 12,
+              "y": 16,
+              "width": 351,
+              "height": 1055,
+              "top": 16,
+              "right": 363,
+              "bottom": 1071,
+              "left": 12
+            },
+            "display": "flex",
+            "width": "351px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "DIV",
+            "class": "quoting-toolbar login-card-wrap",
+            "rect": {
+              "x": 12,
+              "y": 16,
+              "width": 351,
+              "height": 32,
+              "top": 16,
+              "right": 363,
+              "bottom": 48,
+              "left": 12
+            },
+            "display": "flex",
+            "width": "351px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "DIV",
+            "class": "login-card-wrap",
+            "rect": {
+              "x": 12,
+              "y": 76,
+              "width": 351,
+              "height": 959,
+              "top": 76,
+              "right": 363,
+              "bottom": 1035,
+              "left": 12
+            },
+            "display": "block",
+            "width": "351px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "DIV",
+            "class": "login-split-grid",
+            "rect": {
+              "x": 13,
+              "y": 77,
+              "width": 349,
+              "height": 957,
+              "top": 77,
+              "right": 362,
+              "bottom": 1034,
+              "left": 13
+            },
+            "display": "grid",
+            "width": "349px",
+            "containerType": "normal",
+            "columns": "309px",
+            "padding": "20px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "DIV",
+            "class": "astryx-stack x78zum5 xdt5ytf x1eqhezk x1iu6piu xl56j7k login-form",
+            "rect": {
+              "x": 33,
+              "y": 97,
+              "width": 309,
+              "height": 489,
+              "top": 97,
+              "right": 342,
+              "bottom": 586,
+              "left": 33
+            },
+            "display": "flex",
+            "width": "309px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "FORM",
+            "class": "",
+            "rect": {
+              "x": 33,
+              "y": 269,
+              "width": 309,
+              "height": 192,
+              "top": 269,
+              "right": 342,
+              "bottom": 461,
+              "left": 33
+            },
+            "display": "block",
+            "width": "309px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "INPUT",
+            "class": "x1lliihq x98rzlu xeuugli xc342km xng3xce x1717udv x9ynric xjm74w1 xf9zqsd xw6l6zx x1tgivj0 xjbqb8w x1a2a7pz xeyghm5",
+            "rect": {
+              "x": 42,
+              "y": 303,
+              "width": 291,
+              "height": 24,
+              "top": 303,
+              "right": 333,
+              "bottom": 327,
+              "left": 42
+            },
+            "display": "block",
+            "width": "291px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "INPUT",
+            "class": "x1lliihq x98rzlu xeuugli xc342km xng3xce x1717udv x9ynric xjm74w1 xf9zqsd xw6l6zx x1tgivj0 xjbqb8w x1a2a7pz xeyghm5",
+            "rect": {
+              "x": 42,
+              "y": 381,
+              "width": 259,
+              "height": 24,
+              "top": 381,
+              "right": 301,
+              "bottom": 405,
+              "left": 42
+            },
+            "display": "block",
+            "width": "259px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          },
+          {
+            "tag": "DIV",
+            "class": "login-split-image",
+            "rect": {
+              "x": 33,
+              "y": 610,
+              "width": 309,
+              "height": 404,
+              "top": 610,
+              "right": 342,
+              "bottom": 1014,
+              "left": 33
+            },
+            "display": "block",
+            "width": "309px",
+            "containerType": "normal",
+            "columns": "none",
+            "padding": "0px",
+            "alignItems": "normal"
+          }
+        ]
+      }
+    }
+  ]
+}
