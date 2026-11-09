@@ -1,0 +1,6 @@
+playwright/
+playwright-report/
+*.png
+*-report.json
+playwright-results.json
+runtime/

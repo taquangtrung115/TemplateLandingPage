@@ -73,6 +73,19 @@ describe('LoginPage - Kiểm thử bảo mật & giao diện đăng nhập', () 
   // 2. EDGE CASES (Các trường hợp biên & OWASP)
   // ==========================================
   describe('2. Các trường hợp biên (Edge Cases & Bảo mật OWASP)', () => {
+    it.each([
+      [{ pathname: '/quotations/quote-id/edit', search: '?source=direct', hash: '#items' }, '/quotations/quote-id/edit?source=direct#items'],
+      [{ pathname: '//example.test' }, '/'],
+      [{ pathname: '/login/' }, '/'],
+    ])('returns only to a local protected location after login: %j', async (from, destination) => {
+      mockLogin.mockResolvedValueOnce({ success: true });
+      render(<MemoryRouter initialEntries={[{ pathname: '/login', state: { from } }]}><LoginPage /></MemoryRouter>);
+      fireEvent.change(screen.getByPlaceholderText('name@company.com'), { target: { value: 'user@example.test' } });
+      fireEvent.change(screen.getByPlaceholderText('Nhập mật khẩu'), { target: { value: 'Synthetic123!' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập', exact: true }));
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(destination, { replace: true }));
+    });
+
     it('tuân thủ OWASP: không prefill mật khẩu hoặc email khi mới tải trang', () => {
       render(
         <MemoryRouter>

@@ -33,7 +33,7 @@ import { quotingCustomerApi } from '../../api/quotingCustomerApi';
 import { quotingProductApi } from '../../api/quotingProductApi';
 import { quotingTemplateApi } from '../../api/quotingTemplateApi';
 import { quotationApi } from '../../api/quotationApi';
-import { ProductCategoryBadge, UnitBadge } from '../../components/common/StatusBadge';
+import { UnitBadge } from '../../components/common/StatusBadge';
 import { ActionButton } from '../../components/common/ActionButton';
 import { useToast } from '@astryxdesign/core/Toast';
 import { Switch } from '@astryxdesign/core/Switch';
@@ -305,7 +305,7 @@ export default function CreateQuotationPage() {
         <VStack gap={3} style={{ maxHeight: '240px', overflowY: 'auto' }}>
           {items.map((it, idx) => (
             <HStack key={idx} gap={3} vAlign="center" hAlign="between">
-              <HStack gap={2} vAlign="center">
+              <HStack gap={2} vAlign="center" className="quotation-summary-product">
                 {it.imageUrl ? (
                   <img
                     src={resolveApiAssetUrl(it.imageUrl)}
@@ -317,8 +317,8 @@ export default function CreateQuotationPage() {
                     <Icon icon={ShoppingCartIcon} size="sm" />
                   </div>
                 )}
-                <VStack gap={0}>
-                  <Text type="body" weight="medium" style={{ fontSize: 12, maxWidth: '170px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <VStack gap={0} className="quotation-summary-product-info">
+                  <Text type="body" weight="medium" style={{ fontSize: 12 }}>
                     {it.productName}
                   </Text>
                   <Text type="supporting" color="secondary" style={{ fontSize: 11 }}>
@@ -571,20 +571,20 @@ export default function CreateQuotationPage() {
                       items.map((it, idx) => (
                         <Card key={idx} padding={4} style={{ border: '1px solid var(--color-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                           <HStack gap={4} vAlign="center" hAlign="between" wrap="wrap">
-                            <HStack gap={3} vAlign="center">
+                            <HStack gap={3} vAlign="center" className="quotation-item-identity">
                               {it.imageUrl && (
                                 <img
                                   src={resolveApiAssetUrl(it.imageUrl)}
                                   alt={it.productName}
-                                  style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }}
+                                  style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
                                 />
                               )}
-                              <VStack gap={0.5}>
-                                <HStack gap={2} vAlign="center">
-                                  <Text type="body" weight="semibold">{it.productName}</Text>
+                              <VStack gap={0.5} className="quotation-item-description">
+                                <HStack gap={2} vAlign="center" wrap="wrap">
+                                  <Text type="body" weight="semibold" className="quotation-item-name">{it.productName}</Text>
                                   <UnitBadge unit={it.unit} />
-                                  <ProductCategoryBadge category={it.itemGroup} />
                                 </HStack>
+                                <Text type="supporting" color="secondary" className="quotation-item-category">{it.itemGroup || 'Chưa phân loại'}</Text>
                                 <Text type="supporting" color="secondary">
                                   Giá danh mục: {formatVnd(it.catalogPrice)}
                                 </Text>
@@ -622,7 +622,7 @@ export default function CreateQuotationPage() {
                                 actionType="danger"
                                 size="sm"
                                 icon={<Icon icon={TrashIcon} size="sm" />}
-                                label={`Xóa ${it.productName}`}
+                                label="Xóa sản phẩm"
                                 aria-label={`Xóa ${it.productName}`}
                                 onClick={() => handleRemoveItem(idx)}
                               />

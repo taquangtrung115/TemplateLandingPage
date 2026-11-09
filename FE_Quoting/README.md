@@ -40,6 +40,16 @@ npm run dev
 
 FE mặc định cổng 5174, proxy `/api` đến `http://127.0.0.1:54611`. Có thể đặt `QUOTING_API_PROXY_TARGET` trước khi khởi động Vite hoặc `VITE_API_BASE_URL` cho API riêng. Không đưa secret vào biến `VITE_*`.
 
+### Routes và triển khai Vercel
+
+Vercel project của app báo giá phải đặt **Root Directory = `FE_Quoting`**, framework **Vite**, build `npm run build`, output `dist`. File `FE_Quoting/vercel.json` phục vụ `index.html` khi mở trực tiếp/refresh các URL React Router, gồm `/login`, `/quotations`, `/quotations/create`, `/quotations/:id`, `/quotations/:id/edit`, `/products`, `/customers`, `/templates`, `/contact` và `/support`.
+
+Đặt `VITE_API_BASE_URL` là URL backend Render (có thể kèm `/api/v1`) tại môi trường build Vercel. Proxy trong Vite chỉ dành cho local; SPA rewrite không thay thế backend API. Sau khi đổi source/cấu hình cần deploy lại frontend để bản đang chạy nhận thay đổi. Cấu hình này theo [hướng dẫn Vite SPA của Vercel](https://vercel.com/docs/frameworks/frontend/vite#using-vite-to-make-spas).
+
+Mọi route nghiệp vụ vẫn kiểm tra phiên đăng nhập. Chưa đăng nhập/hết phiên → `/login`; đăng nhập thành công quay lại đầy đủ pathname, query và hash, kể cả sau khi refresh trang login. Phiên hợp lệ mở `/login` được đưa về trang nghiệp vụ. Backend tiếp tục kiểm tra JWT và quyền Admin như trước.
+
+Login dùng lưới CSS có độ rộng rõ ràng, một cột trên màn hình ≤640px; form hiển thị trước phần giới thiệu. Không dùng container query để tính độ rộng form. Ô nhập trên mobile tối thiểu 16px để tránh iOS tự zoom khi focus.
+
 BE cần cấu hình `ConnectionStrings__DefaultConnection`, `Jwt__SecretKey`, issuer/audience theo môi trường. Áp dụng EF migrations bằng quy trình deploy của dự án. `SeedData__Enabled=true` chỉ dành cho development được bật rõ ràng; `SeedData__IncludeCatalog=false` tránh seed catalog landing page không liên quan. Review các tài khoản demo của seeder trước khi dùng ngoài môi trường kiểm thử.
 
 HTML nhúng ảnh của các sản phẩm gốc và ảnh upload thành data URI để mở offline. Ảnh URL ngoài cũ vẫn cần kết nối mạng. PDF chuẩn hóa Unicode NFC để ký tự ghép dấu hiển thị đúng, dùng PDFsharp và font Noto Sans thường/đậm nhúng (kèm giấy phép OFL), giữ tiếng Việt, hình sản phẩm gốc/ảnh upload và ngắt nhiều trang. Tệp báo giá được lưu ở thư mục riêng `App_Data/quotations` hoặc `Quoting:Storage:LocalPath`, tải qua endpoint JWT `/{quotationId}/files/{fileId}/download`. Không công khai thư mục xuất qua static files. Endpoint có xác thực đọc được file ở thư mục cũ `wwwroot/exports/quotations` (hoặc `Quoting:Storage:LegacyPath`); đường dẫn static mặc định của thư mục này bị chặn.
@@ -90,7 +100,7 @@ $env:QUOTING_E2E_PASSWORD='<mật khẩu kiểm thử>'
 npm run test:e2e
 ```
 
-Playwright dùng FE cổng 5184, kiểm tra desktop sáng/tối và mobile 320/375/390px, CRUD, tạo/sửa/xuất PDF, VAT tùy chọn, đăng nhập, phiên bản mẫu, overflow và Axe accessibility. API ứng dụng và database chạy thật. E2E làm thay đổi dữ liệu nên chỉ chạy với database kiểm thử.
+Playwright dùng FE cổng 5184, kiểm tra desktop sáng/tối, mobile 320/375/390px và iPhone 11 trên WebKit sáng/tối (screen 414×896, viewport 414×715 có thanh trình duyệt). Bao gồm CRUD, tạo/sửa/xuất PDF, VAT tùy chọn, đăng nhập, phiên bản mẫu, overflow và Axe accessibility. `routes-auth-mobile.spec.js` kiểm tra 10 route trực tiếp/refresh, chặn khách chưa đăng nhập, đăng nhập lại sau 401, menu cảm ứng, logout/back, độ rộng form và các bước báo giá có dữ liệu. WebKit mô phỏng không thay thế kiểm tra trên iPhone thật, nhất là phiên bản iOS cũ. API ứng dụng và database chạy thật. E2E làm thay đổi dữ liệu nên chỉ chạy với database kiểm thử. Khi local `.env` trỏ API production, đặt `VITE_API_BASE_URL=/api/v1` trước khi chạy Vite/Playwright để dùng proxy kiểm thử.
 
 Để chạy thêm E2E ảnh upload mà không dùng cloud: chạy `node e2e/fixtures/storage-server.mjs` ở terminal riêng, cấu hình BE kiểm thử `Quoting__Images__SupabaseUrl=http://127.0.0.1:55440` và `Quoting__Images__ServiceRoleKey=synthetic-image-key`, sau đó đặt `QUOTING_E2E_IMAGE_STORAGE=1` trước khi chạy Playwright. Fixture chỉ nghe loopback và lưu trong bộ nhớ. Khi không bật biến này, riêng ca upload được skip. Với máy hạn chế tài nguyên, chạy Vitest bằng `node node_modules/vitest/vitest.mjs run --maxWorkers=2 --coverage`.
 
