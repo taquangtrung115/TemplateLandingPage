@@ -1,0 +1,81 @@
+{
+  "checkedAt": "2026-11-09T16:13:43.545Z",
+  "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/21H16 [FBAN/FBIOS;FBAV/586.0.0.32.108;FBBV/1105932679;FBDV/iPhone12,1;FBMD/iPhone;FBSN/iOS;FBSV/17.7;FBSS/2;FBCR/;FBID/phone;FBLC/vi_VN;FBOP/80]",
+  "requests": [
+    {
+      "path": "/login",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "requestId": "hkg1::9dr77-1794240824592-09d65e39e8e3"
+    },
+    {
+      "path": "/products",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "requestId": "hkg1::bpws9-1794240824896-e5b483a47f51"
+    },
+    {
+      "path": "/quotations/create",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "requestId": "hkg1::dk5r8-1794240824992-c16814ddf87b"
+    }
+  ],
+  "browser": [
+    {
+      "path": "/login",
+      "status": 200,
+      "finalPath": "/login",
+      "form": {
+        "x": 33,
+        "y": 270.96875,
+        "width": 348,
+        "height": 192
+      },
+      "submit": {
+        "x": 33,
+        "y": 426.96875,
+        "width": 348,
+        "height": 36
+      },
+      "refreshStatus": 200
+    },
+    {
+      "path": "/products",
+      "status": 200,
+      "finalPath": "/login",
+      "form": {
+        "x": 33,
+        "y": 270.96875,
+        "width": 348,
+        "height": 192
+      },
+      "submit": {
+        "x": 33,
+        "y": 426.96875,
+        "width": 348,
+        "height": 36
+      },
+      "refreshStatus": 200
+    },
+    {
+      "path": "/quotations/create",
+      "status": 200,
+      "finalPath": "/login",
+      "form": {
+        "x": 33,
+        "y": 270.96875,
+        "width": 348,
+        "height": 192
+      },
+      "submit": {
+        "x": 33,
+        "y": 426.96875,
+        "width": 348,
+        "height": 36
+      },
+      "refreshStatus": 200
+    }
+  ],
+  "errors": []
+}

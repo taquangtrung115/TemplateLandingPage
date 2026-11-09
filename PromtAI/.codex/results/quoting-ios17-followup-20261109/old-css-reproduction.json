@@ -1,0 +1,24 @@
+{
+  "engine": "17.4",
+  "before": {
+    "x": 33,
+    "y": 269,
+    "width": 348,
+    "height": 192
+  },
+  "after": {
+    "x": 33,
+    "y": 6330,
+    "width": 0,
+    "height": 216
+  },
+  "htmlCache": {
+    "navigation": [
+      {
+        "type": "navigate",
+        "transferSize": 797
+      }
+    ],
+    "oldContainer": "inline-size"
+  }
+}
