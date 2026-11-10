@@ -6,6 +6,7 @@ using System.Net;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using TemplateLandingPage.Application.Abstractions;
+using TemplateLandingPage.Application.Exceptions;
 using TemplateLandingPage.Domain.Entities.Quoting;
 using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Helpers;
 
@@ -14,7 +15,12 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
     private static readonly CultureInfo VnCulture = new("vi-VN");
 
     private readonly IQuotingProductImageService? _imageService;
-    public QuotationHtmlExportService(IQuotingProductImageService? imageService = null) => _imageService = imageService;
+    private readonly IQuotationRemoteImageService? _remoteImageService;
+    public QuotationHtmlExportService(IQuotingProductImageService? imageService = null, IQuotationRemoteImageService? remoteImageService = null)
+    {
+        _imageService = imageService;
+        _remoteImageService = remoteImageService;
+    }
 
     public async Task<byte[]> GenerateHtmlAsync(Quotation quotation, QuotationTemplateVersion templateVersion, CancellationToken cancellationToken = default)
     {
@@ -30,25 +36,44 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
 
     private async Task<IReadOnlyDictionary<string, byte[]>> LoadImagesAsync(Quotation quotation, CancellationToken cancellationToken)
     {
-        var urls = quotation.Items.Select(item => item.ImageUrl).Where(url => QuotingProductImageAddress.FileName(url) is not null).Distinct().Cast<string>().ToArray();
+        var urls = quotation.Items.Select(item => item.ImageUrl).Where(url => !string.IsNullOrWhiteSpace(url))
+            .Distinct(StringComparer.Ordinal).Cast<string>().ToArray();
         var images = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         long totalBytes = 0;
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(TimeSpan.FromSeconds(45));
         // Bound parallel storage reads and deduplicate repeated product images in a document.
-        foreach (var batch in urls.Chunk(4))
+        try
         {
-            var resolved = await Task.WhenAll(batch.Select(async url =>
+            foreach (var batch in urls.Chunk(4))
             {
-                if (_imageService is null) throw new InvalidOperationException("Product image storage is unavailable.");
-                var image = await _imageService.GetAsync(QuotingProductImageAddress.FileName(url)!, cancellationToken)
-                    ?? throw new InvalidOperationException("A saved product image could not be loaded.");
-                return (Url: url, image.Data);
-            }));
-            foreach (var image in resolved)
-            {
-                totalBytes += image.Data.Length;
-                if (totalBytes > 32 * 1024 * 1024) throw new InvalidOperationException("Quotation images exceed the document memory budget.");
-                images[image.Url] = image.Data;
+                var resolved = await Task.WhenAll(batch.Select(async url =>
+                {
+                    byte[]? data;
+                    if (QuotingProductImageAddress.FileName(url) is { } fileName)
+                        data = _imageService is null ? null : (await _imageService.GetAsync(fileName, deadline.Token))?.Data;
+                    else
+                    {
+                        using var bundled = QuotationProductImageSource.OpenBundledImage(url);
+                        if (bundled is not null) return (Url: url, Data: (byte[]?)null);
+                        data = _remoteImageService is null ? null : await _remoteImageService.GetAsync(url, deadline.Token);
+                    }
+                    if (data is null || data.Length == 0)
+                        throw new QuotationImageUnavailableException();
+                    return (Url: url, Data: (byte[]?)data);
+                }));
+                foreach (var image in resolved)
+                {
+                    if (image.Data is null) continue;
+                    totalBytes += image.Data.Length;
+                    if (totalBytes > 32 * 1024 * 1024) throw new QuotationImageUnavailableException();
+                    images[image.Url] = image.Data;
+                }
             }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new QuotationImageUnavailableException();
         }
         return images;
     }

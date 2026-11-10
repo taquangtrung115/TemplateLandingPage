@@ -6,7 +6,7 @@ import { FileInput } from '@astryxdesign/core/FileInput';
 import { Card } from '@astryxdesign/core/Card';
 import { QuotingTable as Table, pixel, proportional } from '../../components/common/QuotingTable';
 import { Badge } from '@astryxdesign/core/Badge';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from '../../components/common/Button';
 import { Selector } from '@astryxdesign/core/Selector';
 import { Heading, Text } from '@astryxdesign/core/Text';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
@@ -20,7 +20,7 @@ import { Drawer, DrawerHeader } from '@astryxdesign/core/Drawer';
 import { HoverCard } from '@astryxdesign/core/HoverCard';
 import { Pagination } from '@astryxdesign/core/Pagination';
 import { Skeleton } from '@astryxdesign/core/Skeleton';
-import { AlertDialog } from '@astryxdesign/core/AlertDialog';
+import { ConfirmationDialog as AlertDialog } from '../../components/common/ConfirmationDialog';
 import { useToast } from '@astryxdesign/core/Toast';
 import { Field } from '@astryxdesign/core/Field';
 import { FieldStatus } from '@astryxdesign/core/FieldStatus';
@@ -32,7 +32,7 @@ import {
   PencilSquareIcon,
   TrashIcon,
   CubeIcon,
-  CheckIcon,
+  CheckIcon, XMarkIcon, ArrowPathIcon, FunnelIcon,
 } from '@heroicons/react/24/outline';
 import RowActions from '../../components/common/RowActions';
 import { quotingProductGroupApi } from '../../api/quotingProductGroupApi';
@@ -511,10 +511,11 @@ export default function ProductCatalogPage() {
               </Field>
 
               <FileInput label="Ảnh sản phẩm" value={imageFile} onChange={handleImageChange} accept="image/jpeg,image/png" maxSize={5 * 1024 * 1024}
-                mode="dropzone" isDisabled={saving || !isAdmin} isLoading={uploadingImage} description="Chọn ảnh JPG hoặc PNG, tối đa 5 MB. Ảnh được tải lên khi bạn lưu sản phẩm." placeholder="Chọn ảnh từ thiết bị" />
+                mode="dropzone" isDisabled={saving || uploadingImage || !isAdmin} description="Chọn ảnh JPG hoặc PNG, tối đa 5 MB. Ảnh được tải lên khi bạn lưu sản phẩm." placeholder="Chọn ảnh từ thiết bị" />
+              {uploadingImage && <Skeleton height={64} aria-label="Đang tải ảnh sản phẩm" />}
               {(imagePreview || imageUrl) && <VStack gap={2}>
                 <img src={imagePreview || resolveApiAssetUrl(imageUrl)} alt="Ảnh sản phẩm đang chọn" className="product-image-preview" />
-                <Button label="Xóa ảnh" variant="secondary" isDisabled={saving || !isAdmin} onClick={() => { setImageFile(null); setImageUrl(''); }} />
+                <Button icon={<Icon icon={TrashIcon} size="sm" />} label="Xóa ảnh" variant="secondary" isDisabled={saving || !isAdmin} onClick={() => { setImageFile(null); setImageUrl(''); }} />
               </VStack>}
 
               <HStack vAlign="center" gap={3}>
@@ -529,7 +530,7 @@ export default function ProductCatalogPage() {
             <Divider />
 
             <HStack gap={3} hAlign="end">
-              <Button
+              <Button icon={<Icon icon={XMarkIcon} size="sm" />}
                 variant="secondary"
                 label="Hủy"
                 onClick={() => handleFormOpenChange(false)}
@@ -586,7 +587,7 @@ export default function ProductCatalogPage() {
       </HStack>
 
       {loadError && <Banner status="error" title="Không thể tải sản phẩm" description={loadError} />}
-      {loadError && <Button label="Thử lại" onClick={fetchProducts} />}
+      {loadError && <Button icon={<Icon icon={ArrowPathIcon} size="sm" />} label="Thử lại" onClick={fetchProducts} />}
       {/* Main Table or Skeleton */}
       <Card padding={0}>
         {loading ? (
@@ -604,7 +605,7 @@ export default function ProductCatalogPage() {
               title="Không tìm thấy sản phẩm"
               description="Không có sản phẩm nào phù hợp với bộ lọc tìm kiếm hiện tại."
               actions={
-                <Button
+                <Button icon={<Icon icon={FunnelIcon} size="sm" />}
                   variant="secondary"
                   label="Xóa bộ lọc"
                   onClick={() => {
@@ -632,8 +633,8 @@ export default function ProductCatalogPage() {
                       </HStack>
                       <Text type="body">{product.description || 'Chưa có mô tả.'}</Text>
                       <VStack gap={1}>
-                        <Text type="body"><strong>Nhóm sản phẩm:</strong> {product.category || 'Chưa phân loại'}</Text>
-                        <Text type="body"><strong>Đơn vị tính:</strong> {product.unit || '—'}</Text>
+                        <Text type="body"><strong>Nhóm sản phẩm:</strong> <Badge label={product.category || 'Chưa phân loại'} variant="neutral" /></Text>
+                        <Text type="body"><strong>Đơn vị tính:</strong> <Badge label={product.unit || '—'} variant="neutral" /></Text>
                         <Text type="body" weight="semibold">Giá danh mục: {formatVnd(product.price)}</Text>
                       </VStack>
                       {isAdmin && <RowActions label={product.name} actions={[

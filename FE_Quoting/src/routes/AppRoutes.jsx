@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Spinner } from '@astryxdesign/core/Spinner';
+import AppLoading from '../components/common/AppLoading';
 import { useAuth } from '../contexts/AuthContext';
 import QuotingLayout from '../layouts/QuotingLayout';
 const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
@@ -19,21 +19,7 @@ function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'var(--color-background-body)',
-        }}
-      >
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  if (loading) return <AppLoading label="Đang kiểm tra phiên đăng nhập" />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -44,7 +30,7 @@ function ProtectedRoute({ children }) {
 
 export default function AppRoutes() {
   return (
-    <Suspense fallback={<Spinner label="Đang tải trang" />}><Routes>
+    <Suspense fallback={<AppLoading />}><Routes>
       <Route path="/login" element={<LoginPage />} />
 
       <Route

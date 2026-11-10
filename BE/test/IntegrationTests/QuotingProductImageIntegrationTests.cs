@@ -14,6 +14,29 @@ using Xunit;
 [Collection(PostgresApiCollection.Name)]
 public sealed class QuotingProductImageIntegrationTests(PostgresApiFixture fixture)
 {
+    [Theory]
+    [InlineData("pdf")]
+    [InlineData("html")]
+    public async Task UnavailableImage_ReturnsAnActionableError_AndDoesNotSaveAnIncompleteExport(string format)
+    {
+        var user = await fixture.AddUserAsync("Admin");
+        using var client = fixture.CreateClientFor(user.Id, "Admin");
+        await fixture.WithDatabaseAsync(async db => { await TemplateLandingPage.Persistence.Data.QuotingSeeder.SeedAsync(db); return true; });
+        var quote = await SendAsync(client, HttpMethod.Post, "/api/v1/quoting/quotations", new
+        {
+            issueDate = DateTime.UtcNow,
+            items = new[] { new { productName = "Ảnh không thể tải", unit = "Gói", unitPrice = 18000, quantity = 1, imageUrl = "https://untrusted.example.test/photo.png" } }
+        });
+        using var preview = await client.GetAsync($"/api/v1/quoting/quotations/{quote.GetGuid()}/preview");
+        preview.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await preview.Content.ReadAsStringAsync()).Should().Contain("Quotation.ImageUnavailable");
+        using var export = await ApiTestJson.SendJsonAsync(client, HttpMethod.Post, $"/api/v1/quoting/quotations/{quote.GetGuid()}/export", new { fileType = format });
+        export.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await export.Content.ReadAsStringAsync()).Should().Contain("Quotation.ImageUnavailable");
+        using var detail = await client.GetAsync($"/api/v1/quoting/quotations/{quote.GetGuid()}");
+        (await ValueAsync(detail)).GetProperty("files").GetArrayLength().Should().Be(0);
+    }
+
     #region Helpers
     private static byte[] Png(SKColor color, int width = 113, int height = 79)
     {

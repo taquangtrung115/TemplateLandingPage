@@ -1,5 +1,7 @@
+import { Icon } from '@astryxdesign/core/Icon';
+import { PlusIcon, ArrowPathIcon, XMarkIcon, CheckIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from '../../components/common/Button';
 import { Card } from '@astryxdesign/core/Card';
 import { Heading, Text } from '@astryxdesign/core/Text';
 import { Banner } from '@astryxdesign/core/Banner';
@@ -9,7 +11,7 @@ import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Switch } from '@astryxdesign/core/Switch';
 import { Badge } from '@astryxdesign/core/Badge';
 import { Drawer, DrawerHeader } from '@astryxdesign/core/Drawer';
-import { AlertDialog } from '@astryxdesign/core/AlertDialog';
+import { ConfirmationDialog as AlertDialog } from '../../components/common/ConfirmationDialog';
 import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { useToast } from '@astryxdesign/core/Toast';
 import { QuotingTable, pixel, proportional } from '../../components/common/QuotingTable';
@@ -77,14 +79,14 @@ export default function ProductGroupPage() {
     { key: 'sortOrder', header: 'Thứ tự', width: pixel(100), renderCell: (group) => group.sortOrder },
     { key: 'isActive', header: 'Trạng thái', width: pixel(140), renderCell: (group) => <Badge label={group.isActive ? 'Đang dùng' : 'Tạm ngưng'} variant={group.isActive ? 'success' : 'neutral'} /> },
     ...(isAdmin ? [{ key: 'actions', header: 'Thao tác', width: pixel(80), renderCell: (group) => <RowActions label={group.name} actions={[
-      { label: 'Sửa nhóm', onClick: () => edit(group) }, { label: 'Xóa nhóm', destructive: true, onClick: () => setDeleting(group) },
+      { label: 'Sửa nhóm', icon: PencilSquareIcon, onClick: () => edit(group) }, { label: 'Xóa nhóm', icon: TrashIcon, destructive: true, onClick: () => setDeleting(group) },
     ]} /> }] : []),
   ];
 
   return <div className="quoting-page-stack">
     <div className="page-heading"><div><Heading level={1}>Nhóm sản phẩm</Heading><Text color="secondary">Sắp xếp các dòng sản phẩm theo thứ tự hiển thị trên báo giá.</Text></div>
-      {isAdmin && <Button label="Thêm nhóm" onClick={() => edit(null)} />}</div>
-    {error && <><Banner status="error" title="Không thể tải danh mục" description={error} /><Button label="Thử lại" onClick={() => setAttempt((value) => value + 1)} /></>}
+      {isAdmin && <Button icon={<Icon icon={PlusIcon} size="sm" />} label="Thêm nhóm" onClick={() => edit(null)} />}</div>
+    {error && <><Banner status="error" title="Không thể tải danh mục" description={error} /><Button icon={<Icon icon={ArrowPathIcon} size="sm" />} label="Thử lại" onClick={() => setAttempt((value) => value + 1)} /></>}
     <Card padding={0}>{loading ? <Skeleton height={180} /> : groups.length ? <QuotingTable data={groups} columns={columns} idKey="id" /> : <div className="empty-records">Chưa có nhóm sản phẩm.</div>}</Card>
     <Drawer isOpen={open} onOpenChange={(value) => { if (!saving) setOpen(value); }} side="end" width={480} label={form.id ? 'Sửa nhóm sản phẩm' : 'Thêm nhóm sản phẩm'}>
       <div className="group-editor quoting-page-stack">
@@ -95,7 +97,7 @@ export default function ProductGroupPage() {
         <TextArea label="Mô tả" value={form.description || ''} onChange={(value) => update('description', value)} />
         <NumberInput label="Thứ tự hiển thị" value={form.sortOrder} min={0} precision={0} onChange={(value) => update('sortOrder', value)} />
         <Switch label="Đang dùng" value={form.isActive} onChange={(value) => update('isActive', value)} />
-        <div className="group-editor-actions"><Button label="Hủy" variant="secondary" isDisabled={saving} onClick={() => setOpen(false)} /><Button label="Lưu nhóm" onClick={save} isLoading={saving} /></div>
+        <div className="group-editor-actions"><Button icon={<Icon icon={XMarkIcon} size="sm" />} label="Hủy" variant="secondary" isDisabled={saving} onClick={() => setOpen(false)} /><Button icon={<Icon icon={CheckIcon} size="sm" />} label="Lưu nhóm" onClick={save} isLoading={saving} /></div>
       </div>
     </Drawer>
     <AlertDialog isOpen={Boolean(deleting)} onOpenChange={(open) => { if (!open && !removing) setDeleting(null); }} title="Xóa nhóm sản phẩm?"

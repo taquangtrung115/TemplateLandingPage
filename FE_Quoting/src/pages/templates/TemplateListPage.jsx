@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '@astryxdesign/core/Card';
 import { QuotingTable as Table, pixel, proportional } from '../../components/common/QuotingTable';
 import { Badge } from '@astryxdesign/core/Badge';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from '../../components/common/Button';
 import { Heading, Text } from '@astryxdesign/core/Text';
 import {
   VStack,
@@ -27,7 +27,7 @@ import {
   DocumentTextIcon,
   ClockIcon,
   CheckIcon,
-  DocumentDuplicateIcon,
+  DocumentDuplicateIcon, XMarkIcon, DocumentPlusIcon, PlusIcon,
 } from '@heroicons/react/24/outline';
 import { quotingTemplateApi } from '../../api/quotingTemplateApi';
 import { useAuth } from '../../contexts/AuthContext';
@@ -238,7 +238,7 @@ export default function TemplateListPage() {
           <TextInput label="Mã mẫu" value={newTemplateCode} onChange={setNewTemplateCode} placeholder="Ví dụ: BG-DAI-LY" />
           <TextInput label="Tên mẫu" value={newTemplateName} onChange={setNewTemplateName} placeholder="Ví dụ: Báo giá đại lý" />
           {isCreateOpen && errorMessage && <Banner status="error" title="Chưa thể tạo mẫu" description={errorMessage} />}
-          <HStack gap={2} hAlign="end"><Button label="Hủy" variant="secondary" isDisabled={saving} onClick={() => setIsCreateOpen(false)} /><Button label="Tạo mẫu" variant="primary" onClick={handleCreateTemplate} isLoading={saving} /></HStack>
+          <HStack gap={2} hAlign="end"><Button icon={<Icon icon={XMarkIcon} size="sm" />} label="Hủy" variant="secondary" isDisabled={saving} onClick={() => setIsCreateOpen(false)} /><Button icon={<Icon icon={DocumentPlusIcon} size="sm" />} label="Tạo mẫu" variant="primary" onClick={handleCreateTemplate} isLoading={saving} /></HStack>
         </VStack>
       </Drawer>
       {/* Title */}
@@ -250,7 +250,7 @@ export default function TemplateListPage() {
           </Text>
         </VStack>
         <HStack gap={2} wrap="wrap">
-        <Button label="Thêm mẫu" variant="secondary" isDisabled={!isAdmin || loading || saving} onClick={() => { setNewTemplateCode(''); setNewTemplateName(''); setErrorMessage(null); setIsCreateOpen(true); }} />
+        <Button icon={<Icon icon={PlusIcon} size="sm" />} label="Thêm mẫu" variant="secondary" isDisabled={!isAdmin || loading || saving} onClick={() => { setNewTemplateCode(''); setNewTemplateName(''); setErrorMessage(null); setIsCreateOpen(true); }} />
         <Button
           variant="primary"
           label={saving ? 'Đang lưu...' : 'Lưu phiên bản mới'}

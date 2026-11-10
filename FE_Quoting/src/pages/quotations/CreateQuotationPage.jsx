@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Stepper, Step } from '@astryxdesign/core/Stepper';
 import { Card } from '@astryxdesign/core/Card';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from '../../components/common/Button';
 import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { TextArea } from '@astryxdesign/core/TextArea';
@@ -17,7 +17,8 @@ import { Calendar } from '@astryxdesign/core/Calendar';
 import { useMediaQuery } from '@astryxdesign/core/hooks';
 import { useToast } from '@astryxdesign/core/Toast';
 import { Icon } from '@astryxdesign/core/Icon';
-import { TrashIcon, ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon, ArrowPathIcon, SquaresPlusIcon, XMarkIcon,
+} from '@heroicons/react/24/outline';
 import { quotingCustomerApi } from '../../api/quotingCustomerApi';
 import { quotingProductApi } from '../../api/quotingProductApi';
 import { quotingProductGroupApi } from '../../api/quotingProductGroupApi';
@@ -216,7 +217,7 @@ export default function CreateQuotationPage() {
   const itemColumns = [
     { key: 'productName', header: 'Sản phẩm', width: proportional(1, { minWidth: 230 }), renderCell: (item) => <div className="quotation-product-identity">
       {item.imageUrl && <img src={resolveApiAssetUrl(item.imageUrl)} alt="" />}
-      <div><strong>{item.productName}</strong><Text type="supporting" color="secondary">{item.itemGroup} · {item.unit}</Text><Text type="supporting">Giá danh mục: {formatVnd(item.catalogPrice)}</Text></div>
+      <div><strong>{item.productName}</strong><div className="quotation-item-tags"><Badge label={item.itemGroup || 'Chưa phân loại'} variant="blue" /><Badge label={item.unit} variant="neutral" /></div><Text type="supporting">Giá danh mục: {formatVnd(item.catalogPrice)}</Text></div>
     </div> },
     ...(display.showQuantity ? [{ key: 'quantity', header: 'Số lượng', width: pixel(120), renderCell: (item) => <NumberInput label={`Số lượng ${item.productName}`} isLabelHidden value={item.quantity} min={0.01} step={0.01} onChange={(value) => updateItem(item, 'quantity', Math.max(0.01, Number(value) || 0.01))} /> }] : []),
     { key: 'unitPrice', header: 'Đơn giá báo giá (VNĐ)', width: pixel(170), renderCell: (item) => <NumberInput label={`Đơn giá báo giá (VNĐ) ${item.productName}`} isLabelHidden value={item.unitPrice} min={0} onChange={(value) => updateItem(item, 'unitPrice', Math.max(0, Number(value) || 0))} /> },
@@ -225,7 +226,7 @@ export default function CreateQuotationPage() {
   ];
 
   if (loading) return <div className="quoting-page-stack"><Skeleton height={40} /><Skeleton height={300} /></div>;
-  if (loadError) return <div className="quoting-page-stack"><Banner status="error" title="Không thể mở trình lập báo giá" description={loadError} /><Button label="Thử lại" onClick={() => setLoadAttempt((value) => value + 1)} /></div>;
+  if (loadError) return <div className="quoting-page-stack"><Banner status="error" title="Không thể mở trình lập báo giá" description={loadError} /><Button icon={<Icon icon={ArrowPathIcon} size="sm" />} label="Thử lại" onClick={() => setLoadAttempt((value) => value + 1)} /></div>;
 
   return <div className="quotation-workflow quoting-page-stack" ref={workflowRef}>
     <div className="page-heading"><Button label="Về danh sách" variant="secondary" icon={<Icon icon={ArrowLeftIcon} size="sm" />} onClick={() => navigate('/quotations')} /><Heading level={1}>{isEditing ? 'Sửa báo giá' : 'Tạo báo giá'}</Heading></div>
@@ -253,7 +254,7 @@ export default function CreateQuotationPage() {
           <div><Heading level={2}>Bước 2: Sản phẩm và đơn giá</Heading><Text color="secondary">Thêm cả dòng sản phẩm hoặc chọn riêng từng sản phẩm. Đơn giá có thể điều chỉnh cho báo giá này.</Text></div>
           <div className="quotation-group-picker"><Selector label="Thêm theo nhóm sản phẩm" value={selectedGroup || undefined} onChange={addGroup} hasSearch presentation={presentation} placeholder="Chọn Combo, Xiên que hoặc nhóm khác"
             options={groups.map((group) => ({ value: group.id, label: group.name }))} />
-            {selectedGroup && <Button label="Thêm cả nhóm" variant="secondary" onClick={() => addGroup(selectedGroup)} />}</div>
+            {selectedGroup && <Button icon={<Icon icon={SquaresPlusIcon} size="sm" />} label="Thêm cả nhóm" variant="secondary" onClick={() => addGroup(selectedGroup)} />}</div>
           <MultiSelector label="Chọn sản phẩm" value={items.map((item) => item.productId).filter((id) => products.some((product) => product.id === id))}
             onChange={pickProducts} hasSearch hasSelectAll selectAllLabel="Chọn tất cả" formatValue={(selected) => `${selected.length} sản phẩm đã chọn`} presentation={presentation} searchPlaceholder="Tìm theo mã hoặc tên sản phẩm..." placeholder="Tìm và chọn sản phẩm"
             options={products.map((product) => ({ value: product.id, label: `${product.code} · ${product.name} · ${formatVnd(product.price)}` }))} />
@@ -277,7 +278,7 @@ export default function CreateQuotationPage() {
           <Text color="secondary">{isGenericCustomer ? 'QUÝ KHÁCH HÀNG' : selectedCustomer?.name} · {items.length} sản phẩm · {selectedTemplate?.name} (v{versionNumber})</Text>
           <Heading level={3}>Xem trước mẫu báo giá</Heading>
           {previewLoading && <Skeleton height={300} />}
-          {previewError && <><Banner status="error" title="Không thể tải bản xem trước" description={previewError} /><Button label="Thử lại bản xem trước" variant="secondary" onClick={() => setPreviewAttempt((value) => value + 1)} /></>}
+          {previewError && <><Banner status="error" title="Không thể tải bản xem trước" description={previewError} /><Button icon={<Icon icon={ArrowPathIcon} size="sm" />} label="Thử lại bản xem trước" variant="secondary" onClick={() => setPreviewAttempt((value) => value + 1)} /></>}
           {previewHtml && <div className="draft-preview-container"><iframe title="Bản xem trước trước khi tạo" sandbox="" srcDoc={previewHtml} /></div>}
         </div>}
       </Card></div>
@@ -293,7 +294,7 @@ export default function CreateQuotationPage() {
       </div></Card></aside>
     </div>
     <footer className="quotation-wizard-footer"><div>
-      <Button label={step > 0 ? 'Quay lại' : 'Hủy'} variant="secondary" isDisabled={submitting} onClick={() => step > 0 ? goToStep(step - 1) : navigate('/quotations')} />
+      <Button icon={<Icon icon={step > 0 ? ArrowLeftIcon : XMarkIcon} size="sm" />} label={step > 0 ? 'Quay lại' : 'Hủy'} variant="secondary" isDisabled={submitting} onClick={() => step > 0 ? goToStep(step - 1) : navigate('/quotations')} />
       <Text type="supporting" color="secondary" className="wizard-footer-position">Bước {step + 1} / 4</Text>
       <Button variant="primary" label={step < 3 ? 'Tiếp tục' : submitting ? 'Đang lưu...' : isEditing ? 'Lưu báo giá' : 'Tạo báo giá'}
         icon={<Icon icon={step < 3 ? ArrowRightIcon : CheckCircleIcon} size="sm" />} isDisabled={submitting} isLoading={submitting}

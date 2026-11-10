@@ -25,6 +25,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IQuotationFileStorageService, QuotationFileStorageResolver>();
         services.AddHttpClient<IQuotingProductImageService, SupabaseProductImageService>(client => client.Timeout = TimeSpan.FromSeconds(20))
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+        services.AddHttpClient<IQuotationRemoteImageService, QuotationRemoteImageService>(client => client.Timeout = TimeSpan.FromSeconds(10))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddScoped<IQuotationExportService, QuotationHtmlExportService>();
 
         return services;

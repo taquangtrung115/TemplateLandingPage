@@ -3,8 +3,15 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest';
 import { ThemeProvider, THEME_STORAGE_KEY } from '../src/contexts/ThemeContext';
 import ThemeToggle from '../src/components/common/ThemeToggle';
+import { quotingThemes } from '../src/quoting-theme';
 
 describe('Light and dark Astryx themes', () => {
+  it('keeps typography, dimensions and component rules identical across color modes', () => {
+    const geometry = (theme) => Object.fromEntries(Object.entries(theme.tokens).filter(([name]) => !name.startsWith('--color-')));
+    expect(geometry(quotingThemes.light)).toEqual(geometry(quotingThemes.dark));
+    expect(quotingThemes.light.components).toEqual(quotingThemes.dark.components);
+    expect(quotingThemes.light.tokens['--color-background-muted']).not.toBe(quotingThemes.light.tokens['--color-background-body']);
+  });
   it.each([null, 'invalid'])('defaults to light without a valid saved preference (%s), even on a dark device', (savedMode) => {
     if (savedMode) localStorage.setItem(THEME_STORAGE_KEY, savedMode);
     const media = vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({

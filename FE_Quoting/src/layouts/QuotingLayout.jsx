@@ -27,6 +27,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from '../components/common/ThemeToggle';
+import PageSkeleton from '../components/common/PageSkeleton';
 
 const MENU_SECTIONS = [
   {
@@ -139,7 +140,7 @@ export default function QuotingLayout() {
       <div className="quoting-content">
         <ToastViewport position="topEnd" />
         <div className="quoting-toolbar"><ThemeToggle /></div>
-        <Outlet />
+        <React.Suspense fallback={<PageSkeleton />}><Outlet /></React.Suspense>
       </div>
     </AppShell>
   );

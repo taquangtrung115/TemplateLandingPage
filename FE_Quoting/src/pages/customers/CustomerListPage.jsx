@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Card } from '@astryxdesign/core/Card';
 import { QuotingTable as Table, pixel, proportional } from '../../components/common/QuotingTable';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from '../../components/common/Button';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { Heading, Text } from '@astryxdesign/core/Text';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
@@ -15,7 +15,7 @@ import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { Drawer, DrawerHeader } from '@astryxdesign/core/Drawer';
 import { Pagination } from '@astryxdesign/core/Pagination';
 import { Skeleton } from '@astryxdesign/core/Skeleton';
-import { AlertDialog } from '@astryxdesign/core/AlertDialog';
+import { ConfirmationDialog as AlertDialog } from '../../components/common/ConfirmationDialog';
 import { useToast } from '@astryxdesign/core/Toast';
 import { Field } from '@astryxdesign/core/Field';
 import { FieldStatus } from '@astryxdesign/core/FieldStatus';
@@ -24,7 +24,7 @@ import {
   PlusIcon,
   PencilSquareIcon,
   TrashIcon,
-  CheckIcon,
+  CheckIcon, XMarkIcon, ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { quotingCustomerApi } from '../../api/quotingCustomerApi';
 
@@ -370,7 +370,7 @@ export default function CustomerListPage() {
             <Divider />
 
             <HStack gap={3} hAlign="end">
-              <Button
+              <Button icon={<Icon icon={XMarkIcon} size="sm" />}
                 variant="secondary"
                 label="Hủy"
                 onClick={() => setIsFormOpen(false)}
@@ -414,7 +414,7 @@ export default function CustomerListPage() {
       </HStack>
 
       {loadError && <Banner status="error" title="Không thể tải khách hàng" description={loadError} />}
-      {loadError && <Button label="Thử lại" onClick={fetchCustomers} />}
+      {loadError && <Button icon={<Icon icon={ArrowPathIcon} size="sm" />} label="Thử lại" onClick={fetchCustomers} />}
       {/* Main Table or Skeleton */}
       <Card padding={0}>
         {loading ? (

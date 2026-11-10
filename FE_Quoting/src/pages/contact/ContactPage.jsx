@@ -4,7 +4,7 @@ import { Center } from '@astryxdesign/core/Center';
 import { Section } from '@astryxdesign/core/Section';
 import { Grid } from '@astryxdesign/core/Grid';
 import { Card } from '@astryxdesign/core/Card';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from '../../components/common/Button';
 import { Heading, Text } from '@astryxdesign/core/Text';
 import { Icon } from '@astryxdesign/core/Icon';
 import { TextInput } from '@astryxdesign/core/TextInput';
@@ -19,7 +19,7 @@ import {
   ChatBubbleLeftRightIcon,
   DocumentDuplicateIcon,
   PrinterIcon,
-  CheckCircleIcon,
+  CheckCircleIcon, PlusIcon, PaperAirplaneIcon,
 } from '@heroicons/react/24/outline';
 
 const REQUEST_TOPICS = [
@@ -140,7 +140,7 @@ export default function ContactPage() {
                 <Text type="body" color="secondary" style={{ maxWidth: 500 }}>
                   Yêu cầu đã được lưu trong hệ thống. Mã yêu cầu: <strong>{requestId}</strong>. Email liên hệ: <strong>{email}</strong>.
                 </Text>
-                <Button
+                <Button icon={<Icon icon={PlusIcon} size="sm" />}
                   label="Tạo yêu cầu khác"
                   variant="secondary"
                   onClick={() => {
@@ -240,7 +240,7 @@ export default function ContactPage() {
                   <Divider />
 
                   <HStack hAlign="end" gap={3}>
-                    <Button
+                    <Button icon={<Icon icon={PaperAirplaneIcon} size="sm" />}
                       label={saving ? 'Đang gửi...' : 'Gửi yêu cầu'}
                       isLoading={saving}
                       variant="primary"

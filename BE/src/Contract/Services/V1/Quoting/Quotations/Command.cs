@@ -13,6 +13,7 @@ public static class QuotationErrors
     public static readonly Error InvalidDiscount = new("Quotation.InvalidDiscount", "Tỷ lệ chiết khấu phải từ 0% đến 100%.");
     public static readonly Error InvalidTax = new("Quotation.InvalidTax", "Thuế suất VAT phải từ 0% đến 100%.");
     public static readonly Error InvalidFileType = new("Quotation.InvalidFileType", "Định dạng file xuất chỉ chấp nhận 'pdf' hoặc 'html'.");
+    public static readonly Error ImageUnavailable = new("Quotation.ImageUnavailable", "Không thể tải ảnh sản phẩm đã lưu. Vui lòng kiểm tra ảnh trong danh mục hoặc thử lại.");
 }
 
 public record QuotationItemDto(

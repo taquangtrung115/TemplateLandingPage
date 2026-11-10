@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TemplateLandingPage.Application.Abstractions;
+using TemplateLandingPage.Application.Exceptions;
 using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Commands;
 using TemplateLandingPage.Contract.Services.V1.Quoting.Customers;
 using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
@@ -237,6 +238,27 @@ public class QuotationHandlersTests
     #endregion
 
     #region 3. ExportQuotationFileCommandHandler Tests
+
+    [Theory]
+    [InlineData("pdf")]
+    [InlineData("html")]
+    public async Task UnavailableProductImage_ReturnsAnActionableErrorWithoutUploadingOrSavingAFile(string format)
+    {
+        var quoteId = Guid.NewGuid(); var templateId = Guid.NewGuid();
+        var quotation = CreateSampleQuotation(quoteId, templateId);
+        var template = QuotationTemplate.Create("TPL", "Mẫu", null, true);
+        template.AddNewVersion("BẢNG BÁO GIÁ", "{}", "Kính gửi", "{}", "{}", "{}", null, null);
+        _quotationRepoMock.Setup(repo => repo.GetByIdWithDetailsAsync(quoteId, It.IsAny<CancellationToken>())).ReturnsAsync(quotation);
+        _templateRepoMock.Setup(repo => repo.GetByIdWithVersionsAsync(templateId, It.IsAny<CancellationToken>())).ReturnsAsync(template);
+        _exportServiceMock.Setup(service => service.GeneratePdfAsync(It.IsAny<Quotation>(), It.IsAny<QuotationTemplateVersion>(), It.IsAny<CancellationToken>())).ThrowsAsync(new QuotationImageUnavailableException());
+        _exportServiceMock.Setup(service => service.GenerateHtmlAsync(It.IsAny<Quotation>(), It.IsAny<QuotationTemplateVersion>(), It.IsAny<CancellationToken>())).ThrowsAsync(new QuotationImageUnavailableException());
+        var handler = new ExportQuotationFileCommandHandler(_quotationRepoMock.Object, _templateRepoMock.Object, _exportServiceMock.Object,
+            _storageServiceMock.Object, _unitOfWorkMock.Object, NullLogger<ExportQuotationFileCommandHandler>.Instance);
+        var result = await handler.Handle(new ExportQuotationFileCommand(quoteId, format, Guid.NewGuid()), default);
+        result.IsFailure.Should().BeTrue(); result.Error.Should().Be(QuotationErrors.ImageUnavailable);
+        quotation.Files.Should().BeEmpty();
+        _storageServiceMock.VerifyNoOtherCalls(); _unitOfWorkMock.VerifyNoOtherCalls();
+    }
 
     [Theory]
     [InlineData("pdf")]

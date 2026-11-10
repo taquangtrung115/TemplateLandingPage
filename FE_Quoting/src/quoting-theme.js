@@ -8,10 +8,15 @@ const actionStyles = (background, hover) => ({
   ':active': { backgroundColor: hover },
 });
 
-const createQuotingTheme = (base, mode) => defineTheme({
+// Both modes share Gothic's typography, geometry and component rules; only colors change.
+const lightColors = Object.fromEntries(Object.entries(themes.neutral.tokens).filter(([name]) => name.startsWith('--color-')));
+const createQuotingTheme = (mode) => defineTheme({
   name: `quoting-${mode}`,
-  extends: base,
+  extends: themes.gothic,
   tokens: {
+    ...(mode === 'light' ? lightColors : {}),
+    '--color-background-muted': mode === 'light' ? '#e8edf2' : '#24292d',
+    '--color-skeleton': mode === 'light' ? '#d3dce5' : '#495056',
     '--color-accent': '#0369a1', '--color-on-accent': '#ffffff',
     '--color-success': '#047857', '--color-on-success': '#ffffff',
     '--color-warning': '#92400e', '--color-on-warning': '#ffffff',
@@ -39,7 +44,7 @@ const createQuotingTheme = (base, mode) => defineTheme({
 });
 
 export const quotingThemes = {
-  light: createQuotingTheme(themes.neutral, 'light'),
-  dark: createQuotingTheme(themes.gothic, 'dark'),
+  light: createQuotingTheme('light'),
+  dark: createQuotingTheme('dark'),
 };
 // #endregion

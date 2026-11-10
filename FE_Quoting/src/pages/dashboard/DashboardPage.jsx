@@ -1,3 +1,4 @@
+import { QuotationStatusBadge } from '../../components/common/StatusBadge';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { VStack, HStack } from '@astryxdesign/core/Layout';
@@ -6,7 +7,7 @@ import { Banner } from '@astryxdesign/core/Banner';
 import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { Card } from '@astryxdesign/core/Card';
 import { Grid, GridSpan } from '@astryxdesign/core/Grid';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from '../../components/common/Button';
 import { Badge } from '@astryxdesign/core/Badge';
 import { QuotingTable as Table, proportional } from '../../components/common/QuotingTable';
 import { Divider } from '@astryxdesign/core/Divider';
@@ -28,7 +29,7 @@ import {
   DocumentTextIcon,
   CheckCircleIcon,
   ClockIcon,
-  BanknotesIcon,
+  BanknotesIcon, EyeIcon, ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import { quotationApi } from '../../api/quotationApi';
 
@@ -185,23 +186,14 @@ export default function DashboardPage() {
         key: 'status',
         header: 'Trạng thái',
         width: proportional(1.2),
-        renderCell: (row) => {
-          const status = row.status || 'Draft';
-          const variant =
-            status === 'Approved' ? 'success' :
-            status === 'Sent' ? 'warning' : 'neutral';
-          const label =
-            status === 'Approved' ? 'Đã duyệt' :
-            status === 'Sent' ? 'Đã gửi' : 'Bản nháp';
-          return <Badge label={label} variant={variant} />;
-        },
+        renderCell: (row) => <QuotationStatusBadge status={row.status} />,
       },
       {
         key: 'actions',
         header: 'Thao tác',
         width: proportional(1),
         renderCell: (row) => (
-          <Button
+          <Button icon={<Icon icon={EyeIcon} size="sm" />}
             label="Xem chi tiết"
             variant="secondary"
             size="sm"
@@ -379,7 +371,7 @@ export default function DashboardPage() {
 
               <VStack gap={2}>
                 <Divider />
-                <Button
+                <Button icon={<Icon icon={ArrowRightIcon} size="sm" />}
                   label="Xem tất cả"
                   variant="secondary"
                   size="md"
@@ -402,7 +394,7 @@ export default function DashboardPage() {
                 5 phiếu báo giá mới nhất được cập nhật trên hệ thống
               </Text>
             </VStack>
-            <Button
+            <Button icon={<Icon icon={ArrowRightIcon} size="sm" />}
               label="Xem tất cả"
               variant="secondary"
               size="sm"

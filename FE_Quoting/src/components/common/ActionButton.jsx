@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from './Button';
 
 // Keep callers compatible while using Astryx keyboard, focus and loading behavior.
 export function ActionButton({ actionType = 'secondary', disabled = false, loading = false, isDisabled = false, isLoading = false, ...props }) {

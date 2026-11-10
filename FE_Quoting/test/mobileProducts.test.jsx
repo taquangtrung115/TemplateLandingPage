@@ -16,6 +16,6 @@ describe('Mobile product information', () => {
     expect(list).toHaveTextContent(`Đơn vị tính: ${product.unit}`);
     expect(within(list).getByText(/Giá danh mục:/)).toHaveTextContent('18.000'); expect(list).toHaveTextContent(`Nhóm sản phẩm: ${product.category}`);
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    fireEvent.click(within(list).getByRole('button', { name: `Thao tác ${product.name}` })); fireEvent.click(await screen.findByRole('button', { name: 'Sửa sản phẩm', exact: true })); expect(await screen.findByRole('dialog', { name: 'Sửa sản phẩm' })).toBeInTheDocument();
+    expect(within(list).getAllByRole('button')).toHaveLength(2); fireEvent.click(within(list).getByRole('button', { name: 'Sửa sản phẩm', exact: true })); expect(await screen.findByRole('dialog', { name: 'Sửa sản phẩm' })).toBeInTheDocument();
   });
 });

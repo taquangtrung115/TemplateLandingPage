@@ -183,7 +183,6 @@ public class QuotationExportServiceTests
     [Theory]
     [InlineData(null, 0)]
     [InlineData("", 0)]
-    [InlineData("https://cdn.example.test/unrelated-photo.png", 0)]
     [InlineData("/api/v1/quoting/product-images/CB-01.png", 1)]
     public async Task Pdf_RespectsRemovedImage_EvenWhenTheProductHasABundledPhoto(string? imageUrl, int expectedImages)
     {

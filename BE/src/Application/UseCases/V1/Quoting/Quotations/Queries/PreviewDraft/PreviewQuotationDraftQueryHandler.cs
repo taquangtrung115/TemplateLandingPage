@@ -2,8 +2,10 @@ namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries
 
 using System.Text;
 using TemplateLandingPage.Application.Abstractions;
+using TemplateLandingPage.Application.Exceptions;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Quoting.Customers;
+using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
 using TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
 using TemplateLandingPage.Domain.Entities.Quoting;
 using TemplateLandingPage.Domain.Repositories.Quoting;
@@ -40,7 +42,9 @@ public sealed class PreviewQuotationDraftQueryHandler(
             item.ProductId, item.ProductCode, item.ProductName, item.Description, item.Unit, item.ImageUrl,
             item.ItemGroup, item.Quantity, item.UnitPrice, item.DiscountPercent, item.Notes,
             item.SortOrder > 0 ? item.SortOrder : index + 1, item.GroupSortOrder)).ToList(), request.UserId);
-        var html = await exportService.GenerateHtmlAsync(quotation, version, cancellationToken);
+        byte[] html;
+        try { html = await exportService.GenerateHtmlAsync(quotation, version, cancellationToken); }
+        catch (QuotationImageUnavailableException) { return Result.Failure<PreviewQuotationDraftResult>(QuotationErrors.ImageUnavailable); }
         return Result.Success(new PreviewQuotationDraftResult(Encoding.UTF8.GetString(html)));
     }
     #endregion

@@ -39,8 +39,10 @@ async function open(page, route, heading) {
 }
 
 async function rowAction(page, name, action) {
-  await main(page).getByRole('button', { name: `Thao tác ${name}`, exact: true }).click();
-  await page.getByRole('menuitem', { name: action, exact: true }).or(page.getByRole('button', { name: action, exact: true })).click();
+  const record = main(page).getByRole('row').filter({ hasText: name })
+    .or(main(page).locator('.mobile-record').filter({ hasText: name }))
+    .or(main(page).getByLabel('Danh sách sản phẩm trên điện thoại').locator(':scope > *').filter({ hasText: name }));
+  await record.getByRole('button', { name: action, exact: true }).click();
 }
 
 async function pickProduct(page, name) {
@@ -349,7 +351,7 @@ test('mobile products show every field and usable actions without horizontal col
   const item = main(page).getByLabel('Sản phẩm CB-01', { exact: true });
   await expect(item).toBeVisible();
   for (const text of ['Nhóm sản phẩm:', 'Đơn vị tính:', 'Giá danh mục:', 'Đang bán']) await expect(item).toContainText(text);
-  await expect(item.getByRole('button', { name: 'Thao tác COMBO NGUYÊN BẢN BAO NGON', exact: true })).toBeVisible();
+  await expect(item.getByRole('button', { name: 'Sửa sản phẩm', exact: true })).toBeVisible();
   const image = item.locator('img'); await expect(image).toHaveJSProperty('complete', true); await expect(image).not.toHaveJSProperty('naturalWidth', 0);
   await page.screenshot({ path: testInfo.outputPath('mobile-products.png'), fullPage: true });
   await noPageOverflow(page);
