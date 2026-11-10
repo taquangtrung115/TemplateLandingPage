@@ -355,6 +355,18 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<bool>("ShowDiscount")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowGrandTotal")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowQuantity")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowSubTotal")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -487,6 +499,9 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Property<decimal>("DiscountPercent")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
+
+                    b.Property<int>("GroupSortOrder")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(1000)
@@ -725,6 +740,9 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<Guid?>("GroupId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -757,7 +775,56 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
+                    b.HasIndex("GroupId");
+
                     b.ToTable("Products", "quo");
+                });
+
+            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotingProductGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("SortOrder", "Code");
+
+                    b.ToTable("ProductGroups", "quo");
                 });
 
             modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotingSupportRequest", b =>
@@ -1182,6 +1249,16 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasForeignKey("TemplateId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotingProduct", b =>
+                {
+                    b.HasOne("TemplateLandingPage.Domain.Entities.Quoting.QuotingProductGroup", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Group");
                 });
 
             modelBuilder.Entity("TemplateLandingPage.Domain.Entities.RsvpEntry", b =>

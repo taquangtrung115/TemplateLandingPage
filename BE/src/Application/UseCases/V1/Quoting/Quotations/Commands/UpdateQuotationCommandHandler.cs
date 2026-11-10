@@ -79,8 +79,10 @@ public sealed class UpdateQuotationCommandHandler : ICommandHandler<UpdateQuotat
             dto.UnitPrice,
             dto.DiscountPercent,
             dto.Notes,
-            dto.SortOrder > 0 ? dto.SortOrder : idx + 1)).ToList();
+            dto.SortOrder > 0 ? dto.SortOrder : idx + 1, dto.GroupSortOrder)).ToList();
 
+        quotation.SetDisplayOptions(request.ShowDiscount ?? quotation.ShowDiscount, request.ShowQuantity ?? quotation.ShowQuantity,
+            request.ShowSubTotal ?? quotation.ShowSubTotal, request.ShowGrandTotal ?? quotation.ShowGrandTotal);
         quotation.SetItems(items, request.UserId);
 
         _quotationRepository.Update(quotation);

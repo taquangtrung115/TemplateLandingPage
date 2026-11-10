@@ -12,6 +12,9 @@ public sealed class QuotingCustomerRepository : RepositoryBase<QuotingCustomer, 
     {
     }
 
+    public Task<QuotingCustomer?> GetForReadAsync(Guid id, CancellationToken cancellationToken) =>
+        DbSet.AsNoTracking().FirstOrDefaultAsync(customer => customer.Id == id && !customer.IsDeleted, cancellationToken);
+
     public async Task<List<QuotingCustomer>> SearchAsync(string? searchTerm, bool includeInactive = false, CancellationToken cancellationToken = default)
     {
         var query = DbSet.AsNoTracking().Where(c => !c.IsDeleted);

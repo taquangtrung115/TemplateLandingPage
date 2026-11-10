@@ -19,6 +19,7 @@ public sealed class QuotationItem : Entity<Guid>
     public decimal TotalAmount { get; private set; }
     public string? Notes { get; private set; }
     public int SortOrder { get; private set; }
+    public int GroupSortOrder { get; private set; }
 
     private QuotationItem()
     {
@@ -71,7 +72,7 @@ public sealed class QuotationItem : Entity<Guid>
         decimal unitPrice,
         decimal discountPercent,
         string? notes,
-        int sortOrder)
+        int sortOrder, int groupSortOrder = 0)
     {
         if (string.IsNullOrWhiteSpace(productName))
         {
@@ -93,7 +94,7 @@ public sealed class QuotationItem : Entity<Guid>
             throw new ArgumentException("Discount percent must be between 0 and 100.", nameof(discountPercent));
         }
 
-        return new QuotationItem(
+        var item = new QuotationItem(
             Guid.NewGuid(),
             quotationId,
             productId,
@@ -108,6 +109,8 @@ public sealed class QuotationItem : Entity<Guid>
             discountPercent,
             notes?.Trim(),
             sortOrder);
+        item.GroupSortOrder = groupSortOrder;
+        return item;
     }
 
     public void UpdateValues(

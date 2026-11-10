@@ -95,3 +95,78 @@ body {
   /* iOS zooms the viewport when focusing smaller form text. */
   .login-page input, .quoting-content input, .quoting-content textarea, .quoting-content select { font-size: 16px; }
 }
+
+/* Hallmark · component scope: quotation workbench · existing Astryx theme
+ * Pre-emit critique: Philosophy 4 · Hierarchy 4 · Execution 4 · Specificity 5 · Restraint 5 · Variety 4
+ */
+html, body { overflow-x: clip; }
+.quoting-page-stack { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.page-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; flex-wrap: wrap; }
+.page-heading > div { min-width: 0; }
+.quoting-content h1, .quoting-content h2, .quoting-content h3 { min-width: 0; overflow-wrap: anywhere; }
+.mobile-record-list { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+.mobile-record { border: 1px solid var(--color-border); border-radius: 12px; padding: 16px; min-width: 0; background: var(--color-background-card); }
+.mobile-record-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.mobile-record-heading > :first-child { min-width: 0; overflow-wrap: anywhere; }
+.mobile-record dl { margin: 16px 0 0; display: flex; flex-direction: column; gap: 12px; }
+.mobile-record-field { min-width: 0; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; align-items: start; }
+.mobile-record-field dt { color: var(--color-text-secondary); font-size: 12px; }
+.mobile-record-field dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.group-editor { padding: 24px; }
+.group-editor-actions { display: flex; justify-content: flex-end; gap: 12px; }
+.empty-records { padding: 32px 16px; text-align: center; color: var(--color-text-secondary); }
+.quotation-workflow { padding-bottom: 100px; }
+.quotation-wizard-top { position: sticky; top: 0; z-index: 20; background: var(--color-background-body); border-bottom: 1px solid var(--color-border); padding: 16px 0; }
+.quotation-step-content { flex: 1; min-width: 0; }
+.quotation-editor { scroll-margin-top: 110px; }
+.quotation-summary { top: 108px; max-height: calc(100dvh - 208px); }
+.quotation-date-grid, .quotation-option-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.quotation-date-grid > div { min-width: 0; }
+.quotation-recipient, .quotation-display-options { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 8px; background: var(--color-background-muted); overflow-wrap: anywhere; }
+.quotation-group-picker { display: flex; gap: 12px; align-items: flex-end; }
+.quotation-group-picker > :first-child { flex: 1; min-width: 0; }
+.quotation-product-identity { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+.quotation-product-identity img { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+.quotation-product-identity > div { min-width: 0; overflow-wrap: anywhere; }
+.quotation-summary-items { display: flex; flex-direction: column; gap: 12px; max-height: 320px; overflow-y: auto; }
+.quotation-summary-line { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; overflow-wrap: anywhere; }
+.quotation-summary-line strong { text-align: right; }
+.quotation-summary-total { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; padding-top: 16px; border-top: 1px solid var(--color-border); }
+.quotation-wizard-footer { position: fixed; bottom: 0; left: var(--wizard-left, 0); width: var(--wizard-width, 100%); z-index: 30; padding: 12px 0 max(12px, env(safe-area-inset-bottom)); background: var(--color-background-body); border-top: 1px solid var(--color-border); }
+.quotation-wizard-footer > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-inline: 4px; }
+.quotation-wizard-footer button { white-space: nowrap; }
+.mobile-wizard-progress { display: flex; flex-direction: column; gap: 8px; }
+.mobile-wizard-progress progress { width: 100%; height: 5px; accent-color: var(--color-text-info); }
+.draft-preview-container { border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-background-muted); min-width: 0; }
+.draft-preview-container iframe { display: block; width: 100%; min-height: 1050px; border: 0; border-radius: 8px; }
+@media (max-width: 1279px) { .quotation-summary { position: static; max-height: none; } }
+@media (max-width: 767px) {
+  .quotation-option-grid, .quotation-date-grid { grid-template-columns: minmax(0, 1fr); }
+  .quotation-group-picker { flex-direction: column; align-items: stretch; }
+  .quotation-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  .quotation-metrics > * { padding: 12px !important; }
+  .quotation-metrics > * > * { flex-wrap: wrap; }
+  .quotation-metrics > * > * > * { min-width: 0; }
+  .quotation-metrics svg, .quotation-metrics [class*="badge"] { display: none; }
+  .quotation-metrics h2 { font-size: 26px; }
+  .quotation-wizard-top { padding: 12px 0; }
+  .quotation-step-content .mobile-record-list { padding: 0; }
+  .quotation-step-content .mobile-record-field { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .wizard-footer-position { display: none; }
+  .draft-preview-container iframe { min-height: 760px; }
+  .quotation-tabs > * { min-width: 0; }
+  .product-mobile-list button { white-space: nowrap; }
+}
+.quotation-product-identity > div, .quotation-summary-line > div { display: flex; flex-direction: column; gap: 4px; }
+.quoting-desktop-table { max-width: 100%; min-width: 0; }
+.has-sticky-actions th:last-child, .has-sticky-actions td:last-child { position: sticky; right: 0; z-index: 2; background: var(--color-background-card); border-inline-start: 1px solid var(--color-border); }
+.has-sticky-actions th:last-child { z-index: 3; }
+.quotation-wizard-top { top: var(--_app-shell-header-height, 0px); }
+.quotation-editor { scroll-margin-top: calc(var(--_app-shell-header-height, 0px) + 110px); }
+.quotation-summary { top: calc(var(--_app-shell-header-height, 0px) + 108px); }
+@media (max-width: 1279px) { .quotation-summary { width: 100%; flex-shrink: 1; } }
+@media (max-width: 767px) {
+  .quoting-content .quoting-grid.quotation-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .quotation-metrics .metric-icon { display: none; }
+}
+@media (max-width: 767px) { .quotation-metrics .metric-icon { display: none !important; } }

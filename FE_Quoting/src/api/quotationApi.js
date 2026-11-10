@@ -1,6 +1,10 @@
 import axiosInstance from './axios';
 
 export const quotationApi = {
+  previewDraft: async (data, signal) => {
+    const response = await axiosInstance.post('/quoting/quotations/preview-draft', data, { signal });
+    return response.data?.value ?? response.data;
+  },
   getSummary: async () => {
     const response = await axiosInstance.get('/quoting/quotations/summary');
     return response.data?.value ?? response.data;

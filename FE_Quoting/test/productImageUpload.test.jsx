@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import ProductCatalogPage from '../src/pages/products/ProductCatalogPage';
 import { quotingProductApi } from '../src/api/quotingProductApi';
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => ({ isAdmin: true }) }));
+vi.mock('../src/api/quotingProductGroupApi', () => ({ quotingProductGroupApi: { getGroups: vi.fn(async () => (await import('./fixtures')).groups) } }));
 vi.mock('../src/api/quotingProductApi', () => ({ quotingProductApi: { getProducts: vi.fn(), createProduct: vi.fn(), uploadImage: vi.fn() } }));
 const imageUrl = '/api/v1/quoting/product-images/uploads/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png';
 const originalCreate = URL.createObjectURL; const originalRevoke = URL.revokeObjectURL;

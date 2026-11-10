@@ -46,7 +46,7 @@ public sealed class QuotingProductApi : IEndpoint
                 request.Price,
                 request.ImageUrl,
                 request.Category,
-                request.IsActive);
+                request.IsActive, request.GroupId);
 
             var result = await sender.Send(command, ct);
             return Respond(result, StatusCodes.Status201Created);
@@ -80,7 +80,7 @@ public sealed class QuotingProductApi : IEndpoint
                 request.Price,
                 request.ImageUrl,
                 request.Category,
-                request.IsActive);
+                request.IsActive, request.GroupId);
 
             var result = await sender.Send(command, ct);
             return Respond(result);
@@ -119,7 +119,7 @@ public record CreateQuotingProductRequest(
     decimal Price,
     string? ImageUrl,
     string? Category,
-    bool IsActive = true);
+    bool IsActive = true, Guid? GroupId = null);
 
 public record UpdateQuotingProductRequest(
     string Code,
@@ -129,4 +129,4 @@ public record UpdateQuotingProductRequest(
     decimal Price,
     string? ImageUrl,
     string? Category,
-    bool IsActive);
+    bool IsActive, Guid? GroupId = null);

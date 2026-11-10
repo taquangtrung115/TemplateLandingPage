@@ -12,6 +12,10 @@ public sealed class QuotationTemplateRepository : RepositoryBase<QuotationTempla
     {
     }
 
+    public Task<QuotationTemplate?> GetForReadWithVersionsAsync(Guid id, CancellationToken cancellationToken) =>
+        DbSet.AsNoTracking().Include(template => template.Versions)
+            .FirstOrDefaultAsync(template => template.Id == id && !template.IsDeleted, cancellationToken);
+
     public async Task<QuotationTemplate?> GetByIdWithVersionsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await DbSet

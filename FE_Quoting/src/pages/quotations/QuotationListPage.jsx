@@ -22,6 +22,7 @@ import {
   ClockIcon,
   PaperAirplaneIcon,
 } from '@heroicons/react/24/outline';
+import RowActions from '../../components/common/RowActions';
 import { quotationApi } from '../../api/quotationApi';
 
 const STATUS_OPTIONS = [
@@ -54,6 +55,7 @@ function MetricSummaryCard({ label, count, icon: IconComponent, badgeVariant, lo
       <HStack gap={3} vAlign="center" hAlign="between">
         <HStack gap={3} vAlign="center">
           <div
+            className="metric-icon"
             style={{
               padding: 10,
               borderRadius: 8,
@@ -188,7 +190,7 @@ export default function QuotationListPage() {
         width: pixel(160),
         renderCell: (row) => (
           <Text type="body" weight="semibold">
-            {formatVnd(row.totalAmount)}
+            {row.showGrandTotal === false ? '—' : formatVnd(row.totalAmount)}
           </Text>
         ),
       },
@@ -196,15 +198,10 @@ export default function QuotationListPage() {
         key: 'actions',
         header: 'Thao tác',
         width: pixel(140),
-        renderCell: (row) => (
-          <Button
-            variant="secondary"
-            size="sm"
-            label="Xem chi tiết"
-            icon={<Icon icon={EyeIcon} size="sm" />}
-            onClick={() => navigate(`/quotations/${row.id}`)}
-          />
-        ),
+        renderCell: (row) => <RowActions label={row.quotationNumber} actions={[
+          { label: 'Xem chi tiết', icon: EyeIcon, onClick: () => navigate(`/quotations/${row.id}`) },
+          row.status === 'Draft' && { label: 'Sửa báo giá', onClick: () => navigate(`/quotations/${row.id}/edit`) },
+        ]} />,
       },
     ],
     [navigate]
@@ -229,7 +226,7 @@ export default function QuotationListPage() {
       </HStack>
 
       {/* KPI Cards theo Gothic Theme */}
-      <Grid className="quoting-grid" columns={{ minWidth: 220, repeat: 'fit' }} gap={4}>
+      <Grid className="quoting-grid quotation-metrics" columns={{ minWidth: 220, repeat: 'fit' }} gap={4}>
         <MetricSummaryCard
           label="Tổng số báo giá"
           count={totalCount}

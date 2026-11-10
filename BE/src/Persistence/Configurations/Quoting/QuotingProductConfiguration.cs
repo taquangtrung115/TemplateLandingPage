@@ -39,6 +39,8 @@ public sealed class QuotingProductConfiguration : IEntityTypeConfiguration<Quoti
         builder.Property(p => p.ImageUrl)
             .HasMaxLength(1000);
 
+        builder.HasOne(p => p.Group).WithMany().HasForeignKey(p => p.GroupId).OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(p => p.Category)
             .HasMaxLength(100);
 

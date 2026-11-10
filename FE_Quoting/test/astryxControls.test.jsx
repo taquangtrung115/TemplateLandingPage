@@ -43,6 +43,7 @@ vi.mock('../src/api/quotingCustomerApi', () => ({
   },
 }));
 
+vi.mock('../src/api/quotingProductGroupApi', () => ({ quotingProductGroupApi: { getGroups: vi.fn(async () => (await import('./fixtures')).groups) } }));
 vi.mock('../src/api/quotingProductApi', () => ({
   quotingProductApi: {
     getProducts: vi.fn(),
@@ -133,6 +134,7 @@ describe('Nâng Cấp Astryx Controls - Kiểm Thử Toàn Diện Hệ Thống �
       const editBtn = document.querySelector('button[data-variant="secondary"][data-size="sm"]');
       expect(editBtn).toBeInTheDocument();
       fireEvent.click(editBtn);
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Sửa khách hàng' }));
 
       // Drawer Header hiển thị chế độ sửa
       expect(screen.getByText('Sửa khách hàng', { selector: 'h2' })).toBeInTheDocument();
@@ -576,6 +578,7 @@ describe('Nâng Cấp Astryx Controls - Kiểm Thử Toàn Diện Hệ Thống �
       const editBtn = document.querySelector('button[data-variant="secondary"][data-size="sm"]');
       expect(editBtn).toBeInTheDocument();
       fireEvent.click(editBtn);
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Sửa sản phẩm' }));
 
       await waitFor(() => {
         expect(screen.getByText('Sửa sản phẩm', { selector: 'h2' })).toBeInTheDocument();

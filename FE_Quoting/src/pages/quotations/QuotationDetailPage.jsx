@@ -1,3 +1,4 @@
+import RowActions from '../../components/common/RowActions';
 import { resolveApiAssetUrl } from '../../api/apiUrl';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -258,7 +259,9 @@ export default function QuotationDetailPage() {
         </Text>
       ),
     },
-  ], []);
+  ].filter((column) => !(column.key === 'quantity' && quotation?.showQuantity === false)
+    && !(column.key === 'discountPercent' && quotation?.showDiscount === false)
+    && !(column.key === 'totalAmount' && quotation?.showGrandTotal === false)), [quotation?.showQuantity, quotation?.showDiscount, quotation?.showGrandTotal]);
 
   const historyColumns = useMemo(() => [
     {
@@ -316,16 +319,7 @@ export default function QuotationDetailPage() {
       key: 'actions',
       header: 'Tải xuống',
       width: pixel(120),
-      renderCell: (row) => (
-        <Button
-          variant="secondary"
-          size="sm"
-          label="Tải tệp"
-          icon={<Icon icon={ArrowDownTrayIcon} size="sm" />}
-          onClick={() => handleDownloadFile(row)}
-          isDisabled={exporting || previewing || Boolean(previewError)}
-        />
-      ),
+      renderCell: (row) => <RowActions label={row.name || row.fileName} actions={[{ label: 'Tải tệp', icon: ArrowDownTrayIcon, onClick: () => handleDownloadFile(row), isDisabled: exporting || previewing || Boolean(previewError) }]} />,
     },
   ], [id, exporting]);
 
@@ -458,7 +452,7 @@ export default function QuotationDetailPage() {
 
           <Divider orientation="vertical" />
 
-          <VStack gap={1} style={{ flex: '1 1 220px', textAlign: 'right' }}>
+          {quotation.showGrandTotal !== false && <VStack gap={1} style={{ flex: '1 1 220px', textAlign: 'right' }}>
             <Text type="supporting" color="secondary" style={{ textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.05em' }}>
               Tổng giá trị báo giá:
             </Text>
@@ -468,12 +462,12 @@ export default function QuotationDetailPage() {
             {quotation.taxPercent > 0 && <Text type="supporting" color="secondary">
               VAT cộng thêm {quotation.taxPercent}% ({formatVnd(quotation.taxAmount)})
             </Text>}
-            {quotation.discountPercent > 0 && (
+            {quotation.showDiscount !== false && quotation.discountPercent > 0 && (
               <Text type="supporting" style={{ color: 'var(--color-text-error)' }}>
                 Chiết khấu: -{quotation.discountPercent}% ({formatVnd(quotation.discountAmount)})
               </Text>
             )}
-          </VStack>
+          </VStack>}
         </HStack>
       </Card>
 
@@ -483,7 +477,7 @@ export default function QuotationDetailPage() {
           <Switch label="Thêm VAT khi xuất" value={includeExportVat} isDisabled={exporting} onChange={(checked) => updateExportVat(checked, exportTaxPercent)} />
           {includeExportVat && <InputGroup label="Thuế suất VAT khi xuất"><NumberInput value={exportTaxPercent} min={0} max={100} precision={2} isDisabled={exporting} onChange={(percent) => updateExportVat(true, percent)} /><InputGroupText>%</InputGroupText></InputGroup>}
           <Text type="supporting" color="secondary">Tùy chọn áp dụng cho bản xem trước và tệp xuất này. Nội dung báo giá đã lưu được giữ nguyên.</Text>
-          <Text type="body" weight="semibold">Tổng tiền trên tệp: {formatVnd(calculateQuotation(quotation.items, quotation.discountPercent, includeExportVat ? exportTaxPercent : 0).totalAmount)}</Text>
+          {quotation.showGrandTotal !== false && <Text type="body" weight="semibold">Tổng tiền trên tệp: {formatVnd(calculateQuotation(quotation.items, quotation.discountPercent, includeExportVat ? exportTaxPercent : 0).totalAmount)}</Text>}
           {previewing && <Skeleton height={24} />}
           {previewError && <Banner status="error" title="Không thể cập nhật bản xem trước" description={previewError} />}
         </VStack>

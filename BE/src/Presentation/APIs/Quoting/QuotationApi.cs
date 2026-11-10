@@ -1,6 +1,7 @@
 namespace TemplateLandingPage.Presentation.APIs.Quoting;
 
 using System.Security.Claims;
+using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries.PreviewDraft;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -18,6 +19,12 @@ public sealed class QuotationApi : IEndpoint
         var group = app.MapGroup("/api/v1/quoting/quotations")
             .WithTags("Quotations")
             .RequireAuthorization();
+
+        group.MapPost("preview-draft", async (CreateQuotationRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new PreviewQuotationDraftQuery(new CreateQuotationCommand(
+                request.CustomerId, request.TemplateId, request.TemplateVersion, request.IssueDate, request.ValidUntil,
+                request.DiscountPercent, request.TaxPercent, request.Notes, request.Items ?? [], UserId(user),
+                request.ShowDiscount, request.ShowQuantity, request.ShowSubTotal, request.ShowGrandTotal)), ct)));
 
         group.MapGet("summary", async (ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(new GetQuotationSummaryQuery(), ct)));
@@ -41,7 +48,7 @@ public sealed class QuotationApi : IEndpoint
                 request.TaxPercent,
                 request.Notes,
                 request.Items ?? new(),
-                UserId(user));
+                UserId(user), request.ShowDiscount, request.ShowQuantity, request.ShowSubTotal, request.ShowGrandTotal);
 
             var result = await sender.Send(command, ct);
             return Respond(result, StatusCodes.Status201Created);
@@ -72,7 +79,7 @@ public sealed class QuotationApi : IEndpoint
                 request.TaxPercent,
                 request.Notes,
                 request.Items ?? new(),
-                UserId(user));
+                UserId(user), request.ShowDiscount, request.ShowQuantity, request.ShowSubTotal, request.ShowGrandTotal);
 
             var result = await sender.Send(command, ct);
             return Respond(result);
@@ -148,7 +155,11 @@ public record CreateQuotationRequest(
     decimal DiscountPercent = 0,
     decimal TaxPercent = 0,
     string? Notes = null,
-    List<QuotationItemDto>? Items = null);
+    List<QuotationItemDto>? Items = null,
+    bool ShowDiscount = false,
+    bool ShowQuantity = false,
+    bool ShowSubTotal = false,
+    bool ShowGrandTotal = false);
 
 public record UpdateQuotationRequest(
     Guid? CustomerId,
@@ -157,7 +168,11 @@ public record UpdateQuotationRequest(
     decimal DiscountPercent,
     decimal TaxPercent,
     string? Notes,
-    List<QuotationItemDto> Items);
+    List<QuotationItemDto> Items,
+    bool? ShowDiscount = null,
+    bool? ShowQuantity = null,
+    bool? ShowSubTotal = null,
+    bool? ShowGrandTotal = null);
 
 public record ChangeQuotationStatusRequest(string Status, string? Reason = null);
 

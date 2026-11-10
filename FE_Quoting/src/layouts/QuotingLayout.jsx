@@ -40,6 +40,7 @@ const MENU_SECTIONS = [
   {
     title: 'Danh mục',
     items: [
+      { label: 'Nhóm sản phẩm', path: '/product-groups', icon: ViewColumnsIcon },
       { label: 'Danh mục sản phẩm', path: '/products', icon: CubeIcon },
       { label: 'Khách hàng', path: '/customers', icon: UserGroupIcon },
     ],

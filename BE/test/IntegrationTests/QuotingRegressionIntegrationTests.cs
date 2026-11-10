@@ -54,7 +54,7 @@ public sealed class QuotingRegressionIntegrationTests(PostgresApiFixture fixture
 
     private static async Task<Guid> CreateProductAsync(HttpClient client) => (await SendAsync(client, HttpMethod.Post, "/api/v1/quoting/products", new
     {
-        code = $"TEST-{Guid.NewGuid():N}", name = "Sản phẩm kiểm thử", unit = "GÓI", price = 18000m, category = "Nhóm riêng", isActive = true
+        code = $"TEST-{Guid.NewGuid():N}", name = "Sản phẩm kiểm thử", unit = "GÓI", price = 18000m, category = "A/ DÒNG COMBO", isActive = true
     })).GetGuid();
     #endregion
 

@@ -47,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminOverviewRepository, AdminOverviewRepository>();
 
         // Quoting Repositories
+        services.AddScoped<IQuotingProductGroupRepository, QuotingProductGroupRepository>();
         services.AddScoped<IQuotingProductRepository, QuotingProductRepository>();
         services.AddScoped<IQuotingCustomerRepository, QuotingCustomerRepository>();
         services.AddScoped<IQuotationTemplateRepository, QuotationTemplateRepository>();

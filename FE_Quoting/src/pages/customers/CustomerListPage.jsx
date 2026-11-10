@@ -1,3 +1,4 @@
+import RowActions from '../../components/common/RowActions';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Card } from '@astryxdesign/core/Card';
@@ -250,26 +251,7 @@ export default function CustomerListPage() {
         key: 'actions',
         header: 'Thao tác',
         width: pixel(130),
-        renderCell: (row) => (
-          <HStack gap={1}>
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<Icon icon={PencilSquareIcon} size="sm" />}
-              label={`Sửa ${row.name}`}
-              isIconOnly
-              onClick={() => handleOpenEdit(row)}
-            />
-            <Button
-              variant="destructive"
-              size="sm"
-              icon={<Icon icon={TrashIcon} size="sm" />}
-              label={`Xóa ${row.name}`}
-              isIconOnly
-              onClick={() => handleConfirmDelete(row.id)}
-            />
-          </HStack>
-        ),
+      renderCell: (row) => <RowActions label={row.name || row.fileName} actions={[{ label: 'Sửa khách hàng', icon: PencilSquareIcon, onClick: () => handleOpenEdit(row) }, { label: 'Xóa khách hàng', icon: TrashIcon, destructive: true, onClick: () => handleConfirmDelete(row.id) }]} />,
       },
     ],
     []

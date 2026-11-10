@@ -25,6 +25,7 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<GuestbookEntry> GuestbookEntries => Set<GuestbookEntry>();
 
     // Quoting Module
+    public DbSet<QuotingProductGroup> QuotingProductGroups => Set<QuotingProductGroup>();
     public DbSet<QuotingProduct> QuotingProducts => Set<QuotingProduct>();
     public DbSet<QuotingCustomer> QuotingCustomers => Set<QuotingCustomer>();
     public DbSet<QuotationTemplate> QuotationTemplates => Set<QuotationTemplate>();

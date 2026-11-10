@@ -1,5 +1,9 @@
+export const groups = [
+  { id: 'a0000000-0000-4000-8000-000000000001', code: 'COMBO', name: 'A/ DÒNG COMBO', sortOrder: 1, isActive: true },
+  { id: 'b0000000-0000-4000-8000-000000000002', code: 'XIEN-QUE', name: 'B/ DÒNG SẢN PHẨM XIÊN QUE', sortOrder: 2, isActive: true },
+];
 export const customer = { id: '11111111-1111-4111-8111-111111111111', name: 'Đại lý Minh Phát', phone: '0901234567', email: 'minh@example.test', address: 'TP.HCM', isActive: true };
-export const product = { id: '22222222-2222-4222-8222-222222222222', code: 'CB-01', name: 'Combo nguyên bản', description: 'Surimi, khoai tây', unit: 'GÓI', price: 18000, category: 'A/ DÒNG COMBO', isActive: true };
+export const product = { id: '22222222-2222-4222-8222-222222222222', groupId: groups[0].id, groupSortOrder: 1, code: 'CB-01', name: 'Combo nguyên bản', description: 'Surimi, khoai tây', unit: 'GÓI', price: 18000, category: 'A/ DÒNG COMBO', isActive: true };
 export const template = { id: '33333333-3333-4333-8333-333333333333', name: 'Báo giá đại lý', code: 'TPL-01', isActive: true, isSystem: true, currentVersion: 1, versions: [{ version: 1, title: 'BẢNG BÁO GIÁ', sellerInfoJson: '{"companyName":"Đơn vị bán hàng","bankAccount":"123456","bankName":"Ngân hàng A","bankHolder":"Chủ tài khoản"}', paymentTermsJson: '{"delivery":"TP.HCM","retainedSetting":true}', signatureConfigJson: '{"city":"TP.HCM"}', columnsConfigJson: '{"showCode":true}', salutationText: 'Kính gửi quý khách', customCss: null }] };
 export const quotationId = '44444444-4444-4444-8444-444444444444';
 export const quotation = { id: quotationId, quotationNumber: 'BG-202611-0001', customerId: customer.id, customerName: customer.name, status: 'Draft', templateId: template.id, templateVersion: 1, issueDate: '2026-11-08T00:00:00Z', validUntil: null, discountPercent: 0, discountAmount: 0, taxPercent: 0, taxAmount: 0, subTotal: 12000, totalAmount: 12000, notes: 'Nội dung đã lưu', items: [{ ...product, id: 'line-1', productId: product.id, productCode: product.code, productName: product.name, unitPrice: 12000, quantity: 1, discountPercent: 0, totalAmount: 12000 }], files: [], histories: [] };

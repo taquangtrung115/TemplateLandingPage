@@ -38,9 +38,21 @@ async function open(page, route, heading) {
   await expect(main(page).getByRole('heading', { name: heading, exact: true })).toBeVisible();
 }
 
+async function rowAction(page, name, action) {
+  await main(page).getByRole('button', { name: `Thao tác ${name}`, exact: true }).click();
+  await page.getByRole('menuitem', { name: action, exact: true }).or(page.getByRole('button', { name: action, exact: true })).click();
+}
+
+async function pickProduct(page, name) {
+  await main(page).getByRole('button', { name: 'Chọn sản phẩm', exact: true }).click();
+  await page.getByRole('option', { name }).click();
+  await page.keyboard.press('Escape');
+}
+
 async function ready(page, route) {
   if (route === '/products' && page.viewportSize().width < 768) await expect(main(page).getByLabel('Danh sách sản phẩm trên điện thoại')).toBeVisible();
   else if (route === '/products') await expect(main(page).getByRole('table')).toBeVisible();
+  else if (['/customers', '/quotations'].includes(route) && page.viewportSize().width < 768) await expect(main(page).getByLabel('Danh sách trên điện thoại').or(main(page).getByText(/Chưa có (khách hàng|báo giá) nào/))).toBeVisible();
   else if (route === '/customers') await expect(main(page).getByRole('table').or(main(page).getByText('Chưa có khách hàng nào', { exact: true }))).toBeVisible();
   else if (route === '/quotations') await expect(main(page).getByRole('table').or(main(page).getByText('Chưa có báo giá nào', { exact: true }))).toBeVisible();
   if (route === '/quotations/create') await expect(main(page).getByRole('heading', { name: 'Tóm tắt báo giá' })).toBeVisible();
@@ -108,13 +120,13 @@ test('customer drawer creates and edits data with validation and delete confirma
   await drawer.getByRole('button', { name: 'Lưu khách hàng' }).click();
   await expect(drawer).not.toBeVisible();
   await main(page).getByLabel('Tìm kiếm khách hàng', { exact: true }).fill(name);
-  await main(page).getByRole('button', { name: `Sửa ${name}`, exact: true }).click();
+  await rowAction(page, name, 'Sửa khách hàng');
   const edit = page.getByRole('dialog', { name: 'Sửa khách hàng', exact: true });
   await edit.getByLabel('Số điện thoại', { exact: true }).fill('0909999888');
   await edit.getByRole('button', { name: 'Lưu khách hàng' }).click();
   await expect(edit).not.toBeVisible();
   await expect(main(page).getByText('0909999888', { exact: true })).toBeVisible();
-  await main(page).getByRole('button', { name: `Xóa ${name}`, exact: true }).click();
+  await rowAction(page, name, 'Xóa khách hàng');
   await page.getByRole('alertdialog').getByRole('button', { name: 'Xóa khách hàng', exact: true }).click();
   await expect(main(page).getByText(name, { exact: true })).toHaveCount(0);
   await noPageOverflow(page);
@@ -133,7 +145,7 @@ test('catalog product drawer saves code, price, active state and changes without
   await drawer.getByRole('button', { name: 'Lưu sản phẩm', exact: true }).click();
   await expect(drawer).not.toBeVisible();
   await main(page).getByLabel('Tìm kiếm sản phẩm', { exact: true }).fill(name);
-  await main(page).getByRole('button', { name: `Sửa ${name}`, exact: true }).click();
+  await rowAction(page, name, 'Sửa sản phẩm');
   const edit = page.getByRole('dialog', { name: 'Sửa sản phẩm', exact: true });
   const editPrice = edit.getByRole('group', { name: 'Giá danh mục', exact: true }).locator('input');
   await expect(editPrice).toHaveValue('28000'); await editPrice.fill('32000'); await editPrice.blur();
@@ -141,7 +153,7 @@ test('catalog product drawer saves code, price, active state and changes without
   await edit.getByRole('button', { name: 'Lưu sản phẩm', exact: true }).click();
   await expect(edit).not.toBeVisible();
   await expect(main(page).getByText('Tạm ngưng', { exact: true })).toBeVisible();
-  await main(page).getByRole('button', { name: `Xóa ${name}`, exact: true }).click();
+  await rowAction(page, name, 'Xóa sản phẩm');
   await page.getByRole('alertdialog').getByRole('button', { name: 'Xóa sản phẩm', exact: true }).click();
   await expect(main(page).getByText(name, { exact: true })).toHaveCount(0);
 });
@@ -153,17 +165,20 @@ test('quotation full flow supports per-customer prices, edits, PDF download and 
   const catalogProduct = products.find((product) => product.code === 'CB-01');
   expect(catalogProduct.price).toBe(18000);
   await open(page, '/quotations/create', 'Tạo báo giá');
-  await main(page).getByRole('radio', { name: /Chọn khách hàng doanh nghiệp/ }).check();
-  await main(page).getByRole('radio', { name: customerName, exact: true }).check();
+  await main(page).getByRole('switch', { name: /Bỏ qua chọn khách hàng/ }).uncheck();
+  await main(page).getByRole('button', { name: /^Khách hàng nhận báo giá/ }).click();
+  await page.getByRole('option', { name: new RegExp(customerName) }).click();
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
-  await main(page).getByRole('button', { name: /COMBO NGUYÊN BẢN BAO NGON ·/ }).click();
-  await main(page).getByLabel('Số lượng', { exact: true }).fill('2.5');
-  await main(page).getByLabel('Số lượng', { exact: true }).blur();
-  await main(page).getByLabel('Đơn giá báo giá (VNĐ)', { exact: true }).fill('20000');
-  await main(page).getByLabel('Đơn giá báo giá (VNĐ)', { exact: true }).blur();
+  await pickProduct(page, /CB-01 · COMBO NGUYÊN BẢN BAO NGON/);
+  await main(page).getByRole('switch', { name: 'Hiển thị Số lượng', exact: true }).check();
+  await main(page).getByRole('switch', { name: 'Hiển thị TỔNG CỘNG', exact: true }).check();
+  await main(page).getByLabel('Số lượng COMBO NGUYÊN BẢN BAO NGON', { exact: true }).fill('2.5');
+  await main(page).getByLabel('Số lượng COMBO NGUYÊN BẢN BAO NGON', { exact: true }).blur();
+  await main(page).getByLabel('Đơn giá báo giá (VNĐ) COMBO NGUYÊN BẢN BAO NGON', { exact: true }).fill('20000');
+  await main(page).getByLabel('Đơn giá báo giá (VNĐ) COMBO NGUYÊN BẢN BAO NGON', { exact: true }).blur();
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
   await main(page).getByRole('switch', { name: 'Thêm VAT', exact: true }).check();
-  const tax = main(page).getByRole('group', { name: 'Thuế suất VAT', exact: true }).locator('input');
+  const tax = main(page).getByLabel('Thuế suất VAT (%)', { exact: true });
   await tax.fill('8'); await tax.blur();
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
   await main(page).getByRole('button', { name: 'Tạo báo giá', exact: true }).click();
@@ -175,9 +190,9 @@ test('quotation full flow supports per-customer prices, edits, PDF download and 
   await expect(page.frameLocator('iframe').locator('.customer-box')).toContainText(customerName);
   await main(page).getByRole('button', { name: 'Sửa báo giá', exact: true }).click();
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
-  await expect(main(page).getByLabel('Đơn giá báo giá (VNĐ)', { exact: true })).toHaveValue('20000');
-  await main(page).getByLabel('Đơn giá báo giá (VNĐ)', { exact: true }).fill('21000');
-  await main(page).getByLabel('Đơn giá báo giá (VNĐ)', { exact: true }).blur();
+  await expect(main(page).getByLabel('Đơn giá báo giá (VNĐ) COMBO NGUYÊN BẢN BAO NGON', { exact: true })).toHaveValue('20000');
+  await main(page).getByLabel('Đơn giá báo giá (VNĐ) COMBO NGUYÊN BẢN BAO NGON', { exact: true }).fill('21000');
+  await main(page).getByLabel('Đơn giá báo giá (VNĐ) COMBO NGUYÊN BẢN BAO NGON', { exact: true }).blur();
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
   await main(page).getByRole('button', { name: 'Lưu báo giá', exact: true }).click();
@@ -213,9 +228,9 @@ test('generic quotation omits the customer block and template copies keep indepe
   const copied = templates.find((template) => template.code.toUpperCase() === code.toUpperCase());
   expect(copied.currentVersion).toBe(1);
   await open(page, '/quotations/create', 'Tạo báo giá');
-  await main(page).getByRole('radio', { name: /Bỏ qua chọn khách hàng/ }).check();
+  await main(page).getByRole('switch', { name: /Bỏ qua chọn khách hàng/ }).check();
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
-  await main(page).getByRole('button', { name: /COMBO NGUYÊN BẢN BAO NGON ·/ }).click();
+  await pickProduct(page, /CB-01 · COMBO NGUYÊN BẢN BAO NGON/);
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
   await main(page).getByRole('button', { name: 'Tạo báo giá', exact: true }).click();
@@ -245,7 +260,7 @@ test('product image upload, replacement and quotation export preserve the saved 
   await expect(main(page).getByAltText(name)).toHaveJSProperty('naturalWidth', 254);
   await open(page, '/quotations/create', 'Tạo báo giá');
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
-  await main(page).getByRole('button', { name: new RegExp(`${name} ·`) }).click();
+  await pickProduct(page, new RegExp(`${name} ·`));
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
   await main(page).getByRole('button', { name: 'Tiếp tục', exact: true }).click();
   await main(page).getByRole('button', { name: 'Tạo báo giá', exact: true }).click();
@@ -256,7 +271,7 @@ test('product image upload, replacement and quotation export preserve the saved 
   await expect(page.frameLocator('iframe').getByAltText(name)).toHaveJSProperty('naturalWidth', 254);
   await open(page, '/products', 'Danh mục sản phẩm');
   await main(page).getByLabel('Tìm kiếm sản phẩm', { exact: true }).fill(name);
-  await main(page).getByRole('button', { name: `Sửa ${name}`, exact: true }).click();
+  await rowAction(page, name, 'Sửa sản phẩm');
   const edit = page.getByRole('dialog', { name: 'Sửa sản phẩm', exact: true });
   await edit.locator('input[type="file"]').setInputFiles('../BE/assets/quoting/products/XQ-01.png');
   await edit.getByRole('button', { name: 'Lưu sản phẩm', exact: true }).click();
@@ -334,7 +349,7 @@ test('mobile products show every field and usable actions without horizontal col
   const item = main(page).getByLabel('Sản phẩm CB-01', { exact: true });
   await expect(item).toBeVisible();
   for (const text of ['Nhóm sản phẩm:', 'Đơn vị tính:', 'Giá danh mục:', 'Đang bán']) await expect(item).toContainText(text);
-  await expect(item.getByRole('button', { name: 'Sửa COMBO NGUYÊN BẢN BAO NGON', exact: true })).toBeVisible();
+  await expect(item.getByRole('button', { name: 'Thao tác COMBO NGUYÊN BẢN BAO NGON', exact: true })).toBeVisible();
   const image = item.locator('img'); await expect(image).toHaveJSProperty('complete', true); await expect(image).not.toHaveJSProperty('naturalWidth', 0);
   await page.screenshot({ path: testInfo.outputPath('mobile-products.png'), fullPage: true });
   await noPageOverflow(page);

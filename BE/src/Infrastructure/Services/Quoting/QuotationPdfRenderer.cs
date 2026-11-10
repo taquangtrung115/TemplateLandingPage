@@ -41,7 +41,15 @@ internal static class QuotationPdfRenderer
         XGraphics graphics = null!;
         double y = 0;
         const double left = 40, usableWidth = 515;
-        var widths = new double[] { 23, 172, 48, 35, 64, 65, 108 };
+        var columns = new List<(string Key, string Label, double Width)> { ("sequence", "STT", 23), ("product", "Sản phẩm / ĐVT", 172) };
+        if (quotation.ShowQuantity) columns.Add(("quantity", "SL", 48));
+        if (quotation.ShowDiscount) columns.Add(("discount", "CK %", 35));
+        columns.Add(("price", "Đơn giá", 64));
+        if (quotation.ShowGrandTotal) columns.Add(("total", "Thành tiền", 65));
+        columns.Add(("image", "Hình ảnh", 108));
+        var availableWidth = usableWidth - columns.Sum(column => column.Width);
+        columns[1] = ("product", "Sản phẩm / ĐVT", columns[1].Width + availableWidth);
+        var widths = columns.Select(column => column.Width).ToArray();
 
         void NewPage()
         {
@@ -93,7 +101,7 @@ internal static class QuotationPdfRenderer
         void TableHeader()
         {
             EnsureSpace(28);
-            var labels = new[] { "STT", "Sản phẩm / ĐVT", "SL", "CK %", "Đơn giá", "Thành tiền", "Hình ảnh" };
+            var labels = columns.Select(column => column.Label).ToArray();
             var x = left;
             for (var index = 0; index < labels.Length; index++)
             {
@@ -131,26 +139,34 @@ internal static class QuotationPdfRenderer
 
             var sequence = 0;
             string? currentGroup = null;
-            foreach (var item in quotation.Items.OrderBy(item => item.SortOrder))
+            foreach (var item in quotation.Items.OrderBy(item => item.GroupSortOrder).ThenBy(item => item.SortOrder))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var textLines = Wrap($"{item.ProductName}\n{item.Unit}" + (string.IsNullOrWhiteSpace(item.Description) ? "" : $"\n{item.Description}"), body, widths[1] - 8);
-                var fullHeight = Math.Max(68, textLines.Count * 13 + 8);
+                var fullHeight = Math.Max(60, textLines.Count * 13 + 8);
                 if (y + Math.Min(fullHeight, 100) + 22 > page.Height.Point - 42) { NewPage(); TableHeader(); currentGroup = null; }
                 if (!string.IsNullOrWhiteSpace(item.ItemGroup) && item.ItemGroup != currentGroup)
                 {
                     Paragraph(item.ItemGroup, strong, accent);
                     currentGroup = item.ItemGroup;
                 }
-                var rowValues = new[] { (++sequence).ToString(), "", item.Quantity.ToString("0.####", Vietnamese), item.DiscountPercent.ToString("0.##", Vietnamese),
-                    item.UnitPrice.ToString("N2", Vietnamese), item.TotalAmount.ToString("N2", Vietnamese), "" };
+                sequence++;
+                var rowValues = columns.Select(column => column.Key switch
+                {
+                    "sequence" => sequence.ToString(),
+                    "quantity" => item.Quantity.ToString("0.####", Vietnamese),
+                    "discount" => item.DiscountPercent.ToString("0.##", Vietnamese),
+                    "price" => item.UnitPrice.ToString("N2", Vietnamese),
+                    "total" => item.TotalAmount.ToString("N2", Vietnamese),
+                    _ => ""
+                }).ToArray();
                 var firstSegment = true;
                 while (textLines.Count > 0)
                 {
                     var capacity = Math.Max(1, (int)((page.Height.Point - 42 - y - 8) / 13));
                     var segment = textLines.Take(capacity).ToList();
                     textLines.RemoveRange(0, segment.Count);
-                    var height = Math.Max(68, segment.Count * 13 + 8);
+                    var height = Math.Max(60, segment.Count * 13 + 8);
                     var x = left;
                     for (var column = 0; column < widths.Length; column++)
                     {
@@ -162,11 +178,10 @@ internal static class QuotationPdfRenderer
                         else if (firstSegment) graphics.DrawString(rowValues[column], body, ink, new XRect(x + 3, y + 4, widths[column] - 6, height - 8), XStringFormats.Center);
                         x += widths[column];
                     }
-                    var imageCode = item.ProductCode;
                     var uploadedImage = item.ImageUrl is not null && uploadedImages?.TryGetValue(item.ImageUrl, out _) == true ? uploadedImages[item.ImageUrl] : null;
-                    if (firstSegment && !string.IsNullOrWhiteSpace(item.ImageUrl) && (uploadedImage is not null || (imageCode is not null && imageCode.All(character => char.IsAsciiLetterOrDigit(character) || character == '-'))))
+                    if (firstSegment && !string.IsNullOrWhiteSpace(item.ImageUrl))
                     {
-                        using var stream = uploadedImage is not null ? new MemoryStream(uploadedImage) : typeof(QuotationPdfRenderer).Assembly.GetManifestResourceStream($"TemplateLandingPage.Infrastructure.Assets.Products.{imageCode}.png");
+                        using var stream = uploadedImage is not null ? new MemoryStream(uploadedImage) : QuotationProductImageSource.OpenBundledImage(item.ImageUrl);
                         if (stream is not null)
                         {
                             using var image = XImage.FromStream(stream);
@@ -182,19 +197,31 @@ internal static class QuotationPdfRenderer
             }
 
             y += 12;
-            Paragraph($"Tạm tính: {quotation.SubTotal.ToString("N2", Vietnamese)} VNĐ");
-            if (quotation.DiscountPercent > 0) Paragraph($"Chiết khấu ({quotation.DiscountPercent:0.##}%): -{quotation.DiscountAmount.ToString("N2", Vietnamese)} VNĐ");
+            if (quotation.ShowSubTotal) Paragraph($"Tạm tính hàng hóa: {quotation.SubTotal.ToString("N2", Vietnamese)} VNĐ");
+            if (quotation.ShowDiscount && quotation.DiscountPercent > 0) Paragraph($"Chiết khấu ({quotation.DiscountPercent:0.##}%): -{quotation.DiscountAmount.ToString("N2", Vietnamese)} VNĐ");
             if (quotation.TaxPercent > 0) Paragraph($"Thuế GTGT ({quotation.TaxPercent:0.##}%): {quotation.TaxAmount.ToString("N2", Vietnamese)} VNĐ");
-            Paragraph($"TỔNG THANH TOÁN: {quotation.TotalAmount.ToString("N2", Vietnamese)} VNĐ", strong, accent);
+            if (quotation.ShowGrandTotal) Paragraph($"TỔNG CỘNG: {quotation.TotalAmount.ToString("N2", Vietnamese)} VNĐ", strong, accent);
             if (quotation.ValidUntil.HasValue) Paragraph($"Hạn hiệu lực: {quotation.ValidUntil:dd/MM/yyyy}");
             if (!string.IsNullOrWhiteSpace(quotation.Notes)) Paragraph($"Ghi chú: {quotation.Notes}");
             if (content.VatNote.Length > 0 && quotation.TaxPercent == 0) Paragraph(content.VatNote);
             if (content.Delivery.Length > 0) Paragraph(content.Delivery);
             if (content.Payment.Length > 0) Paragraph(content.Payment);
             if (content.BankAccount.Length > 0) Paragraph($"Thanh toán: {content.BankHolder} - {content.BankAccount} - {content.BankName}");
-            y += 10;
-            Paragraph($"{content.SignCity}, ngày {quotation.IssueDate:dd/MM/yyyy}");
-            Paragraph(content.SignTitle, strong);
+            EnsureSpace(110);
+            y = Math.Max(y + 10, page.Height.Point - 145);
+            var signatureX = left + usableWidth - 270;
+            var signatureDate = $"{content.SignCity}, ngày {quotation.IssueDate.Day} tháng {quotation.IssueDate.Month} năm {quotation.IssueDate.Year}";
+            foreach (var line in Wrap(signatureDate, body, 270))
+            {
+                graphics.DrawString(line, body, ink, new XRect(signatureX, y, 270, 16), XStringFormats.TopCenter);
+                y += 16;
+            }
+            foreach (var line in Wrap(content.SignTitle, strong, 270))
+            {
+                graphics.DrawString(line, strong, ink, new XRect(signatureX, y + 6, 270, 16), XStringFormats.TopCenter);
+                y += 16;
+            }
+            graphics.DrawString("(Ký và đóng dấu)", body, XBrushes.Gray, new XRect(signatureX, y + 12, 270, 16), XStringFormats.TopCenter);
             graphics.Dispose();
             graphics = null!;
             for (var index = 0; index < document.Pages.Count; index++)
