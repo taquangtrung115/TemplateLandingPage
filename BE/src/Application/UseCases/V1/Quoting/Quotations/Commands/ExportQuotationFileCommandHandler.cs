@@ -2,6 +2,7 @@ namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Command
 
 using Microsoft.Extensions.Logging;
 using TemplateLandingPage.Application.Abstractions;
+using TemplateLandingPage.Application.Exceptions;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
 using TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
@@ -65,15 +66,22 @@ public sealed class ExportQuotationFileCommandHandler : ICommandHandler<ExportQu
         var exportSnapshot = quotation.CreateExportSnapshot(request.TaxPercent ?? quotation.TaxPercent);
         byte[] fileBytes;
         string contentType;
-        if (normalizedType == "pdf")
+        try
         {
-            fileBytes = await _exportService.GeneratePdfAsync(exportSnapshot, templateVersion, cancellationToken);
-            contentType = "application/pdf";
+            if (normalizedType == "pdf")
+            {
+                fileBytes = await _exportService.GeneratePdfAsync(exportSnapshot, templateVersion, cancellationToken);
+                contentType = "application/pdf";
+            }
+            else
+            {
+                fileBytes = await _exportService.GenerateHtmlAsync(exportSnapshot, templateVersion, cancellationToken);
+                contentType = "text/html";
+            }
         }
-        else
+        catch (QuotationImageUnavailableException)
         {
-            fileBytes = await _exportService.GenerateHtmlAsync(exportSnapshot, templateVersion, cancellationToken);
-            contentType = "text/html";
+            return Result.Failure<QuotationFileResponse>(QuotationErrors.ImageUnavailable);
         }
 
         var fileName = $"{quotation.QuotationNumber}_{Guid.NewGuid():N}.{normalizedType}";

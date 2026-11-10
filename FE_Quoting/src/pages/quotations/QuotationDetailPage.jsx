@@ -8,14 +8,14 @@ import { InputGroup, InputGroupText } from '@astryxdesign/core/InputGroup';
 import { calculateQuotation } from '../../utils/quotationCalculation';
 import { Card } from '@astryxdesign/core/Card';
 import { Badge } from '@astryxdesign/core/Badge';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from '../../components/common/Button';
 import { Heading, Text } from '@astryxdesign/core/Text';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { Divider } from '@astryxdesign/core/Divider';
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
 import { QuotingTable as Table, pixel, proportional } from '../../components/common/QuotingTable';
 import { HoverCard } from '@astryxdesign/core/HoverCard';
-import { AlertDialog } from '@astryxdesign/core/AlertDialog';
+import { ConfirmationDialog as AlertDialog } from '../../components/common/ConfirmationDialog';
 import { useToast } from '@astryxdesign/core/Toast';
 import { Banner } from '@astryxdesign/core/Banner';
 import { downloadBlob } from '../../utils/downloadFile';
@@ -27,7 +27,7 @@ import {
   CheckCircleIcon,
   PaperAirplaneIcon,
   XCircleIcon,
-  DocumentDuplicateIcon,
+  DocumentDuplicateIcon, ArrowPathIcon, PencilSquareIcon, TrashIcon,
 } from '@heroicons/react/24/outline';
 import { quotationApi } from '../../api/quotationApi';
 import {
@@ -326,8 +326,8 @@ export default function QuotationDetailPage() {
   if (!loading && (errorMessage || !quotation)) return (
     <VStack gap={4}>
       <Banner status="error" title="Không thể mở báo giá" description={errorMessage || 'Báo giá không tồn tại.'} />
-      <Button label="Thử lại" onClick={fetchDetail} />
-      <Button label="Về danh sách báo giá" variant="secondary" onClick={() => navigate('/quotations')} />
+      <Button icon={<Icon icon={ArrowPathIcon} size="sm" />} label="Thử lại" onClick={fetchDetail} />
+      <Button icon={<Icon icon={ArrowLeftIcon} size="sm" />} label="Về danh sách báo giá" variant="secondary" onClick={() => navigate('/quotations')} />
     </VStack>
   );
 
@@ -358,8 +358,8 @@ export default function QuotationDetailPage() {
         </HStack>
 
         <HStack gap={2} wrap="wrap">
-          {quotation.status === 'Draft' && <Button label="Sửa báo giá" variant="secondary" onClick={() => navigate(`/quotations/${id}/edit`)} />}
-          <Button label="Xóa báo giá" variant="destructive" isDisabled={exporting || changingStatus || deleting} onClick={() => setIsDeleteOpen(true)} />
+          {quotation.status === 'Draft' && <Button icon={<Icon icon={PencilSquareIcon} size="sm" />} label="Sửa báo giá" variant="secondary" onClick={() => navigate(`/quotations/${id}/edit`)} />}
+          <Button icon={<Icon icon={TrashIcon} size="sm" />} label="Xóa báo giá" variant="destructive" isDisabled={exporting || changingStatus || deleting} onClick={() => setIsDeleteOpen(true)} />
           {quotation.status === 'Draft' && (
             <ActionButton
               actionType="secondary"
@@ -410,6 +410,7 @@ export default function QuotationDetailPage() {
         title={statusDialog.title}
         description={statusDialog.description}
         actionLabel={statusDialog.targetStatus === 'Sent' ? 'Đánh dấu đã gửi' : statusDialog.targetStatus === 'Approved' ? 'Phê duyệt' : 'Từ chối'}
+        actionIcon={statusDialog.targetStatus === 'Sent' ? PaperAirplaneIcon : statusDialog.targetStatus === 'Approved' ? CheckCircleIcon : XCircleIcon}
         isActionLoading={changingStatus}
         actionVariant={statusDialog.targetStatus === 'Rejected' ? 'destructive' : 'primary'}
         onAction={executeStatusChange}
@@ -508,6 +509,7 @@ export default function QuotationDetailPage() {
                 variant="primary"
                 size="sm"
                 label={exporting ? 'Đang tải...' : 'Tải PDF'}
+                isLoading={exporting}
                 icon={<Icon icon={ArrowDownTrayIcon} size="sm" />}
                 onClick={() => handleExport('pdf')}
                 isDisabled={exporting || previewing || Boolean(previewError)}
@@ -525,7 +527,7 @@ export default function QuotationDetailPage() {
                 overflow: 'hidden',
               }}
             >
-              {previewHtml ? (
+              {previewing ? <div className="quotation-preview-loading" role="status" aria-label="Đang tải bản xem trước"><Skeleton width="50%" height={32} /><Skeleton height={420} /></div> : previewHtml ? (
                 <iframe
                   title="Bản xem trước báo giá"
                   sandbox=""

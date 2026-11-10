@@ -131,10 +131,9 @@ describe('Nâng Cấp Astryx Controls - Kiểm Thử Toàn Diện Hệ Thống �
       });
 
       // Bấm nút sửa (icon button variant secondary)
-      const editBtn = document.querySelector('button[data-variant="secondary"][data-size="sm"]');
+      const editBtn = screen.getByRole('button', { name: 'Sửa khách hàng', exact: true });
       expect(editBtn).toBeInTheDocument();
       fireEvent.click(editBtn);
-      fireEvent.click(await screen.findByRole('menuitem', { name: 'Sửa khách hàng' }));
 
       // Drawer Header hiển thị chế độ sửa
       expect(screen.getByText('Sửa khách hàng', { selector: 'h2' })).toBeInTheDocument();
@@ -575,10 +574,9 @@ describe('Nâng Cấp Astryx Controls - Kiểm Thử Toàn Diện Hệ Thống �
       });
 
       // Mở Drawer sửa sản phẩm
-      const editBtn = document.querySelector('button[data-variant="secondary"][data-size="sm"]');
+      const editBtn = screen.getByRole('button', { name: 'Sửa sản phẩm', exact: true });
       expect(editBtn).toBeInTheDocument();
       fireEvent.click(editBtn);
-      fireEvent.click(await screen.findByRole('menuitem', { name: 'Sửa sản phẩm' }));
 
       await waitFor(() => {
         expect(screen.getByText('Sửa sản phẩm', { selector: 'h2' })).toBeInTheDocument();

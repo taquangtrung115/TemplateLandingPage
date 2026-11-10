@@ -7,18 +7,18 @@ import { Heading, Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { InputGroup } from '@astryxdesign/core/InputGroup';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from '../../components/common/Button';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Divider } from '@astryxdesign/core/Divider';
 import { Icon } from '@astryxdesign/core/Icon';
-import { Spinner } from '@astryxdesign/core/Spinner';
+import AppLoading from '../../components/common/AppLoading';
 import {
   BuildingStorefrontIcon,
   EyeIcon,
   EyeSlashIcon,
   ShieldCheckIcon,
   SparklesIcon,
-  CheckCircleIcon,
+  CheckCircleIcon, ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import ThemeToggle from '../../components/common/ThemeToggle';
@@ -70,7 +70,7 @@ export default function LoginPage() {
   };
   // #endregion
 
-  if (restoringSession) return <Center className="login-page"><Spinner label="Đang kiểm tra phiên đăng nhập" /></Center>;
+  if (restoringSession) return <AppLoading label="Đang kiểm tra phiên đăng nhập" />;
   if (isAuthenticated) return <Navigate to={returnLocation} replace />;
 
   return (
@@ -139,7 +139,7 @@ export default function LoginPage() {
                       <IconButton type="button" label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} icon={<Icon icon={showPassword ? EyeSlashIcon : EyeIcon} size="sm" />} variant="ghost" onClick={() => setShowPassword((value) => !value)} />
                     </InputGroup>
 
-                    <Button
+                    <Button icon={<Icon icon={ArrowRightOnRectangleIcon} size="sm" />}
                       label={loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
                       variant="primary"
                       size="lg"

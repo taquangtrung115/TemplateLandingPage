@@ -1,0 +1,7 @@
+*.log
+*.json
+qa-runtime/
+
+*.pdf
+*.html
+*.png

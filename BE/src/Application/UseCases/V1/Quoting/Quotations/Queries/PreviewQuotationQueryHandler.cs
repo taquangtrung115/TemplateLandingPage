@@ -2,6 +2,7 @@ namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries
 
 using System.Text;
 using TemplateLandingPage.Application.Abstractions;
+using TemplateLandingPage.Application.Exceptions;
 using TemplateLandingPage.Contract.Abstractions.Shared;
 using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
 using TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
@@ -47,7 +48,9 @@ public sealed class PreviewQuotationQueryHandler : IQueryHandler<PreviewQuotatio
         }
 
         var snapshot = quotation.CreateExportSnapshot(request.TaxPercent ?? quotation.TaxPercent);
-        var htmlBytes = await _exportService.GenerateHtmlAsync(snapshot, templateVersion, cancellationToken);
+        byte[] htmlBytes;
+        try { htmlBytes = await _exportService.GenerateHtmlAsync(snapshot, templateVersion, cancellationToken); }
+        catch (QuotationImageUnavailableException) { return Result.Failure<QuotationPreviewResponse>(QuotationErrors.ImageUnavailable); }
         var htmlContent = Encoding.UTF8.GetString(htmlBytes);
 
         var response = new QuotationPreviewResponse(quotation.Id, quotation.QuotationNumber, htmlContent);

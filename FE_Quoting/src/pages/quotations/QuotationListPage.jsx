@@ -8,7 +8,7 @@ import { Grid } from '@astryxdesign/core/Grid';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { Badge } from '@astryxdesign/core/Badge';
-import { Button } from '@astryxdesign/core/Button';
+import { Button } from '../../components/common/Button';
 import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { QuotingTable as Table, proportional, pixel } from '../../components/common/QuotingTable';
 import { Pagination } from '@astryxdesign/core/Pagination';
@@ -21,6 +21,7 @@ import {
   CheckCircleIcon,
   ClockIcon,
   PaperAirplaneIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import RowActions from '../../components/common/RowActions';
 import { quotationApi } from '../../api/quotationApi';
@@ -137,9 +138,7 @@ export default function QuotationListPage() {
             <Text type="body" weight="semibold">
               {row.quotationNumber}
             </Text>
-            <Text type="supporting" color="secondary">
-              v{row.templateVersion || 1}
-            </Text>
+            <Badge label={`v${row.templateVersion || 1}`} variant="neutral" />
           </VStack>
         ),
       },
@@ -200,7 +199,7 @@ export default function QuotationListPage() {
         width: pixel(140),
         renderCell: (row) => <RowActions label={row.quotationNumber} actions={[
           { label: 'Xem chi tiết', icon: EyeIcon, onClick: () => navigate(`/quotations/${row.id}`) },
-          row.status === 'Draft' && { label: 'Sửa báo giá', onClick: () => navigate(`/quotations/${row.id}/edit`) },
+          row.status === 'Draft' && { label: 'Sửa báo giá', icon: PencilSquareIcon, onClick: () => navigate(`/quotations/${row.id}/edit`) },
         ]} />,
       },
     ],

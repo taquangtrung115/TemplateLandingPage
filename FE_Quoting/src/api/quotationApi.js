@@ -2,7 +2,7 @@ import axiosInstance from './axios';
 
 export const quotationApi = {
   previewDraft: async (data, signal) => {
-    const response = await axiosInstance.post('/quoting/quotations/preview-draft', data, { signal });
+    const response = await axiosInstance.post('/quoting/quotations/preview-draft', data, { signal, timeout: 60000 });
     return response.data?.value ?? response.data;
   },
   getSummary: async () => {
@@ -40,12 +40,12 @@ export const quotationApi = {
   },
 
   exportFile: async (id, fileType = 'pdf', taxPercent) => {
-    const response = await axiosInstance.post(`/quoting/quotations/${id}/export`, { fileType, ...(taxPercent === undefined ? {} : { taxPercent }) });
+    const response = await axiosInstance.post(`/quoting/quotations/${id}/export`, { fileType, ...(taxPercent === undefined ? {} : { taxPercent }) }, { timeout: 60000 });
     return response.data?.value ?? response.data;
   },
 
   previewQuotation: async (id, taxPercent) => {
-    const response = await axiosInstance.get(`/quoting/quotations/${id}/preview`, taxPercent === undefined ? undefined : { params: { taxPercent } });
+    const response = await axiosInstance.get(`/quoting/quotations/${id}/preview`, { timeout: 60000, ...(taxPercent === undefined ? {} : { params: { taxPercent } }) });
     return response.data?.value ?? response.data;
   },
 

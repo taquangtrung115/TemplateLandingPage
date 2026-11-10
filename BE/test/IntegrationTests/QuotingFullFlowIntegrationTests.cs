@@ -47,7 +47,7 @@ public sealed class QuotingFullFlowIntegrationTests(PostgresApiFixture fixture)
             description = "Thanh cua chất lượng cao chuẩn Nhật",
             unit = "GÓI",
             price = 28000m,
-            imageUrl = "https://cdn.example.com/thanh-cua.jpg",
+            imageUrl = "/api/v1/quoting/product-images/XQ-01.png",
             category = "Surimi Chế Biến", groupId
         };
         using var createProductRes = await ApiTestJson.SendJsonAsync(client, HttpMethod.Post, "/api/v1/quoting/products", productPayload);
@@ -96,7 +96,7 @@ public sealed class QuotingFullFlowIntegrationTests(PostgresApiFixture fixture)
                     productName = "Thanh Cua Hoàng Gia Surimi",
                     description = "Thanh cua chuẩn Nhật",
                     unit = "GÓI",
-                    imageUrl = "https://cdn.example.com/thanh-cua.jpg",
+                    imageUrl = "/api/v1/quoting/product-images/XQ-01.png",
                     itemGroup = "Surimi Chế Biến",
                     quantity = 20m,
                     unitPrice = 28000m,

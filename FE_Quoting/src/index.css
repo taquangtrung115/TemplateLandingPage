@@ -17,16 +17,6 @@ body {
   color: var(--color-text-primary, #111827);
 }
 
-/* Spinner keyframes for loading states */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Layout only. Controls and interaction states are owned by Astryx themes. */
 .quoting-content { min-width: 0; min-height: 100dvh; padding: 24px 32px; box-sizing: border-box; background: var(--color-background-body); color: var(--color-text-primary); }
 .quoting-toolbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
@@ -170,3 +160,15 @@ html, body { overflow-x: clip; }
   .quotation-metrics .metric-icon { display: none; }
 }
 @media (max-width: 767px) { .quotation-metrics .metric-icon { display: none !important; } }
+.quotation-row-actions { display: flex; align-items: center; gap: 6px; }
+.mobile-record-actions { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+.confirmation-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.has-sticky-actions th:last-child, .has-sticky-actions td:last-child { min-width: 128px; }
+@media (max-width: 767px) {
+  .quotation-row-actions { flex-wrap: wrap; }
+  .quotation-row-actions button { white-space: nowrap; }
+  .confirmation-actions { flex-direction: column-reverse; }
+}
+.quotation-item-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.quotation-preview-loading { display: flex; flex-direction: column; gap: 24px; padding: 32px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
