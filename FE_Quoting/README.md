@@ -26,9 +26,31 @@ Chỉ báo giá nháp được sửa. **Đánh dấu đã gửi** chỉ ghi nh�
 
 Yêu cầu hỗ trợ được lưu tại `quo.SupportRequests`, gắn người dùng đã xác thực. Quản trị viên xử lý tại `/support` bằng Kanban Mới → Đang xử lý → Đã xử lý, có thể mở lại; lưu người/thời điểm thay đổi và revision để ngăn ghi đè cập nhật đồng thời. Mỗi cột có tìm kiếm/lọc mức ưu tiên và phân trang 20. Trên mobile, chọn cột qua thanh trạng thái. Migration `AddQuotingSupportWorkflow` bổ sung dữ liệu trạng thái; các yêu cầu cũ mặc định Mới. Màn hình chỉ báo thành công sau khi API lưu; không tự gửi email hay cam kết thời gian xử lý.
 
+## Nhóm sản phẩm và tùy chọn báo giá (2026-11-10)
+
+Danh mục `/product-groups` quản lý mã, tên, mô tả, thứ tự (`sortOrder`) và trạng thái. Hai nhóm khởi tạo là **A/ DÒNG COMBO** và **B/ DÒNG SẢN PHẨM XIÊN QUE**. Sản phẩm chọn `groupId` từ danh mục; `category` được giữ trong contract để tương thích client cũ. API chỉ nhận nhóm hợp lệ; cập nhật cũ không gửi nhóm sẽ giữ nhóm hiện tại. Nhóm đang có sản phẩm chưa xóa không thể xóa. Nhóm ngưng dùng không được dùng để thêm sản phẩm hoặc chọn mới khi lập báo giá.
+
+Bước Sản phẩm có picker tìm kiếm và thêm cả nhóm, không thêm trùng hoặc tự tăng số lượng khi chọn lại. Mỗi báo giá giữ tên và thứ tự nhóm tại lúc lập; đổi danh mục không làm đổi nội dung file của báo giá đã lưu.
+
+Bốn cờ `showDiscount`, `showQuantity`, `showSubTotal`, `showGrandTotal` được lưu theo báo giá, mặc định **false** ở báo giá mới. Tắt số lượng dùng số lượng 1; tắt CK không gửi chiết khấu. `showGrandTotal` điều khiển cả Thành tiền và TỔNG CỘNG. Màn hình, HTML và PDF dùng cùng cấu hình. Preview ở bước Xác nhận tạo gọi `POST /api/v1/quoting/quotations/preview-draft`, dựng bằng renderer xuất thật mà không lưu bản nháp hay cấp số báo giá.
+
+Migration **AddQuotingProductGroupsAndDisplayOptions** cần chạy trước khi triển khai BE mới. Migration chuyển nhóm nhập tay hiện có sang danh mục, liên kết sản phẩm và giữ cả 4 cờ **true** cho báo giá cũ để bảo toàn cách hiển thị. Client cũ sửa nháp mà không gửi bốn cờ sẽ giữ nguyên lựa chọn đã lưu. Không tự chạy migration lên production. Triển khai BE và FE cùng đợt; FE mới cần endpoint nhóm và preview mới.
+
+### Seed danh mục bằng một lần migration
+
+Migration dữ liệu `20261110102142_SeedQuotingProductCatalog` chạy tiếp sau migration cấu trúc nhóm. Từ `C:\Source\TemplateLandingPage`, dùng cấu hình kết nối migration hiện có (hoặc `TEMPLATE_MIGRATION_CONNECTION_STRING`) rồi chạy một lệnh:
+
+```powershell
+dotnet ef database update --project BE/src/Persistence --startup-project BE/src/API
+```
+
+Lệnh áp dụng toàn bộ migration chưa chạy và seed hai nhóm **COMBO** / **XIEN-QUE** cùng 11 sản phẩm chuẩn (6 Combo, 5 Xiên que); không cần gọi seeder riêng hoặc bật `SeedData__Enabled` cho hai danh mục này. Nếu migration cấu trúc nhóm đã chạy thì chỉ migration seed còn thiếu được áp dụng.
+
+Seed chỉ thêm sản phẩm thiếu, đối chiếu cả mã và tên đã chuẩn hóa Unicode/khoảng trắng/hoa thường. Giữ giá, đơn vị, mô tả, ảnh upload, trạng thái ngưng dùng/xóa mềm và cấu hình nhóm đã sửa; nhóm riêng và báo giá cũ được giữ nguyên. Sản phẩm chuẩn chưa có nhóm được gắn nhóm tương ứng. Bản ghi seed được giữ khi rollback migration dữ liệu để tránh xóa các sản phẩm đã được sử dụng.
+
 ## Giao diện
 
-Theme sáng dựa trên Neutral và là mặc định khi chưa có lựa chọn hợp lệ; theme tối dựa trên Gothic. Lựa chọn sáng/tối đã lưu của người dùng được giữ lại. Màu nút theo hành động, badge trạng thái và nhãn tiếng Việt. SideNav chia nhóm nghiệp vụ/danh mục/cấu hình/hỗ trợ, chuyển thành điều hướng mobile. Drawer tạo/sửa danh mục; bảng dùng vùng cuộn ngang của Astryx, mặc định 20 dòng. Riêng sản phẩm trên mobile dùng thẻ hiển thị đủ mã, mô tả, nhóm, ĐVT, giá, trạng thái và thao tác. Tóm tắt báo giá ở bên phải từ 1280px, chuyển dưới nội dung trên màn hình hẹp. Control ngày dùng Calendar, thông báo dùng Toast, form có nhãn/validation/loading.
+Theme sáng dựa trên Neutral và là mặc định khi chưa có lựa chọn hợp lệ; theme tối dựa trên Gothic. Lựa chọn sáng/tối đã lưu của người dùng được giữ lại. Màu nút theo hành động, badge trạng thái và nhãn tiếng Việt. SideNav chia nhóm nghiệp vụ/danh mục/cấu hình/hỗ trợ, chuyển thành điều hướng mobile. Drawer tạo/sửa danh mục; bảng desktop dùng Astryx, thao tác DropdownMenuItem cố định bên phải, mặc định 20 dòng. Các bảng trên mobile dùng thẻ; sản phẩm dùng thẻ hiển thị đủ mã, mô tả, nhóm, ĐVT, giá, trạng thái và thao tác. Tóm tắt báo giá ở bên phải từ 1280px, chuyển dưới nội dung trên màn hình hẹp. Control ngày dùng Calendar, thông báo dùng Toast, form có nhãn/validation/loading.
 
 ## Chạy local
 
@@ -53,6 +75,8 @@ Mọi route nghiệp vụ vẫn kiểm tra phiên đăng nhập. Chưa đăng nh
 Login dùng lưới CSS có độ rộng rõ ràng, một cột trên màn hình ≤640px; form hiển thị trước phần giới thiệu. Không dùng container query để tính độ rộng form. Ô nhập trên mobile tối thiểu 16px để tránh iOS tự zoom khi focus.
 
 BE cần cấu hình `ConnectionStrings__DefaultConnection`, `Jwt__SecretKey`, issuer/audience theo môi trường. Áp dụng EF migrations bằng quy trình deploy của dự án. `SeedData__Enabled=true` chỉ dành cho development được bật rõ ràng; `SeedData__IncludeCatalog=false` tránh seed catalog landing page không liên quan. Review các tài khoản demo của seeder trước khi dùng ngoài môi trường kiểm thử.
+
+PDF và HTML lấy ảnh theo `ImageUrl` đã lưu trên dòng báo giá; không suy đoán ảnh theo `ProductCode`. Điều này giữ đúng ảnh khi mã sản phẩm khác tên file ảnh hoặc khi thay ảnh trong danh mục. Tệp đã xuất trước thay đổi là bản lưu lịch sử; cần xuất tệp mới để áp dụng bản sửa renderer.
 
 HTML nhúng ảnh của các sản phẩm gốc và ảnh upload thành data URI để mở offline. Ảnh URL ngoài cũ vẫn cần kết nối mạng. PDF chuẩn hóa Unicode NFC để ký tự ghép dấu hiển thị đúng, dùng PDFsharp và font Noto Sans thường/đậm nhúng (kèm giấy phép OFL), giữ tiếng Việt, hình sản phẩm gốc/ảnh upload và ngắt nhiều trang. Tệp báo giá được lưu ở thư mục riêng `App_Data/quotations` hoặc `Quoting:Storage:LocalPath`, tải qua endpoint JWT `/{quotationId}/files/{fileId}/download`. Không công khai thư mục xuất qua static files. Endpoint có xác thực đọc được file ở thư mục cũ `wwwroot/exports/quotations` (hoặc `Quoting:Storage:LegacyPath`); đường dẫn static mặc định của thư mục này bị chặn.
 

@@ -83,10 +83,13 @@ public class QuotingFullFlowEndToEndTests
         _productRepo.Setup(r => r.IsCodeUniqueAsync(It.IsAny<string>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
+        var groupRepository = new Mock<IQuotingProductGroupRepository>();
+        groupRepository.Setup(repository => repository.ResolveAsync(It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(QuotingProductGroup.Create("COMBO", "A/ DÒNG COMBO", null, 1));
         var createProductHandler = new CreateQuotingProductCommandHandler(
             _productRepo.Object,
             _unitOfWork.Object,
-            NullLogger<CreateQuotingProductCommandHandler>.Instance);
+            NullLogger<CreateQuotingProductCommandHandler>.Instance, groupRepository.Object);
 
         var createProductCmd = new CreateQuotingProductCommand(
             "SKU-CB-01",

@@ -6,6 +6,7 @@ import ProductCatalogPage from '../src/pages/products/ProductCatalogPage';
 import { product } from './fixtures';
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => ({ isAdmin: true }) }));
 vi.mock('@astryxdesign/core/hooks', async () => ({ ...await vi.importActual('@astryxdesign/core/hooks'), useMediaQuery: () => true }));
+vi.mock('../src/api/quotingProductGroupApi', () => ({ quotingProductGroupApi: { getGroups: vi.fn(async () => (await import('./fixtures')).groups) } }));
 vi.mock('../src/api/quotingProductApi', () => ({ quotingProductApi: { getProducts: vi.fn(async () => [product]) } }));
 describe('Mobile product information', () => {
   it('exposes all business fields and edit action without hidden table columns', async () => {
@@ -15,6 +16,6 @@ describe('Mobile product information', () => {
     expect(list).toHaveTextContent(`Đơn vị tính: ${product.unit}`);
     expect(within(list).getByText(/Giá danh mục:/)).toHaveTextContent('18.000'); expect(list).toHaveTextContent(`Nhóm sản phẩm: ${product.category}`);
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    fireEvent.click(within(list).getByRole('button', { name: `Sửa ${product.name}` })); expect(await screen.findByRole('dialog', { name: 'Sửa sản phẩm' })).toBeInTheDocument();
+    fireEvent.click(within(list).getByRole('button', { name: `Thao tác ${product.name}` })); fireEvent.click(await screen.findByRole('button', { name: 'Sửa sản phẩm', exact: true })); expect(await screen.findByRole('dialog', { name: 'Sửa sản phẩm' })).toBeInTheDocument();
   });
 });

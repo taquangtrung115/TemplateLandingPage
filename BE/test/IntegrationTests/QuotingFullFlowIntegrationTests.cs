@@ -32,6 +32,12 @@ public sealed class QuotingFullFlowIntegrationTests(PostgresApiFixture fixture)
         using var custBody = await ApiTestJson.ReadAsync(createCustomerRes);
         var customerId = ApiTestJson.GuidValue(custBody.RootElement, "value");
 
+        using var createGroupResponse = await ApiTestJson.SendJsonAsync(client, HttpMethod.Post, "/api/v1/quoting/product-groups",
+            new { code = $"SURIMI-{Guid.NewGuid():N}", name = "Surimi Chế Biến", sortOrder = 3, isActive = true });
+        createGroupResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        using var groupBody = await ApiTestJson.ReadAsync(createGroupResponse);
+        var groupId = groupBody.RootElement.GetProperty("value").GetProperty("id").GetGuid();
+
         // 2. Tạo Sản Phẩm
         var productCode = $"SKU-TEST-{Guid.NewGuid():N}"[..12].ToUpperInvariant();
         var productPayload = new
@@ -42,7 +48,7 @@ public sealed class QuotingFullFlowIntegrationTests(PostgresApiFixture fixture)
             unit = "GÓI",
             price = 28000m,
             imageUrl = "https://cdn.example.com/thanh-cua.jpg",
-            category = "Surimi Chế Biến"
+            category = "Surimi Chế Biến", groupId
         };
         using var createProductRes = await ApiTestJson.SendJsonAsync(client, HttpMethod.Post, "/api/v1/quoting/products", productPayload);
         createProductRes.StatusCode.Should().Be(HttpStatusCode.Created);

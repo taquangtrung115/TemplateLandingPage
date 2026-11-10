@@ -16,7 +16,7 @@ public sealed class GetQuotingProductByIdQueryHandler : IQueryHandler<GetQuoting
 
     public async Task<Result<QuotingProductResponse>> Handle(GetQuotingProductByIdQuery request, CancellationToken cancellationToken)
     {
-        var product = await _productRepository.GetByIdAsync(request.Id, cancellationToken);
+        var product = await _productRepository.GetForReadAsync(request.Id, cancellationToken);
         if (product is null || product.IsDeleted)
         {
             return Result.Failure<QuotingProductResponse>(QuotingProductErrors.NotFound);
@@ -30,10 +30,10 @@ public sealed class GetQuotingProductByIdQueryHandler : IQueryHandler<GetQuoting
             product.Unit,
             product.Price,
             product.ImageUrl,
-            product.Category,
+            product.Group?.Name ?? product.Category,
             product.IsActive,
             product.CreatedAtUtc,
-            product.ModifiedAtUtc);
+            product.ModifiedAtUtc, product.GroupId, product.Group?.SortOrder ?? 0);
 
         return Result.Success(response);
     }

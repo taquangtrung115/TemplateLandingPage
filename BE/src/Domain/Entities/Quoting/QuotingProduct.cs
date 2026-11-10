@@ -11,6 +11,8 @@ public sealed class QuotingProduct : AggregateRoot<Guid>, IAuditableEntity, ISof
     public decimal Price { get; private set; }
     public string? ImageUrl { get; private set; }
     public string? Category { get; private set; }
+    public Guid? GroupId { get; private set; }
+    public QuotingProductGroup? Group { get; private set; }
     public bool IsActive { get; private set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
@@ -117,6 +119,12 @@ public sealed class QuotingProduct : AggregateRoot<Guid>, IAuditableEntity, ISof
         Category = category?.Trim();
         IsActive = isActive;
         ModifiedAtUtc = DateTime.UtcNow;
+    }
+
+    public void AssignGroup(QuotingProductGroup group, bool updateLegacyCategory = true)
+    {
+        GroupId = group.Id;
+        if (updateLegacyCategory) Category = group.Name;
     }
 
     public void Delete()

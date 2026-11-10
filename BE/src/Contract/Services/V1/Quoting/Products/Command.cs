@@ -18,7 +18,7 @@ public record CreateQuotingProductCommand(
     decimal Price,
     string? ImageUrl,
     string? Category,
-    bool IsActive = true) : ICommand<Guid>;
+    bool IsActive = true, Guid? GroupId = null) : ICommand<Guid>;
 
 public record UpdateQuotingProductCommand(
     Guid Id,
@@ -29,6 +29,6 @@ public record UpdateQuotingProductCommand(
     decimal Price,
     string? ImageUrl,
     string? Category,
-    bool IsActive) : ICommand;
+    bool IsActive, Guid? GroupId = null) : ICommand;
 
 public record DeleteQuotingProductCommand(Guid Id) : ICommand;

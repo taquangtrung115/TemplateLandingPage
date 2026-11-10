@@ -1,3 +1,4 @@
+import RowActions from '../../components/common/RowActions';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '@astryxdesign/core/Card';
 import { QuotingTable as Table, pixel, proportional } from '../../components/common/QuotingTable';
@@ -222,19 +223,7 @@ export default function TemplateListPage() {
         key: 'actions',
         header: 'Thao tác',
         width: pixel(170),
-        renderCell: (row) => (
-          <Button
-            variant="secondary"
-            size="sm"
-            label="Chọn mẫu"
-            icon={<Icon icon={DocumentDuplicateIcon} size="sm" />}
-            onClick={() => {
-              setSelectedTemplateId(row.id);
-              setActiveSection('seller');
-              setErrorMessage(null);
-                    }}
-          />
-        ),
+      renderCell: (row) => <RowActions label={row.name || row.fileName} actions={[{ label: 'Chọn mẫu', icon: DocumentDuplicateIcon, onClick: () => { setSelectedTemplateId(row.id); setActiveSection('seller'); setErrorMessage(null); } }]} />,
       },
     ],
     [templates]

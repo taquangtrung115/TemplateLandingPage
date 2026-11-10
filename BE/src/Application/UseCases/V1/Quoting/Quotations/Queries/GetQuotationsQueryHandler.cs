@@ -43,7 +43,7 @@ public sealed class GetQuotationsQueryHandler : IQueryHandler<GetQuotationsQuery
             q.DiscountAmount,
             q.TaxAmount,
             q.TotalAmount,
-            q.CreatedAtUtc)).ToList();
+            q.CreatedAtUtc, q.ShowGrandTotal)).ToList();
 
         var response = new PagedResponse<QuotationResponse>(data, total, request.PageIndex, request.PageSize);
         return Result.Success(response);

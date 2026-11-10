@@ -13,7 +13,7 @@ public record QuotationResponse(
     decimal DiscountAmount,
     decimal TaxAmount,
     decimal TotalAmount,
-    DateTime CreatedAtUtc);
+    DateTime CreatedAtUtc, bool ShowGrandTotal = true);
 
 public record QuotationDetailResponse(
     Guid Id,
@@ -42,7 +42,11 @@ public record QuotationDetailResponse(
     DateTime? ModifiedAtUtc,
     List<QuotationItemResponse> Items,
     List<QuotationHistoryResponse> Histories,
-    List<QuotationFileResponse> Files);
+    List<QuotationFileResponse> Files,
+    bool ShowDiscount = true,
+    bool ShowQuantity = true,
+    bool ShowSubTotal = true,
+    bool ShowGrandTotal = true);
 
 public record QuotationItemResponse(
     Guid Id,
@@ -59,7 +63,7 @@ public record QuotationItemResponse(
     decimal DiscountAmount,
     decimal TotalAmount,
     string? Notes,
-    int SortOrder);
+    int SortOrder, int GroupSortOrder = 0);
 
 public record QuotationHistoryResponse(
     Guid Id,

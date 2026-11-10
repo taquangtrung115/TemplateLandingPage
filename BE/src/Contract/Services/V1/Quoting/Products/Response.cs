@@ -11,4 +11,4 @@ public record QuotingProductResponse(
     string? Category,
     bool IsActive,
     DateTime CreatedAtUtc,
-    DateTime? ModifiedAtUtc);
+    DateTime? ModifiedAtUtc, Guid? GroupId = null, int GroupSortOrder = 0);

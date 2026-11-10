@@ -9,6 +9,7 @@ const QuotationListPage = lazy(() => import('../pages/quotations/QuotationListPa
 const CreateQuotationPage = lazy(() => import('../pages/quotations/CreateQuotationPage'));
 const QuotationDetailPage = lazy(() => import('../pages/quotations/QuotationDetailPage'));
 const ProductCatalogPage = lazy(() => import('../pages/products/ProductCatalogPage'));
+const ProductGroupPage = lazy(() => import('../pages/products/ProductGroupPage'));
 const CustomerListPage = lazy(() => import('../pages/customers/CustomerListPage'));
 const TemplateListPage = lazy(() => import('../pages/templates/TemplateListPage'));
 const SupportBoardPage = lazy(() => import('../pages/support/SupportBoardPage'));
@@ -59,6 +60,7 @@ export default function AppRoutes() {
         <Route path="quotations/create" element={<CreateQuotationPage />} />
         <Route path="quotations/:id/edit" element={<CreateQuotationPage />} />
         <Route path="quotations/:id" element={<QuotationDetailPage />} />
+        <Route path="product-groups" element={<ProductGroupPage />} />
         <Route path="products" element={<ProductCatalogPage />} />
         <Route path="customers" element={<CustomerListPage />} />
         <Route path="templates" element={<TemplateListPage />} />

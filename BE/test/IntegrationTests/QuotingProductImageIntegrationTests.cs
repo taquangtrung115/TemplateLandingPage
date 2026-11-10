@@ -45,11 +45,11 @@ public sealed class QuotingProductImageIntegrationTests(PostgresApiFixture fixtu
         imageResponse.StatusCode.Should().Be(HttpStatusCode.OK); imageResponse.Content.Headers.ContentType!.MediaType.Should().Be("image/png");
         var photo = await imageResponse.Content.ReadAsByteArrayAsync(); using var decoded = SKBitmap.Decode(photo); decoded.Width.Should().Be(113); decoded.Height.Should().Be(79);
         var code = "IMAGE-" + Guid.NewGuid().ToString("N");
-        var product = await SendAsync(admin, HttpMethod.Post, "/api/v1/quoting/products", new { code, name = "Sản phẩm có ảnh tải lên", unit = "Gói", price = 18000, imageUrl = url });
+        var product = await SendAsync(admin, HttpMethod.Post, "/api/v1/quoting/products", new { code, name = "Sản phẩm có ảnh tải lên", unit = "Gói", price = 18000, category = "A/ DÒNG COMBO", imageUrl = url });
         await fixture.WithDatabaseAsync(async db => { await TemplateLandingPage.Persistence.Data.QuotingSeeder.SeedAsync(db); return true; });
         var quote = await SendAsync(admin, HttpMethod.Post, "/api/v1/quoting/quotations", new { issueDate = DateTime.UtcNow, items = new[] { new { productId = product.GetGuid(), productCode = code, productName = "Ảnh theo báo giá", unit = "Gói", unitPrice = 20000, quantity = 1, imageUrl = url } } });
         using var secondUpload = await UploadAsync(admin, Png(SKColors.Blue)); var replacement = (await ValueAsync(secondUpload)).GetProperty("image").GetProperty("imageUrl").GetString(); replacement.Should().NotBe(url);
-        await SendAsync(admin, HttpMethod.Put, $"/api/v1/quoting/products/{product.GetGuid()}", new { code, name = "Sản phẩm đã đổi ảnh", unit = "Gói", price = 18000, imageUrl = replacement, isActive = true });
+        await SendAsync(admin, HttpMethod.Put, $"/api/v1/quoting/products/{product.GetGuid()}", new { code, name = "Sản phẩm đã đổi ảnh", unit = "Gói", price = 18000, category = "A/ DÒNG COMBO", imageUrl = replacement, isActive = true });
         using var detailResponse = await admin.GetAsync($"/api/v1/quoting/quotations/{quote.GetGuid()}");
         (await ValueAsync(detailResponse)).GetProperty("items")[0].GetProperty("imageUrl").GetString().Should().Be(url);
         foreach(var format in new[] { "html", "pdf" })

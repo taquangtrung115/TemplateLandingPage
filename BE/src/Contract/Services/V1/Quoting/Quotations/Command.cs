@@ -27,7 +27,7 @@ public record QuotationItemDto(
     decimal UnitPrice = 0,
     decimal DiscountPercent = 0,
     string? Notes = null,
-    int SortOrder = 0);
+    int SortOrder = 0, int GroupSortOrder = 0);
 
 public record CreateQuotationCommand(
     Guid? CustomerId = null,
@@ -39,7 +39,11 @@ public record CreateQuotationCommand(
     decimal TaxPercent = 0,
     string? Notes = null,
     List<QuotationItemDto>? Items = null,
-    Guid UserId = default) : ICommand<Guid>;
+    Guid UserId = default,
+    bool ShowDiscount = true,
+    bool ShowQuantity = true,
+    bool ShowSubTotal = true,
+    bool ShowGrandTotal = true) : ICommand<Guid>;
 
 public record UpdateQuotationCommand(
     Guid Id,
@@ -50,7 +54,11 @@ public record UpdateQuotationCommand(
     decimal TaxPercent,
     string? Notes,
     List<QuotationItemDto> Items,
-    Guid UserId = default) : ICommand;
+    Guid UserId = default,
+    bool? ShowDiscount = null,
+    bool? ShowQuantity = null,
+    bool? ShowSubTotal = null,
+    bool? ShowGrandTotal = null) : ICommand;
 
 public record ChangeQuotationStatusCommand(
     Guid Id,

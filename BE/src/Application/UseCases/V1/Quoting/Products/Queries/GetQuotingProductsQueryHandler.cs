@@ -30,10 +30,10 @@ public sealed class GetQuotingProductsQueryHandler : IQueryHandler<GetQuotingPro
             p.Unit,
             p.Price,
             p.ImageUrl,
-            p.Category,
+            p.Group?.Name ?? p.Category,
             p.IsActive,
             p.CreatedAtUtc,
-            p.ModifiedAtUtc)).ToList();
+            p.ModifiedAtUtc, p.GroupId, p.Group?.SortOrder ?? 0)).ToList();
 
         return Result.Success(response);
     }

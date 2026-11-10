@@ -37,6 +37,10 @@ public class QuotingSeederTests : IDisposable
         // Assert - 1. Hệ thống có đúng 11 sản phẩm chuẩn
         var products = await _dbContext.QuotingProducts.ToListAsync();
         products.Should().HaveCount(11);
+        var groups = await _dbContext.QuotingProductGroups.OrderBy(group => group.SortOrder).ToListAsync();
+        groups.Select(group => group.Code).Should().Equal("COMBO", "XIEN-QUE");
+        groups.Select(group => group.SortOrder).Should().Equal(1, 2);
+        products.Should().OnlyContain(product => product.GroupId.HasValue);
 
         // 2. 6 Sản phẩm dòng Combo có ĐVT "GÓI"
         var comboProducts = products.Where(p => p.Category == "A/ DÒNG COMBO").ToList();
@@ -90,6 +94,29 @@ public class QuotingSeederTests : IDisposable
     #region 2. Edge Cases (Tính bất biến Idempotent & Cập nhật dữ liệu cũ)
 
     [Fact]
+    public async Task SeedAsync_WhenDefaultGroupWasCustomized_ShouldReuseItsIdentityAndConfiguration()
+    {
+        var combo = QuotingProductGroup.Create("COMBO", "Combo đã đổi tên", "Ghi chú riêng", 9, false);
+        var product = QuotingProduct.Create("CB-01", "Combo giá riêng", null, "Hộp", 20000m, null, null);
+        _dbContext.QuotingProductGroups.Add(combo);
+        _dbContext.QuotingProducts.Add(product);
+        await _dbContext.SaveChangesAsync();
+
+        await QuotingSeeder.SeedAsync(_dbContext);
+
+        (await _dbContext.QuotingProductGroups.CountAsync()).Should().Be(2);
+        var saved = await _dbContext.QuotingProductGroups.SingleAsync(group => group.Code == "COMBO");
+        saved.Id.Should().Be(combo.Id);
+        saved.Name.Should().Be("Combo đã đổi tên");
+        saved.Description.Should().Be("Ghi chú riêng");
+        saved.SortOrder.Should().Be(9);
+        saved.IsActive.Should().BeFalse();
+        product.GroupId.Should().Be(combo.Id);
+        product.Category.Should().BeNull();
+        product.Price.Should().Be(20000m);
+    }
+
+    [Fact]
     public async Task SeedAsync_WhenExecutedMultipleTimes_ShouldBeIdempotentAndNotDuplicateData()
     {
         // Act - Chạy Seeder lần 1
@@ -131,6 +158,7 @@ public class QuotingSeederTests : IDisposable
         updated.Price.Should().Be(12000m);
         updated.Name.Should().Be("Combo cũ");
         updated.Category.Should().BeNull();
+        updated.GroupId.Should().Be((await _dbContext.QuotingProductGroups.SingleAsync(group => group.Code == "COMBO")).Id);
 
         // Tổng số sản phẩm sau khi bù đắp 10 sản phẩm còn lại vẫn là 11
         var totalCount = await _dbContext.QuotingProducts.CountAsync();

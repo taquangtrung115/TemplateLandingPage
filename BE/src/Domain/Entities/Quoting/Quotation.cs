@@ -32,6 +32,11 @@ public sealed class Quotation : AggregateRoot<Guid>, IAuditableEntity, ISoftDele
     public decimal TotalAmount { get; private set; }
 
     public string? Notes { get; private set; }
+    public bool ShowDiscount { get; private set; } = true;
+    public bool ShowQuantity { get; private set; } = true;
+    public bool ShowSubTotal { get; private set; } = true;
+    public bool ShowGrandTotal { get; private set; } = true;
+
     public Guid CreatedByUserId { get; private set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
@@ -224,6 +229,14 @@ public sealed class Quotation : AggregateRoot<Guid>, IAuditableEntity, ISoftDele
         snapshot.TaxPercent = taxPercent;
         snapshot.RecalculateTotals();
         return snapshot;
+    }
+
+    public void SetDisplayOptions(bool showDiscount, bool showQuantity, bool showSubTotal, bool showGrandTotal)
+    {
+        ShowDiscount = showDiscount;
+        ShowQuantity = showQuantity;
+        ShowSubTotal = showSubTotal;
+        ShowGrandTotal = showGrandTotal;
     }
 
     public void RecalculateTotals()

@@ -11,16 +11,19 @@ public sealed class UpdateQuotingProductCommandHandler : ICommandHandler<UpdateQ
 {
     private readonly IQuotingProductRepository _productRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IQuotingProductGroupRepository _groupRepository;
     private readonly ILogger<UpdateQuotingProductCommandHandler> _logger;
 
     public UpdateQuotingProductCommandHandler(
         IQuotingProductRepository productRepository,
         IUnitOfWork unitOfWork,
-        ILogger<UpdateQuotingProductCommandHandler> logger)
+        ILogger<UpdateQuotingProductCommandHandler> logger,
+        IQuotingProductGroupRepository groupRepository)
     {
         _productRepository = productRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _groupRepository = groupRepository;
     }
 
     public async Task<Result> Handle(UpdateQuotingProductCommand request, CancellationToken cancellationToken)
@@ -30,6 +33,10 @@ public sealed class UpdateQuotingProductCommandHandler : ICommandHandler<UpdateQ
         {
             return Result.Failure(QuotingProductErrors.NotFound);
         }
+
+        var group = await _groupRepository.ResolveAsync(request.GroupId ?? (string.IsNullOrWhiteSpace(request.Category) ? product.GroupId : null), request.Category, cancellationToken);
+        if (group is null || (!group.IsActive && product.GroupId != group.Id))
+            return Result.Failure(TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.QuotingProductGroupErrors.NotFound);
 
         var isUnique = await _productRepository.IsCodeUniqueAsync(request.Code, request.Id, cancellationToken);
         if (!isUnique)
@@ -47,6 +54,7 @@ public sealed class UpdateQuotingProductCommandHandler : ICommandHandler<UpdateQ
             request.Category,
             request.IsActive);
 
+        product.AssignGroup(group);
         _productRepository.Update(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

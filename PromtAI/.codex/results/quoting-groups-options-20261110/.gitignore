@@ -1,0 +1,11 @@
+pgdata/
+files/
+runtime/
+playwright/
+playwright-report/
+*.log
+*.json
+__pycache__/
+pdf-libs/
+*-playwright/
+runtime-final/

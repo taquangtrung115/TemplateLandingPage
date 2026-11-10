@@ -92,6 +92,9 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
     padding: 24px;
     font-size: 14px;
     line-height: 1.5;
+    min-height: 257mm;
+    display: flex;
+    flex-direction: column;
   }}
   .header {{
     border-bottom: 2px solid #e5e7eb;
@@ -193,18 +196,23 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
     color: #1e40af;
   }}
   .signature-block {{
-    margin-top: 32px;
+    margin-top: auto;
+    padding-top: 32px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 10%;
     page-break-inside: avoid;
+    flex-shrink: 0;
   }}
   .sign-col {{
+    min-height: 135px;
     width: 45%;
     text-align: center;
   }}
   .sign-title {{
     font-weight: bold;
-    margin-bottom: 60px;
+    margin-top: 8px;
+    margin-bottom: 8px;
   }}
   {(templateVersion.CustomCss ?? "").Replace("<", "").Replace(">", "")}
 </style>
@@ -247,91 +255,50 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
   </div>");
         }
 
+        var columnCount = 5 + (quotation.ShowQuantity ? 1 : 0) + (quotation.ShowDiscount ? 1 : 0) + (quotation.ShowGrandTotal ? 1 : 0);
         sb.Append($@"
   <table class=""table-data"">
-    <thead>
-      <tr>
-        <th style=""width: 40px;"">STT</th>
-        <th>Tên sản phẩm / Quy cách</th>
-        <th style=""width: 60px;"">ĐVT</th>
-        <th style=""width: 70px;"">Số lượng</th>
-        <th style=""width: 110px;"">Đơn giá (VNĐ)</th>
-        <th style=""width: 80px;"">CK (%)</th>
-        <th style=""width: 130px;"">Thành tiền (VNĐ)</th>
-        <th>Hình ảnh</th>
-      </tr>
-    </thead>
-    <tbody>");
+    <thead><tr>
+      <th>STT</th><th>Tên sản phẩm / Quy cách</th><th>ĐVT</th>
+      {(quotation.ShowQuantity ? "<th>Số lượng</th>" : "")}
+      <th>Đơn giá (VNĐ)</th>
+      {(quotation.ShowDiscount ? "<th>CK (%)</th>" : "")}
+      {(quotation.ShowGrandTotal ? "<th>Thành tiền (VNĐ)</th>" : "")}
+      <th>Hình ảnh</th>
+    </tr></thead><tbody>");
 
-        var groupedItems = quotation.Items
-            .OrderBy(i => i.SortOrder)
-            .GroupBy(i => string.IsNullOrWhiteSpace(i.ItemGroup) ? "Danh mục chính" : i.ItemGroup.Trim());
-
-        int stt = 1;
+        var groupedItems = quotation.Items.OrderBy(item => item.GroupSortOrder).ThenBy(item => item.SortOrder)
+            .GroupBy(item => string.IsNullOrWhiteSpace(item.ItemGroup) ? "Danh mục chính" : item.ItemGroup.Trim()).ToList();
+        var sequence = 1;
         foreach (var group in groupedItems)
         {
-            if (groupedItems.Count() > 1 || group.Key != "Danh mục chính")
-            {
-                sb.Append($@"
-      <tr class=""group-row"">
-        <td colspan=""8"">{Html(group.Key.ToUpperInvariant())}</td>
-      </tr>");
-            }
-
+            if (groupedItems.Count > 1 || group.Key != "Danh mục chính")
+                sb.Append($"<tr class=\"group-row\"><td colspan=\"{columnCount}\">{Html(group.Key.ToUpperInvariant())}</td></tr>");
             foreach (var item in group)
             {
                 var imageSource = ImageSource(item.ImageUrl, imageSources, uploadedImages);
-                sb.Append($@"
-      <tr>
-        <td class=""text-center"">{stt++}</td>
-        <td class=""text-left"">
-          <strong>{Html(item.ProductName)}</strong>
-          {(string.IsNullOrWhiteSpace(item.Description) ? "" : $"<br><small style=\"color: #6b7280;\">{Html(item.Description)}</small>")}
-        </td>
-        <td class=""text-center"">{Html(item.Unit)}</td>
-        <td class=""text-center"">{item.Quantity.ToString("0.####", VnCulture)}</td>
-        <td class=""text-right"">{item.UnitPrice.ToString("N2", VnCulture)}</td>
-        <td class=""text-center"">{(item.DiscountPercent > 0 ? $"{item.DiscountPercent}%" : "0%")}</td>
-        <td class=""text-right""><strong>{item.TotalAmount.ToString("N2", VnCulture)}</strong></td>
-        <td>{(string.IsNullOrEmpty(imageSource) ? "" : $"<img src=\"{imageSource}\" alt=\"{Html(item.ProductName)}\" style=\"max-width:90px;max-height:70px;object-fit:contain\">")}</td>
-      </tr>");
+                sb.Append($@"<tr>
+                  <td class=""text-center"">{sequence++}</td>
+                  <td><strong>{Html(item.ProductName)}</strong>{(string.IsNullOrWhiteSpace(item.Description) ? "" : $"<br><small>{Html(item.Description)}</small>")}</td>
+                  <td class=""text-center"">{Html(item.Unit)}</td>
+                  {(quotation.ShowQuantity ? $"<td class=\"text-center\">{item.Quantity.ToString("0.####", VnCulture)}</td>" : "")}
+                  <td class=""text-right"">{item.UnitPrice.ToString("N2", VnCulture)}</td>
+                  {(quotation.ShowDiscount ? $"<td class=\"text-center\">{item.DiscountPercent.ToString("0.##", VnCulture)}%</td>" : "")}
+                  {(quotation.ShowGrandTotal ? $"<td class=\"text-right\"><strong>{item.TotalAmount.ToString("N2", VnCulture)}</strong></td>" : "")}
+                  <td>{(string.IsNullOrEmpty(imageSource) ? "" : $"<img src=\"{imageSource}\" alt=\"{Html(item.ProductName)}\" style=\"max-width:90px;max-height:70px;object-fit:contain\">")}</td>
+                </tr>");
             }
         }
-
-        sb.Append($@"
-    </tbody>
-  </table>
-
-  <table class=""summary-table"">
-    <tr>
-      <td class=""text-left"">Tạm tính hàng hóa:</td>
-      <td class=""text-right"">{quotation.SubTotal.ToString("N2", VnCulture)} đ</td>
-    </tr>");
-
-        if (quotation.DiscountPercent > 0 || quotation.DiscountAmount > 0)
-        {
-            sb.Append($@"
-    <tr>
-      <td class=""text-left"">Chiết khấu tổng ({quotation.DiscountPercent}%):</td>
-      <td class=""text-right"">-{quotation.DiscountAmount.ToString("N2", VnCulture)} đ</td>
-    </tr>");
-        }
-
-        if (quotation.TaxPercent > 0 || quotation.TaxAmount > 0)
-        {
-            sb.Append($@"
-    <tr>
-      <td class=""text-left"">Thuế VAT ({quotation.TaxPercent}%):</td>
-      <td class=""text-right"">+{quotation.TaxAmount.ToString("N2", VnCulture)} đ</td>
-    </tr>");
-        }
-
-        sb.Append($@"
-    <tr class=""summary-total"">
-      <td class=""text-left"">TỔNG CỘNG:</td>
-      <td class=""text-right"">{quotation.TotalAmount.ToString("N2", VnCulture)} đ</td>
-    </tr>
-  </table>
+        sb.Append("</tbody></table><table class=\"summary-table\">");
+        if (quotation.ShowSubTotal)
+            sb.Append($"<tr><td>Tạm tính hàng hóa:</td><td class=\"text-right\">{quotation.SubTotal.ToString("N2", VnCulture)} đ</td></tr>");
+        if (quotation.ShowDiscount && quotation.DiscountPercent > 0)
+            sb.Append($"<tr><td>Chiết khấu tổng ({quotation.DiscountPercent}%):</td><td class=\"text-right\">-{quotation.DiscountAmount.ToString("N2", VnCulture)} đ</td></tr>");
+        if (quotation.TaxPercent > 0)
+            sb.Append($"<tr><td>Thuế VAT ({quotation.TaxPercent}%):</td><td class=\"text-right\">{quotation.TaxAmount.ToString("N2", VnCulture)} đ</td></tr>");
+        if (quotation.ShowGrandTotal)
+            sb.Append($"<tr class=\"summary-total\"><td>TỔNG CỘNG:</td><td class=\"text-right\">{quotation.TotalAmount.ToString("N2", VnCulture)} đ</td></tr>");
+        sb.Append($@"</table>
 
   <div class=""terms-box"">
     <p><strong>* Điều khoản & Ghi chú:</strong></p>
@@ -374,23 +341,15 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
         if (string.IsNullOrWhiteSpace(value)) return "";
         if (uploadedImages?.TryGetValue(value, out var imageBytes) == true)
             return "data:" + (imageBytes[0] == 0x89 ? "image/png" : "image/jpeg") + ";base64," + Convert.ToBase64String(imageBytes);
-        var path = Uri.TryCreate(value, UriKind.Absolute, out var absolute) ? absolute.AbsolutePath : value;
-        if (path.StartsWith("/api/v1/quoting/product-images/", StringComparison.Ordinal))
+        if (cache.TryGetValue(value, out var cached)) return cached;
+        using var stream = QuotationProductImageSource.OpenBundledImage(value);
+        if (stream is not null)
         {
-            var code = Path.GetFileNameWithoutExtension(path);
-            if (cache.TryGetValue(code, out var cached)) return cached;
-            if (code.Length > 0 && code.All(character => char.IsAsciiLetterOrDigit(character) || character == '-'))
-            {
-                using var stream = typeof(QuotationHtmlExportService).Assembly.GetManifestResourceStream($"TemplateLandingPage.Infrastructure.Assets.Products.{code}.png");
-                if (stream is not null)
-                {
-                    using var buffer = new MemoryStream();
-                    stream.CopyTo(buffer);
-                    return cache[code] = "data:image/png;base64," + Convert.ToBase64String(buffer.ToArray());
-                }
-            }
-            return cache[code] = "";
+            using var buffer = new MemoryStream();
+            stream.CopyTo(buffer);
+            return cache[value] = "data:image/png;base64," + Convert.ToBase64String(buffer.ToArray());
         }
+        Uri.TryCreate(value, UriKind.Absolute, out var absolute);
         return absolute is not null && (absolute.Scheme == "https" || absolute.Scheme == "http") ? Html(value) : "";
     }
 }

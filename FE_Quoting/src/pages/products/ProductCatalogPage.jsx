@@ -34,6 +34,8 @@ import {
   CubeIcon,
   CheckIcon,
 } from '@heroicons/react/24/outline';
+import RowActions from '../../components/common/RowActions';
+import { quotingProductGroupApi } from '../../api/quotingProductGroupApi';
 import { quotingProductApi } from '../../api/quotingProductApi';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -47,6 +49,7 @@ export default function ProductCatalogPage() {
   const [loadError, setLoadError] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [products, setProducts] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -57,8 +60,8 @@ export default function ProductCatalogPage() {
 
   const categoryFilterOptions = useMemo(() => [
     { label: 'Tất cả nhóm sản phẩm', value: 'ALL' },
-    ...[...new Set(products.map((product) => product.category?.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi')).map((category) => ({ value: category, label: category })),
-  ], [products]);
+    ...groups.map((group) => ({ value: group.id, label: group.name })),
+  ], [groups]);
 
   // Form Drawer State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -68,7 +71,7 @@ export default function ProductCatalogPage() {
   const [description, setDescription] = useState('');
   const [unit, setUnit] = useState('Gói');
   const [price, setPrice] = useState(25000);
-  const [category, setCategory] = useState('A/ DÒNG COMBO');
+  const [groupId, setGroupId] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -86,9 +89,8 @@ export default function ProductCatalogPage() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await quotingProductApi.getProducts({
-        includeInactive: true,
-      });
+      const [res, groupList] = await Promise.all([quotingProductApi.getProducts({ includeInactive: true }), quotingProductGroupApi.getGroups({ includeInactive: true })]);
+      setGroups(groupList);
       setProducts(res || []);
       setLoadError(null);
     } catch (error) {
@@ -129,7 +131,7 @@ export default function ProductCatalogPage() {
     setDescription('');
     setUnit('Gói');
     setPrice(25000);
-    setCategory('A/ DÒNG COMBO');
+    setGroupId(groups.find((group) => group.isActive)?.id || '');
     setImageUrl('');
     setImageFile(null);
     setIsActive(true);
@@ -144,7 +146,7 @@ export default function ProductCatalogPage() {
     setDescription(p.description || '');
     setUnit(p.unit);
     setPrice(p.price);
-    setCategory(p.category || 'A/ DÒNG COMBO');
+    setGroupId(p.groupId || groups.find((group) => group.name === p.category)?.id || '');
     setImageUrl(p.imageUrl || '');
     setImageFile(null);
     setIsActive(p.isActive);
@@ -159,6 +161,7 @@ export default function ProductCatalogPage() {
       return;
     }
 
+    if (!groupId) { setErrorMessage('Chọn nhóm sản phẩm trong danh mục.'); return; }
     if (!unit.trim() || price === null || !Number.isFinite(Number(price)) || Number(price) < 0) { setErrorMessage('Nhập đơn vị tính và đơn giá không âm.'); return; }
     try {
       setSaving(true);
@@ -180,7 +183,8 @@ export default function ProductCatalogPage() {
           description,
           unit,
           price: Number(price) || 0,
-          category,
+          groupId,
+          category: groups.find((group) => group.id === groupId)?.name,
           imageUrl: savedImageUrl,
           isActive,
         });
@@ -192,7 +196,8 @@ export default function ProductCatalogPage() {
           description,
           unit,
           price: Number(price) || 0,
-          category,
+          groupId,
+          category: groups.find((group) => group.id === groupId)?.name,
           imageUrl: savedImageUrl,
           isActive,
         });
@@ -230,7 +235,7 @@ export default function ProductCatalogPage() {
   const visibleProducts = useMemo(() => {
     let result = products;
     if (selectedCategory !== 'ALL') {
-      result = result.filter((p) => p.category === selectedCategory);
+      result = result.filter((p) => p.groupId === selectedCategory);
     }
     if (searchTerm.trim()) {
       const q = searchTerm.trim().toLowerCase();
@@ -393,31 +398,13 @@ export default function ProductCatalogPage() {
         key: 'actions',
         header: 'Thao tác',
         width: pixel(140),
-        renderCell: (row) => (
-          <HStack gap={1}>
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<Icon icon={PencilSquareIcon} size="sm" />}
-              label={`Sửa ${row.name}`}
-              isIconOnly
-              onClick={() => handleOpenEdit(row)}
-            />
-            {isAdmin && (
-              <Button
-                variant="destructive"
-                size="sm"
-                icon={<Icon icon={TrashIcon} size="sm" />}
-                label={`Xóa ${row.name}`}
-                isIconOnly
-                onClick={() => handleConfirmDelete(row.id)}
-              />
-            )}
-          </HStack>
-        ),
+        renderCell: (row) => <RowActions label={row.name} actions={[
+          isAdmin && { label: 'Sửa sản phẩm', icon: PencilSquareIcon, onClick: () => handleOpenEdit(row) },
+          isAdmin && { label: 'Xóa sản phẩm', icon: TrashIcon, destructive: true, onClick: () => handleConfirmDelete(row.id) },
+        ]} />,
       },
-    ],
-    [isAdmin]
+    ].filter((column) => column.key !== 'actions' || isAdmin),
+    [isAdmin, groups]
   );
 
   return (
@@ -435,7 +422,7 @@ export default function ProductCatalogPage() {
           label="Thêm sản phẩm"
           icon={<Icon icon={PlusIcon} size="sm" />}
           onClick={handleOpenAdd}
-          isDisabled={!isAdmin}
+          isDisabled={!isAdmin || loading || !groups.some((group) => group.isActive)}
         />
       </HStack>
 
@@ -518,13 +505,9 @@ export default function ProductCatalogPage() {
               </Grid>
 
               <Field label="Nhóm sản phẩm" inputID="product-field-5" labelID="product-field-5-label">
-                <TextInput
-                  label="Nhóm sản phẩm" isLabelHidden
-                  id="product-field-5" aria-labelledby="product-field-5-label"
-                  value={category}
-                  onChange={setCategory}
-                  placeholder="A/ DÒNG COMBO, B/ DÒNG SẢN PHẨM XIÊN QUE"
-                />
+                <Selector label="Nhóm sản phẩm" isLabelHidden id="product-field-5" aria-labelledby="product-field-5-label"
+                  value={groupId || undefined} onChange={setGroupId} hasSearch placeholder="Chọn nhóm sản phẩm"
+                  options={groups.filter((group) => (group.isActive || group.id === groupId) && !group.isDeleted).map((group) => ({ value: group.id, label: group.name }))} />
               </Field>
 
               <FileInput label="Ảnh sản phẩm" value={imageFile} onChange={handleImageChange} accept="image/jpeg,image/png" maxSize={5 * 1024 * 1024}
@@ -653,10 +636,10 @@ export default function ProductCatalogPage() {
                         <Text type="body"><strong>Đơn vị tính:</strong> {product.unit || '—'}</Text>
                         <Text type="body" weight="semibold">Giá danh mục: {formatVnd(product.price)}</Text>
                       </VStack>
-                      <HStack gap={2} wrap="wrap">
-                        <Button label="Sửa sản phẩm" aria-label={`Sửa ${product.name}`} icon={<Icon icon={PencilSquareIcon} size="sm" />} variant="secondary" onClick={() => handleOpenEdit(product)} />
-                        {isAdmin && <Button label="Xóa sản phẩm" aria-label={`Xóa ${product.name}`} icon={<Icon icon={TrashIcon} size="sm" />} variant="destructive" onClick={() => handleConfirmDelete(product.id)} />}
-                      </HStack>
+                      {isAdmin && <RowActions label={product.name} actions={[
+                        { label: 'Sửa sản phẩm', icon: PencilSquareIcon, onClick: () => handleOpenEdit(product) },
+                        { label: 'Xóa sản phẩm', icon: TrashIcon, destructive: true, onClick: () => handleConfirmDelete(product.id) },
+                      ]} />}
                     </VStack>
                   </Card>
                 ))}

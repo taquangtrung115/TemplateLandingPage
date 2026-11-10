@@ -183,6 +183,7 @@ public class QuotationExportServiceTests
     [Theory]
     [InlineData(null, 0)]
     [InlineData("", 0)]
+    [InlineData("https://cdn.example.test/unrelated-photo.png", 0)]
     [InlineData("/api/v1/quoting/product-images/CB-01.png", 1)]
     public async Task Pdf_RespectsRemovedImage_EvenWhenTheProductHasABundledPhoto(string? imageUrl, int expectedImages)
     {
@@ -316,4 +317,40 @@ public class QuotationExportServiceTests
         var html = QuotationHtmlExportService.BuildHtmlContent(quote, CreateTestTemplateVersion());
         html.Should().Contain("src=\"data:image/png;base64,").And.NotContain("src=\"/api/").And.NotContain("src=\"https://api.example.test");
     }
+    [Theory]
+    [InlineData("CB-01", "CB-02")]
+    [InlineData("CB-02", "CB-03")]
+    [InlineData("CB-03", "CB-04")]
+    [InlineData("CB-04", "CB-05")]
+    [InlineData("CB-05", "CB-06")]
+    [InlineData("CB-06", "XQ-01")]
+    [InlineData("XQ-01", "XQ-02")]
+    [InlineData("XQ-02", "XQ-03")]
+    [InlineData("XQ-03", "XQ-04")]
+    [InlineData("XQ-04", "XQ-05")]
+    [InlineData("XQ-05", "CB-01")]
+    [InlineData("CUSTOM-SKU", "CB-02")]
+    public async Task PdfAndHtml_UseTheSnapshottedImageUrl_RegardlessOfProductCode(string productCode, string photoCode)
+    {
+        var version = CreateTestTemplateVersion();
+        var quote = Quotation.Create("BG-PHOTO-SOURCE", null, null, null, null, null, null, null,
+            Guid.NewGuid(), 1, DateTime.UtcNow, null, 0, 0, null, Guid.NewGuid());
+        var url = $"/api/v1/quoting/product-images/{photoCode}.png";
+        quote.SetItems([QuotationItem.Create(quote.Id, null, productCode, "Sản phẩm", null, "Gói", url, null, 1, 18000, 0, null, 1)], Guid.NewGuid());
+        var html = QuotationHtmlExportService.BuildHtmlContent(quote, version);
+        using var expectedSource = typeof(QuotationHtmlExportService).Assembly.GetManifestResourceStream($"TemplateLandingPage.Infrastructure.Assets.Products.{photoCode}.png")!;
+        using var sourceBytes = new MemoryStream(); await expectedSource.CopyToAsync(sourceBytes);
+        html.Should().Contain("data:image/png;base64," + Convert.ToBase64String(sourceBytes.ToArray()));
+        using var actual = PdfReader.Open(new MemoryStream(await _exportService.GeneratePdfAsync(quote, version)), PdfDocumentOpenMode.Import);
+        quote.SetItems([QuotationItem.Create(quote.Id, null, photoCode, "Sản phẩm", null, "Gói", url, null, 1, 18000, 0, null, 1)], Guid.NewGuid());
+        using var reference = PdfReader.Open(new MemoryStream(await _exportService.GeneratePdfAsync(quote, version)), PdfDocumentOpenMode.Import);
+        static List<PdfDictionary> Images(PdfDocument document) => document.Pages[0].Resources.Elements.GetDictionary("/XObject")!
+            .Elements.Values.OfType<PdfReference>().Select(reference => reference.Value).OfType<PdfDictionary>()
+            .Where(image => image.Elements.GetName("/Subtype") == "/Image").ToList();
+        var actualImages = Images(actual); var expectedImages = Images(reference);
+        actualImages.Should().HaveCount(expectedImages.Count).And.NotBeEmpty();
+        for (var index = 0; index < actualImages.Count; index++)
+            actualImages[index].Stream.UnfilteredValue.Should().Equal(expectedImages[index].Stream.UnfilteredValue);
+    }
+
 }

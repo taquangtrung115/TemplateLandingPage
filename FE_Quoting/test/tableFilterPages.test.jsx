@@ -33,6 +33,7 @@ vi.mock('../src/api/quotationApi', () => ({
   },
 }));
 
+vi.mock('../src/api/quotingProductGroupApi', () => ({ quotingProductGroupApi: { getGroups: vi.fn(async () => (await import('./fixtures')).groups) } }));
 vi.mock('../src/api/quotingProductApi', () => ({
   quotingProductApi: {
     getProducts: vi.fn(),
@@ -209,7 +210,7 @@ describe('Table & Filter Pages - Kiểm thử Danh Sách & Bộ Lọc', () => {
       });
 
       expect(screen.getByText('Danh mục sản phẩm')).toBeInTheDocument();
-      expect(screen.getByText('CB-01')).toBeInTheDocument();
+      expect(await screen.findByText('CB-01')).toBeInTheDocument();
       expect(screen.getByText('COMBO NGUYÊN BẢN BAO NGON')).toBeInTheDocument();
       expect(screen.getByText('XQ-01')).toBeInTheDocument();
       expect(screen.getByText('XIÊN CÁ VIÊN CHIÊN ĐẬM VỊ')).toBeInTheDocument();

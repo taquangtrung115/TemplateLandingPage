@@ -22,7 +22,7 @@ public sealed class GetQuotationByIdQueryHandler : IQueryHandler<GetQuotationByI
             return Result.Failure<QuotationDetailResponse>(QuotationErrors.NotFound);
         }
 
-        var items = quotation.Items.OrderBy(i => i.SortOrder).Select(i => new QuotationItemResponse(
+        var items = quotation.Items.OrderBy(i => i.GroupSortOrder).ThenBy(i => i.SortOrder).Select(i => new QuotationItemResponse(
             i.Id,
             i.ProductId,
             i.ProductCode,
@@ -37,7 +37,7 @@ public sealed class GetQuotationByIdQueryHandler : IQueryHandler<GetQuotationByI
             i.DiscountAmount,
             i.TotalAmount,
             i.Notes,
-            i.SortOrder)).ToList();
+            i.SortOrder, i.GroupSortOrder)).ToList();
 
         var histories = quotation.Histories.OrderByDescending(h => h.CreatedAtUtc).Select(h => new QuotationHistoryResponse(
             h.Id,
@@ -84,7 +84,7 @@ public sealed class GetQuotationByIdQueryHandler : IQueryHandler<GetQuotationByI
             quotation.ModifiedAtUtc,
             items,
             histories,
-            files);
+            files, quotation.ShowDiscount, quotation.ShowQuantity, quotation.ShowSubTotal, quotation.ShowGrandTotal);
 
         return Result.Success(response);
     }
