@@ -92,6 +92,16 @@ Khi tách service: giữ contract tenant URL, thay destination cluster; tách pe
 
 ## Render / Vercel
 
+### Render Free: Gateway và API cùng một instance
+
+`Dockerfile.render-free` chạy hai executable độc lập trong một Web Service Free: Gateway lắng nghe cổng `PORT` public; API chỉ lắng nghe `127.0.0.1:54611` trong container. `scripts/start-oneportal-render-free.sh` chạy initializer trước khi mở server, giới hạn biến môi trường của Gateway để không nhận private key/DB/storage key, và dừng container nếu một process lỗi. Health Check Path là `/health/ready`, được Gateway proxy đến API/DB.
+
+Dùng `render-free.yaml` nếu tạo Blueprint Free mới; với service hiện hữu, đổi Dockerfile Path thành `./Dockerfile.render-free`, giữ Docker Build Context `.` và Root Directory trống. Không đặt Pre-Deploy Command trên Free. Secret/issuer/audience/CORS/storage cấu hình giống mô hình hai service; cả hai process dùng cùng một bộ public/private RSA tương ứng, nhưng Gateway chỉ nhận public key. VITE_API_BASE_URL vẫn trỏ URL public service + `/api/v1`.
+
+Free có thể ngủ khi idle và tài nguyên 512 MB được chia cho hai process; chưa có khả năng scale độc lập. Storage phải dùng Supabase, không dựa vào ổ ephemeral. Khi chuyển sang trả phí, dùng lại Dockerfile backend/Gateway riêng và `render.yaml` bên dưới.
+
+### Hai service độc lập
+
 `render.yaml` khai báo private backend và public Gateway; preDeploy chạy initializer. Cấu hình private service hostname/port vào cả ba destination, DB runtime/migration, RSA, Supabase storage và ba CORS frontend origins. Pre-deploy/private service cần plan Render hỗ trợ các tính năng này. Không có deployment tự động từ task coding.
 
 Tạo ba Vercel project với Root Directory lần lượt `FE_TemplateLandingPage`, `FE_Quoting`, `FE_Tenant`, build `npm run build`, output `dist`. Đặt `VITE_API_BASE_URL=https://<gateway>/api/v1`. Đổi Root Directory project Landing hiện tại sau rename. SPA rewrites hỗ trợ deep link `/t/{key}/...`; không rewrite API/assets sang HTML. Vite dev proxy mặc định trỏ Gateway localhost:54612.
