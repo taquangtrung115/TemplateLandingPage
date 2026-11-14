@@ -1,17 +1,17 @@
-namespace TemplateLandingPage.Presentation.APIs.Quoting;
+namespace OnePortal.Presentation.APIs.Quoting;
 
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Commands.UploadImage;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Queries.GetImage;
+using OnePortal.Application.UseCases.V1.Quoting.Products.Commands.UploadImage;
+using OnePortal.Application.UseCases.V1.Quoting.Products.Queries.GetImage;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Products;
-using TemplateLandingPage.Presentation.Abstractions;
-using TemplateLandingPage.Presentation.Authorization;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Quoting.Products;
+using OnePortal.Presentation.Abstractions;
+using OnePortal.Presentation.Authorization;
 
 public sealed class QuotingProductApi : IEndpoint
 {

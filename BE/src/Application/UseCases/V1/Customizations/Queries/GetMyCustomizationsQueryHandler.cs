@@ -1,11 +1,11 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Queries;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.Repositories;
+namespace OnePortal.Application.UseCases.V1.Customizations.Queries;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Customizations.Helpers;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Domain.Repositories;
 
-public sealed class GetMyCustomizationsQueryHandler(ICustomizationRepository customizationRepository)
+public sealed class GetMyCustomizationsQueryHandler(ICustomizationRepository customizationRepository, ITenantContext? scope = null)
     : IQueryHandler<GetMyCustomizationsQuery, PagedResponse<CustomizationSummaryResponse>>
 {
     private readonly ICustomizationRepository _repository = customizationRepository;
@@ -15,6 +15,6 @@ public sealed class GetMyCustomizationsQueryHandler(ICustomizationRepository cus
         var page = Math.Clamp(request.Page, 1, 1_000_000);
         var size = Math.Clamp(request.PageSize, 1, 100);
         var result = await _repository.SearchAsync(request.UserId, false, page, size, cancellationToken);
-        return Result.Success(new PagedResponse<CustomizationSummaryResponse>(result.Data.Select(CustomizationRules.Summary).ToList(), result.Total, page, size));
+        return Result.Success(new PagedResponse<CustomizationSummaryResponse>(result.Data.Select(item => CustomizationRules.Summary(item, scope?.TenantKey)).ToList(), result.Total, page, size));
     }
 }

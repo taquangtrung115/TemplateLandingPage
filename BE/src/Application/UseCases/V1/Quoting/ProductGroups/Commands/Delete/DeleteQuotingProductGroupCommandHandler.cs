@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.Commands.Delete;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+namespace OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Commands.Delete;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Repositories.Quoting;
 
 public sealed class DeleteQuotingProductGroupCommandHandler(IQuotingProductGroupRepository repository, IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteQuotingProductGroupCommand, DeleteQuotingProductGroupResult>

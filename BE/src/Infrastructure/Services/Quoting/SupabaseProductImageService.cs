@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Infrastructure.Services.Quoting;
+namespace OnePortal.Infrastructure.Services.Quoting;
 
 using System.Net;
 using System.Net.Http.Headers;
@@ -7,14 +7,16 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Dtos;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Helpers;
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Quoting.Products.Dtos;
+using OnePortal.Application.UseCases.V1.Quoting.Products.Helpers;
+using OnePortal.Contract.Abstractions.Shared;
 
-public sealed class SupabaseProductImageService(HttpClient httpClient, IConfiguration configuration, ILogger<SupabaseProductImageService> logger) : IQuotingProductImageService
+public sealed class SupabaseProductImageService(HttpClient httpClient, IConfiguration configuration, ILogger<SupabaseProductImageService> logger, ITenantContext? tenantContext = null) : IQuotingProductImageService
 {
     #region Configuration
+    private string ObjectPrefix => tenantContext?.TenantId is Guid tenantId ? $"tenants/{tenantId:N}/quoting/uploads/" : "uploads/";
+    private bool CanReadLegacy => tenantContext?.TenantId is null || tenantContext.TenantId == OnePortal.Domain.Entities.Tenancy.TenantDefaults.QuotingId;
     private const int MaximumBytes = 5 * 1024 * 1024;
     private const int MaximumPixels = 16_000_000;
     private const int OutputEdge = 1600;
@@ -43,12 +45,12 @@ public sealed class SupabaseProductImageService(HttpClient httpClient, IConfigur
             await EnsureBucketAsync(cancellationToken);
             var extension = normalized.ContentType == "image/png" ? ".png" : ".jpg";
             var fileName = Guid.NewGuid().ToString("N") + extension;
-            using var request = Request(HttpMethod.Post, $"/storage/v1/object/{_bucket}/uploads/{fileName}");
+            using var request = Request(HttpMethod.Post, $"/storage/v1/object/{_bucket}/{ObjectPrefix}{fileName}");
             request.Content = new ByteArrayContent(normalized.Data);
             request.Content.Headers.ContentType = new MediaTypeHeaderValue(normalized.ContentType);
             using var response = await _httpClient.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
-            return Result.Success(new UploadedQuotingProductImageDto(QuotingProductImageAddress.Prefix + fileName, fileName, normalized.ContentType, normalized.Width, normalized.Height, normalized.Data.Length));
+            return Result.Success(new UploadedQuotingProductImageDto((tenantContext?.TenantKey is string key ? $"/t/{key}" : "") + QuotingProductImageAddress.Prefix + fileName, fileName, normalized.ContentType, normalized.Width, normalized.Height, normalized.Data.Length));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
@@ -61,10 +63,12 @@ public sealed class SupabaseProductImageService(HttpClient httpClient, IConfigur
     public async Task<QuotingProductImageContentDto?> GetAsync(string fileName, CancellationToken cancellationToken)
     {
         if (!IsConfigured || !QuotingProductImageAddress.IsFileName(fileName)) return null;
-        using var request = Request(HttpMethod.Get, $"/storage/v1/object/authenticated/{_bucket}/uploads/{fileName}");
+        using var request = Request(HttpMethod.Get, $"/storage/v1/object/authenticated/{_bucket}/{ObjectPrefix}{fileName}");
         try
         {
             using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            if (!response.IsSuccessStatusCode && CanReadLegacy && ObjectPrefix != "uploads/")
+                return await GetLegacyAsync(fileName, cancellationToken);
             if (!response.IsSuccessStatusCode || response.Content.Headers.ContentLength > MaximumBytes) return null;
             await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
             var bytes = await ReadBoundedAsync(source, cancellationToken);
@@ -78,6 +82,16 @@ public sealed class SupabaseProductImageService(HttpClient httpClient, IConfigur
         }
     }
     #endregion
+
+    private async Task<QuotingProductImageContentDto?> GetLegacyAsync(string fileName, CancellationToken cancellationToken)
+    {
+        using var request = Request(HttpMethod.Get, $"/storage/v1/object/authenticated/{_bucket}/uploads/{fileName}");
+        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if (!response.IsSuccessStatusCode || response.Content.Headers.ContentLength > MaximumBytes) return null;
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var bytes = await ReadBoundedAsync(stream, cancellationToken);
+        return bytes is null ? null : new QuotingProductImageContentDto(bytes, fileName.EndsWith(".png", StringComparison.Ordinal) ? "image/png" : "image/jpeg");
+    }
 
     #region Storage protocol
     private HttpRequestMessage Request(HttpMethod method, string path)

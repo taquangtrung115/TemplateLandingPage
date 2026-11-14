@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries.PreviewDraft;
+namespace OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries.PreviewDraft;
 
 using FluentValidation;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Commands.Validators;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Commands.Validators;
 
 public sealed class PreviewQuotationDraftQueryValidator : AbstractValidator<PreviewQuotationDraftQuery>
 {

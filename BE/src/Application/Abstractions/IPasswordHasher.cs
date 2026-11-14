@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.Abstractions;
+namespace OnePortal.Application.Abstractions;
 
 public interface IPasswordHasher
 {

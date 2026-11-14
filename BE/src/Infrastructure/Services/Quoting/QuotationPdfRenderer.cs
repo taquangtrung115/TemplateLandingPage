@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Infrastructure.Services.Quoting;
+namespace OnePortal.Infrastructure.Services.Quoting;
 
 using System.Globalization;
 using System.Text;
@@ -6,7 +6,7 @@ using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
-using TemplateLandingPage.Domain.Entities.Quoting;
+using OnePortal.Domain.Entities.Quoting;
 
 internal static class QuotationPdfRenderer
 {

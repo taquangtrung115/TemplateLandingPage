@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.Common.Validation;
+namespace OnePortal.Application.Common.Validation;
 
 using System.Text;
 using System.Text.Json;

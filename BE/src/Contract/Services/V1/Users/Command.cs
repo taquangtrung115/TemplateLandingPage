@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Users;
+namespace OnePortal.Contract.Services.V1.Users;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Message;
 
 public record CreateUserCommand(string Email, string Password, string FullName, string Role) : ICommand<Guid>;
 

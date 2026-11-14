@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.Exceptions;
+namespace OnePortal.Application.Exceptions;
 
 public sealed class QuotationImageUnavailableException : Exception
 {

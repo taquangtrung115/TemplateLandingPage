@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Domain.Abstractions.Repositories;
+namespace OnePortal.Domain.Abstractions.Repositories;
 
 public interface IUnitOfWork
 {

@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Domain.Entities.Quoting;
+namespace OnePortal.Domain.Entities.Quoting;
 
 public enum QuotingSupportStatus
 {

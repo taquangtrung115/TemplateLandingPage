@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.Presentation.APIs.NavigationMenus;
+namespace OnePortal.Presentation.APIs.NavigationMenus;
 
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.NavigationMenus;
-using TemplateLandingPage.Presentation.Abstractions;
-using TemplateLandingPage.Presentation.Authorization;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.NavigationMenus;
+using OnePortal.Presentation.Abstractions;
+using OnePortal.Presentation.Authorization;
 using System.Security.Claims;
 
 public sealed class NavigationMenuApi : IEndpoint

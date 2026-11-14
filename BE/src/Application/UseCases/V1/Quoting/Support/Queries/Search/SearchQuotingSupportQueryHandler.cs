@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Support.Queries.Search;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Support.Dtos;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+namespace OnePortal.Application.UseCases.V1.Quoting.Support.Queries.Search;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Quoting.Support.Dtos;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Repositories.Quoting;
 public sealed class SearchQuotingSupportQueryHandler(IQuotingSupportRepository repository) : IQueryHandler<SearchQuotingSupportQuery, SearchQuotingSupportResult>
 {
     #region Fields

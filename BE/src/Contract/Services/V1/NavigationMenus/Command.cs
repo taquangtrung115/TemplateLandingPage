@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.NavigationMenus;
+namespace OnePortal.Contract.Services.V1.NavigationMenus;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Message;
 
 public record CreateNavigationMenuCommand(
     string Title,

@@ -1,23 +1,23 @@
-namespace TemplateLandingPage.Presentation.APIs.Users;
+namespace OnePortal.Presentation.APIs.Users;
 
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Auth;
-using TemplateLandingPage.Contract.Services.V1.Users;
-using TemplateLandingPage.Presentation.Abstractions;
-using TemplateLandingPage.Presentation.Authorization;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Auth;
+using OnePortal.Contract.Services.V1.Users;
+using OnePortal.Presentation.Abstractions;
+using OnePortal.Presentation.Authorization;
 
 public sealed class UserApi : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/v1/users")
+        var group = app.MapGroup("/api/v1/platform/users")
             .WithTags("Users")
-            .RequireAuthorization(AuthorizationPolicies.AdminOnly);
+            .RequireAuthorization("PlatformAdmin");
 
         group.MapGet(string.Empty, async (ISender sender) =>
         {
@@ -39,7 +39,7 @@ public sealed class UserApi : IEndpoint
         group.MapPost(string.Empty, async (CreateUserCommand command, ISender sender) =>
         {
             var result = await sender.Send(command);
-            return HandleResult(result, () => Results.Created($"/api/v1/users/{result.Value}", result));
+            return HandleResult(result, () => Results.Created($"/api/v1/platform/users/{result.Value}", result));
         })
         .WithName("CreateUser")
         .Produces<Result<Guid>>(StatusCodes.Status201Created)

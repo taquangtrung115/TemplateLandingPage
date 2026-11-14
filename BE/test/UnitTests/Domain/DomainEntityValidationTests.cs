@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.UnitTests.Domain;
+namespace OnePortal.UnitTests.Domain;
 
 using FluentAssertions;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Infrastructure.Services;
+using OnePortal.Domain.Entities;
+using OnePortal.Infrastructure.Services;
 using Xunit;
 
 public class DomainEntityValidationTests

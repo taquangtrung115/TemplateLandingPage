@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Repositories;
+namespace OnePortal.Persistence.Repositories;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Abstractions;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Abstractions;
+using OnePortal.Domain.Abstractions.Repositories;
 
 public abstract class RepositoryBase<TEntity, TKey> : IRepositoryBase<TEntity, TKey>
     where TEntity : Entity<TKey>

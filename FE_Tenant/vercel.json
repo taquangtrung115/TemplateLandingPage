@@ -1,0 +1,19 @@
+{
+  "headers": [
+    {
+      "source": "/((?!assets/|api/|t/[^/]+/api/).*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!assets/|api/|t/[^/]+/api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

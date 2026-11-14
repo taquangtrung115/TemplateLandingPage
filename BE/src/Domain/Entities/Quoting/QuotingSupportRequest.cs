@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Domain.Entities.Quoting;
+namespace OnePortal.Domain.Entities.Quoting;
 
-using TemplateLandingPage.Domain.Abstractions;
+using OnePortal.Domain.Abstractions;
 
-public sealed class QuotingSupportRequest : Entity<Guid>
+public sealed class QuotingSupportRequest : TenantEntity<Guid>
 {
     public Guid CreatedByUserId { get; private set; }
     public string FullName { get; private set; } = string.Empty;

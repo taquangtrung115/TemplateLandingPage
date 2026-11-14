@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom';
+import { configure } from '@testing-library/dom';
+
+// Astryx loads mobile sheets lazily; give their real import/render cycle time on CI.
+configure({ asyncUtilTimeout: 5000 });
 
 global.ResizeObserver = class ResizeObserver {
   constructor(cb) {

@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Domain.Repositories;
+namespace OnePortal.Domain.Repositories;
 
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.ReadModels;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.ReadModels;
 
 public interface ICategoryRepository : IRepositoryBase<Category, Guid>
 {

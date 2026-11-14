@@ -1,5 +1,5 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups;
-using TemplateLandingPage.Contract.Abstractions.Shared;
+namespace OnePortal.Application.UseCases.V1.Quoting.ProductGroups;
+using OnePortal.Contract.Abstractions.Shared;
 public static class QuotingProductGroupErrors
 {
     public static readonly Error NotFound = new("ProductGroup.NotFound", "Chọn nhóm sản phẩm đang hoạt động trong danh mục.");

@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Presentation.Authorization;
+namespace OnePortal.Presentation.Authorization;
 
 public static class AuthorizationPolicies
 {

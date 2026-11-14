@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Domain.Entities.Quoting;
+namespace OnePortal.Domain.Entities.Quoting;
 
-using TemplateLandingPage.Domain.Abstractions;
+using OnePortal.Domain.Abstractions;
 
-public sealed class QuotationHistory : Entity<Guid>
+public sealed class QuotationHistory : TenantEntity<Guid>
 {
     public Guid QuotationId { get; private set; }
     public string Action { get; private set; } = string.Empty;

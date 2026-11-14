@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Domain.Entities;
+namespace OnePortal.Domain.Entities;
 
-using TemplateLandingPage.Domain.Abstractions;
+using OnePortal.Domain.Abstractions;
 
-public sealed class CustomizationVersion : Entity<Guid>
+public sealed class CustomizationVersion : TenantEntity<Guid>
 {
     public Guid CustomizationId { get; private set; }
     public int VersionNumber { get; private set; }

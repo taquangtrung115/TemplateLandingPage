@@ -1,16 +1,16 @@
-namespace TemplateLandingPage.Presentation.APIs.Quoting;
+namespace OnePortal.Presentation.APIs.Quoting;
 
 using System.Security.Claims;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries.PreviewDraft;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries.PreviewDraft;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries.Download;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries.Summary;
-using TemplateLandingPage.Presentation.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Quoting.Quotations;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries.Download;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries.Summary;
+using OnePortal.Presentation.Abstractions;
 
 public sealed class QuotationApi : IEndpoint
 {

@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.UnitTests.Application.Interactions;
+namespace OnePortal.UnitTests.Application.Interactions;
 
 using FluentAssertions;
 using Moq;
-using TemplateLandingPage.Application.UseCases.V1.Interactions.Commands;
-using TemplateLandingPage.Contract.Services.V1.Interactions;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
-using TemplateLandingPage.Domain.ReadModels;
+using OnePortal.Application.UseCases.V1.Interactions.Commands;
+using OnePortal.Contract.Services.V1.Interactions;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
+using OnePortal.Domain.ReadModels;
 using Xunit;
 
 public class SubmitGuestbookCommandHandlerTests

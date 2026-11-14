@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.Infrastructure.DependencyInjection.Extensions;
+namespace OnePortal.Infrastructure.DependencyInjection.Extensions;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Infrastructure.Abstractions;
-using TemplateLandingPage.Infrastructure.Authentication;
-using TemplateLandingPage.Infrastructure.Services;
-using TemplateLandingPage.Infrastructure.Services.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Infrastructure.Abstractions;
+using OnePortal.Infrastructure.Authentication;
+using OnePortal.Infrastructure.Services;
+using OnePortal.Infrastructure.Services.Quoting;
 
 public static class ServiceCollectionExtensions
 {
@@ -21,8 +21,8 @@ public static class ServiceCollectionExtensions
         // Quoting Services
         services.AddHttpClient<SupabaseStorageService>()
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
-        services.AddSingleton<LocalStorageService>();
-        services.AddSingleton<IQuotationFileStorageService, QuotationFileStorageResolver>();
+        services.AddScoped<LocalStorageService>();
+        services.AddScoped<IQuotationFileStorageService, QuotationFileStorageResolver>();
         services.AddHttpClient<IQuotingProductImageService, SupabaseProductImageService>(client => client.Timeout = TimeSpan.FromSeconds(20))
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddHttpClient<IQuotationRemoteImageService, QuotationRemoteImageService>(client => client.Timeout = TimeSpan.FromSeconds(10))

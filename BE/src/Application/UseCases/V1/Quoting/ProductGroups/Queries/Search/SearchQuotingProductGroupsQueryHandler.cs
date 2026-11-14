@@ -1,10 +1,10 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.Queries.Search;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Domain.Repositories.Quoting;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.Dtos;
+namespace OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Queries.Search;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Repositories.Quoting;
+using OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Dtos;
 public sealed class SearchQuotingProductGroupsQueryHandler(IQuotingProductGroupRepository repository)
     : IQueryHandler<SearchQuotingProductGroupsQuery, SearchQuotingProductGroupsResult>
 {

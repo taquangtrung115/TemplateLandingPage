@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Domain.Entities;
+namespace OnePortal.Domain.Entities;
 
-using TemplateLandingPage.Domain.Abstractions;
+using OnePortal.Domain.Abstractions;
 
-public sealed class User : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
+public sealed class User : GlobalEntity<Guid>, IAuditableEntity, ISoftDelete
 {
     public string Email { get; private set; } = string.Empty;
     public string PasswordHash { get; private set; } = string.Empty;
@@ -11,6 +11,7 @@ public sealed class User : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
     public string? AvatarUrl { get; private set; }
     public string? Provider { get; private set; } = "Local"; // "Local", "Google", "Facebook"
     public bool IsActive { get; private set; } = true;
+    public bool IsPlatformAdmin { get; private set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
     public DateTime CreatedAtUtc { get; set; }
@@ -63,6 +64,8 @@ public sealed class User : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
         PasswordHash = newPasswordHash;
         ModifiedAtUtc = DateTime.UtcNow;
     }
+
+    public void SetPlatformAdmin(bool isPlatformAdmin) => IsPlatformAdmin = isPlatformAdmin;
 
     public void Delete()
     {

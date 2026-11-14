@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.NavigationMenus;
+namespace OnePortal.Contract.Services.V1.NavigationMenus;
 
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Shared;
 
 public record NavigationMenuResponse(
     Guid Id,

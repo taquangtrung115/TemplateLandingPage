@@ -1,0 +1,19 @@
+{
+  "migration": "20261114080350_AddMultiTenantPlatform",
+  "platformAdminEmail": "admin@template.com",
+  "platformAdminEnabled": true,
+  "expectedAuditChange": "Only the approved administrator ModifiedAtUtc changes when its new privilege is granted.",
+  "applications": [
+    {
+      "AppKey": "landing",
+      "ProvisioningStatus": "Ready",
+      "SeedVersion": "1"
+    },
+    {
+      "AppKey": "quoting",
+      "ProvisioningStatus": "Ready",
+      "SeedVersion": "1"
+    }
+  ],
+  "validatedForeignKeys": "37"
+}

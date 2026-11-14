@@ -1,11 +1,11 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Categories.Commands;
+namespace OnePortal.Application.UseCases.V1.Categories.Commands;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Categories;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Categories;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 
 public sealed class CreateCategoryCommandHandler : ICommandHandler<CreateCategoryCommand, Guid>
 {

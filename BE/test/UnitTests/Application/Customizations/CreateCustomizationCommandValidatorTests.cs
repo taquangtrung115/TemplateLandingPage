@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.UnitTests.Application.Customizations;
+namespace OnePortal.UnitTests.Application.Customizations;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Commands.Validators;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
+using OnePortal.Application.UseCases.V1.Customizations.Commands.Validators;
+using OnePortal.Contract.Services.V1.Customizations;
 using Xunit;
 
 public class CreateCustomizationCommandValidatorTests

@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.Presentation.APIs.Interactions;
+namespace OnePortal.Presentation.APIs.Interactions;
 
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Interactions;
-using TemplateLandingPage.Presentation.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Interactions;
+using OnePortal.Presentation.Abstractions;
 
 public sealed class InteractionApi : IEndpoint
 {

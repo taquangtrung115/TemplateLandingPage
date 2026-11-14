@@ -1,10 +1,10 @@
-namespace TemplateLandingPage.UnitTests.Persistence;
+namespace OnePortal.UnitTests.Persistence;
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Persistence;
+using OnePortal.Domain.Entities;
+using OnePortal.Persistence;
 using Xunit;
 
 public class ApplicationDbContextTests : IDisposable
@@ -17,7 +17,7 @@ public class ApplicationDbContextTests : IDisposable
             .UseInMemoryDatabase(databaseName: $"AppDbContextTestDb_{Guid.NewGuid()}")
             .Options;
 
-        _inMemoryContext = new ApplicationDbContext(options);
+        _inMemoryContext = new ApplicationDbContext(options, OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.LandingId, "landing"));
     }
 
     public void Dispose()
@@ -418,7 +418,7 @@ public class ApplicationDbContextTests : IDisposable
             .UseInMemoryDatabase(databaseName: $"DisposedTestDb_{Guid.NewGuid()}")
             .Options;
 
-        var context = new ApplicationDbContext(options);
+        var context = new ApplicationDbContext(options, OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.LandingId, "landing"));
         context.Dispose();
 
         // Act

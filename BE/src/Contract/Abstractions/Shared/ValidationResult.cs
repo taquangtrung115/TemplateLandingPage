@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Contract.Abstractions.Shared;
+namespace OnePortal.Contract.Abstractions.Shared;
 
 public sealed class ValidationResult : Result, IValidationResult
 {

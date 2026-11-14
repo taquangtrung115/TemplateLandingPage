@@ -1,8 +1,9 @@
 .git
 .github
 PromtAI
-FE
+FE_TemplateLandingPage
 FE_Quoting
+FE_Tenant
 BE/test
 BE/tools
 **/bin

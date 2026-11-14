@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Presentation.DependencyInjection.Extensions;
+namespace OnePortal.Presentation.DependencyInjection.Extensions;
 
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using TemplateLandingPage.Presentation.Abstractions;
+using OnePortal.Presentation.Abstractions;
 
 public static class ServiceCollectionExtensions
 {

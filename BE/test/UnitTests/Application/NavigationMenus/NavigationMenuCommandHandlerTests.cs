@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.UnitTests.Application.NavigationMenus;
+namespace OnePortal.UnitTests.Application.NavigationMenus;
 
 using FluentAssertions;
 using Moq;
-using TemplateLandingPage.Application.UseCases.V1.NavigationMenus.Commands;
-using TemplateLandingPage.Contract.Services.V1.NavigationMenus;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.UseCases.V1.NavigationMenus.Commands;
+using OnePortal.Contract.Services.V1.NavigationMenus;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 using Xunit;
 
 public class NavigationMenuCommandHandlerTests

@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Customizations;
+namespace OnePortal.Contract.Services.V1.Customizations;
 
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Shared;
 
 public record CustomizationResponse(Guid Id, Guid? UserId, Guid TemplateId, string TemplateName,
     string Title, string Slug, string ConfigJson, bool IsPublished, DateTime CreatedAtUtc,

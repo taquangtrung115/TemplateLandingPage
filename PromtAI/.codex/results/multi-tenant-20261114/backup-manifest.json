@@ -1,0 +1,26 @@
+{
+  "tables": {
+    "public.Users": 5,
+    "public.Categories": 19,
+    "public.Products": 4,
+    "public.Templates": 408,
+    "public.NavigationMenus": 10,
+    "public.UserCustomizations": 11,
+    "public.CustomizationVersions": 12,
+    "public.CustomizationSlugAliases": 11,
+    "public.RsvpEntries": 6,
+    "public.GuestbookEntries": 7,
+    "quo.ProductGroups": 3,
+    "quo.Products": 13,
+    "quo.Customers": 2,
+    "quo.QuotationTemplates": 2,
+    "quo.QuotationTemplateVersions": 7,
+    "quo.Quotations": 11,
+    "quo.QuotationItems": 68,
+    "quo.QuotationHistories": 56,
+    "quo.QuotationFiles": 23,
+    "quo.SupportRequests": 1
+  },
+  "encryptedSha256": "edd43448b0e4ec707bac75ec39ddcc28bd8d88ccba69d502afb5c17b5bdef7cd",
+  "encryption": "Windows DPAPI current user"
+}

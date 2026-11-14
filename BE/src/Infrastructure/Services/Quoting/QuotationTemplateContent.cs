@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Infrastructure.Services.Quoting;
+namespace OnePortal.Infrastructure.Services.Quoting;
 
 using System.Text.Json;
-using TemplateLandingPage.Domain.Entities.Quoting;
+using OnePortal.Domain.Entities.Quoting;
 
 internal sealed record QuotationTemplateContent(
     string SellerName, string Address, string TaxCode, string Phone,

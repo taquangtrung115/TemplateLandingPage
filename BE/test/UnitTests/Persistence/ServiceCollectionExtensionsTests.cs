@@ -1,16 +1,16 @@
-namespace TemplateLandingPage.UnitTests.Persistence;
+namespace OnePortal.UnitTests.Persistence;
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Repositories;
-using TemplateLandingPage.Persistence;
-using TemplateLandingPage.Persistence.DependencyInjection.Extensions;
-using TemplateLandingPage.Persistence.Interceptors;
-using TemplateLandingPage.Persistence.Repositories;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Repositories;
+using OnePortal.Persistence;
+using OnePortal.Persistence.DependencyInjection.Extensions;
+using OnePortal.Persistence.Interceptors;
+using OnePortal.Persistence.Repositories;
 using Xunit;
 
 public class ServiceCollectionExtensionsTests

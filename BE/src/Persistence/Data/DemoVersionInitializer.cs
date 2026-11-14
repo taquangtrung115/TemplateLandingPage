@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Persistence.Data;
+namespace OnePortal.Persistence.Data;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Entities;
+using OnePortal.Domain.Entities;
 
 internal static class DemoVersionInitializer
 {

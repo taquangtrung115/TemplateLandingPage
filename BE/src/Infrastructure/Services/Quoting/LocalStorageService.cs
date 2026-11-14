@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Infrastructure.Services.Quoting;
+namespace OnePortal.Infrastructure.Services.Quoting;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Application.Abstractions;
+using OnePortal.Application.Abstractions;
 
 public sealed class LocalStorageService : IQuotationFileStorageService
 {
@@ -10,8 +10,10 @@ public sealed class LocalStorageService : IQuotationFileStorageService
     private readonly string _baseUrl;
     private readonly string _legacyStoragePath;
     private readonly ILogger<LocalStorageService> _logger;
+    private readonly string _preTenantPath;
+    private readonly bool _canReadLegacy;
 
-    public LocalStorageService(IConfiguration configuration, ILogger<LocalStorageService> logger)
+    public LocalStorageService(IConfiguration configuration, ILogger<LocalStorageService> logger, ITenantContext? tenantContext = null)
     {
         _logger = logger;
         _baseUrl = configuration["Quoting:Storage:BaseUrl"] ?? "/exports/quotations";
@@ -27,10 +29,9 @@ public sealed class LocalStorageService : IQuotationFileStorageService
             _storagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "App_Data", "quotations");
         }
 
-        if (!Directory.Exists(_storagePath))
-        {
-            Directory.CreateDirectory(_storagePath);
-        }
+        _preTenantPath = _storagePath;
+        _canReadLegacy = tenantContext?.TenantId is null || tenantContext.TenantId == OnePortal.Domain.Entities.Tenancy.TenantDefaults.QuotingId;
+        if (tenantContext?.TenantId is Guid tenantId) _storagePath = Path.Combine(_storagePath, "tenants", tenantId.ToString("N"), "quoting");
     }
 
     public async Task<(string FileUrl, string StorageProvider)> UploadFileAsync(
@@ -40,6 +41,7 @@ public sealed class LocalStorageService : IQuotationFileStorageService
         CancellationToken cancellationToken = default)
     {
         var safeFileName = Path.GetFileName(fileName);
+        Directory.CreateDirectory(_storagePath);
         var destinationPath = Path.Combine(_storagePath, safeFileName);
 
         using (var destStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -59,7 +61,8 @@ public sealed class LocalStorageService : IQuotationFileStorageService
         var fullPath = Path.Combine(_storagePath, fileName);
 
         // Older exports remain available through the authenticated download endpoint.
-        if (!File.Exists(fullPath)) fullPath = Path.Combine(_legacyStoragePath, fileName);
+        if (!File.Exists(fullPath) && _canReadLegacy) fullPath = Path.Combine(_preTenantPath, fileName);
+        if (!File.Exists(fullPath) && _canReadLegacy) fullPath = Path.Combine(_legacyStoragePath, fileName);
         if (!File.Exists(fullPath)) return Task.FromResult<Stream?>(null);
 
         var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);

@@ -1,10 +1,10 @@
-namespace TemplateLandingPage.Application.UseCases.V1.NavigationMenus.Commands;
+namespace OnePortal.Application.UseCases.V1.NavigationMenus.Commands;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.NavigationMenus;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.NavigationMenus;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Repositories;
 
 public sealed class UpdateNavigationMenuCommandHandler : ICommandHandler<UpdateNavigationMenuCommand>
 {

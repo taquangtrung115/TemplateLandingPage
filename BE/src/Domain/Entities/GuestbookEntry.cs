@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Domain.Entities;
+namespace OnePortal.Domain.Entities;
 
-using TemplateLandingPage.Domain.Abstractions;
+using OnePortal.Domain.Abstractions;
 
-public sealed class GuestbookEntry : Entity<Guid>
+public sealed class GuestbookEntry : TenantEntity<Guid>
 {
     public Guid? CustomizationId { get; private set; }
     public Guid? CustomizationVersionId { get; private set; }

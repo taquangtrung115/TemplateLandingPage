@@ -1,11 +1,11 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Queries.SearchAdmin;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.Repositories;
+namespace OnePortal.Application.UseCases.V1.Customizations.Queries.SearchAdmin;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Customizations.Helpers;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Domain.Repositories;
 
-public sealed class SearchAdminCustomizationsQueryHandler(ICustomizationRepository repository)
+public sealed class SearchAdminCustomizationsQueryHandler(ICustomizationRepository repository, ITenantContext? scope = null)
     : IQueryHandler<SearchAdminCustomizationsQuery, PagedResponse<CustomizationSummaryResponse>>
 {
     private readonly ICustomizationRepository _repository = repository;
@@ -17,6 +17,6 @@ public sealed class SearchAdminCustomizationsQueryHandler(ICustomizationReposito
         var size = Math.Clamp(request.PageSize, 1, 100);
         var values = await _repository.SearchAsync(null, request.Ownerless, page, size, cancellationToken);
         return Result.Success(new PagedResponse<CustomizationSummaryResponse>(
-            values.Data.Select(CustomizationRules.Summary).ToList(), values.Total, page, size));
+            values.Data.Select(item => CustomizationRules.Summary(item, scope?.TenantKey)).ToList(), values.Total, page, size));
     }
 }

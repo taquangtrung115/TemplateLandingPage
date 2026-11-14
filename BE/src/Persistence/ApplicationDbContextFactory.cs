@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Persistence;
+namespace OnePortal.Persistence;
 
 using System;
 using System.IO;
@@ -11,7 +11,9 @@ public sealed class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Ap
     public ApplicationDbContext CreateDbContext(string[] args)
     {
         // 1. Check explicit migration connection string from environment variable
-        var connectionString = Environment.GetEnvironmentVariable("TEMPLATE_MIGRATION_CONNECTION_STRING");
+        var connectionString = Environment.GetEnvironmentVariable("TEMPLATE_MIGRATION_CONNECTION_STRING")
+            ?? Environment.GetEnvironmentVariable("ConnectionStrings__MigrationConnection")
+            ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
         // 2. If not specified, load from appsettings files in the API project (defaults to Development)
         if (string.IsNullOrWhiteSpace(connectionString))
@@ -25,7 +27,7 @@ public sealed class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Ap
                 .AddJsonFile($"appsettings.{environment}.json", optional: true)
                 .Build();
 
-            connectionString = configuration.GetConnectionString("DefaultConnection");
+            connectionString = configuration.GetConnectionString("MigrationConnection") ?? configuration.GetConnectionString("DefaultConnection");
         }
 
         if (string.IsNullOrWhiteSpace(connectionString))
@@ -37,7 +39,9 @@ public sealed class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Ap
         }
 
         return new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseNpgsql(connectionString).Options);
+            .UseNpgsql(connectionString)
+            .UseSeeding((context, _) => Initialization.DatabaseInitializer.SeedAsync((ApplicationDbContext)context).GetAwaiter().GetResult())
+            .UseAsyncSeeding((context, _, token) => Initialization.DatabaseInitializer.SeedAsync((ApplicationDbContext)context, token)).Options);
     }
 
     private static string ResolveApiDirectory()

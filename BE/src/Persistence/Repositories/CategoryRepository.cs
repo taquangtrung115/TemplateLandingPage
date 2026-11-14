@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Persistence.Repositories;
+namespace OnePortal.Persistence.Repositories;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
-using TemplateLandingPage.Domain.ReadModels;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
+using OnePortal.Domain.ReadModels;
 
 public sealed class CategoryRepository : RepositoryBase<Category, Guid>, ICategoryRepository
 {

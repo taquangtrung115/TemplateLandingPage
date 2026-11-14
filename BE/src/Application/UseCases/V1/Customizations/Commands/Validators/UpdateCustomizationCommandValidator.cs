@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Commands.Validators;
+namespace OnePortal.Application.UseCases.V1.Customizations.Commands.Validators;
 using FluentValidation;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
+using OnePortal.Application.UseCases.V1.Customizations.Helpers;
+using OnePortal.Contract.Services.V1.Customizations;
 
 public sealed class UpdateCustomizationCommandValidator : AbstractValidator<UpdateCustomizationCommand>
 {

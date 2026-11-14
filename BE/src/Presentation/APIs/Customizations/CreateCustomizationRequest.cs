@@ -1,2 +1,2 @@
-namespace TemplateLandingPage.Presentation.APIs.Customizations;
+namespace OnePortal.Presentation.APIs.Customizations;
 public sealed record CreateCustomizationRequest(Guid TemplateId, string Title, string Slug, string ConfigJson, Guid ClientDraftId);

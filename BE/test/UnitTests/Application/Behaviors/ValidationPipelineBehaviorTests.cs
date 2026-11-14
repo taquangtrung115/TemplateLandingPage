@@ -1,15 +1,15 @@
-namespace TemplateLandingPage.UnitTests.Application.Behaviors;
+namespace OnePortal.UnitTests.Application.Behaviors;
 
 using FluentAssertions;
 using FluentValidation;
 using MediatR;
 using Moq;
-using TemplateLandingPage.Application.Behaviors;
-using TemplateLandingPage.Application.UseCases.V1.Auth.Validators;
-using TemplateLandingPage.Application.UseCases.V1.Categories.Commands.Validators;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Auth;
-using TemplateLandingPage.Contract.Services.V1.Categories;
+using OnePortal.Application.Behaviors;
+using OnePortal.Application.UseCases.V1.Auth.Validators;
+using OnePortal.Application.UseCases.V1.Categories.Commands.Validators;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Auth;
+using OnePortal.Contract.Services.V1.Categories;
 using Xunit;
 
 public class ValidationPipelineBehaviorTests

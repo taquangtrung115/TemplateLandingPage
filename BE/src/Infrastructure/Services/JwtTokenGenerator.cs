@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.Infrastructure.Services;
+namespace OnePortal.Infrastructure.Services;
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Infrastructure.Authentication;
+using OnePortal.Application.Abstractions;
+using OnePortal.Domain.Entities;
+using OnePortal.Infrastructure.Authentication;
 
 public sealed class JwtTokenGenerator : IJwtTokenGenerator
 {
@@ -20,15 +20,14 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
 
     public string GenerateToken(User user)
     {
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
-        var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+        var signingKey = JwtKeyMaterial.Create(_jwtSettings, signing: true);
+        var credentials = new SigningCredentials(signingKey, signingKey is RsaSecurityKey ? SecurityAlgorithms.RsaSha256 : SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Name, user.FullName),
-            new Claim(ClaimTypes.Role, user.Role),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

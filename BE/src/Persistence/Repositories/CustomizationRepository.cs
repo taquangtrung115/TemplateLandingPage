@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Persistence.Repositories;
+namespace OnePortal.Persistence.Repositories;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
-using TemplateLandingPage.Domain.ReadModels;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
+using OnePortal.Domain.ReadModels;
 
 public sealed class CustomizationRepository : RepositoryBase<UserCustomization, Guid>, ICustomizationRepository
 {
@@ -37,7 +37,7 @@ public sealed class CustomizationRepository : RepositoryBase<UserCustomization, 
             .FirstOrDefaultAsync(cancellationToken);
 
     public Task<UserCustomization?> GetByClientDraftIdAsync(Guid userId, Guid clientDraftId, CancellationToken cancellationToken = default) =>
-        DbSet.IgnoreQueryFilters().AsNoTracking().FirstOrDefaultAsync(c => c.UserId == userId && c.ClientDraftId == clientDraftId, cancellationToken);
+        DbSet.IgnoreQueryFilters().Where(entity => entity.TenantId == DbContext.CurrentTenantId).AsNoTracking().FirstOrDefaultAsync(c => c.UserId == userId && c.ClientDraftId == clientDraftId, cancellationToken);
 
     public async Task<Guid?> FindSlugOwnerAsync(string slug, CancellationToken cancellationToken = default)
     {

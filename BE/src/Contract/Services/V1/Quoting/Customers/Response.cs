@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Contract.Services.V1.Quoting.Customers;
+namespace OnePortal.Contract.Services.V1.Quoting.Customers;
 
 public record QuotingCustomerResponse(
     Guid Id,

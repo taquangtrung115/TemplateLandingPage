@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Repositories;
+namespace OnePortal.Persistence.Repositories;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 
 public sealed class UserRepository : RepositoryBase<User, Guid>, IUserRepository
 {
@@ -19,11 +19,19 @@ public sealed class UserRepository : RepositoryBase<User, Guid>, IUserRepository
     public async Task<User?> GetActiveByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await DbSet.AsNoTracking()
-            .FirstOrDefaultAsync(user => user.Id == id && user.IsActive && !user.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(user => user.Id == id && user.IsActive && !user.IsDeleted
+                && (DbContext.CurrentTenantId == Guid.Empty || DbContext.TenantMemberships.Any(membership =>
+                    membership.UserId == user.Id && membership.IsActive && membership.AppKey == DbContext.CurrentAppKey)), cancellationToken);
     }
 
     public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await DbSet.AnyAsync(u => u.Email == email.ToLowerInvariant(), cancellationToken);
     }
+
+    public Task<bool> AllowsSelfRegistrationAsync(Guid tenantId, string appKey, CancellationToken cancellationToken = default) =>
+        DbContext.TenantApplications.AnyAsync(application => application.TenantId == tenantId && application.AppKey == appKey
+            && application.IsEnabled && application.AllowSelfRegistration && application.ProvisioningStatus == "Ready", cancellationToken);
+
+    public void AddMembership(OnePortal.Domain.Entities.Tenancy.TenantMembership membership) => DbContext.TenantMemberships.Add(membership);
 }

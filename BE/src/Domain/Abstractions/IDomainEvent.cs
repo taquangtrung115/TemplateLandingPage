@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Domain.Abstractions;
+namespace OnePortal.Domain.Abstractions;
 
 public interface IDomainEvent
 {

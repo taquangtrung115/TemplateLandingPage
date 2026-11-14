@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Infrastructure.Services.Quoting;
+namespace OnePortal.Infrastructure.Services.Quoting;
 
 using System.Net;
 using Microsoft.Extensions.Configuration;
 using SkiaSharp;
-using TemplateLandingPage.Application.Abstractions;
+using OnePortal.Application.Abstractions;
 
 public sealed class QuotationRemoteImageService(HttpClient httpClient, IConfiguration configuration) : IQuotationRemoteImageService
 {

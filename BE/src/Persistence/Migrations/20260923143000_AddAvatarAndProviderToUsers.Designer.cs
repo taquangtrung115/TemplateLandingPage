@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using TemplateLandingPage.Persistence;
+using OnePortal.Persistence;
 
 #nullable disable
 
-namespace TemplateLandingPage.Persistence.Migrations
+namespace OnePortal.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260923143000_AddAvatarAndProviderToUsers")]
@@ -25,7 +25,7 @@ namespace TemplateLandingPage.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Category", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -75,7 +75,7 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.ToTable("Categories", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.GuestbookEntry", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.GuestbookEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -102,7 +102,7 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.ToTable("GuestbookEntries", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.NavigationMenu", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.NavigationMenu", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -165,7 +165,7 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.ToTable("NavigationMenus", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Product", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -204,7 +204,7 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.ToTable("Products", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.RsvpEntry", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.RsvpEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -250,7 +250,7 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.ToTable("RsvpEntries", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Template", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Template", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -344,7 +344,7 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.ToTable("Templates", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.User", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -400,7 +400,7 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.UserCustomization", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.UserCustomization", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -449,9 +449,9 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.ToTable("UserCustomizations", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.NavigationMenu", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.NavigationMenu", b =>
                 {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.NavigationMenu", "Parent")
+                    b.HasOne("OnePortal.Domain.Entities.NavigationMenu", "Parent")
                         .WithMany("SubMenus")
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -459,9 +459,9 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Template", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Template", b =>
                 {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.Category", "CategoryRef")
+                    b.HasOne("OnePortal.Domain.Entities.Category", "CategoryRef")
                         .WithMany("Templates")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -469,12 +469,12 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Navigation("CategoryRef");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Category", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Category", b =>
                 {
                     b.Navigation("Templates");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.NavigationMenu", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.NavigationMenu", b =>
                 {
                     b.Navigation("SubMenus");
                 });

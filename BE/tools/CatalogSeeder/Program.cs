@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Persistence;
-using TemplateLandingPage.Persistence.Data;
+using OnePortal.Persistence;
+using OnePortal.Persistence.Data;
 
 var definitions = TemplateCatalogSeeder.ReadDefinitions();
 Console.WriteLine($"Catalog: {definitions.Count} categories, {definitions.Sum(c => c.Concepts.Length)} templates.");

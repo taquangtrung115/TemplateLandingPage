@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Contract.Services.V1.Templates;
+namespace OnePortal.Contract.Services.V1.Templates;
 
 public sealed record TemplateSummaryResponse(
     Guid Id,

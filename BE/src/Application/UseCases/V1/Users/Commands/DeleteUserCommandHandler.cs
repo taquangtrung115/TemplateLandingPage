@@ -1,10 +1,10 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Users.Commands;
+namespace OnePortal.Application.UseCases.V1.Users.Commands;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Users;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Users;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Repositories;
 
 public sealed class DeleteUserCommandHandler : ICommandHandler<DeleteUserCommand>
 {

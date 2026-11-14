@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OnePortal.API</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="../../assets/quoting/products/*.png" Link="wwwroot/api/v1/quoting/product-images/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\OnePortal.Application.csproj" />
+    <ProjectReference Include="..\Contract\OnePortal.Contract.csproj" />
+    <ProjectReference Include="..\Domain\OnePortal.Domain.csproj" />
+    <ProjectReference Include="..\Infrastructure\OnePortal.Infrastructure.csproj" />
+    <ProjectReference Include="..\Persistence\OnePortal.Persistence.csproj" />
+    <ProjectReference Include="..\Presentation\OnePortal.Presentation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.Development.json;appsettings.*.local.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+</Project>

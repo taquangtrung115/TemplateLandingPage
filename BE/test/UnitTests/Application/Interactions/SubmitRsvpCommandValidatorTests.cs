@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.UnitTests.Application.Interactions;
+namespace OnePortal.UnitTests.Application.Interactions;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Interactions.Commands.Validators;
-using TemplateLandingPage.Contract.Services.V1.Interactions;
+using OnePortal.Application.UseCases.V1.Interactions.Commands.Validators;
+using OnePortal.Contract.Services.V1.Interactions;
 using Xunit;
 
 public class SubmitRsvpCommandValidatorTests

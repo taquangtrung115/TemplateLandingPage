@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Queries;
+namespace OnePortal.Application.UseCases.V1.Quoting.Products.Queries;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Products;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Quoting.Products;
+using OnePortal.Domain.Repositories.Quoting;
 
 public sealed class GetQuotingProductByIdQueryHandler : IQueryHandler<GetQuotingProductByIdQuery, QuotingProductResponse>
 {

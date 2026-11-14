@@ -1,15 +1,15 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
+namespace OnePortal.Application.UseCases.V1.Customizations.Helpers;
 
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using TemplateLandingPage.Application.Common.Validation;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.ReadModels;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Common.Validation;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.ReadModels;
+using OnePortal.Domain.Repositories;
 
 internal static class CustomizationRules
 {
@@ -42,5 +42,8 @@ internal static class CustomizationRules
         item.TemplateId, item.TemplateName, item.Title, item.Slug, item.Revision, item.LastVersionNumber,
         item.PublishedVersionId, item.CreatedAtUtc);
 
-    public static string VersionUrl(string slug, int number) => $"/p/{Uri.EscapeDataString(slug)}/v/{number}";
+    public static CustomizationSummaryResponse Summary(CustomizationSummary item, string? tenantKey) => Summary(item) with { TenantKey = tenantKey };
+    public static string SiteUrl(string slug, string? tenantKey = null) =>
+        (string.IsNullOrWhiteSpace(tenantKey) || tenantKey == "landing-default" ? "" : "/t/" + Uri.EscapeDataString(tenantKey)) + $"/p/{Uri.EscapeDataString(slug)}";
+    public static string VersionUrl(string slug, int number, string? tenantKey = null) => SiteUrl(slug, tenantKey) + $"/v/{number}";
 }

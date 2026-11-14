@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Commands.SetPublication;
+namespace OnePortal.Application.UseCases.V1.Customizations.Commands.SetPublication;
 
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Customizations.Helpers;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Repositories;
 
 public sealed class SetCustomizationPublicationCommandHandler(ICustomizationRepository repository,
     IUnitOfWork unitOfWork, ILogger<SetCustomizationPublicationCommandHandler> logger)

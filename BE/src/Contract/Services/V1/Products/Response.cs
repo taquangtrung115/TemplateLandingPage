@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Contract.Services.V1.Products;
+namespace OnePortal.Contract.Services.V1.Products;
 
 public record ProductResponse(
     Guid Id,

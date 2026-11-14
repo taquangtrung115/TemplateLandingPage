@@ -1,3 +1,5 @@
+import WorkspaceGate from './components/WorkspaceGate';
+import { workspaceBasename } from './utils/tenantScope';
 import './layers.css';
 import './index.css';
 
@@ -13,9 +15,9 @@ import AppRoutes from './routes/AppRoutes';
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <InternationalizationProvider locale="vi-VN" messages={{ 'vi-VN': vietnameseMessages }}><ThemeProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={workspaceBasename()}>
         <AuthProvider>
-          <AppRoutes />
+          <WorkspaceGate><AppRoutes /></WorkspaceGate>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider></InternationalizationProvider>

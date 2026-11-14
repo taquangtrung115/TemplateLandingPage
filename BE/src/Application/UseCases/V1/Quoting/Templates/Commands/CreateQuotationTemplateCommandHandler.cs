@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Templates.Commands;
+namespace OnePortal.Application.UseCases.V1.Quoting.Templates.Commands;
 
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Quoting.Templates;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Repositories.Quoting;
 
 public sealed class CreateQuotationTemplateCommandHandler : ICommandHandler<CreateQuotationTemplateCommand, Guid>
 {

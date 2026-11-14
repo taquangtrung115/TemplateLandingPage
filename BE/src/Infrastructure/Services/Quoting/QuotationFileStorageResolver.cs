@@ -1,22 +1,25 @@
-namespace TemplateLandingPage.Infrastructure.Services.Quoting;
+namespace OnePortal.Infrastructure.Services.Quoting;
 
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Application.Abstractions;
+using Microsoft.Extensions.Configuration;
+using OnePortal.Application.Abstractions;
 
 public sealed class QuotationFileStorageResolver : IQuotationFileStorageService
 {
     private readonly SupabaseStorageService _supabaseService;
     private readonly LocalStorageService _localService;
     private readonly ILogger<QuotationFileStorageResolver> _logger;
+    private readonly bool _allowLocalFallback;
 
     public QuotationFileStorageResolver(
         SupabaseStorageService supabaseService,
         LocalStorageService localService,
-        ILogger<QuotationFileStorageResolver> logger)
+        ILogger<QuotationFileStorageResolver> logger, IConfiguration? configuration = null)
     {
         _supabaseService = supabaseService;
         _localService = localService;
         _logger = logger;
+        _allowLocalFallback = configuration is null || configuration.GetValue<bool>("Quoting:Storage:AllowLocalFallback");
     }
 
     public async Task<(string FileUrl, string StorageProvider)> UploadFileAsync(
@@ -43,7 +46,8 @@ public sealed class QuotationFileStorageResolver : IQuotationFileStorageService
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch (Exception ex)
             {
-                _logger.LogWarning("Supabase upload failed ({ExceptionType}); using local storage for {FileName}.", ex.GetType().Name, fileName);
+                _logger.LogWarning("Supabase upload failed ({ExceptionType}); file {FileName}.", ex.GetType().Name, fileName);
+                if (!_allowLocalFallback) throw new OnePortal.Application.Exceptions.QuotationStorageUnavailableException();
                 if (!fileStream.CanSeek) throw;
                 if (fileStream.CanSeek)
                 {
@@ -52,6 +56,7 @@ public sealed class QuotationFileStorageResolver : IQuotationFileStorageService
             }
         }
 
+        if (!_allowLocalFallback) throw new OnePortal.Application.Exceptions.QuotationStorageUnavailableException();
         return await _localService.UploadFileAsync(fileName, contentType, fileStream, cancellationToken);
     }
 

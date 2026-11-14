@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.UnitTests.Application.Customizations;
+namespace OnePortal.UnitTests.Application.Customizations;
 
 using FluentAssertions;
 using Moq;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Commands;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.UseCases.V1.Customizations.Commands;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 using Xunit;
 
 public class UpdateCustomizationCommandHandlerTests

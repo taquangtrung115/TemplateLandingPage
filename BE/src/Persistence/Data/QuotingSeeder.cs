@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Data;
+namespace OnePortal.Persistence.Data;
 
 using Microsoft.EntityFrameworkCore;
 using System.Text;
-using TemplateLandingPage.Domain.Entities.Quoting;
+using OnePortal.Domain.Entities.Quoting;
 
 public static class QuotingSeeder
 {
@@ -31,7 +31,7 @@ public static class QuotingSeeder
 
         #region Product groups
         // Group identities are reused on seed so catalog edits and quotation snapshots survive.
-        var groups = await context.QuotingProductGroups.IgnoreQueryFilters().ToListAsync();
+        var groups = await context.QuotingProductGroups.IgnoreQueryFilters().Where(entity => entity.TenantId == context.CurrentTenantId).ToListAsync();
         foreach (var definition in new[] { (Code: "COMBO", Name: "A/ DÒNG COMBO", Order: 1), (Code: "XIEN-QUE", Name: "B/ DÒNG SẢN PHẨM XIÊN QUE", Order: 2) })
         {
             if (groups.Any(group => group.Code == definition.Code)) continue;
@@ -39,7 +39,7 @@ public static class QuotingSeeder
             context.QuotingProductGroups.Add(group);
             groups.Add(group);
         }
-        var ungrouped = await context.QuotingProducts.IgnoreQueryFilters().Where(product => product.GroupId == null).ToListAsync();
+        var ungrouped = await context.QuotingProducts.IgnoreQueryFilters().Where(entity => entity.TenantId == context.CurrentTenantId).Where(product => product.GroupId == null).ToListAsync();
         var standardByCode = sampleProducts.ToDictionary(product => product.Code, StringComparer.OrdinalIgnoreCase);
         var standardByName = sampleProducts.ToDictionary(product => NormalizeProductName(product.Name), StringComparer.OrdinalIgnoreCase);
         var groupedProducts = ungrouped.GroupBy(product =>
@@ -74,7 +74,7 @@ public static class QuotingSeeder
 
         #region System template
         // 1. Seed System Template V1
-        var systemTemplate = await context.QuotationTemplates.IgnoreQueryFilters()
+        var systemTemplate = await context.QuotationTemplates.IgnoreQueryFilters().Where(entity => entity.TenantId == context.CurrentTenantId)
             .Include(t => t.Versions)
             .FirstOrDefaultAsync(t => t.Code == "TPL-CHUOI-AN-VAT-V1");
 
@@ -148,7 +148,7 @@ public static class QuotingSeeder
 
         #region Standard products
 
-        var existingProducts = await context.QuotingProducts.IgnoreQueryFilters().AsNoTracking().ToListAsync();
+        var existingProducts = await context.QuotingProducts.IgnoreQueryFilters().Where(entity => entity.TenantId == context.CurrentTenantId).AsNoTracking().ToListAsync();
         var existingCodes = existingProducts.Select(product => product.Code.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var existingNames = existingProducts.Select(product => NormalizeProductName(product.Name)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var product in sampleProducts)

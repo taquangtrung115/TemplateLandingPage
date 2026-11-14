@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries.Summary;
+namespace OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries.Summary;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
 
 public sealed class GetQuotationSummaryQueryHandler(IQuotationSummaryService summaryService)
     : IQueryHandler<GetQuotationSummaryQuery, GetQuotationSummaryResult>

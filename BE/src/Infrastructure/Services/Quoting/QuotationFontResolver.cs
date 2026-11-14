@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Infrastructure.Services.Quoting;
+namespace OnePortal.Infrastructure.Services.Quoting;
 
 using PdfSharp.Fonts;
 
@@ -9,7 +9,7 @@ internal sealed class QuotationFontResolver : IFontResolver
     {
         var fileName = faceName == "QuotationSans-Bold" ? "NotoSans-Bold.ttf" : "NotoSans-Regular.ttf";
         using var stream = typeof(QuotationFontResolver).Assembly.GetManifestResourceStream(
-            $"TemplateLandingPage.Infrastructure.Assets.Fonts.{fileName}")
+            $"OnePortal.Infrastructure.Assets.Fonts.{fileName}")
             ?? throw new InvalidOperationException("The quotation font resource is missing.");
         using var output = new MemoryStream();
         stream.CopyTo(output);

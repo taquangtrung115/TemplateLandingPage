@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Application.Exceptions;
+namespace OnePortal.Application.Exceptions;
 
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Shared;
 
 public sealed class ValidationException : Exception
 {

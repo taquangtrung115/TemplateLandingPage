@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.UnitTests.Infrastructure.Quoting;
+namespace OnePortal.UnitTests.Infrastructure.Quoting;
 
 using System.Net;
 using System.Text;
@@ -7,8 +7,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using SkiaSharp;
-using TemplateLandingPage.Infrastructure.Services.Quoting;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Helpers;
+using OnePortal.Infrastructure.Services.Quoting;
+using OnePortal.Application.UseCases.V1.Quoting.Products.Helpers;
 using Xunit;
 
 public sealed class ProductImageStorageTests

@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.UnitTests.Application.Quoting;
+namespace OnePortal.UnitTests.Application.Quoting;
 
 using System;
 using System.Collections.Generic;
@@ -9,19 +9,19 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Customers.Commands;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Commands;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Commands;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Templates.Commands;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Customers;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Products;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Quoting.Customers.Commands;
+using OnePortal.Application.UseCases.V1.Quoting.Products.Commands;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Commands;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries;
+using OnePortal.Application.UseCases.V1.Quoting.Templates.Commands;
+using OnePortal.Contract.Services.V1.Quoting.Customers;
+using OnePortal.Contract.Services.V1.Quoting.Products;
+using OnePortal.Contract.Services.V1.Quoting.Quotations;
+using OnePortal.Contract.Services.V1.Quoting.Templates;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Repositories.Quoting;
 using Xunit;
 
 public class QuotingFullFlowEndToEndTests

@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace TemplateLandingPage.Persistence.Migrations;
+namespace OnePortal.Persistence.Migrations;
 
 public partial class SeedQuotingProductCatalog : Migration
 {

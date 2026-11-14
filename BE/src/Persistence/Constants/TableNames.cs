@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Persistence.Constants;
+namespace OnePortal.Persistence.Constants;
 
 public static class TableNames
 {

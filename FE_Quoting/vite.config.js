@@ -8,8 +8,9 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
+      '^/t/[^/]+/api/': { target: process.env.QUOTING_API_PROXY_TARGET || 'http://127.0.0.1:54612', changeOrigin: true, secure: false },
       '/api': {
-        target: process.env.QUOTING_API_PROXY_TARGET || 'http://127.0.0.1:54611',
+        target: process.env.QUOTING_API_PROXY_TARGET || 'http://127.0.0.1:54612',
         changeOrigin: true,
         secure: false
       }

@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Domain.Entities;
+namespace OnePortal.Domain.Entities;
 
-using TemplateLandingPage.Domain.Abstractions;
+using OnePortal.Domain.Abstractions;
 
-public sealed class CustomizationSlugAlias : Entity<Guid>
+public sealed class CustomizationSlugAlias : TenantEntity<Guid>
 {
     public Guid CustomizationId { get; private set; }
     public string Slug { get; private set; } = string.Empty;

@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Contract.Services.V1.Interactions;
+namespace OnePortal.Contract.Services.V1.Interactions;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Shared;
 
 public record GetRsvpsByCustomizationIdQuery(
     Guid CustomizationId,

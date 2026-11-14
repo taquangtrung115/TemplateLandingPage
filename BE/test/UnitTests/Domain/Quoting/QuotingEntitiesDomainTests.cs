@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.UnitTests.Domain.Quoting;
+namespace OnePortal.UnitTests.Domain.Quoting;
 
 using FluentAssertions;
-using TemplateLandingPage.Domain.Entities.Quoting;
+using OnePortal.Domain.Entities.Quoting;
 using Xunit;
 
 public class QuotingEntitiesDomainTests

@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using TemplateLandingPage.Persistence;
+using OnePortal.Persistence;
 
 #nullable disable
 
-namespace TemplateLandingPage.Persistence.Migrations
+namespace OnePortal.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -24,7 +24,7 @@ namespace TemplateLandingPage.Persistence.Migrations
 
             modelBuilder.HasSequence("QuotationNumbers", "quo");
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Category", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -66,15 +66,19 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Slug")
+                    b.HasIndex("TenantId", "Slug")
                         .IsUnique();
 
                     b.ToTable("Categories", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.CustomizationSlugAlias", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.CustomizationSlugAlias", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -91,17 +95,23 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomizationId");
+                    b.HasAlternateKey("TenantId", "Id");
 
-                    b.HasIndex("Slug")
+                    b.HasIndex("TenantId", "CustomizationId");
+
+                    b.HasIndex("TenantId", "Slug")
                         .IsUnique();
 
                     b.ToTable("CustomizationSlugAliases", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.CustomizationVersion", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.CustomizationVersion", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -134,6 +144,10 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Property<int>("SourceRevision")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -144,16 +158,16 @@ namespace TemplateLandingPage.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomizationId", "RequestId")
+                    b.HasIndex("TenantId", "CustomizationId", "RequestId")
                         .IsUnique();
 
-                    b.HasIndex("CustomizationId", "VersionNumber")
+                    b.HasIndex("TenantId", "CustomizationId", "VersionNumber")
                         .IsUnique();
 
                     b.ToTable("CustomizationVersions", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.GuestbookEntry", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.GuestbookEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -178,14 +192,22 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
+                    b.HasAlternateKey("TenantId", "Id");
+
                     b.HasIndex("CustomizationVersionId", "CreatedAtUtc");
+
+                    b.HasIndex("TenantId", "CustomizationVersionId");
 
                     b.ToTable("GuestbookEntries", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.NavigationMenu", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.NavigationMenu", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -231,6 +253,10 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasDefaultValue("_self");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -243,12 +269,12 @@ namespace TemplateLandingPage.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentId");
+                    b.HasIndex("TenantId", "ParentId");
 
                     b.ToTable("NavigationMenus", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Product", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -282,12 +308,18 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasAlternateKey("TenantId", "Id");
 
                     b.ToTable("Products", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.Quotation", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.Quotation", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -390,6 +422,10 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Property<int>("TemplateVersion")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -399,13 +435,13 @@ namespace TemplateLandingPage.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("QuotationNumber")
+                    b.HasIndex("TenantId", "QuotationNumber")
                         .IsUnique();
 
                     b.ToTable("Quotations", "quo");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotationFile", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationFile", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -442,14 +478,20 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("QuotationId");
+                    b.HasAlternateKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "QuotationId");
 
                     b.ToTable("QuotationFiles", "quo");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotationHistory", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationHistory", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -476,14 +518,20 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Property<string>("SnapshotData")
                         .HasColumnType("text");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("QuotationId");
+                    b.HasAlternateKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "QuotationId");
 
                     b.ToTable("QuotationHistories", "quo");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotationItem", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -537,6 +585,10 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -552,12 +604,14 @@ namespace TemplateLandingPage.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("QuotationId");
+                    b.HasAlternateKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "QuotationId");
 
                     b.ToTable("QuotationItems", "quo");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotationTemplate", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationTemplate", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -597,15 +651,19 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
+                    b.HasIndex("TenantId", "Code")
                         .IsUnique();
 
                     b.ToTable("QuotationTemplates", "quo");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotationTemplateVersion", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationTemplateVersion", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -645,6 +703,10 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Property<Guid>("TemplateId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(250)
@@ -655,13 +717,15 @@ namespace TemplateLandingPage.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TemplateId", "Version")
+                    b.HasAlternateKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "TemplateId", "Version")
                         .IsUnique();
 
                     b.ToTable("QuotationTemplateVersions", "quo");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotingCustomer", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotingCustomer", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -711,12 +775,18 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasAlternateKey("TenantId", "Id");
 
                     b.ToTable("Customers", "quo");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotingProduct", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotingProduct", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -765,6 +835,10 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -772,15 +846,17 @@ namespace TemplateLandingPage.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
+                    b.HasAlternateKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "Code")
                         .IsUnique();
 
-                    b.HasIndex("GroupId");
+                    b.HasIndex("TenantId", "GroupId");
 
                     b.ToTable("Products", "quo");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotingProductGroup", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotingProductGroup", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -817,17 +893,21 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique();
-
                     b.HasIndex("SortOrder", "Code");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique();
 
                     b.ToTable("ProductGroups", "quo");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotingSupportRequest", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotingSupportRequest", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -879,6 +959,10 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Topic")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -892,6 +976,8 @@ namespace TemplateLandingPage.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasAlternateKey("TenantId", "Id");
+
                     b.HasIndex("CreatedByUserId", "CreatedAtUtc");
 
                     b.HasIndex("Status", "CreatedAtUtc", "Id");
@@ -899,7 +985,7 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.ToTable("SupportRequests", "quo");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.RsvpEntry", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.RsvpEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -939,18 +1025,26 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Wishes")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
                     b.HasKey("Id");
 
+                    b.HasAlternateKey("TenantId", "Id");
+
                     b.HasIndex("CustomizationVersionId", "CreatedAtUtc");
+
+                    b.HasIndex("TenantId", "CustomizationVersionId");
 
                     b.ToTable("RsvpEntries", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Template", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Template", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1029,6 +1123,10 @@ namespace TemplateLandingPage.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ThumbnailUrl")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -1036,15 +1134,196 @@ namespace TemplateLandingPage.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
+                    b.HasAlternateKey("TenantId", "Id");
 
-                    b.HasIndex("Slug")
+                    b.HasIndex("TenantId", "CategoryId");
+
+                    b.HasIndex("TenantId", "Slug")
                         .IsUnique();
 
                     b.ToTable("Templates", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.User", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Tenancy.PlatformApplication", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Applications", "platform");
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Tenancy.SystemSeedHistory", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SystemSeedHistory", "platform");
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Tenancy.Tenant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(63)
+                        .HasColumnType("character varying(63)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("Tenants", "platform");
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Tenancy.TenantApplication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AllowSelfRegistration")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("AppKey")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastInitializationError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ProvisioningStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("SeedVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("TenantId", "Id");
+
+                    b.HasIndex("AppKey");
+
+                    b.ToTable("TenantApplications", "platform");
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Tenancy.TenantMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AppKey")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("TenantId", "Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TenantId", "AppKey", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("TenantMemberships", "platform");
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Tenancy.TenantSeedHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AppKey")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SeedKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "AppKey", "SeedKey", "Version")
+                        .IsUnique();
+
+                    b.ToTable("TenantSeedHistory", "platform");
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1076,6 +1355,9 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsPlatformAdmin")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("ModifiedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -1100,7 +1382,7 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.UserCustomization", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.UserCustomization", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1158,6 +1440,10 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Property<Guid>("TemplateId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("TenantId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1168,136 +1454,329 @@ namespace TemplateLandingPage.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PublishedVersionId");
+                    b.HasIndex("TenantId", "PublishedVersionId");
 
-                    b.HasIndex("Slug")
+                    b.HasIndex("TenantId", "Slug")
                         .IsUnique();
 
-                    b.HasIndex("UserId", "ClientDraftId")
+                    b.HasIndex("TenantId", "UserId", "ClientDraftId")
                         .IsUnique();
 
                     b.ToTable("UserCustomizations", (string)null);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.CustomizationSlugAlias", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Category", b =>
                 {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.UserCustomization", null)
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
                         .WithMany()
-                        .HasForeignKey("CustomizationId")
+                        .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.CustomizationVersion", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.CustomizationSlugAlias", b =>
                 {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.UserCustomization", null)
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
                         .WithMany()
-                        .HasForeignKey("CustomizationId")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.UserCustomization", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CustomizationId")
+                        .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.GuestbookEntry", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.CustomizationVersion", b =>
                 {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.CustomizationVersion", null)
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
                         .WithMany()
-                        .HasForeignKey("CustomizationVersionId")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.UserCustomization", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CustomizationId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.GuestbookEntry", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.CustomizationVersion", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CustomizationVersionId")
+                        .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.NavigationMenu", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.NavigationMenu", b =>
                 {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.NavigationMenu", "Parent")
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.NavigationMenu", "Parent")
                         .WithMany("SubMenus")
-                        .HasForeignKey("ParentId")
+                        .HasForeignKey("TenantId", "ParentId")
+                        .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotationFile", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Product", b =>
                 {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.Quoting.Quotation", null)
-                        .WithMany("Files")
-                        .HasForeignKey("QuotationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotationHistory", b =>
-                {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.Quoting.Quotation", null)
-                        .WithMany("Histories")
-                        .HasForeignKey("QuotationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotationItem", b =>
-                {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.Quoting.Quotation", null)
-                        .WithMany("Items")
-                        .HasForeignKey("QuotationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotationTemplateVersion", b =>
-                {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.Quoting.QuotationTemplate", null)
-                        .WithMany("Versions")
-                        .HasForeignKey("TemplateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotingProduct", b =>
-                {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.Quoting.QuotingProductGroup", "Group")
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
                         .WithMany()
-                        .HasForeignKey("GroupId")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.Quotation", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationFile", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.Quoting.Quotation", null)
+                        .WithMany("Files")
+                        .HasForeignKey("TenantId", "QuotationId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationHistory", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.Quoting.Quotation", null)
+                        .WithMany("Histories")
+                        .HasForeignKey("TenantId", "QuotationId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationItem", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.Quoting.Quotation", null)
+                        .WithMany("Items")
+                        .HasForeignKey("TenantId", "QuotationId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationTemplate", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationTemplateVersion", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.Quoting.QuotationTemplate", null)
+                        .WithMany("Versions")
+                        .HasForeignKey("TenantId", "TemplateId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotingCustomer", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotingProduct", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.Quoting.QuotingProductGroup", "Group")
+                        .WithMany()
+                        .HasForeignKey("TenantId", "GroupId")
+                        .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Group");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.RsvpEntry", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotingProductGroup", b =>
                 {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.CustomizationVersion", null)
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
                         .WithMany()
-                        .HasForeignKey("CustomizationVersionId")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotingSupportRequest", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.RsvpEntry", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.CustomizationVersion", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CustomizationVersionId")
+                        .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Template", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Template", b =>
                 {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.Category", "CategoryRef")
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.Category", "CategoryRef")
                         .WithMany("Templates")
-                        .HasForeignKey("CategoryId")
+                        .HasForeignKey("TenantId", "CategoryId")
+                        .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("CategoryRef");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.UserCustomization", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Tenancy.TenantApplication", b =>
                 {
-                    b.HasOne("TemplateLandingPage.Domain.Entities.CustomizationVersion", null)
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.PlatformApplication", null)
                         .WithMany()
-                        .HasForeignKey("PublishedVersionId")
+                        .HasForeignKey("AppKey")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Tenancy.TenantMembership", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.TenantApplication", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "AppKey")
+                        .HasPrincipalKey("TenantId", "AppKey")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.Tenancy.TenantSeedHistory", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OnePortal.Domain.Entities.UserCustomization", b =>
+                {
+                    b.HasOne("OnePortal.Domain.Entities.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OnePortal.Domain.Entities.CustomizationVersion", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "PublishedVersionId")
+                        .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Category", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Category", b =>
                 {
                     b.Navigation("Templates");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.NavigationMenu", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.NavigationMenu", b =>
                 {
                     b.Navigation("SubMenus");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.Quotation", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.Quotation", b =>
                 {
                     b.Navigation("Files");
 
@@ -1306,7 +1785,7 @@ namespace TemplateLandingPage.Persistence.Migrations
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("TemplateLandingPage.Domain.Entities.Quoting.QuotationTemplate", b =>
+            modelBuilder.Entity("OnePortal.Domain.Entities.Quoting.QuotationTemplate", b =>
                 {
                     b.Navigation("Versions");
                 });

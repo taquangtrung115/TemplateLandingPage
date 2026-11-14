@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.UnitTests.Application.Products;
+namespace OnePortal.UnitTests.Application.Products;
 
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using TemplateLandingPage.Application.UseCases.V1.Products.Commands;
-using TemplateLandingPage.Contract.Services.V1.Products;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.UseCases.V1.Products.Commands;
+using OnePortal.Contract.Services.V1.Products;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 using Xunit;
 
 public class CreateProductCommandHandlerTests

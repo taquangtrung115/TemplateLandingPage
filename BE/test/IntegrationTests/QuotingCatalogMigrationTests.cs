@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.IntegrationTests;
+namespace OnePortal.IntegrationTests;
 
 using System.Text;
 using FluentAssertions;
@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Persistence;
-using TemplateLandingPage.Persistence.Data;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Persistence;
+using OnePortal.Persistence.Data;
 using Xunit;
 
 [Collection(PostgresApiCollection.Name)]
@@ -83,13 +83,12 @@ public sealed class QuotingCatalogMigrationTests(PostgresApiFixture fixture)
     {
         var migrator = db.GetService<IMigrator>();
         await migrator.MigrateAsync("20261110092605_AddQuotingProductGroupsAndDisplayOptions");
-        var combo = await db.QuotingProductGroups.SingleAsync(group => group.Code == "COMBO");
-        combo.Update(combo.Code, "Combo theo cấu hình riêng", "Mô tả đã sửa", 9, false);
-        await db.SaveChangesAsync();
+        var comboId = await db.Database.SqlQueryRaw<Guid>("SELECT \"Id\" AS \"Value\" FROM quo.\"ProductGroups\" WHERE \"Code\" = 'COMBO'").SingleAsync();
+        await db.Database.ExecuteSqlRawAsync("UPDATE quo.\"ProductGroups\" SET \"Name\" = 'Combo theo cấu hình riêng', \"Description\" = 'Mô tả đã sửa', \"SortOrder\" = 9, \"IsActive\" = FALSE WHERE \"Code\" = 'COMBO'");
         await migrator.MigrateAsync();
         db.ChangeTracker.Clear();
         var saved = await db.QuotingProductGroups.SingleAsync(group => group.Code == "COMBO");
-        saved.Id.Should().Be(combo.Id);
+        saved.Id.Should().Be(comboId);
         saved.Name.Should().Be("Combo theo cấu hình riêng");
         saved.Description.Should().Be("Mô tả đã sửa");
         saved.SortOrder.Should().Be(9);
@@ -133,11 +132,11 @@ public sealed class QuotingCatalogMigrationTests(PostgresApiFixture fixture)
         await using var admin = new NpgsqlConnection(settings.ConnectionString);
         await admin.OpenAsync();
         var identifier = new NpgsqlCommandBuilder().QuoteIdentifier(name);
-        await using (var create = new NpgsqlCommand($"CREATE DATABASE {identifier}", admin)) await create.ExecuteNonQueryAsync();
+        await using (var create = new NpgsqlCommand($"CREATE DATABASE {identifier} TEMPLATE template0 LOCALE_PROVIDER icu ICU_LOCALE 'und'", admin)) await create.ExecuteNonQueryAsync();
         try
         {
             settings.Database = name;
-            await using var db = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql(settings.ConnectionString).Options);
+            await using var db = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql(settings.ConnectionString).Options, OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.QuotingId, "quoting"));
             await action(db);
         }
         finally

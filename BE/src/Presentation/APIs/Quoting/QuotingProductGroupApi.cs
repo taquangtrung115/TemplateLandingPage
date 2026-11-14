@@ -1,16 +1,16 @@
-namespace TemplateLandingPage.Presentation.APIs.Quoting;
+namespace OnePortal.Presentation.APIs.Quoting;
 
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.Commands.Create;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.Commands.Update;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.Commands.Delete;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.Queries.Search;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Presentation.Abstractions;
-using TemplateLandingPage.Presentation.Authorization;
+using OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Commands.Create;
+using OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Commands.Update;
+using OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Commands.Delete;
+using OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Queries.Search;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Presentation.Abstractions;
+using OnePortal.Presentation.Authorization;
 
 public sealed class QuotingProductGroupApi : IEndpoint
 {

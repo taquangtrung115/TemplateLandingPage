@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Templates.Commands.Validators;
+namespace OnePortal.Application.UseCases.V1.Quoting.Templates.Commands.Validators;
 
 using FluentValidation;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
+using OnePortal.Contract.Services.V1.Quoting.Templates;
 
 public sealed class CreateTemplateVersionCommandValidator : AbstractValidator<CreateTemplateVersionCommand>
 {

@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Domain.Repositories;
+namespace OnePortal.Domain.Repositories;
 
-using TemplateLandingPage.Domain.ReadModels;
+using OnePortal.Domain.ReadModels;
 
 public interface IAdminOverviewRepository
 {

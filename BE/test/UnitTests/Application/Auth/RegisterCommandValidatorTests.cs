@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.UnitTests.Application.Auth;
+namespace OnePortal.UnitTests.Application.Auth;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Auth.Validators;
-using TemplateLandingPage.Contract.Services.V1.Auth;
+using OnePortal.Application.UseCases.V1.Auth.Validators;
+using OnePortal.Contract.Services.V1.Auth;
 using Xunit;
 
 public class RegisterCommandValidatorTests

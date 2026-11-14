@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.UnitTests.Infrastructure.Quoting;
+namespace OnePortal.UnitTests.Infrastructure.Quoting;
 
 using System.Net;
 using System.Text;
@@ -9,10 +9,10 @@ using PdfSharp.Pdf;
 using PdfSharp.Pdf.Advanced;
 using PdfSharp.Pdf.IO;
 using SkiaSharp;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.Exceptions;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Infrastructure.Services.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.Exceptions;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Infrastructure.Services.Quoting;
 using Xunit;
 
 public sealed class QuotationRemoteImageTests

@@ -1,11 +1,12 @@
-namespace TemplateLandingPage.UnitTests.Infrastructure;
+namespace OnePortal.UnitTests.Infrastructure;
 
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Infrastructure.Authentication;
-using TemplateLandingPage.Infrastructure.Services;
+using OnePortal.Domain.Entities;
+using OnePortal.Infrastructure.Authentication;
+using OnePortal.Infrastructure.Services;
 using Xunit;
 
 public class PasswordHasherAndJwtTokenGeneratorTests
@@ -87,6 +88,6 @@ public class PasswordHasherAndJwtTokenGeneratorTests
         jwt.Issuer.Should().Be("TemplateLandingPage");
         jwt.Audiences.Should().Contain("TemplateLandingPageUsers");
         jwt.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Email && c.Value == "admin@template.com");
-        jwt.Claims.Should().Contain(c => c.Type == "role" && c.Value == "Admin");
+        jwt.Claims.Should().NotContain(c => c.Type == "role" || c.Type == ClaimTypes.Role);
     }
 }

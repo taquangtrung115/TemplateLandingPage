@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Architecture.Tests;
+namespace OnePortal.Architecture.Tests;
 
 using FluentAssertions;
 using NetArchTest.Rules;
@@ -6,19 +6,19 @@ using Xunit;
 
 public class ArchitectureTests
 {
-    private const string DomainNamespace = "TemplateLandingPage.Domain";
-    private const string ContractNamespace = "TemplateLandingPage.Contract";
-    private const string ApplicationNamespace = "TemplateLandingPage.Application";
-    private const string PersistenceNamespace = "TemplateLandingPage.Persistence";
-    private const string InfrastructureNamespace = "TemplateLandingPage.Infrastructure";
-    private const string PresentationNamespace = "TemplateLandingPage.Presentation";
-    private const string ApiNamespace = "TemplateLandingPage.API";
+    private const string DomainNamespace = "OnePortal.Domain";
+    private const string ContractNamespace = "OnePortal.Contract";
+    private const string ApplicationNamespace = "OnePortal.Application";
+    private const string PersistenceNamespace = "OnePortal.Persistence";
+    private const string InfrastructureNamespace = "OnePortal.Infrastructure";
+    private const string PresentationNamespace = "OnePortal.Presentation";
+    private const string ApiNamespace = "OnePortal.API";
 
     [Fact]
     public void Domain_Should_Not_HaveDependencyOnOtherProjects()
     {
         // Arrange
-        var assembly = typeof(TemplateLandingPage.Domain.Abstractions.IDomainEvent).Assembly;
+        var assembly = typeof(OnePortal.Domain.Abstractions.IDomainEvent).Assembly;
 
         var otherProjects = new[]
         {
@@ -44,7 +44,7 @@ public class ArchitectureTests
     public void Contract_Should_Not_HaveDependencyOnCoreProjects()
     {
         // Arrange
-        var assembly = typeof(TemplateLandingPage.Contract.Abstractions.Shared.Result).Assembly;
+        var assembly = typeof(OnePortal.Contract.Abstractions.Shared.Result).Assembly;
 
         var otherProjects = new[]
         {
@@ -70,7 +70,7 @@ public class ArchitectureTests
     public void Application_Should_Not_HaveDependencyOnOuterLayers()
     {
         // Arrange
-        var assembly = typeof(TemplateLandingPage.Application.Abstractions.ICommandHandler<>).Assembly;
+        var assembly = typeof(OnePortal.Application.Abstractions.ICommandHandler<>).Assembly;
 
         var outerProjects = new[]
         {
@@ -94,7 +94,7 @@ public class ArchitectureTests
     public void Handlers_Should_Have_NameEndingWith_Handler()
     {
         // Arrange
-        var assembly = typeof(TemplateLandingPage.Application.Abstractions.ICommandHandler<>).Assembly;
+        var assembly = typeof(OnePortal.Application.Abstractions.ICommandHandler<>).Assembly;
 
         // Act
         var result = Types.InAssembly(assembly)
@@ -115,7 +115,7 @@ public class ArchitectureTests
     public void Presentation_Should_Not_HaveDirectDependencyOn_DbContext()
     {
         // Arrange
-        var assembly = typeof(TemplateLandingPage.Presentation.Abstractions.IEndpoint).Assembly;
+        var assembly = typeof(OnePortal.Presentation.Abstractions.IEndpoint).Assembly;
 
         // Act
         var result = Types.InAssembly(assembly)
@@ -131,7 +131,7 @@ public class ArchitectureTests
     public void Validators_Should_Have_NameEndingWith_Validator()
     {
         // Arrange
-        var assembly = typeof(TemplateLandingPage.Application.Abstractions.ICommandHandler<>).Assembly;
+        var assembly = typeof(OnePortal.Application.Abstractions.ICommandHandler<>).Assembly;
 
         // Act
         var result = Types.InAssembly(assembly)
@@ -152,7 +152,7 @@ public class ArchitectureTests
     public void Validators_Should_ResideIn_ValidatorsNamespace()
     {
         // Arrange
-        var assembly = typeof(TemplateLandingPage.Application.Abstractions.ICommandHandler<>).Assembly;
+        var assembly = typeof(OnePortal.Application.Abstractions.ICommandHandler<>).Assembly;
 
         // Act
         var result = Types.InAssembly(assembly)

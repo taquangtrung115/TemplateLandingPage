@@ -1,10 +1,10 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Interactions.Queries;
+namespace OnePortal.Application.UseCases.V1.Interactions.Queries;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Interactions;
-using TemplateLandingPage.Application.UseCases.V1.Interactions.Helpers;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Interactions;
+using OnePortal.Application.UseCases.V1.Interactions.Helpers;
+using OnePortal.Domain.Repositories;
 
 public sealed class GetGuestbookByCustomizationIdQueryHandler : IQueryHandler<GetGuestbookByCustomizationIdQuery, PagedResponse<GuestbookResponse>>
 {

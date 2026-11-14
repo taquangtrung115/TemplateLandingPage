@@ -1,3 +1,4 @@
+import { scopeRequest, assertCurrentScope } from '../utils/tenantScope';
 import axios from 'axios';
 import { readAuthToken, clearAuthSession } from '../utils/authStorage';
 import { readApiError } from './apiError';
@@ -18,7 +19,7 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    return config;
+    return scopeRequest(config);
   },
   (error) => {
     return Promise.reject(error);
@@ -30,7 +31,7 @@ axiosInstance.interceptors.response.use(
     if (response.data?.isFailure === true || response.data?.isSuccess === false) {
       throw new Error(await readApiError(response.data, 'Không thể thực hiện thao tác. Vui lòng thử lại.'));
     }
-    return response;
+    return assertCurrentScope(response);
   },
   async (error) => {
     let errorMessage = 'Đã có lỗi xảy ra. Vui lòng thử lại!';

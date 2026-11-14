@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Repositories;
+namespace OnePortal.Persistence.Repositories;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 
 public sealed class GuestbookRepository : RepositoryBase<GuestbookEntry, Guid>, IGuestbookRepository
 {

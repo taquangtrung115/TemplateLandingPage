@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Commands.CreateVersion;
+namespace OnePortal.Application.UseCases.V1.Customizations.Commands.CreateVersion;
 
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Customizations.Helpers;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 
 public sealed class CreateCustomizationVersionCommandHandler(ICustomizationRepository repository,
     IUnitOfWork unitOfWork, ILogger<CreateCustomizationVersionCommandHandler> logger)

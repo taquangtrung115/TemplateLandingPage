@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Persistence.Repositories.Quoting;
+namespace OnePortal.Persistence.Repositories.Quoting;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Domain.Repositories.Quoting;
-using TemplateLandingPage.Persistence.Repositories;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Repositories.Quoting;
+using OnePortal.Persistence.Repositories;
 
 public sealed class QuotationRepository : RepositoryBase<Quotation, Guid>, IQuotationRepository
 {
@@ -37,7 +37,7 @@ public sealed class QuotationRepository : RepositoryBase<Quotation, Guid>, IQuot
                 .SingleAsync(cancellationToken);
             return $"{prefix}{sequence:D4}";
         }
-        var numbers = await DbSet.IgnoreQueryFilters().AsNoTracking().Where(quotation => quotation.QuotationNumber.StartsWith(prefix))
+        var numbers = await DbSet.IgnoreQueryFilters().Where(entity => entity.TenantId == DbContext.CurrentTenantId).AsNoTracking().Where(quotation => quotation.QuotationNumber.StartsWith(prefix))
             .Select(quotation => quotation.QuotationNumber).ToListAsync(cancellationToken);
         var next = numbers.Select(number => long.TryParse(number[prefix.Length..], out var value) ? value : 0).DefaultIfEmpty(0).Max() + 1;
         return $"{prefix}{next:D4}";

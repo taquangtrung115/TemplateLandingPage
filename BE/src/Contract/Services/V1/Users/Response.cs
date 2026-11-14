@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Users;
+namespace OnePortal.Contract.Services.V1.Users;
 
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Shared;
 
 public static class UserErrors
 {

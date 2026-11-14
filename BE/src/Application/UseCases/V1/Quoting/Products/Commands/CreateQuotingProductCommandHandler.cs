@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Commands;
+namespace OnePortal.Application.UseCases.V1.Quoting.Products.Commands;
 
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Products;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Quoting.Products;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Repositories.Quoting;
 
 public sealed class CreateQuotingProductCommandHandler : ICommandHandler<CreateQuotingProductCommand, Guid>
 {
@@ -31,7 +31,7 @@ public sealed class CreateQuotingProductCommandHandler : ICommandHandler<CreateQ
     {
         var group = await _groupRepository.ResolveAsync(request.GroupId, request.Category, cancellationToken);
         if (group is null || (!group.IsActive))
-            return Result.Failure<Guid>(TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.QuotingProductGroupErrors.NotFound);
+            return Result.Failure<Guid>(OnePortal.Application.UseCases.V1.Quoting.ProductGroups.QuotingProductGroupErrors.NotFound);
 
         var isUnique = await _productRepository.IsCodeUniqueAsync(request.Code, cancellationToken: cancellationToken);
         if (!isUnique)

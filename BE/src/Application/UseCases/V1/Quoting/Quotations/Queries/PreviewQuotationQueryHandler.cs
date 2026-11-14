@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries;
+namespace OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries;
 
 using System.Text;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.Exceptions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.Exceptions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Quoting.Quotations;
+using OnePortal.Contract.Services.V1.Quoting.Templates;
+using OnePortal.Domain.Repositories.Quoting;
 
 public sealed class PreviewQuotationQueryHandler : IQueryHandler<PreviewQuotationQuery, QuotationPreviewResponse>
 {

@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Data;
+namespace OnePortal.Persistence.Data;
 
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Entities;
+using OnePortal.Domain.Entities;
 
 public static class TemplateCatalogSeeder
 {
@@ -17,7 +17,7 @@ public static class TemplateCatalogSeeder
     private static T[] ReadResource<T>(string name)
     {
         using var stream = typeof(TemplateCatalogSeeder).Assembly.GetManifestResourceStream(
-            $"TemplateLandingPage.Persistence.Data.{name}") ?? throw new InvalidOperationException($"Missing catalog resource: {name}");
+            $"OnePortal.Persistence.Data.{name}") ?? throw new InvalidOperationException($"Missing catalog resource: {name}");
         return JsonSerializer.Deserialize<T[]>(stream, JsonOptions) ?? throw new InvalidOperationException($"Invalid catalog: {name}");
     }
 
@@ -26,9 +26,9 @@ public static class TemplateCatalogSeeder
         var definitions = ReadDefinitions();
         var styles = ReadStyles();
         // Include removed rows so seeding never resurrects an administrator's removal or overwrites edited templates.
-        var categories = await context.Categories.IgnoreQueryFilters().AsNoTracking()
+        var categories = await context.Categories.IgnoreQueryFilters().Where(entity => entity.TenantId == context.CurrentTenantId).AsNoTracking()
             .Select(c => new { c.Id, c.Slug, c.IsDeleted }).ToDictionaryAsync(c => c.Slug, cancellationToken);
-        var existingSlugs = (await context.Templates.IgnoreQueryFilters().AsNoTracking()
+        var existingSlugs = (await context.Templates.IgnoreQueryFilters().Where(entity => entity.TenantId == context.CurrentTenantId).AsNoTracking()
             .Select(t => t.Slug).ToListAsync(cancellationToken)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var categoriesAdded = 0;
         var templatesAdded = 0;
