@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { AppShell } from '@astryxdesign/core/AppShell';
 import {
   SideNav,
@@ -28,6 +28,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from '../components/common/ThemeToggle';
 import PageSkeleton from '../components/common/PageSkeleton';
+import { workspaceBasename } from '../utils/tenantScope';
 
 const MENU_SECTIONS = [
   {
@@ -62,7 +63,18 @@ const MENU_SECTIONS = [
   },
 ];
 
-export default function QuotingLayout() {
+const ADMIN_MENU = [{ title: 'Quản trị', items: [
+  { label: 'Tổng quan quản trị', path: '/admin', icon: ChartBarIcon },
+  { label: 'Thành viên workspace', path: '/admin/members', icon: UserGroupIcon },
+  { label: 'Đăng ký tài khoản', path: '/admin/registration', icon: Cog6ToothIcon },
+  { label: 'Nhóm sản phẩm', path: '/admin/product-groups', icon: ViewColumnsIcon },
+  { label: 'Danh mục sản phẩm', path: '/admin/products', icon: CubeIcon },
+  { label: 'Khách hàng', path: '/admin/customers', icon: UserGroupIcon },
+  { label: 'Mẫu báo giá', path: '/admin/templates', icon: DocumentTextIcon },
+  { label: 'Xử lý hỗ trợ', path: '/admin/support', icon: QuestionMarkCircleIcon },
+] }];
+
+export default function QuotingLayout({ admin = false }) {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -73,6 +85,7 @@ export default function QuotingLayout() {
   };
 
   const isPathActive = (path) => {
+    if (path === '/admin') return location.pathname === '/admin';
     if (path === '/') {
       return location.pathname === '/';
     }
@@ -97,9 +110,9 @@ export default function QuotingLayout() {
           resizable={{ defaultWidth: 260, minWidth: 220, maxWidth: 360 }}
           header={
             <SideNavHeading
-              heading="Quoting"
+              heading={admin ? "Quoting Admin" : "Quoting"}
               icon={<NavIcon icon={<Icon icon={BuildingStorefrontIcon} size="sm" />} />}
-              headingHref="/"
+              headingHref={workspaceBasename() + (admin ? "/admin" : "/")}
             />
           }
           footer={
@@ -119,7 +132,7 @@ export default function QuotingLayout() {
             </SideNavSection>
           }
         >
-          {MENU_SECTIONS.map((section, idx) => (
+          {(admin ? ADMIN_MENU : MENU_SECTIONS).map((section, idx) => (
             <React.Fragment key={section.title}>
               {idx > 0 && <Divider />}
               <SideNavSection title={section.title}>
@@ -140,7 +153,7 @@ export default function QuotingLayout() {
     >
       <div className="quoting-content">
         <ToastViewport position="topEnd" />
-        <div className="quoting-toolbar"><ThemeToggle /></div>
+        <div className="quoting-toolbar">{isAdmin && <Link className="auth-link" to={admin ? "/" : "/admin"}>{admin ? "Về báo giá" : "Quản trị Quoting"}</Link>}<ThemeToggle /></div>
         <React.Suspense fallback={<PageSkeleton />}><Outlet /></React.Suspense>
       </div>
     </AppShell>

@@ -50,10 +50,11 @@ public sealed class TenantCommandTests
     }
 
     [Fact]
-    public void QuotingSelfRegistration_CannotBeEnabled()
+    public void QuotingSelfRegistration_IsClosedByDefault_AndCanBeConfigured()
     {
-        var application = TenantApplication.Create(Guid.NewGuid(), "quoting", true);
+        var application = TenantApplication.Create(Guid.NewGuid(), "quoting");
         application.AllowSelfRegistration.Should().BeFalse();
-        application.Configure(true, true); application.AllowSelfRegistration.Should().BeFalse();
+        application.Configure(true, true); application.AllowSelfRegistration.Should().BeTrue();
+        application.Configure(true, false); application.AllowSelfRegistration.Should().BeFalse();
     }
 }

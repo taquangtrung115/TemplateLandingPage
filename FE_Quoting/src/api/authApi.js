@@ -11,6 +11,8 @@ export const authApi = {
     return response.data?.value ?? response.data;
   },
 
+  registration: async (signal) => { const response = await axiosInstance.get('/auth/registration', { signal }); return (response.data?.value ?? response.data).settings; },
+
   getMe: async () => {
     const response = await axiosInstance.get('/auth/me');
     return response.data?.value ?? response.data;

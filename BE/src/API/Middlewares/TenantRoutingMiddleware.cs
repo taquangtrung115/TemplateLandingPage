@@ -31,7 +31,7 @@ public sealed class TenantRoutingMiddleware(RequestDelegate next)
             context.Request.Path = "/api/v1" + (appKey == "quoting" && !shared ? "/quoting" : "") + remainder;
         }
         else if (path.StartsWith("/api/v1/quoting", StringComparison.Ordinal)) context.Items[SelectionKey] = ("quoting-default", "quoting");
-        else if (path == "/api/v1/auth/register" || (path.StartsWith("/api/v1/", StringComparison.Ordinal) && !path.StartsWith("/api/v1/auth/", StringComparison.Ordinal)
+        else if ((path == "/api/v1/auth/register" || path == "/api/v1/auth/registration") || (path.StartsWith("/api/v1/", StringComparison.Ordinal) && !path.StartsWith("/api/v1/auth/", StringComparison.Ordinal)
             && !path.StartsWith("/api/v1/platform/", StringComparison.Ordinal))) context.Items[SelectionKey] = ("landing-default", "landing");
         await next(context);
     }

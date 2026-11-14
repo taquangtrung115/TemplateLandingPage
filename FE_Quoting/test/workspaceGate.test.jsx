@@ -15,6 +15,7 @@ describe('Workspace boundary', () => {
     expect(screen.queryByText('Private business content')).not.toBeInTheDocument();
     expect(await screen.findByText('Private business content')).toBeInTheDocument();
     expect(auth.applyWorkspaceRole).toHaveBeenCalledWith('Admin');
+    expect(screen.queryByRole('combobox', { name: 'Workspace' })).not.toBeInTheDocument();
   });
   it('blocks data screens when membership is absent', async () => {
     workspaceApi.contexts.mockResolvedValue({ items: [] });

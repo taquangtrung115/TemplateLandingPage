@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
 import { Center } from '@astryxdesign/core/Center';
 import { Card } from '@astryxdesign/core/Card';
 import { VStack, HStack } from '@astryxdesign/core/Layout';
@@ -22,6 +22,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import ThemeToggle from '../../components/common/ThemeToggle';
+import useRegistrationSettings from '../../hooks/useRegistrationSettings';
 
 // #region Return location
 function getReturnLocation(location) {
@@ -36,6 +37,7 @@ function getReturnLocation(location) {
 export default function LoginPage() {
   // #region State
   const { login, loading: restoringSession, isAuthenticated } = useAuth();
+  const { settings: registration, error: registrationError, loading: registrationLoading, reload: reloadRegistration } = useRegistrationSettings();
   const navigate = useNavigate();
   const location = useLocation();
   const returnLocation = getReturnLocation(location);
@@ -150,13 +152,15 @@ export default function LoginPage() {
                   </VStack>
                 </form>
 
+                {registrationLoading ? <Text type="supporting">Đang kiểm tra đăng ký…</Text> : registration?.allowSelfRegistration ? <Link className="auth-link" to="/register" state={location.state}>Chưa có tài khoản? Đăng ký</Link>
+                  : registrationError ? <Button label="Kiểm tra lại đăng ký" variant="secondary" onClick={reloadRegistration}/> : <Text type="supporting" color="secondary">Liên hệ quản trị viên nếu bạn chưa có quyền truy cập.</Text>}
                 <Divider />
 
                 <Card variant="muted" padding={3}>
                   <HStack gap={2} vAlign="start">
                     <Icon icon={ShieldCheckIcon} size="sm" color="accent" />
                     <Text type="supporting" color="secondary">
-                      Hệ thống áp dụng chuẩn an toàn OWASP. Vui lòng sử dụng thông tin định danh nội bộ được quản trị viên cấp phát.
+                      Dùng tài khoản đã được cấp quyền trong workspace của công ty bạn.
                     </Text>
                   </HStack>
                 </Card>

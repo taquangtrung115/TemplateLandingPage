@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { workspaceApi } from '../api/workspaceApi';
-import { DEFAULT_TENANT_KEY, workspaceKey, workspaceBasename, navigateWorkspace } from '../utils/tenantScope';
+import { workspaceKey, workspaceBasename, navigateWorkspace } from '../utils/tenantScope';
 
 export default function WorkspaceGate({ children }) {
   const { user, isAuthenticated, loading, applyWorkspaceRole, logout } = useAuth();
@@ -27,5 +27,5 @@ export default function WorkspaceGate({ children }) {
     <div className="mt-4 grid gap-3">{contexts?.map(context => <button key={context.tenantId} className="rounded-lg border p-3 text-left hover:bg-blue-50" onClick={() => navigateWorkspace(context.tenantKey)}>{context.tenantName}<span className="ml-2 text-sm text-slate-500">{context.role}</span></button>)}</div>
     <div className="mt-4 flex gap-3"><button disabled={page === 1} onClick={() => setPage(page - 1)}>Trước</button><button disabled={!contexts || contexts.length < 100} onClick={() => setPage(page + 1)}>Sau</button><button onClick={() => setRevision(value => value + 1)}>Tải lại</button><button onClick={() => logout?.()}>Đăng xuất</button></div>
   </section>;
-  return <><div className="flex flex-wrap items-center justify-end gap-2 border-b bg-white px-4 py-2 text-sm text-slate-900"><label>Workspace <select aria-label="Workspace" className="ml-2 rounded border bg-white px-2 py-1 text-slate-900" value={current.tenantKey} onChange={event => navigateWorkspace(event.target.value)}>{contexts.map(context => <option key={context.tenantId} value={context.tenantKey}>{context.tenantName}</option>)}</select></label><span className="text-xs text-slate-500">{current.role}</span></div>{children}</>;
+  return children;
 }

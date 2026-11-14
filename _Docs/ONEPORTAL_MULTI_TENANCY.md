@@ -92,6 +92,16 @@ Khi tách service: giữ contract tenant URL, thay destination cluster; tách pe
 
 ## Render / Vercel
 
+### Render Free: Gateway và API cùng một instance
+
+`Dockerfile.render-free` chạy hai executable độc lập trong một Web Service Free: Gateway lắng nghe cổng `PORT` public; API chỉ lắng nghe `127.0.0.1:54611` trong container. `scripts/start-oneportal-render-free.sh` chạy initializer trước khi mở server, giới hạn biến môi trường của Gateway để không nhận private key/DB/storage key, và dừng container nếu một process lỗi. Health Check Path là `/health/ready`, được Gateway proxy đến API/DB.
+
+Dùng `render-free.yaml` nếu tạo Blueprint Free mới; với service hiện hữu, đổi Dockerfile Path thành `./Dockerfile.render-free`, giữ Docker Build Context `.` và Root Directory trống. Không đặt Pre-Deploy Command trên Free. Secret/issuer/audience/CORS/storage cấu hình giống mô hình hai service; cả hai process dùng cùng một bộ public/private RSA tương ứng, nhưng Gateway chỉ nhận public key. VITE_API_BASE_URL vẫn trỏ URL public service + `/api/v1`.
+
+Free có thể ngủ khi idle và tài nguyên 512 MB được chia cho hai process; chưa có khả năng scale độc lập. Storage phải dùng Supabase, không dựa vào ổ ephemeral. Khi chuyển sang trả phí, dùng lại Dockerfile backend/Gateway riêng và `render.yaml` bên dưới.
+
+### Hai service độc lập
+
 `render.yaml` khai báo private backend và public Gateway; preDeploy chạy initializer. Cấu hình private service hostname/port vào cả ba destination, DB runtime/migration, RSA, Supabase storage và ba CORS frontend origins. Pre-deploy/private service cần plan Render hỗ trợ các tính năng này. Không có deployment tự động từ task coding.
 
 Tạo ba Vercel project với Root Directory lần lượt `FE_TemplateLandingPage`, `FE_Quoting`, `FE_Tenant`, build `npm run build`, output `dist`. Đặt `VITE_API_BASE_URL=https://<gateway>/api/v1`. Đổi Root Directory project Landing hiện tại sau rename. SPA rewrites hỗ trợ deep link `/t/{key}/...`; không rewrite API/assets sang HTML. Vite dev proxy mặc định trỏ Gateway localhost:54612.
@@ -119,3 +129,18 @@ cd ..
 ```
 
 Initializer **reset database disposable `oneportal_e2e`**, tạo schema/seed/tài khoản synthetic, tạo RSA test key trong thư mục ignored. Không trỏ test này vào dữ liệu cần giữ. Launcher khởi động protocol storage fixture, hai API replica và Gateway; Stop chỉ dừng PID đã ghi nhận và có command line đúng workspace. Fixture không gọi Supabase thật. `BE/tools/VerificationSeed` là test tool, không nằm trong deployment backend/Gateway.
+
+
+## Quoting registration and application administration
+
+OnePortal (`FE_Tenant`) uses a company directory and separate application tabs. Select a company, then **Quoting** or **Landing Page**, then **Người dùng → Thêm người dùng**. Create a new account and scoped membership together, or grant access to an existing account without changing its password. The global identity remains User; the selected membership can be User or Admin. The last active Admin cannot be removed or downgraded.
+
+Under **Cấu hình**, enable the application and explicitly allow self registration when desired. Registration stays closed by default for new applications. Both application types support the setting. Existing flags are preserved; this change does not automatically open any workspace.
+
+Quoting public signup is `/t/{tenantKey}/register`. Signup creates only a User membership for that tenant and Quoting; the user then signs in. The UI reads `GET /t/{tenantKey}/api/v1/quoting/auth/registration`. Tenant Admins can toggle registration through `PUT` to the same scoped URL. Admin UI lives at `/t/{tenantKey}/admin`, with members, registration settings, catalog and support screens. Direct Admin routes and APIs enforce the effective tenant role.
+
+Platform member creation: `POST /api/v1/platform/tenants/{tenantId}/applications/{appKey}/members`. Scoped Admin member creation: `POST /t/{tenantKey}/api/v1/{appKey}/members`. Payload: `email`, `fullName`, `password` (8–128 characters), `role` (User/Admin). Identity and membership save atomically. Duplicate accounts return 409 and require the existing-account grant flow. Scoped routes overwrite any client-supplied tenant/app identifiers.
+
+The workspace header is hidden on both business applications. The canonical URL still determines tenant isolation; users without a valid current membership see the workspace picker instead of business data. Workspace changes use the tenant URL; no data scope is removed.
+
+This feature uses the existing `AllowSelfRegistration` column and membership tables. No additional schema migration or production seed modification is required.

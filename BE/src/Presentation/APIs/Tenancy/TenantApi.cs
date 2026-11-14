@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using OnePortal.Application.Abstractions;
 using OnePortal.Application.UseCases.V1.Tenancy.Commands.Create;
+using OnePortal.Application.UseCases.V1.Tenancy.Commands.CreateMember;
+using OnePortal.Application.UseCases.V1.Tenancy.Commands.ConfigureRegistration;
+using OnePortal.Application.UseCases.V1.Tenancy.Queries.GetRegistration;
 using OnePortal.Application.UseCases.V1.Tenancy.Commands.Update;
 using OnePortal.Application.UseCases.V1.Tenancy.Commands.ConfigureApplication;
 using OnePortal.Application.UseCases.V1.Tenancy.Commands.SetMembership;
@@ -25,8 +28,8 @@ public sealed class TenantApi : IEndpoint
         app.MapGet("/api/v1/context", (ITenantContext scope, IRequestActor actor) => Results.Ok(Result.Success(new { scope.TenantId, scope.AppKey, actor.Role, actor.IsPlatformAdmin }))).RequireAuthorization();
 
         var platform = app.MapGroup("/api/v1/platform/tenants").RequireAuthorization("PlatformAdmin");
-        platform.MapGet("", async (int? page, int? pageSize, ISender sender, CancellationToken ct) =>
-            Respond(await sender.Send(new SearchTenantsQuery(page ?? 1, pageSize ?? 20), ct)));
+        platform.MapGet("", async (int? page, int? pageSize, string? search, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new SearchTenantsQuery(page ?? 1, pageSize ?? 20, search), ct)));
         platform.MapPost("", async (CreateTenantCommand request, ISender sender, CancellationToken ct) => Respond(await sender.Send(request, ct), 201));
         platform.MapPut("/{tenantId:guid}", async (Guid tenantId, UpdateTenantCommand request, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(request with { TenantId = tenantId }, ct)));
@@ -37,9 +40,17 @@ public sealed class TenantApi : IEndpoint
         platform.MapPut("/{tenantId:guid}/applications/{appKey}/members", async (Guid tenantId, string appKey, SetTenantMembershipCommand request, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(request with { TenantId = tenantId, AppKey = appKey }, ct)));
 
+        platform.MapPost("/{tenantId:guid}/applications/{appKey}/members", async (Guid tenantId, string appKey, CreateTenantMemberCommand request, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(request with { TenantId = tenantId, AppKey = appKey }, ct), 201));
+        app.MapGet("/api/v1/auth/registration", async (ISender sender, CancellationToken ct) => Respond(await sender.Send(new GetRegistrationQuery(), ct)));
+        app.MapPut("/api/v1/auth/registration", async (ConfigureRegistrationCommand request, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(request, ct))).RequireAuthorization("Admin");
+
         var members = app.MapGroup("/api/v1/members").RequireAuthorization("Admin");
         members.MapGet("", async (int? page, ITenantContext scope, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(new GetTenantMembersQuery(scope.TenantId ?? Guid.Empty, scope.AppKey ?? "", page ?? 1), ct)));
+        members.MapPost("", async (CreateTenantMemberCommand request, ITenantContext scope, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(request with { TenantId = scope.TenantId ?? Guid.Empty, AppKey = scope.AppKey ?? "" }, ct), 201));
         members.MapPut("", async (SetTenantMembershipCommand request, ITenantContext scope, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(request with { TenantId = scope.TenantId ?? Guid.Empty, AppKey = scope.AppKey ?? "" }, ct)));
     }

@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import LoginPage from '../src/pages/auth/LoginPage';
 
+vi.mock('../src/api/authApi', () => ({ authApi: { registration: vi.fn().mockResolvedValue({ allowSelfRegistration: false }) } }));
 const mockLogin = vi.fn();
 const mockNavigate = vi.fn();
 
