@@ -59,18 +59,18 @@ test('Gateway validates signatures, exposes trace and CORS, and preserves server
 test('FE_Tenant creates and seeds a workspace through the real Gateway and backend', async ({ page }, testInfo) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/'); await login(page);
-  await expect(page.getByRole('heading', { name: 'Công ty & workspace' })).toBeVisible();
-  await page.getByRole('button', { name: 'Tạo workspace', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Công ty & người dùng' })).toBeVisible();
+  await page.getByRole('button', { name: 'Thêm công ty', exact: true }).click();
   const key = 'ui-' + Date.now().toString(36) + '-' + testInfo.project.name;
   await page.getByLabel('Tên công ty', { exact: true }).fill('UI ' + key);
   await page.getByLabel('Mã workspace', { exact: true }).fill(key);
   await page.getByLabel('Email quản trị viên đã có', { exact: true }).fill(email);
-  await page.getByLabel('Landing', { exact: true }).check();
-  await page.getByRole('button', { name: 'Tạo & khởi tạo dữ liệu', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Đã tạo workspace');
-  await page.getByRole('button', { name: new RegExp('UI ' + key) }).click();
-  await expect(page.getByText('Ready · Seed v1')).toHaveCount(2);
-  await expect(page.getByRole('heading', { name: /Thành viên/ })).toBeVisible();
+  await page.getByLabel('Landing Page', { exact: true }).check();
+  await page.getByRole('button', { name: 'Tạo công ty', exact: true }).click();
+  await expect(page.getByText('Đã tạo công ty và khởi tạo dữ liệu nền tảng.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'UI ' + key })).toBeVisible();
+  await expect(page.getByText('Sẵn sàng', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Người dùng ứng dụng' })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('tenant-admin.png'), fullPage: true });
   expect(errors).toEqual([]);
 });
@@ -79,7 +79,8 @@ test('FE_Quoting switches company data and effective role without sharing record
   await page.goto(`${quoting}/t/${companyA.key}/products`); await login(page);
   await expect(page.getByText('Only company A', { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Thêm sản phẩm', exact: true })).toBeEnabled();
-  await page.getByLabel('Workspace', { exact: true }).selectOption(companyB.key);
+  await expect(page.getByRole('combobox', { name: 'Workspace', exact: true })).toHaveCount(0);
+  await page.goto(`${quoting}/t/${companyB.key}/products`);
   await expect(page).toHaveURL(new RegExp(`/t/${companyB.key}/products$`));
   await expect(page.getByText('Only company B', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Only company A', { exact: true })).toHaveCount(0);
@@ -134,4 +135,59 @@ test('quotation creation and PDF export survive another API replica and reject a
   expect(replica.ok()).toBeTruthy(); expect((await replica.body()).subarray(0, 4).toString()).toBe('%PDF');
   const wrong = await request.get(gateway + root(companyB) + '/quotations/' + quotationId + '/files/' + files.at(-1).id + '/download', { headers: { Authorization: `Bearer ${token}` } });
   expect(wrong.status()).toBe(404);
+});
+
+
+test('Quoting registration grants User access and keeps direct Admin routes closed', async ({ page, request }, testInfo) => {
+  await api(request, 'PUT', `/api/v1/platform/tenants/${companyA.id}/applications/quoting`, { isEnabled: true, allowSelfRegistration: true });
+  await page.goto(`${quoting}/t/${companyA.key}/login`);
+  await page.getByRole('link', { name: 'Chưa có tài khoản? Đăng ký' }).click();
+  await expect(page).toHaveURL(new RegExp(`/t/${companyA.key}/register$`));
+  const signupEmail = `signup-${Date.now()}-${testInfo.project.name}@oneportal.test`;
+  await page.getByLabel(/^Họ tên/).fill('Browser Signup');
+  await page.getByLabel(/^Email/).fill(signupEmail);
+  await page.getByLabel(/^Mật khẩu/).fill(password);
+  await page.getByLabel(/^Xác nhận mật khẩu/).fill(password);
+  await page.getByRole('button', { name: 'Tạo tài khoản', exact: true }).click();
+  await expect(page.getByText('Tạo tài khoản thành công', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Về đăng nhập' }).click();
+  await page.getByLabel(/^Email/).fill(signupEmail); await page.locator('input[type=password]').fill(password); await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Đăng ký Quoting' })).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/t/${companyA.key}/$`));
+  await page.goto(`${quoting}/t/${companyA.key}/admin/members`);
+  await expect(page).toHaveURL(new RegExp(`/t/${companyA.key}/$`));
+  await expect(page.getByRole('heading', { name: 'Thành viên workspace' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Quản trị Quoting', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Workspace', exact: true })).toHaveCount(0);
+});
+
+test('Portal creates a user for the selected app and remains usable on small screens', async ({ page, request }, testInfo) => {
+  await page.goto('/'); await login(page);
+  await page.getByLabel('Tìm công ty').fill(companyA.key);
+  await page.getByRole('button', { name: new RegExp(companyA.name) }).click();
+  await page.getByRole('button', { name: 'Thêm người dùng', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Thêm người dùng' });
+  await expect(dialog.getByText(companyA.name, { exact: true })).toBeVisible();
+  const newEmail = `portal-${Date.now()}-${testInfo.project.name}@oneportal.test`;
+  await dialog.getByLabel('Họ tên', { exact: true }).fill('Portal Created User');
+  await dialog.getByLabel('Email', { exact: true }).fill(newEmail);
+  await dialog.getByLabel('Mật khẩu ban đầu', { exact: true }).fill(password);
+  await dialog.getByRole('button', { name: 'Tạo & cấp quyền', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByText(newEmail, { exact: true })).toBeVisible();
+  const contextsLogin = await request.post(gateway + '/api/v1/auth/login', { data: { email: newEmail, password } }); expect(contextsLogin.ok()).toBeTruthy();
+  const newToken = (await contextsLogin.json()).value.token;
+  const contexts = await request.get(gateway + '/api/v1/auth/contexts?appKey=quoting', { headers: { Authorization: `Bearer ${newToken}` } });
+  const granted = (await contexts.json()).value.items; expect(granted).toHaveLength(1); expect(granted[0].tenantId).toBe(companyA.id); expect(granted[0].role).toBe('User');
+  for (const width of [320,375,414,768,1440]) {
+    await page.setViewportSize({ width, height:900 });
+    await expect(page.getByRole('button', { name: 'Thêm người dùng', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+    await page.screenshot({ path: testInfo.outputPath(`portal-${width}.png`), fullPage:true });
+    await page.getByRole('button', { name:'Thêm người dùng', exact:true }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    expect(await page.getByRole('dialog').evaluate(element => element.scrollWidth <= element.clientWidth)).toBeTruthy();
+    await page.screenshot({ path: testInfo.outputPath(`portal-member-${width}.png`), fullPage:true });
+    await page.getByRole('button', { name:'Đóng hộp thoại', exact:true }).click();
+  }
 });

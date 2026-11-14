@@ -7,6 +7,6 @@ client.interceptors.response.use(response => {
   return response.data?.value ?? response.data;
 }, error => {
   if (error.response?.status === 401) { localStorage.removeItem('oneportal.tenant.token'); window.dispatchEvent(new Event('tenant:session-expired')); }
-  const normalized = new Error(error.response?.data?.error?.message || (error.response?.status === 403 ? 'Bạn không có quyền quản trị nền tảng.' : 'Không thể kết nối máy chủ. Vui lòng thử lại.'));
+  const normalized = new Error(error.response?.data?.error?.message || error.response?.data?.errors?.map(item => item.message).filter(Boolean).join(' ') || (error.response?.status === 403 ? 'Bạn không có quyền quản trị nền tảng.' : 'Không thể kết nối máy chủ. Vui lòng thử lại.'));
   normalized.status = error.response?.status; return Promise.reject(normalized);
 });

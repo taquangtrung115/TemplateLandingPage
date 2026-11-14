@@ -1,2 +1,5 @@
-import React from 'react';
-export default function Field({ label, ...props }) { return <label className="block text-sm font-medium"><span className="mb-1.5 block">{label}</span><input className="field" {...props} /></label>; }
+import React, { useId } from 'react';
+export default function Field({ label, hint, ...props }) {
+  const id = useId(), hintId = id + '-hint';
+  return <div className="field-label"><label htmlFor={id}>{label}</label><input id={id} className="portal-field" aria-describedby={hint ? hintId : undefined} {...props}/>{hint && <span className="field-hint" id={hintId}>{hint}</span>}</div>;
+}

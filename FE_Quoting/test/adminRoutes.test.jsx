@@ -1,0 +1,18 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter, Outlet } from 'react-router-dom';
+import { beforeEach, it, expect, vi } from 'vitest';
+import AppRoutes from '../src/routes/AppRoutes';
+const auth = vi.hoisted(() => ({ isAuthenticated: true, isAdmin: false, loading: false }));
+vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => auth }));
+vi.mock('../src/layouts/QuotingLayout', () => ({ default: () => <Outlet/> }));
+vi.mock('../src/pages/dashboard/DashboardPage', () => ({ default: () => <p>User dashboard</p> }));
+vi.mock('../src/pages/auth/LoginPage', () => ({ default: () => <p>Login page</p> }));
+vi.mock('../src/pages/admin/AdminOverviewPage', () => ({ default: () => <p>Admin overview</p> }));
+vi.mock('../src/components/WorkspaceMembers', () => ({ default: () => <p>Admin members</p> }));
+beforeEach(() => { auth.isAuthenticated = true; auth.isAdmin = false; });
+const open = path => render(<MemoryRouter initialEntries={[path]}><AppRoutes/></MemoryRouter>);
+it('redirects a User away from a directly entered admin route', async () => { open('/admin/members'); expect(await screen.findByText('User dashboard')).toBeInTheDocument(); expect(screen.queryByText('Admin members')).not.toBeInTheDocument(); });
+it('requires login before rendering the admin area', async () => { auth.isAuthenticated = false; open('/admin'); expect(await screen.findByText('Login page')).toBeInTheDocument(); expect(screen.queryByText('Admin overview')).not.toBeInTheDocument(); });
+it('allows an effective tenant Admin into the separate admin area', async () => { auth.isAdmin = true; open('/admin/members'); expect(await screen.findByText('Admin members')).toBeInTheDocument(); });
+it('protects the legacy membership route as well', async () => { open('/members'); expect(await screen.findByText('User dashboard')).toBeInTheDocument(); expect(screen.queryByText('Admin members')).not.toBeInTheDocument(); });

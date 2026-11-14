@@ -17,14 +17,14 @@ public sealed class TenantApplication : TenantEntity<Guid>
     #region Commands
     public static TenantApplication Create(Guid tenantId, string appKey, bool allowSelfRegistration = false)
     {
-        var application = new TenantApplication { Id = Guid.NewGuid(), AppKey = appKey, AllowSelfRegistration = appKey == "landing" && allowSelfRegistration };
+        var application = new TenantApplication { Id = Guid.NewGuid(), AppKey = appKey, AllowSelfRegistration = allowSelfRegistration };
         application.AssignTenant(tenantId);
         return application;
     }
     public void Configure(bool isEnabled, bool allowSelfRegistration)
     {
         IsEnabled = isEnabled;
-        AllowSelfRegistration = AppKey == "landing" && allowSelfRegistration;
+        AllowSelfRegistration = allowSelfRegistration;
     }
     public void MarkReady(int version) { ProvisioningStatus = "Ready"; SeedVersion = version; LastInitializationError = null; }
     public void MarkFailed() { ProvisioningStatus = "Failed"; LastInitializationError = "Workspace initialization failed. Retry initialization."; }

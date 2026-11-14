@@ -129,3 +129,18 @@ cd ..
 ```
 
 Initializer **reset database disposable `oneportal_e2e`**, tạo schema/seed/tài khoản synthetic, tạo RSA test key trong thư mục ignored. Không trỏ test này vào dữ liệu cần giữ. Launcher khởi động protocol storage fixture, hai API replica và Gateway; Stop chỉ dừng PID đã ghi nhận và có command line đúng workspace. Fixture không gọi Supabase thật. `BE/tools/VerificationSeed` là test tool, không nằm trong deployment backend/Gateway.
+
+
+## Quoting registration and application administration
+
+OnePortal (`FE_Tenant`) uses a company directory and separate application tabs. Select a company, then **Quoting** or **Landing Page**, then **Người dùng → Thêm người dùng**. Create a new account and scoped membership together, or grant access to an existing account without changing its password. The global identity remains User; the selected membership can be User or Admin. The last active Admin cannot be removed or downgraded.
+
+Under **Cấu hình**, enable the application and explicitly allow self registration when desired. Registration stays closed by default for new applications. Both application types support the setting. Existing flags are preserved; this change does not automatically open any workspace.
+
+Quoting public signup is `/t/{tenantKey}/register`. Signup creates only a User membership for that tenant and Quoting; the user then signs in. The UI reads `GET /t/{tenantKey}/api/v1/quoting/auth/registration`. Tenant Admins can toggle registration through `PUT` to the same scoped URL. Admin UI lives at `/t/{tenantKey}/admin`, with members, registration settings, catalog and support screens. Direct Admin routes and APIs enforce the effective tenant role.
+
+Platform member creation: `POST /api/v1/platform/tenants/{tenantId}/applications/{appKey}/members`. Scoped Admin member creation: `POST /t/{tenantKey}/api/v1/{appKey}/members`. Payload: `email`, `fullName`, `password` (8–128 characters), `role` (User/Admin). Identity and membership save atomically. Duplicate accounts return 409 and require the existing-account grant flow. Scoped routes overwrite any client-supplied tenant/app identifiers.
+
+The workspace header is hidden on both business applications. The canonical URL still determines tenant isolation; users without a valid current membership see the workspace picker instead of business data. Workspace changes use the tenant URL; no data scope is removed.
+
+This feature uses the existing `AllowSelfRegistration` column and membership tables. No additional schema migration or production seed modification is required.

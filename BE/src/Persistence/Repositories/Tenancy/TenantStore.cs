@@ -8,14 +8,17 @@ using OnePortal.Application.UseCases.V1.Tenancy.Dtos;
 using OnePortal.Application.UseCases.V1.Tenancy.Helpers;
 using OnePortal.Contract.Abstractions.Shared;
 using OnePortal.Domain.Entities.Tenancy;
+using OnePortal.Domain.Entities;
 using OnePortal.Persistence.Initialization;
 
 public sealed class TenantStore(ApplicationDbContext database) : ITenantStore
 {
     #region Queries
-    public async Task<IReadOnlyList<TenantDto>> SearchAsync(int page, int pageSize, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<TenantDto>> SearchAsync(int page, int pageSize, CancellationToken cancellationToken, string? search = null)
     {
-        var tenants = await database.Tenants.AsNoTracking().OrderBy(tenant => tenant.Key).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var query = database.Tenants.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(search)) query = query.Where(tenant => tenant.Name.ToLower().Contains(search.ToLower()) || tenant.Key.Contains(search.ToLower()));
+        var tenants = await query.OrderBy(tenant => tenant.Key).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
         return await DescribeAsync(tenants, cancellationToken);
     }
 
@@ -36,6 +39,12 @@ public sealed class TenantStore(ApplicationDbContext database) : ITenantStore
                orderby user.Email, user.Id
                select new TenantMemberDto(user.Id, user.Email, user.FullName, membership.Role, membership.IsActive, user.IsActive))
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+
+    public async Task<RegistrationSettingsDto?> GetRegistrationAsync(Guid tenantId, string appKey, CancellationToken cancellationToken) =>
+        await (from application in database.TenantApplications.IgnoreQueryFilters().AsNoTracking()
+               join tenant in database.Tenants.AsNoTracking() on application.TenantId equals tenant.Id
+               where application.TenantId == tenantId && application.AppKey == appKey && tenant.IsActive && application.IsEnabled && application.ProvisioningStatus == "Ready"
+               select new RegistrationSettingsDto(tenant.Name, appKey, application.AllowSelfRegistration)).SingleOrDefaultAsync(cancellationToken);
 
     private async Task<IReadOnlyList<TenantDto>> DescribeAsync(IReadOnlyList<Tenant> tenants, CancellationToken cancellationToken)
     {
@@ -119,6 +128,34 @@ public sealed class TenantStore(ApplicationDbContext database) : ITenantStore
             await scoped.SaveChangesAsync(cancellationToken); await transaction.CommitAsync(cancellationToken);
             return Result.Success(new TenantMemberDto(user.Id, user.Email, user.FullName, membership.Role, membership.IsActive, user.IsActive));
         });
+    }
+
+    public async Task<Result<RegistrationSettingsDto>> ConfigureRegistrationAsync(Guid tenantId, string appKey, bool allowSelfRegistration, CancellationToken cancellationToken)
+    {
+        await using var scoped = NewScope(tenantId, appKey);
+        var application = await scoped.TenantApplications.SingleOrDefaultAsync(application => application.AppKey == appKey && application.IsEnabled && application.ProvisioningStatus == "Ready", cancellationToken);
+        var tenantName = await scoped.Tenants.AsNoTracking().Where(tenant => tenant.Id == tenantId && tenant.IsActive).Select(tenant => tenant.Name).SingleOrDefaultAsync(cancellationToken);
+        if (application is null || tenantName is null) return Result.Failure<RegistrationSettingsDto>(TenancyErrors.NotFound);
+        application.Configure(application.IsEnabled, allowSelfRegistration);
+        await scoped.SaveChangesAsync(cancellationToken);
+        return Result.Success(new RegistrationSettingsDto(tenantName, appKey, allowSelfRegistration));
+    }
+
+    public async Task<Result<TenantMemberDto>> CreateMemberAsync(Guid tenantId, string appKey, string email, string fullName, string passwordHash, string role, CancellationToken cancellationToken)
+    {
+        await using var scoped = NewScope(tenantId, appKey);
+        if (!await scoped.Tenants.AnyAsync(tenant => tenant.Id == tenantId && tenant.IsActive, cancellationToken)
+            || !await scoped.TenantApplications.AnyAsync(application => application.AppKey == appKey && application.IsEnabled && application.ProvisioningStatus == "Ready", cancellationToken))
+            return Result.Failure<TenantMemberDto>(TenancyErrors.NotFound);
+        if (await scoped.Users.IgnoreQueryFilters().AnyAsync(user => user.Email == email, cancellationToken))
+            return Result.Failure<TenantMemberDto>(new Error("Tenancy.AccountConflict", "Email đã có tài khoản. Hãy chọn Tài khoản đã có để cấp quyền."));
+        var user = User.Create(email, passwordHash, fullName, "User");
+        scoped.Users.Add(user);
+        scoped.TenantMemberships.Add(TenantMembership.Create(tenantId, user.Id, appKey, role));
+        try { await scoped.SaveChangesAsync(cancellationToken); }
+        catch (DbUpdateException error) when (error.InnerException is PostgresException { SqlState: "23505" })
+        { return Result.Failure<TenantMemberDto>(new Error("Tenancy.AccountConflict", "Email đã có tài khoản. Hãy chọn Tài khoản đã có để cấp quyền.")); }
+        return Result.Success(new TenantMemberDto(user.Id, user.Email, user.FullName, role, true, true));
     }
 
     private ApplicationDbContext NewScope(Guid tenantId, string appKey) => new(database.GetOptions(), TenantContext.For(tenantId, appKey));

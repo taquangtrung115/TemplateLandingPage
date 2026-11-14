@@ -76,7 +76,7 @@ public sealed class TenantWorkflowIntegrationTests(PostgresApiFixture fixture)
             var saved = await database.QuotationTemplates.SingleAsync(template => template.Id == id);
             saved.Name.Should().Be("Tenant custom template"); saved.IsActive.Should().BeFalse();
             (await database.TenantSeedHistory.CountAsync()).Should().Be(1);
-            (await database.TenantApplications.SingleAsync()).AllowSelfRegistration.Should().BeFalse(); return true;
+            (await database.TenantApplications.SingleAsync()).AllowSelfRegistration.Should().BeTrue(); return true;
         });
         using var enableLanding = await ApiTestJson.SendJsonAsync(client, HttpMethod.Put, $"/api/v1/platform/tenants/{tenant.Id}/applications/landing", new { isEnabled = true, allowSelfRegistration = false }); enableLanding.EnsureSuccessStatusCode();
         using var publicTemplates = await fixture.CreateAnonymousClient().GetAsync(Root(tenant, "landing") + "/templates");
@@ -199,6 +199,61 @@ public sealed class TenantWorkflowIntegrationTests(PostgresApiFixture fixture)
         using var anonymous = fixture.CreateAnonymousClient();
         using var own = await anonymous.GetAsync(address); own.StatusCode.Should().Be(HttpStatusCode.OK);
         using var foreign = await anonymous.GetAsync(address.Replace(a.Key, b.Key)); foreign.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+    #endregion
+
+    #region Registration and administration
+    [Fact]
+    public async Task QuotingSignup_RespectsWorkspaceSetting_AndNeverGrantsAdministrator()
+    {
+        var owner = await fixture.AddUserAsync("User", isPlatformAdmin: true); using var admin = fixture.CreateClientFor(owner.Id, "Admin");
+        var a = await CreateAsync(admin, owner.Email, "quoting", "landing"); var b = await CreateAsync(admin, owner.Email, "quoting");
+        using var guest = fixture.CreateAnonymousClient();
+        using var settings = await guest.GetAsync(Root(a, "quoting") + "/auth/registration"); settings.EnsureSuccessStatusCode();
+        (await ValueAsync(settings)).GetProperty("settings").GetProperty("allowSelfRegistration").GetBoolean().Should().BeFalse();
+        var email = $"signup-{Guid.NewGuid():N}@test.local"; var registration = new { email, fullName = "New User", password = "Synthetic-password-123!", role = "Admin", isPlatformAdmin = true };
+        using var closed = await ApiTestJson.SendJsonAsync(guest, HttpMethod.Post, Root(a, "quoting") + "/auth/register", registration); closed.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        using var opened = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Put, Root(a, "quoting") + "/auth/registration", new { allowSelfRegistration = true }); opened.EnsureSuccessStatusCode();
+        using var signup = await ApiTestJson.SendJsonAsync(guest, HttpMethod.Post, Root(a, "quoting") + "/auth/register", registration); signup.EnsureSuccessStatusCode();
+        var userId = (await ValueAsync(signup)).GetGuid(); using var user = fixture.CreateClientFor(userId, "Admin");
+        using var me = await user.GetAsync(Root(a, "quoting") + "/auth/me"); var profile = await ValueAsync(me);
+        profile.GetProperty("role").GetString().Should().Be("User"); profile.GetProperty("isPlatformAdmin").GetBoolean().Should().BeFalse();
+        using var read = await user.GetAsync(Root(a, "quoting") + "/products"); read.EnsureSuccessStatusCode();
+        using var members = await user.GetAsync(Root(a, "quoting") + "/members"); members.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        using var escalation = await ApiTestJson.SendJsonAsync(user, HttpMethod.Put, Root(a, "quoting") + "/auth/registration", new { allowSelfRegistration = false }); escalation.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        using var other = await user.GetAsync(Root(b, "quoting") + "/products"); other.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        using var landing = await user.GetAsync(Root(a, "landing") + "/auth/me"); landing.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        using var disabled = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Put, Root(a, "quoting") + "/auth/registration", new { allowSelfRegistration = false }); disabled.EnsureSuccessStatusCode();
+        using var blockedAgain = await ApiTestJson.SendJsonAsync(guest, HttpMethod.Post, Root(a, "quoting") + "/auth/register", new { email = "other-" + email, fullName = "Other", password = "Synthetic-password-123!" }); blockedAgain.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateMember_CreatesIdentityAndScopedRole_AndNeverReplacesExistingCredentials()
+    {
+        var owner = await fixture.AddUserAsync("User", isPlatformAdmin: true); using var admin = fixture.CreateClientFor(owner.Id, "Admin");
+        var tenant = await CreateAsync(admin, owner.Email, "quoting", "landing"); var email = $"created-{Guid.NewGuid():N}@test.local";
+        using var created = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Post, Root(tenant, "quoting") + "/members", new { email, fullName = "Scoped Admin", password = "Synthetic-password-123!", role = "Admin", tenantId = Guid.NewGuid(), appKey = "landing" });
+        created.StatusCode.Should().Be(HttpStatusCode.Created); var id = (await ValueAsync(created)).GetProperty("member").GetProperty("id").GetGuid();
+        using var member = fixture.CreateClientFor(id, "Admin");
+        using var members = await member.GetAsync(Root(tenant, "quoting") + "/members"); members.EnsureSuccessStatusCode();
+        using var platform = await member.GetAsync("/api/v1/platform/tenants"); platform.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        using var landing = await member.GetAsync(Root(tenant, "landing") + "/auth/me"); landing.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        using var duplicate = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Post, Root(tenant, "quoting") + "/members", new { email, fullName = "Overwrite", password = "Replacement-123!", role = "User" }); duplicate.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        using var login = await ApiTestJson.SendJsonAsync(fixture.CreateAnonymousClient(), HttpMethod.Post, "/api/v1/auth/login", new { email, password = "Synthetic-password-123!" }); login.EnsureSuccessStatusCode();
+        await fixture.WithTenantDatabaseAsync(tenant.Id, "quoting", async database => {
+            var account = await database.Users.AsNoTracking().SingleAsync(user => user.Id == id); account.FullName.Should().Be("Scoped Admin"); account.Role.Should().Be("User"); account.IsPlatformAdmin.Should().BeFalse();
+            (await database.TenantMemberships.CountAsync(membership => membership.UserId == id)).Should().Be(1); return true;
+        });
+    }
+
+    [Fact]
+    public async Task CreateMember_InvalidInputOrUnavailableApplication_DoesNotCreateOrphanAccounts()
+    {
+        var owner = await fixture.AddUserAsync("User", isPlatformAdmin: true); using var admin = fixture.CreateClientFor(owner.Id, "Admin"); var tenant = await CreateAsync(admin, owner.Email, "quoting");
+        var email = $"orphan-{Guid.NewGuid():N}@test.local";
+        using var invalid = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Post, Root(tenant, "quoting") + "/members", new { email, fullName = "Invalid", password = "tiny", role = "Admin" }); invalid.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        using var absent = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Post, $"/api/v1/platform/tenants/{tenant.Id}/applications/landing/members", new { email, fullName = "Invalid", password = "Synthetic-password-123!", role = "User" }); absent.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await fixture.WithDatabaseAsync(async database => { (await database.Users.AnyAsync(user => user.Email == email)).Should().BeFalse(); return true; });
     }
     #endregion
 

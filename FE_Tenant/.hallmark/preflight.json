@@ -1,0 +1,9 @@
+{
+  "date": "2026-11-14",
+  "font": "Inter, system-ui, sans-serif (src/styles.css:4)",
+  "palette": "Existing blue/slate Tailwind palette (src/styles.css:4-9)",
+  "motion": "cut; no animation library in package.json",
+  "framework": "React 19, Vite 6, Tailwind 3 (package.json)",
+  "spacing": "4 point",
+  "scope": "FE_Tenant portal and login"
+}
