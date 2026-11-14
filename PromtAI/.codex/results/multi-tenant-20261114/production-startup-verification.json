@@ -1,0 +1,9 @@
+{
+  "environment": "Production",
+  "readyStatus": 200,
+  "rsaIdentityLogin": 200,
+  "isolatedFailedTenantStatus": 503,
+  "otherTenantOperationalStatus": 200,
+  "recoveredTenantStatus": 200,
+  "privateBackendInternalHttp": true
+}

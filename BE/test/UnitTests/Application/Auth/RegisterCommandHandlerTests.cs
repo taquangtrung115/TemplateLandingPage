@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.UnitTests.Application.Auth;
+namespace OnePortal.UnitTests.Application.Auth;
 
 using FluentAssertions;
 using Moq;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Auth.Commands;
-using TemplateLandingPage.Contract.Services.V1.Auth;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Auth.Commands;
+using OnePortal.Contract.Services.V1.Auth;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 using Xunit;
 
 public class RegisterCommandHandlerTests

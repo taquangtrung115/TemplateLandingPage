@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Templates;
+namespace OnePortal.Contract.Services.V1.Templates;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Message;
 
 public record GetTemplatesQuery(
     string? Category = null,

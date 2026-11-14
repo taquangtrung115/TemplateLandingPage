@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Products;
+namespace OnePortal.Contract.Services.V1.Products;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Message;
 
 public record GetProductsQuery(bool IncludeInactive = false) : IQuery<List<ProductResponse>>;
 

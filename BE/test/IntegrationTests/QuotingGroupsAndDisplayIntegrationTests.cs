@@ -1,11 +1,11 @@
-namespace TemplateLandingPage.IntegrationTests;
+namespace OnePortal.IntegrationTests;
 
 using System.Net;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Persistence.Data;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Persistence.Data;
 using Xunit;
 
 [Collection(PostgresApiCollection.Name)]

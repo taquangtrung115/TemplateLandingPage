@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.IntegrationTests;
+namespace OnePortal.IntegrationTests;
 
 using System;
 using System.Collections.Generic;

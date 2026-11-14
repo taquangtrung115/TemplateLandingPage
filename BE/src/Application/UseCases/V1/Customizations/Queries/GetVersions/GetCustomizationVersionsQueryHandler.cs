@@ -1,11 +1,11 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Queries.GetVersions;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.Repositories;
+namespace OnePortal.Application.UseCases.V1.Customizations.Queries.GetVersions;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Customizations.Helpers;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Domain.Repositories;
 
-public sealed class GetCustomizationVersionsQueryHandler(ICustomizationRepository repository)
+public sealed class GetCustomizationVersionsQueryHandler(ICustomizationRepository repository, ITenantContext? scope = null)
     : IQueryHandler<GetCustomizationVersionsQuery, PagedResponse<CustomizationVersionResponse>>
 {
     private readonly ICustomizationRepository _repository = repository;
@@ -20,6 +20,6 @@ public sealed class GetCustomizationVersionsQueryHandler(ICustomizationRepositor
         var values = await _repository.GetVersionsAsync(site.Id, page, size, cancellationToken);
         return Result.Success(new PagedResponse<CustomizationVersionResponse>(values.Data.Select(v =>
             new CustomizationVersionResponse(v.Id, v.CustomizationId, v.VersionNumber, v.Title, v.IsPublic, v.CreatedAtUtc,
-                v.PublishedAtUtc, CustomizationRules.VersionUrl(site.Slug, v.VersionNumber), IsMain: site.PublishedVersionId == v.Id)).ToList(), values.Total, page, size));
+                v.PublishedAtUtc, CustomizationRules.VersionUrl(site.Slug, v.VersionNumber, scope?.TenantKey), IsMain: site.PublishedVersionId == v.Id)).ToList(), values.Total, page, size));
     }
 }

@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Auth.Validators;
+namespace OnePortal.Application.UseCases.V1.Auth.Validators;
 
 using FluentValidation;
-using TemplateLandingPage.Contract.Services.V1.Auth;
+using OnePortal.Contract.Services.V1.Auth;
 
 public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {

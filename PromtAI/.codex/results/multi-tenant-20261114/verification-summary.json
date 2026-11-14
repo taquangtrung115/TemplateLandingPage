@@ -1,0 +1,70 @@
+{
+  "backend": {
+    "unit": {
+      "total": 602,
+      "passed": 602,
+      "failed": 0
+    },
+    "integration": {
+      "total": 70,
+      "passed": 70,
+      "failed": 0
+    },
+    "architecture": {
+      "total": 14,
+      "passed": 14,
+      "failed": 0
+    }
+  },
+  "frontend": {
+    "landing": {
+      "total": 179,
+      "passed": 179,
+      "failed": 0
+    },
+    "quoting": {
+      "total": 226,
+      "passed": 226,
+      "failed": 0
+    },
+    "tenant": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0
+    }
+  },
+  "browser": {
+    "startTime": "2026-11-14T09:59:04.902Z",
+    "duration": 54391.539,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "supabase": {
+    "migration": "20261114080350_AddMultiTenantPlatform",
+    "platformAdminEmail": "admin@template.com",
+    "platformAdminEnabled": true,
+    "expectedAuditChange": "Only the approved administrator ModifiedAtUtc changes when its new privilege is granted.",
+    "applications": [
+      {
+        "AppKey": "landing",
+        "ProvisioningStatus": "Ready",
+        "SeedVersion": "1"
+      },
+      {
+        "AppKey": "quoting",
+        "ProvisioningStatus": "Ready",
+        "SeedVersion": "1"
+      }
+    ],
+    "validatedForeignKeys": "37"
+  },
+  "dataPreservation": {
+    "original": 679,
+    "current": 681,
+    "tables": 20
+  },
+  "releasePublishWithoutLocalSettings": true,
+  "deployed": false
+}

@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.UnitTests.Application.Templates;
+namespace OnePortal.UnitTests.Application.Templates;
 
 using FluentAssertions;
 using Moq;
-using TemplateLandingPage.Application.UseCases.V1.Templates.Queries;
-using TemplateLandingPage.Contract.Services.V1.Templates;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.ReadModels;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.UseCases.V1.Templates.Queries;
+using OnePortal.Contract.Services.V1.Templates;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.ReadModels;
+using OnePortal.Domain.Repositories;
 using Xunit;
 
 public class GetTemplatesQueryHandlerTests

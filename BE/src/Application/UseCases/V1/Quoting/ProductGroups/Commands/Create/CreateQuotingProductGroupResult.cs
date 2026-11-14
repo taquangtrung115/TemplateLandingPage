@@ -1,2 +1,2 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.Commands.Create;
+namespace OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Commands.Create;
 public sealed record CreateQuotingProductGroupResult(Guid Id);

@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "TemplateLandingPage.API": {
+    "OnePortal.API": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

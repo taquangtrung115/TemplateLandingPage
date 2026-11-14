@@ -1,0 +1,49 @@
+services:
+  - type: pserv
+    name: oneportal-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    preDeployCommand: dotnet OnePortal.API.dll --initialize-database
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DatabaseInitialization__Mode
+        value: Verify
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: ConnectionStrings__MigrationConnection
+        sync: false
+      - key: Jwt__PrivateKeyPem
+        sync: false
+      - key: Jwt__PublicKeyPem
+        sync: false
+      - key: Jwt__Issuer
+        value: OnePortal
+      - key: Jwt__Audience
+        value: OnePortal
+      - key: Quoting__Storage__AllowLocalFallback
+        value: false
+  - type: web
+    name: oneportal-gateway
+    runtime: docker
+    dockerfilePath: ./BE/src/Gateway/Dockerfile
+    healthCheckPath: /health/live
+    envVars:
+      - key: Jwt__PublicKeyPem
+        sync: false
+      - key: Jwt__Issuer
+        value: OnePortal
+      - key: Jwt__Audience
+        value: OnePortal
+      - key: ReverseProxy__Clusters__platform__Destinations__backend__Address
+        sync: false
+      - key: ReverseProxy__Clusters__landing__Destinations__backend__Address
+        sync: false
+      - key: ReverseProxy__Clusters__quoting__Destinations__backend__Address
+        sync: false
+      - key: Cors__AllowedOrigins__0
+        sync: false
+      - key: Cors__AllowedOrigins__1
+        sync: false
+      - key: Cors__AllowedOrigins__2
+        sync: false

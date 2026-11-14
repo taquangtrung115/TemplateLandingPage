@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Interactions.Commands.Validators;
+namespace OnePortal.Application.UseCases.V1.Interactions.Commands.Validators;
 
 using FluentValidation;
-using TemplateLandingPage.Contract.Services.V1.Interactions;
+using OnePortal.Contract.Services.V1.Interactions;
 
 public sealed class SubmitGuestbookCommandValidator : AbstractValidator<SubmitGuestbookCommand>
 {

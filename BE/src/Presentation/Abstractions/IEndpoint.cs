@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Presentation.Abstractions;
+namespace OnePortal.Presentation.Abstractions;
 
 using Microsoft.AspNetCore.Routing;
 

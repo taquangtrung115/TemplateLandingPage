@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Domain.Repositories.Quoting;
+namespace OnePortal.Domain.Repositories.Quoting;
 
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities.Quoting;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities.Quoting;
 
 public interface IQuotationTemplateRepository : IRepositoryBase<QuotationTemplate, Guid>
 {

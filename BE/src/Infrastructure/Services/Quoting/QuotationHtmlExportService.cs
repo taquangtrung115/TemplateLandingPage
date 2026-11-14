@@ -1,14 +1,14 @@
-namespace TemplateLandingPage.Infrastructure.Services.Quoting;
+namespace OnePortal.Infrastructure.Services.Quoting;
 
 using System.Globalization;
 using System.Text;
 using System.Net;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.Exceptions;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Helpers;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.Exceptions;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Application.UseCases.V1.Quoting.Products.Helpers;
 
 public sealed class QuotationHtmlExportService : IQuotationExportService
 {

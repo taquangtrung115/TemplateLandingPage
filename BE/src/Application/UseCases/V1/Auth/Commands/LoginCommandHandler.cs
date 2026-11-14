@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Auth.Commands;
+namespace OnePortal.Application.UseCases.V1.Auth.Commands;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Auth;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Auth;
+using OnePortal.Domain.Repositories;
 
 public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, LoginResponse>
 {
@@ -40,7 +40,7 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, LoginRes
         }
 
         var token = _jwtTokenGenerator.GenerateToken(user);
-        var userResponse = new UserResponse(user.Id, user.Email, user.FullName, user.Role, user.IsActive, user.AvatarUrl, user.CreatedAtUtc);
+        var userResponse = new UserResponse(user.Id, user.Email, user.FullName, "User", user.IsActive, user.AvatarUrl, user.CreatedAtUtc, user.IsPlatformAdmin);
 
         return Result.Success(new LoginResponse(token, userResponse));
     }

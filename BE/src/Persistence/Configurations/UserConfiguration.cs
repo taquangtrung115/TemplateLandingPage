@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Persistence.Configurations;
+namespace OnePortal.Persistence.Configurations;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Persistence.Constants;
+using OnePortal.Domain.Entities;
+using OnePortal.Persistence.Constants;
 
 public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
@@ -48,8 +48,6 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.DeletedAtUtc);
         builder.Property(u => u.CreatedAtUtc).IsRequired();
         builder.Property(u => u.ModifiedAtUtc);
-
-        builder.Ignore(u => u.DomainEvents);
 
         builder.HasQueryFilter(u => !u.IsDeleted);
     }

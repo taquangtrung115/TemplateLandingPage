@@ -1,11 +1,11 @@
-namespace TemplateLandingPage.API.Middlewares;
+namespace OnePortal.API.Middlewares;
 
 using System.Net;
 using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Domain.Exceptions;
+using OnePortal.Domain.Exceptions;
 
 public sealed class ExceptionHandlingMiddleware
 {
@@ -31,6 +31,10 @@ public sealed class ExceptionHandlingMiddleware
                 (int)HttpStatusCode.Conflict,
                 "Conflict",
                 "The request conflicts with the current data. Refresh and retry.");
+        }
+        catch (OnePortal.Application.Exceptions.QuotationStorageUnavailableException)
+        {
+            await WriteErrorAsync(context, 503, "Storage Unavailable", "Shared file storage is unavailable. Please retry.");
         }
         catch (BadHttpRequestException)
         {

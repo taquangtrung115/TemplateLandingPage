@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Domain.Entities;
+namespace OnePortal.Domain.Entities;
 
-using TemplateLandingPage.Domain.Abstractions;
+using OnePortal.Domain.Abstractions;
 
 public sealed class Category : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
 {

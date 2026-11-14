@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.Presentation.APIs.Auth;
+namespace OnePortal.Presentation.APIs.Auth;
 
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Auth;
-using TemplateLandingPage.Presentation.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Auth;
+using OnePortal.Presentation.Abstractions;
 
 public sealed class AuthApi : IEndpoint
 {

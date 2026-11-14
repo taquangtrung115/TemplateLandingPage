@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Application.Abstractions;
+namespace OnePortal.Application.Abstractions;
 
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries.Summary;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries.Summary;
 
 public interface IQuotationSummaryService
 {

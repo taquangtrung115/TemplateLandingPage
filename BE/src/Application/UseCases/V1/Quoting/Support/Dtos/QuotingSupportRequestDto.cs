@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Support.Dtos;
+namespace OnePortal.Application.UseCases.V1.Quoting.Support.Dtos;
 
-using TemplateLandingPage.Domain.Entities.Quoting;
+using OnePortal.Domain.Entities.Quoting;
 
 public sealed record QuotingSupportRequestDto(Guid Id, string FullName, string Email, string? Phone, string Topic, string Priority,
     string Message, string Status, int Revision, DateTime CreatedAtUtc, DateTime? UpdatedAtUtc, Guid? UpdatedByUserId, DateTime? ResolvedAtUtc, Guid? ResolvedByUserId)

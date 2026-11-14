@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.Presentation.APIs.Templates;
+namespace OnePortal.Presentation.APIs.Templates;
 
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Templates;
-using TemplateLandingPage.Presentation.Abstractions;
-using TemplateLandingPage.Presentation.Authorization;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Templates;
+using OnePortal.Presentation.Abstractions;
+using OnePortal.Presentation.Authorization;
 using System.Security.Claims;
 
 public sealed class TemplateApi : IEndpoint

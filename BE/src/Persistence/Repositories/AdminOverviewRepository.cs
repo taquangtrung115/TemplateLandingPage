@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Repositories;
+namespace OnePortal.Persistence.Repositories;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.ReadModels;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Domain.ReadModels;
+using OnePortal.Domain.Repositories;
 
 public sealed class AdminOverviewRepository(ApplicationDbContext dbContext) : IAdminOverviewRepository
 {

@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Interactions.Commands;
+namespace OnePortal.Application.UseCases.V1.Interactions.Commands;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Interactions;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
-using TemplateLandingPage.Application.UseCases.V1.Interactions.Helpers;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Interactions;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
+using OnePortal.Application.UseCases.V1.Interactions.Helpers;
 
 public sealed class SubmitGuestbookCommandHandler : ICommandHandler<SubmitGuestbookCommand, Guid>
 {

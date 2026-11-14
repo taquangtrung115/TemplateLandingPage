@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.Presentation.APIs.Quoting;
+namespace OnePortal.Presentation.APIs.Quoting;
 
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Customers;
-using TemplateLandingPage.Presentation.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Quoting.Customers;
+using OnePortal.Presentation.Abstractions;
 
 public sealed class QuotingCustomerApi : IEndpoint
 {

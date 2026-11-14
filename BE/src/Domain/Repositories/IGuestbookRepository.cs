@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Domain.Repositories;
+namespace OnePortal.Domain.Repositories;
 
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
 
 public interface IGuestbookRepository : IRepositoryBase<GuestbookEntry, Guid>
 {

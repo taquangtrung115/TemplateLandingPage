@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Domain.Exceptions;
+namespace OnePortal.Domain.Exceptions;
 
 public abstract class DomainException : Exception
 {

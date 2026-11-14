@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.UnitTests.Application.Templates;
+namespace OnePortal.UnitTests.Application.Templates;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Templates.Commands.Validators;
-using TemplateLandingPage.Contract.Services.V1.Templates;
+using OnePortal.Application.UseCases.V1.Templates.Commands.Validators;
+using OnePortal.Contract.Services.V1.Templates;
 using Xunit;
 
 public class TemplateCommandValidatorTests

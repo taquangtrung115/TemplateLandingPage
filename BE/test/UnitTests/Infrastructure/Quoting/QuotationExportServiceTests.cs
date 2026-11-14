@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.UnitTests.Infrastructure.Quoting;
+namespace OnePortal.UnitTests.Infrastructure.Quoting;
 
 using System.Text;
 using FluentAssertions;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.Advanced;
 using PdfSharp.Pdf.IO;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Infrastructure.Services.Quoting;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Infrastructure.Services.Quoting;
 using Xunit;
 
 public class QuotationExportServiceTests
@@ -337,7 +337,7 @@ public class QuotationExportServiceTests
         var url = $"/api/v1/quoting/product-images/{photoCode}.png";
         quote.SetItems([QuotationItem.Create(quote.Id, null, productCode, "Sản phẩm", null, "Gói", url, null, 1, 18000, 0, null, 1)], Guid.NewGuid());
         var html = QuotationHtmlExportService.BuildHtmlContent(quote, version);
-        using var expectedSource = typeof(QuotationHtmlExportService).Assembly.GetManifestResourceStream($"TemplateLandingPage.Infrastructure.Assets.Products.{photoCode}.png")!;
+        using var expectedSource = typeof(QuotationHtmlExportService).Assembly.GetManifestResourceStream($"OnePortal.Infrastructure.Assets.Products.{photoCode}.png")!;
         using var sourceBytes = new MemoryStream(); await expectedSource.CopyToAsync(sourceBytes);
         html.Should().Contain("data:image/png;base64," + Convert.ToBase64String(sourceBytes.ToArray()));
         using var actual = PdfReader.Open(new MemoryStream(await _exportService.GeneratePdfAsync(quote, version)), PdfDocumentOpenMode.Import);

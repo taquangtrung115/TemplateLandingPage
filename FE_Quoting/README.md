@@ -1,6 +1,8 @@
 # FE_Quoting
 
-Ứng dụng báo giá độc lập trong monorepo `TemplateLandingPage`. Một `src` là một ứng dụng; không import source từ app `FE`.
+Ứng dụng báo giá độc lập trong monorepo `TemplateLandingPage`. Một `src` là một ứng dụng; không import source từ app `FE_TemplateLandingPage`.
+
+Xem [OnePortal multi-tenancy](../_Docs/ONEPORTAL_MULTI_TENANCY.md) cho API canonical, membership, seed theo tenant, RSA và triển khai Gateway. Danh mục legacy bên dưới chỉ áp dụng `quoting-default`; tenant mới dùng dữ liệu nền tảng trung tính.
 
 ## Kiến trúc
 
@@ -60,13 +62,13 @@ npm ci
 npm run dev
 ```
 
-FE mặc định cổng 5174, proxy `/api` đến `http://127.0.0.1:54611`. Có thể đặt `QUOTING_API_PROXY_TARGET` trước khi khởi động Vite hoặc `VITE_API_BASE_URL` cho API riêng. Không đưa secret vào biến `VITE_*`.
+FE mặc định cổng 5174, proxy `/api` và `/t/{key}/api` đến Gateway `http://127.0.0.1:54612`. Có thể đặt `QUOTING_API_PROXY_TARGET` trước khi khởi động Vite hoặc `VITE_API_BASE_URL` cho API riêng. Không đưa secret vào biến `VITE_*`.
 
 ### Routes và triển khai Vercel
 
 Vercel project của app báo giá phải đặt **Root Directory = `FE_Quoting`**, framework **Vite**, build `npm run build`, output `dist`. File `FE_Quoting/vercel.json` phục vụ `index.html` khi mở trực tiếp/refresh các URL React Router, gồm `/login`, `/quotations`, `/quotations/create`, `/quotations/:id`, `/quotations/:id/edit`, `/products`, `/customers`, `/templates`, `/contact` và `/support`.
 
-Đặt `VITE_API_BASE_URL` là URL backend Render (có thể kèm `/api/v1`) tại môi trường build Vercel. Proxy trong Vite chỉ dành cho local; SPA rewrite không thay thế backend API. Sau khi đổi source/cấu hình cần deploy lại frontend để bản đang chạy nhận thay đổi. Cấu hình này theo [hướng dẫn Vite SPA của Vercel](https://vercel.com/docs/frameworks/frontend/vite#using-vite-to-make-spas).
+Đặt `VITE_API_BASE_URL` là URL Gateway Render (có thể kèm `/api/v1`) tại môi trường build Vercel. Proxy trong Vite chỉ dành cho local; SPA rewrite không thay thế backend API. Sau khi đổi source/cấu hình cần deploy lại frontend để bản đang chạy nhận thay đổi. Cấu hình này theo [hướng dẫn Vite SPA của Vercel](https://vercel.com/docs/frameworks/frontend/vite#using-vite-to-make-spas).
 
 Các URL trang dùng `Cache-Control: no-store, max-age=0` để trình duyệt không lưu HTML trỏ vào bundle của bản deploy cũ. `/assets/` và `/api/` được loại khỏi SPA rewrite/header này; file JS/CSS bị thiếu phải trả lỗi thật thay vì `index.html`. Không xóa localStorage/cookie hoặc phiên đăng nhập để xử lý cache. Nếu máy đã giữ trang cũ từ trước thay đổi, mở một URL login có query mới để buộc tải lại, ví dụ `/login?verify=<mã bản deploy>`.
 
@@ -74,13 +76,13 @@ Mọi route nghiệp vụ vẫn kiểm tra phiên đăng nhập. Chưa đăng nh
 
 Login dùng lưới CSS có độ rộng rõ ràng, một cột trên màn hình ≤640px; form hiển thị trước phần giới thiệu. Không dùng container query để tính độ rộng form. Ô nhập trên mobile tối thiểu 16px để tránh iOS tự zoom khi focus.
 
-BE cần cấu hình `ConnectionStrings__DefaultConnection`, `Jwt__SecretKey`, issuer/audience theo môi trường. Áp dụng EF migrations bằng quy trình deploy của dự án. `SeedData__Enabled=true` chỉ dành cho development được bật rõ ràng; `SeedData__IncludeCatalog=false` tránh seed catalog landing page không liên quan. Review các tài khoản demo của seeder trước khi dùng ngoài môi trường kiểm thử.
+BE cần cấu hình `ConnectionStrings__DefaultConnection`, `Jwt__PrivateKeyPem`, `Jwt__PublicKeyPem`, issuer/audience theo môi trường. Áp dụng EF migrations bằng quy trình deploy của dự án. `SeedData__Enabled=true` chỉ dành cho development được bật rõ ràng; `SeedData__IncludeCatalog=false` tránh seed catalog landing page không liên quan. Review các tài khoản demo của seeder trước khi dùng ngoài môi trường kiểm thử.
 
 PDF và HTML lấy ảnh theo `ImageUrl` đã lưu trên dòng báo giá; không suy đoán ảnh theo `ProductCode`. Điều này giữ đúng ảnh khi mã sản phẩm khác tên file ảnh hoặc khi thay ảnh trong danh mục. Tệp đã xuất trước thay đổi là bản lưu lịch sử; cần xuất tệp mới để áp dụng bản sửa renderer.
 
 HTML nhúng ảnh của các sản phẩm gốc và ảnh upload thành data URI để mở offline. Ảnh URL ngoài cũ (Unsplash) cũng được tải và nhúng vào cả HTML/PDF theo đúng `ImageUrl` snapshot, nên file mở offline vẫn có ảnh. Bộ tải chỉ chấp nhận HTTPS cổng 443, không theo redirect, không gửi khóa storage; mặc định cho phép `images.unsplash.com` và host Supabase đã cấu hình. CDN khác cần khai báo từng hostname trong `Quoting:Images:AllowedRemoteHosts` (biến môi trường ví dụ `Quoting__Images__AllowedRemoteHosts__0=cdn.example.com`). Giới hạn mỗi ảnh 5 MB/16 MP, cạnh tối đa sau chuẩn hóa 1600 px; các lượt tải được gom theo URL, song song tối đa 4 và có thời hạn 45 giây cho tài liệu. Khi ảnh đã lưu không tải được, preview/export trả `Quotation.ImageUnavailable`, không tạo tệp thiếu ảnh. Không cần migration dữ liệu cho bản sửa này. PDF chuẩn hóa Unicode NFC để ký tự ghép dấu hiển thị đúng, dùng PDFsharp và font Noto Sans thường/đậm nhúng (kèm giấy phép OFL), giữ tiếng Việt, hình sản phẩm gốc/ảnh upload và ngắt nhiều trang. Tệp báo giá được lưu ở thư mục riêng `App_Data/quotations` hoặc `Quoting:Storage:LocalPath`, tải qua endpoint JWT `/{quotationId}/files/{fileId}/download`. Không công khai thư mục xuất qua static files. Endpoint có xác thực đọc được file ở thư mục cũ `wwwroot/exports/quotations` (hoặc `Quoting:Storage:LegacyPath`); đường dẫn static mặc định của thư mục này bị chặn.
 
-Đối với **tệp báo giá xuất**, Supabase Storage được hỗ trợ nếu có `Supabase:Url`, `Supabase:ServiceRoleKey`, `Supabase:Bucket` phía BE. Khi chưa cấu hình hoặc upload lỗi, lưu local; file không bị mất bytes sau fallback. Dùng private bucket, service key chỉ ở BE. Khi deploy Render, cần Supabase hoặc persistent disk cho tệp báo giá local.
+Đối với **tệp báo giá xuất**, Supabase Storage được hỗ trợ nếu có `Supabase:Url`, `Supabase:ServiceRoleKey`, `Supabase:Bucket` phía BE. Mặc định thiếu cấu hình hoặc upload lỗi sẽ trả lỗi, không ghi file vào replica local. Chỉ Development một replica mới nên bật `Quoting__Storage__AllowLocalFallback=true`. Dùng private bucket, service key chỉ ở BE. Khi deploy Render, cần Supabase hoặc persistent disk cho tệp báo giá local.
 
 ## Upload ảnh sản phẩm trên Render
 
@@ -112,7 +114,7 @@ npm run build
 
 # BE: unit, architecture và API/DB thật
 cd C:\Source\TemplateLandingPage\BE
-dotnet test TemplateLandingPage.sln
+dotnet test OnePortal.sln
 ```
 
 Integration tests tạo và xóa database riêng. Cấu hình `TEMPLATE_TEST_PGHOST`, `TEMPLATE_TEST_PGPORT`, `TEMPLATE_TEST_PGUSER`, `TEMPLATE_TEST_PGPASSWORD` cho PostgreSQL kiểm thử được phép tạo database; mặc định 127.0.0.1:55432, user `template_test`. Không dùng database production.

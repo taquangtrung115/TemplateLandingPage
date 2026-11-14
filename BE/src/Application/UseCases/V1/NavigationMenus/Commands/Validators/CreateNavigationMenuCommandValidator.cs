@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Application.UseCases.V1.NavigationMenus.Commands.Validators;
+namespace OnePortal.Application.UseCases.V1.NavigationMenus.Commands.Validators;
 
 using FluentValidation;
-using TemplateLandingPage.Contract.Services.V1.NavigationMenus;
+using OnePortal.Contract.Services.V1.NavigationMenus;
 
 public sealed class CreateNavigationMenuCommandValidator : AbstractValidator<CreateNavigationMenuCommand>
 {

@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.IntegrationTests;
+namespace OnePortal.IntegrationTests;
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -11,13 +11,15 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Infrastructure.Services.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Infrastructure.Services.Quoting;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using Xunit;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Persistence;
+using OnePortal.Domain.Entities;
+using OnePortal.Persistence;
+using OnePortal.Application.Services.Tenancy;
+using OnePortal.Domain.Entities.Tenancy;
 
 [CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class PostgresApiCollection : ICollectionFixture<PostgresApiFixture>
@@ -27,8 +29,8 @@ public sealed class PostgresApiCollection : ICollectionFixture<PostgresApiFixtur
 
 public sealed class PostgresApiFixture : IAsyncLifetime
 {
-    public const string Issuer = "TemplateLandingPage.IntegrationTests";
-    public const string Audience = "TemplateLandingPage.IntegrationTests";
+    public const string Issuer = "OnePortal.IntegrationTests";
+    public const string Audience = "OnePortal.IntegrationTests";
     private readonly string _adminConnectionString;
     private WebApplicationFactory<Program>? _factory;
     private bool _databaseCreated;
@@ -95,6 +97,15 @@ public sealed class PostgresApiFixture : IAsyncLifetime
     public async Task<T> WithDatabaseAsync<T>(Func<ApplicationDbContext, Task<T>> action)
     {
         await using var scope = _factory!.Services.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<TenantContext>();
+        context.Initialize(TenantDefaults.QuotingId, "quoting");
+        return await action(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>());
+    }
+
+    public async Task<T> WithTenantDatabaseAsync<T>(Guid tenantId, string appKey, Func<ApplicationDbContext, Task<T>> action)
+    {
+        await using var scope = _factory!.Services.CreateAsyncScope();
+        scope.ServiceProvider.GetRequiredService<TenantContext>().Initialize(tenantId, appKey);
         return await action(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>());
     }
 
@@ -117,15 +128,24 @@ public sealed class PostgresApiFixture : IAsyncLifetime
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public async Task<User> AddUserAsync(string role = "User", bool isActive = true, bool isDeleted = false)
+    public async Task<User> AddUserAsync(string role = "User", bool isActive = true, bool isDeleted = false, bool isPlatformAdmin = false)
     {
         var user = User.Create($"{Guid.NewGuid():N}@integration.test", "test-hash", "Integration User", role);
+        user.SetPlatformAdmin(isPlatformAdmin);
         if (!isActive) user.UpdateProfile("Integration User", role, false);
         if (isDeleted) user.Delete();
         await using var scope = _factory!.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         db.Users.Add(user);
         await db.SaveChangesAsync();
+        foreach (var app in new[] { (TenantDefaults.LandingId, "landing"), (TenantDefaults.QuotingId, "quoting") })
+        {
+            await using var membershipDb = new ApplicationDbContext(db.GetOptions(), TenantContext.For(app.Item1, app.Item2));
+            var membership = TenantMembership.Create(app.Item1, user.Id, app.Item2, role);
+            membership.Update(role, isActive && !isDeleted);
+            membershipDb.TenantMemberships.Add(membership);
+            await membershipDb.SaveChangesAsync();
+        }
         return user;
     }
 
@@ -135,6 +155,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
             "Integration Template", slug ?? $"integration-template-{Guid.NewGuid():N}", null,
             categoryId, "Integration", "https://example.test/template.png", null, null, null, null, null, "{}");
         await using var scope = _factory!.Services.CreateAsyncScope();
+        scope.ServiceProvider.GetRequiredService<TenantContext>().Initialize(TenantDefaults.LandingId, "landing");
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         db.Templates.Add(template);
         await db.SaveChangesAsync();
@@ -145,6 +166,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
     {
         var site = UserCustomization.Create(null, template.Id, "Legacy Ownerless", slug ?? $"ownerless-{Guid.NewGuid():N}", "{}");
         await using var scope = _factory!.Services.CreateAsyncScope();
+        scope.ServiceProvider.GetRequiredService<TenantContext>().Initialize(TenantDefaults.LandingId, "landing");
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         db.UserCustomizations.Add(site);
         await db.SaveChangesAsync();
@@ -169,6 +191,12 @@ public sealed class PostgresApiFixture : IAsyncLifetime
         var user = await db.Users.SingleAsync(x => x.Id == userId);
         user.UpdateProfile(user.FullName, role, isActive);
         await db.SaveChangesAsync();
+        foreach (var app in new[] { (TenantDefaults.LandingId, "landing"), (TenantDefaults.QuotingId, "quoting") })
+        {
+            await using var membershipDb = new ApplicationDbContext(db.GetOptions(), TenantContext.For(app.Item1, app.Item2));
+            var membership = await membershipDb.TenantMemberships.SingleAsync(member => member.UserId == userId && member.AppKey == app.Item2);
+            membership.Update(role, isActive); await membershipDb.SaveChangesAsync();
+        }
     }
 
     public async Task SetUserDeletedAsync(Guid userId)
@@ -215,6 +243,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
                 options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
                 options.TokenValidationParameters.ValidIssuer = Issuer;
                 options.TokenValidationParameters.ValidAudience = Audience;
+                options.TokenValidationParameters.ValidAlgorithms = [SecurityAlgorithms.HmacSha256];
             }));
             builder.ConfigureTestServices(services => services.AddHttpClient<IQuotingProductImageService, SupabaseProductImageService>()
                 .ConfigurePrimaryHttpMessageHandler(() => new FakeSupabaseImageHandler()));
@@ -223,9 +252,13 @@ public sealed class PostgresApiFixture : IAsyncLifetime
                 {
                     ["ConnectionStrings:DefaultConnection"] = connectionString,
                     ["Jwt:SecretKey"] = secretKey,
+                    ["Jwt:PrivateKeyPem"] = "",
+                    ["Jwt:PublicKeyPem"] = "",
                     ["Jwt:Issuer"] = Issuer,
                     ["Jwt:Audience"] = Audience,
                     ["SeedData:Enabled"] = "false",
+                    ["DatabaseInitialization:Mode"] = "Startup",
+                    ["Quoting:Storage:AllowLocalFallback"] = "true",
                     ["Quoting:Images:SupabaseUrl"] = "https://storage.integration.test",
                     ["Quoting:Images:SecretKey"] = "synthetic-image-key",
                     ["Quoting:Images:ServiceRoleKey"] = "synthetic-image-key",

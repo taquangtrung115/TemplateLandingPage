@@ -1,8 +1,9 @@
-namespace TemplateLandingPage.UnitTests.Infrastructure;
+namespace OnePortal.UnitTests.Infrastructure;
 
 using System.IO;
 using System.Text.Json;
-using System.Text.RegularExpressions;
+using OnePortal.Infrastructure.Authentication;
+using Npgsql;
 using FluentAssertions;
 using Xunit;
 
@@ -43,25 +44,19 @@ public class ConfigurationSecurityTests
         defaultConn.GetString().Should().NotBeNullOrWhiteSpace();
 
         jsonDoc.RootElement.TryGetProperty("Jwt", out var jwtSection).Should().BeTrue();
-        jwtSection.TryGetProperty("SecretKey", out var secretKey).Should().BeTrue();
-        secretKey.GetString().Should().NotBeNullOrWhiteSpace();
-        secretKey.GetString()!.Length.Should().BeGreaterThanOrEqualTo(32, "SecretKey tối thiểu 32 ký tự để đảm bảo chuẩn HMAC-SHA256");
+        jwtSection.GetProperty("Issuer").GetString().Should().Be("OnePortal");
+        jwtSection.GetProperty("Audience").GetString().Should().Be("OnePortal");
+        jwtSection.TryGetProperty("SecretKey", out _).Should().BeFalse("signing credentials belong in environment or ignored local configuration");
+        jwtSection.TryGetProperty("PrivateKeyPem", out _).Should().BeFalse();
     }
 
     [Fact]
-    public void EdgeCase_ConnectionString_ShouldUseSafePlaceholderPassword()
+    public void SharedConnectionDefaults_DoNotContainADatabasePassword()
     {
-        // 2. Trường hợp biên: ConnectionString chỉ dùng placeholder Password=passwordhere;
-        var jsonText = File.ReadAllText(_appSettingsPath);
-        using var jsonDoc = JsonDocument.Parse(jsonText);
-        var defaultConn = jsonDoc.RootElement.GetProperty("ConnectionStrings").GetProperty("DefaultConnection").GetString()!;
-
-        // Trích xuất Password trong Connection String
-        var match = Regex.Match(defaultConn, @"Password\s*=\s*([^;]+);?", RegexOptions.IgnoreCase);
-        match.Success.Should().BeTrue("ConnectionString phải có tham số Password");
-
-        var passwordValue = match.Groups[1].Value.Trim();
-        passwordValue.Should().NotBeNullOrWhiteSpace("Password trong ConnectionString không được để trống");
+        using var document = JsonDocument.Parse(File.ReadAllText(_appSettingsPath));
+        var connection = new NpgsqlConnectionStringBuilder(document.RootElement.GetProperty("ConnectionStrings").GetProperty("DefaultConnection").GetString());
+        connection.Password.Should().BeNullOrEmpty();
+        connection.Host.Should().Be("localhost");
     }
 
     [Theory]
@@ -77,17 +72,12 @@ public class ConfigurationSecurityTests
     }
 
     [Fact]
-    public void NegativeCase_JwtSecretKey_MustRejectWeakOrShortKeys()
+    public void DevelopmentHmacValidation_RejectsMissingAndWeakKeyMaterial()
     {
-        // 3. Trường hợp thất bại: JWT SecretKey phải an toàn và không dùng key mặc định quá ngắn
-        var jsonText = File.ReadAllText(_appSettingsPath);
-        using var jsonDoc = JsonDocument.Parse(jsonText);
-        var secretKey = jsonDoc.RootElement.GetProperty("Jwt").GetProperty("SecretKey").GetString()!;
-
-        // Key không được ngắn dưới 32 ký tự và không được để trống
-        secretKey.Length.Should().BeGreaterThanOrEqualTo(32);
-        secretKey.Should().NotBe("secret");
-        secretKey.Should().NotBe("123456");
-        secretKey.Should().NotBe("jwt_secret_key");
+        foreach (var secret in new[] { "", "secret", "123456", "jwt_secret_key" })
+        {
+            Action create = () => JwtKeyMaterial.Create(new JwtSettings { SecretKey = secret }, signing: true);
+            create.Should().Throw<InvalidOperationException>();
+        }
     }
 }

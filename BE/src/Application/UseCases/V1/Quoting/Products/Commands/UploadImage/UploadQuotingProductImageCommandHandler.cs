@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Commands.UploadImage;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
+namespace OnePortal.Application.UseCases.V1.Quoting.Products.Commands.UploadImage;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
 public sealed class UploadQuotingProductImageCommandHandler(IQuotingProductImageService imageService) : ICommandHandler<UploadQuotingProductImageCommand, UploadQuotingProductImageResult>
 {
     #region Fields

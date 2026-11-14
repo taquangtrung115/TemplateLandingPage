@@ -1,10 +1,10 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Templates.Queries;
+namespace OnePortal.Application.UseCases.V1.Templates.Queries;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Templates;
-using TemplateLandingPage.Domain.Repositories;
-using TemplateLandingPage.Domain.ReadModels;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Templates;
+using OnePortal.Domain.Repositories;
+using OnePortal.Domain.ReadModels;
 
 public sealed class GetTemplatesQueryHandler : IQueryHandler<GetTemplatesQuery, List<TemplateSummaryResponse>>
 {

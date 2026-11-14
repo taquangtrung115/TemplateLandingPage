@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.IntegrationTests;
+namespace OnePortal.IntegrationTests;
 
 using System.Net;
 using System.Text.Json;

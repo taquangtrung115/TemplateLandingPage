@@ -1,11 +1,11 @@
-namespace TemplateLandingPage.UnitTests.Infrastructure.Quoting;
+namespace OnePortal.UnitTests.Infrastructure.Quoting;
 
 using System.Net;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
-using TemplateLandingPage.Infrastructure.Services.Quoting;
+using OnePortal.Infrastructure.Services.Quoting;
 using Xunit;
 
 public sealed class QuotationStorageTests
@@ -92,7 +92,7 @@ public sealed class QuotationStorageTests
         {
             using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
             await ((Func<Task>)(async () => { await resolver.UploadFileAsync("quote.pdf", "application/pdf", stream, cancellation.Token); })).Should().ThrowAsync<OperationCanceledException>();
-            Directory.GetFiles(path).Should().BeEmpty();
+            Directory.Exists(path).Should().BeFalse();
         }
         finally { if (Directory.Exists(path)) Directory.Delete(path, true); }
     }
@@ -119,4 +119,43 @@ public sealed class QuotationStorageTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+    [Fact]
+    public async Task SecretApiKey_IsNotForwardedAsAJwt_AndCloudKeysCannotCrossTenantPrefixes()
+    {
+        var id = Guid.NewGuid(); var requests = 0;
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Supabase:Url"] = "https://storage.example.test", ["Supabase:ServiceRoleKey"] = "sb_secret_synthetic_test",
+        }).Build();
+        using var http = new HttpClient(new StubHandler((request, _) =>
+        {
+            requests++;
+            request.Headers.Authorization.Should().BeNull();
+            request.Headers.GetValues("apikey").Should().ContainSingle().Which.Should().Be("sb_secret_synthetic_test");
+            request.RequestUri!.AbsolutePath.Should().Contain($"/tenants/{id:N}/quoting/exports/quote.pdf");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("PDF") });
+        }));
+        var service = new SupabaseStorageService(http, configuration, NullLogger<SupabaseStorageService>.Instance,
+            OnePortal.Application.Services.Tenancy.TenantContext.For(id, "quoting"));
+        using var bytes = new MemoryStream([1, 2, 3]);
+        var upload = await service.UploadFileAsync("quote.pdf", "application/pdf", bytes);
+        using var own = await service.DownloadFileAsync(upload.FileUrl); own.Should().NotBeNull();
+        (await service.DownloadFileAsync(upload.FileUrl.Replace(id.ToString("N"), Guid.NewGuid().ToString("N")))).Should().BeNull();
+        requests.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task ProductionStorageFailure_DoesNotFallBackToReplicaLocalFiles()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "oneportal-no-fallback-" + Guid.NewGuid().ToString("N"));
+        var configuration = Configuration(path);
+        var cloud = Service(new StubHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))), configuration);
+        var resolver = new QuotationFileStorageResolver(cloud, new LocalStorageService(configuration, NullLogger<LocalStorageService>.Instance),
+            NullLogger<QuotationFileStorageResolver>.Instance, configuration);
+        using var bytes = new MemoryStream([1, 2, 3]);
+        await ((Func<Task>)(async () => await resolver.UploadFileAsync("quote.pdf", "application/pdf", bytes)))
+            .Should().ThrowAsync<OnePortal.Application.Exceptions.QuotationStorageUnavailableException>();
+        Directory.Exists(path).Should().BeFalse();
+    }
+
 }

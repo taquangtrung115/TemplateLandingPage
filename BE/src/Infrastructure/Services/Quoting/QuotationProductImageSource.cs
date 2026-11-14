@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Infrastructure.Services.Quoting;
+namespace OnePortal.Infrastructure.Services.Quoting;
 
 internal static class QuotationProductImageSource
 {
@@ -15,6 +15,6 @@ internal static class QuotationProductImageSource
         var code = fileName[..^4];
         if (code.Length == 0 || !code.All(character => char.IsAsciiLetterOrDigit(character) || character == '-')) return null;
         // The snapshotted URL selects the photo. A catalog code can be renamed or refer to a different photo.
-        return typeof(QuotationProductImageSource).Assembly.GetManifestResourceStream($"TemplateLandingPage.Infrastructure.Assets.Products.{code}.png");
+        return typeof(QuotationProductImageSource).Assembly.GetManifestResourceStream($"OnePortal.Infrastructure.Assets.Products.{code}.png");
     }
 }

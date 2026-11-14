@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Application.DependencyInjection.Extensions;
+namespace OnePortal.Application.DependencyInjection.Extensions;
 
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using TemplateLandingPage.Application.Behaviors;
+using OnePortal.Application.Behaviors;
 
 public static class ServiceCollectionExtensions
 {

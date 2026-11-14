@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Infrastructure.Services;
+namespace OnePortal.Infrastructure.Services;
 
-using TemplateLandingPage.Infrastructure.Abstractions;
+using OnePortal.Infrastructure.Abstractions;
 
 public sealed class DateTimeProvider : IDateTimeProvider
 {

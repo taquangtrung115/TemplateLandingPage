@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
+namespace OnePortal.Contract.Services.V1.Quoting.Templates;
 
 public record QuotationTemplateResponse(
     Guid Id,

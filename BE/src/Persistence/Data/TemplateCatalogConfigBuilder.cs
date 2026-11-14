@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Persistence.Data;
+namespace OnePortal.Persistence.Data;
 
 using System.Text.Json;
 

@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Support.Queries.Search;
+namespace OnePortal.Application.UseCases.V1.Quoting.Support.Queries.Search;
 using FluentValidation;
 public sealed class SearchQuotingSupportQueryValidator : AbstractValidator<SearchQuotingSupportQuery>
 {

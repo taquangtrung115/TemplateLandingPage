@@ -46,7 +46,7 @@ describe('QuotingLayout - Kiểm thử cấu trúc Shell, Menu & Điều hướn
       );
 
       // Thương hiệu
-      expect(screen.getByText('CHUỖI ĂN VẶT')).toBeInTheDocument();
+      expect(screen.getByText('Quoting')).toBeInTheDocument();
 
       // Tiêu đề các nhóm nghiệp vụ
       expect(screen.getByText('Nghiệp vụ')).toBeInTheDocument();

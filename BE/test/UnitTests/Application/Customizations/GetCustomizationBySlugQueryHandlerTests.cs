@@ -1,11 +1,11 @@
-namespace TemplateLandingPage.UnitTests.Application.Customizations;
+namespace OnePortal.UnitTests.Application.Customizations;
 
 using FluentAssertions;
 using Moq;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Queries;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.ReadModels;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.UseCases.V1.Customizations.Queries;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Domain.ReadModels;
+using OnePortal.Domain.Repositories;
 using Xunit;
 
 public class GetCustomizationBySlugQueryHandlerTests

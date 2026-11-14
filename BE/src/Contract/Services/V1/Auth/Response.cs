@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Auth;
+namespace OnePortal.Contract.Services.V1.Auth;
 
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Shared;
 
 public record LoginResponse(string Token, UserResponse User);
 
@@ -11,7 +11,8 @@ public record UserResponse(
     string Role,
     bool IsActive,
     string? AvatarUrl,
-    DateTime CreatedAtUtc);
+    DateTime CreatedAtUtc,
+    bool IsPlatformAdmin = false);
 
 public static class AuthErrors
 {

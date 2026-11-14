@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Application.Behaviors;
+namespace OnePortal.Application.Behaviors;
 
 using FluentValidation;
 using MediatR;
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Shared;
 
 public class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>

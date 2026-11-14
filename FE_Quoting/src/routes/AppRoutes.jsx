@@ -1,3 +1,4 @@
+import WorkspaceMembers from '../components/WorkspaceMembers';
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AppLoading from '../components/common/AppLoading';
@@ -51,6 +52,7 @@ export default function AppRoutes() {
         <Route path="customers" element={<CustomerListPage />} />
         <Route path="templates" element={<TemplateListPage />} />
         <Route path="support" element={<SupportBoardPage />} />
+        <Route path="members" element={<WorkspaceMembers />} />
         <Route path="contact" element={<ContactPage />} />
       </Route>
 

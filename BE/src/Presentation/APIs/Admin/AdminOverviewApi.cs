@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.Presentation.APIs.Admin;
+namespace OnePortal.Presentation.APIs.Admin;
 
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Admin;
-using TemplateLandingPage.Presentation.Abstractions;
-using TemplateLandingPage.Presentation.Authorization;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Admin;
+using OnePortal.Presentation.Abstractions;
+using OnePortal.Presentation.Authorization;
 
 public sealed class AdminOverviewApi : IEndpoint
 {

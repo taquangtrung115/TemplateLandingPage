@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Commands;
+namespace OnePortal.Application.UseCases.V1.Quoting.Quotations.Commands;
 
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.Exceptions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.Exceptions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Quoting.Quotations;
+using OnePortal.Contract.Services.V1.Quoting.Templates;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Repositories.Quoting;
 
 public sealed class ExportQuotationFileCommandHandler : ICommandHandler<ExportQuotationFileCommand, QuotationFileResponse>
 {

@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Customizations;
+namespace OnePortal.Contract.Services.V1.Customizations;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Message;
 
 public record CreateCustomizationCommand(Guid? UserId, Guid TemplateId, string Title, string Slug,
     string ConfigJson, bool IsPublished = false, Guid? ClientDraftId = null) : ICommand<CustomizationMutationResponse>;

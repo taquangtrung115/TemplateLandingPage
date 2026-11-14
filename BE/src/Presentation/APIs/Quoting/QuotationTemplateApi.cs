@@ -1,14 +1,14 @@
-namespace TemplateLandingPage.Presentation.APIs.Quoting;
+namespace OnePortal.Presentation.APIs.Quoting;
 
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
-using TemplateLandingPage.Presentation.Abstractions;
-using TemplateLandingPage.Presentation.Authorization;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Quoting.Templates;
+using OnePortal.Presentation.Abstractions;
+using OnePortal.Presentation.Authorization;
 
 public sealed class QuotationTemplateApi : IEndpoint
 {

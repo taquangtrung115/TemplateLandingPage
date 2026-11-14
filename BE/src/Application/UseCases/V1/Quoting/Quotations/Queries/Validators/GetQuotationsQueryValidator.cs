@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries.Validators;
+namespace OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries.Validators;
 
 using FluentValidation;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
+using OnePortal.Contract.Services.V1.Quoting.Quotations;
 
 public sealed class GetQuotationsQueryValidator : AbstractValidator<GetQuotationsQuery>
 {

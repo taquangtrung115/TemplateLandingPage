@@ -7,18 +7,33 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Npgsql;
-using TemplateLandingPage.API.Middlewares;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.DependencyInjection.Extensions;
-using TemplateLandingPage.Infrastructure.Authentication;
-using TemplateLandingPage.Infrastructure.DependencyInjection.Extensions;
-using TemplateLandingPage.Persistence;
-using TemplateLandingPage.Persistence.Data;
-using TemplateLandingPage.Persistence.DependencyInjection.Extensions;
-using TemplateLandingPage.Presentation.Authorization;
-using TemplateLandingPage.Presentation.DependencyInjection.Extensions;
+using OnePortal.API.Middlewares;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.DependencyInjection.Extensions;
+using OnePortal.Infrastructure.Authentication;
+using OnePortal.Infrastructure.DependencyInjection.Extensions;
+using OnePortal.Persistence;
+using OnePortal.Persistence.Data;
+using OnePortal.Persistence.DependencyInjection.Extensions;
+using OnePortal.Presentation.Authorization;
+using OnePortal.Presentation.DependencyInjection.Extensions;
 
-var builder = WebApplication.CreateBuilder(args);
+var initializeDatabase = args.Contains("--initialize-database", StringComparer.Ordinal);
+var builder = WebApplication.CreateBuilder(args.Where(argument => argument != "--initialize-database").ToArray());
+
+if (initializeDatabase)
+{
+    var migrationConnection = Environment.GetEnvironmentVariable("TEMPLATE_MIGRATION_CONNECTION_STRING")
+        ?? builder.Configuration.GetConnectionString("MigrationConnection") ?? builder.Configuration.GetConnectionString("DefaultConnection");
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = migrationConnection;
+    builder.Services.AddPersistence(builder.Configuration);
+    await using var initializationApp = builder.Build();
+    await using var scope = initializationApp.Services.CreateAsyncScope();
+    var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await OnePortal.Persistence.Initialization.DatabaseInitializer.InitializeAsync(database);
+    await OnePortal.Persistence.Initialization.DatabaseInitializer.BootstrapAdministratorAsync(database, builder.Configuration);
+    return;
+}
 
 // Add Services
 builder.Services.AddEndpointsApiExplorer();
@@ -26,9 +41,9 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Template Landing Page API",
+        Title = "OnePortal API",
         Version = "v1",
-        Description = "API for Landing Page Management & Customizer"
+        Description = "Shared portal API for tenants, templates and quoting"
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -73,87 +88,23 @@ builder.Services.AddCors(options =>
 });
 
 // Configure Authentication & JWT
-var jwtSection = builder.Configuration.GetSection(JwtSettings.SectionName);
-var secretKey = jwtSection["SecretKey"];
-if (string.IsNullOrWhiteSpace(secretKey) || Encoding.UTF8.GetByteCount(secretKey) < 32)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
-    throw new InvalidOperationException("Jwt:SecretKey must be configured with at least 32 bytes.");
-}
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
+    if (!builder.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(jwtSettings.PrivateKeyPem))
+        throw new InvalidOperationException("Production requires Jwt:PrivateKeyPem and RSA signing.");
+    var validationKey = JwtKeyMaterial.Create(jwtSettings, signing: false);
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSection["Issuer"],
-            ValidAudience = jwtSection["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
-        };
-
-        options.Events = new JwtBearerEvents
-        {
-            OnTokenValidated = async context =>
-            {
-                var principal = context.Principal;
-                var subject = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                    ?? principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-                if (!Guid.TryParse(subject, out var userId) || principal?.Identity is not ClaimsIdentity identity)
-                {
-                    context.Fail("Invalid access token.");
-                    return;
-                }
-
-                try
-                {
-                    var dbContext = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
-                    var role = await dbContext.Users
-                        .AsNoTracking()
-                        .Where(user => user.Id == userId && user.IsActive && !user.IsDeleted)
-                        .Select(user => user.Role)
-                        .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
-
-                    if (role is null)
-                    {
-                        context.Fail("The account is unavailable.");
-                        return;
-                    }
-
-                    foreach (var claimsIdentity in principal.Identities)
-                    {
-                        foreach (var roleClaim in claimsIdentity.FindAll(ClaimTypes.Role).ToList())
-                        {
-                            claimsIdentity.RemoveClaim(roleClaim);
-                        }
-                    }
-
-                    identity.AddClaim(new Claim(ClaimTypes.Role, role));
-                }
-                catch (OperationCanceledException) when (context.HttpContext.RequestAborted.IsCancellationRequested)
-                {
-                    throw;
-                }
-                catch (Exception exception)
-                {
-                    var logger = context.HttpContext.RequestServices
-                        .GetRequiredService<ILoggerFactory>()
-                        .CreateLogger("JwtAccountValidation");
-                    logger.LogError(
-                        "Account validation failed for operation {OperationId} ({ExceptionType}).",
-                        context.HttpContext.TraceIdentifier,
-                        exception.GetType().Name);
-                    context.Fail("Account validation failed.");
-                }
-            }
-        };
-    });
+        ValidateIssuer = true, ValidateAudience = true, ValidateLifetime = true, ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer, ValidAudience = jwtSettings.Audience, IssuerSigningKey = validationKey,
+        ValidAlgorithms = validationKey is RsaSecurityKey ? [SecurityAlgorithms.RsaSha256] : [SecurityAlgorithms.HmacSha256]
+    };
+});
 
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("PlatformAdmin", policy => policy.RequireAuthenticatedUser().RequireClaim("platform_admin", "true"));
     options.AddPolicy(AuthorizationPolicies.AdminOnly, policy =>
         policy.RequireAuthenticatedUser().RequireRole("Admin"));
 });
@@ -165,31 +116,48 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddPresentation();
 
 var app = builder.Build();
+// Validate key material after host/test configuration is complete and before accepting traffic.
+_ = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<JwtBearerOptions>>().Get(JwtBearerDefaults.AuthenticationScheme);
 
-// Demo data is only inserted after an explicit local development opt-in.
-if (app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("SeedData:Enabled"))
+// Initialization finishes before any endpoint accepts traffic.
+await using (var initializationScope = app.Services.CreateAsyncScope())
 {
-    using var scope = app.Services.CreateScope();
-    try
+    var database = initializationScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var mode = builder.Configuration["DatabaseInitialization:Mode"] ?? (app.Environment.IsDevelopment() ? "Startup" : "Verify");
+    if (mode == "Startup")
     {
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-        await DataSeeder.SeedAsync(dbContext, passwordHasher);
-        if (builder.Configuration.GetValue<bool>("SeedData:IncludeCatalog", true))
+        await OnePortal.Persistence.Initialization.DatabaseInitializer.InitializeAsync(database);
+        await OnePortal.Persistence.Initialization.DatabaseInitializer.BootstrapAdministratorAsync(database, builder.Configuration);
+    }
+    else if (mode == "Verify")
+    {
+        if ((await database.Database.GetPendingMigrationsAsync()).Any()) throw new InvalidOperationException("Run the database initialization deployment step before starting this version.");
+        foreach (var appKey in OnePortal.Domain.Entities.Tenancy.TenantDefaults.ApplicationKeys)
         {
-            await TemplateCatalogSeeder.SeedAsync(dbContext);
+            var requiredVersion = OnePortal.Persistence.Initialization.DatabaseInitializer.RequiredVersion(appKey);
+            if (await database.TenantApplications.IgnoreQueryFilters().AnyAsync(application => application.AppKey == appKey && application.IsEnabled
+                && application.ProvisioningStatus == "Ready" && application.SeedVersion < requiredVersion))
+                throw new InvalidOperationException("Required tenant initialization has not completed.");
         }
-        await QuotingSeeder.SeedAsync(dbContext);
     }
-    catch (NpgsqlException npgsqlEx)
+    else if (mode != "Disabled") throw new InvalidOperationException("Unknown database initialization mode.");
+
+    if (app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("SeedData:Enabled"))
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError("Development seed failed with PostgreSQL state {SqlState}.", npgsqlEx.SqlState);
-    }
-    catch (Exception ex)
-    {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError("Development seed failed ({ExceptionType}).", ex.GetType().Name);
+        await using var landing = new ApplicationDbContext(database.GetOptions(), OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.LandingId, "landing"));
+        await DataSeeder.SeedAsync(landing, initializationScope.ServiceProvider.GetRequiredService<IPasswordHasher>());
+        if (builder.Configuration.GetValue<bool>("SeedData:IncludeCatalog", true)) await TemplateCatalogSeeder.SeedAsync(landing);
+        await using var quoting = new ApplicationDbContext(database.GetOptions(), OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.QuotingId, "quoting"));
+        await QuotingSeeder.SeedAsync(quoting);
+        var demoEmails = new List<string> { "admin@template.com", "user@template.com", "minhlinh@template.com" };
+        var demoUsers = await database.Users.AsNoTracking().Where(user => demoEmails.Contains(user.Email) && user.IsActive).Select(user => new { user.Id, user.Role }).ToListAsync();
+        foreach (var demoContext in new[] { landing, quoting })
+        {
+            var existing = await demoContext.TenantMemberships.Select(membership => membership.UserId).ToListAsync();
+            foreach (var demoUser in demoUsers.Where(user => !existing.Contains(user.Id)))
+                demoContext.TenantMemberships.Add(OnePortal.Domain.Entities.Tenancy.TenantMembership.Create(demoContext.CurrentTenantId, demoUser.Id, demoContext.CurrentAppKey, demoUser.Role));
+            await demoContext.SaveChangesAsync();
+        }
     }
 }
 
@@ -201,10 +169,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Template Landing Page API v1");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "OnePortal API v1");
     });
 }
 
+app.UseCors("DefaultCorsPolicy");
+
+// HTTPS terminates at the public edge; the private backend receives internal HTTP.
+app.UseMiddleware<TenantRoutingMiddleware>();
+app.UseRouting();
+app.UseAuthentication();
+app.UseMiddleware<TenantAccessMiddleware>();
+app.UseAuthorization();
 app.UseWhen(context => !context.Request.Path.StartsWithSegments("/exports/quotations"), branch => branch.UseStaticFiles());
 var quotingImageDirectory = Path.Combine(AppContext.BaseDirectory, "wwwroot", "api", "v1", "quoting", "product-images");
 if (Directory.Exists(quotingImageDirectory))
@@ -215,15 +191,10 @@ if (Directory.Exists(quotingImageDirectory))
         RequestPath = "/api/v1/quoting/product-images"
     });
 }
-app.UseCors("DefaultCorsPolicy");
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
-
-app.UseAuthentication();
-app.UseAuthorization();
+app.MapGet("/health/live", () => Results.Ok(new { status = "live" }));
+app.MapGet("/health/ready", async (ApplicationDbContext database, CancellationToken token) =>
+    await database.Database.CanConnectAsync(token) ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503));
 
 // Map Minimal APIs
 app.MapEndpoints();

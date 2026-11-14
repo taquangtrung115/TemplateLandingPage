@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Interactions.Queries;
+namespace OnePortal.Application.UseCases.V1.Interactions.Queries;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Interactions;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Interactions;
+using OnePortal.Domain.Repositories;
 
 public sealed class GetRsvpsByCustomizationIdQueryHandler : IQueryHandler<GetRsvpsByCustomizationIdQuery, PagedResponse<RsvpResponse>>
 {

@@ -1,10 +1,10 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Support.Commands.Submit;
+namespace OnePortal.Application.UseCases.V1.Quoting.Support.Commands.Submit;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Repositories.Quoting;
 
 public sealed class SubmitQuotingSupportCommandHandler(IQuotingSupportRepository repository, IUnitOfWork unitOfWork)
     : ICommandHandler<SubmitQuotingSupportCommand, SubmitQuotingSupportResult>

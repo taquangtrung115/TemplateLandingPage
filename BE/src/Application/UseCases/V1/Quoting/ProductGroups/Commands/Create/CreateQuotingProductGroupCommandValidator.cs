@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.ProductGroups.Commands.Create;
+namespace OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Commands.Create;
 using FluentValidation;
 public sealed class CreateQuotingProductGroupCommandValidator : AbstractValidator<CreateQuotingProductGroupCommand>
 {

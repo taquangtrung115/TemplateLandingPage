@@ -1,11 +1,11 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Commands.AssignOwner;
+namespace OnePortal.Application.UseCases.V1.Customizations.Commands.AssignOwner;
 
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Repositories;
 
 public sealed class AssignCustomizationOwnerCommandHandler(ICustomizationRepository repository, IUserRepository users,
     IUnitOfWork unitOfWork, ILogger<AssignCustomizationOwnerCommandHandler> logger)
@@ -24,7 +24,7 @@ public sealed class AssignCustomizationOwnerCommandHandler(ICustomizationReposit
         if (site is null) return Result.Failure<CustomizationMutationResponse>(CustomizationErrors.NotFound);
         if (site.Revision != request.ExpectedRevision || site.UserId.HasValue)
             return Result.Failure<CustomizationMutationResponse>(CustomizationErrors.Conflict);
-        var user = await _users.GetByIdAsync(request.UserId, cancellationToken);
+        var user = await _users.GetActiveByIdAsync(request.UserId, cancellationToken);
         if (user is null || !user.IsActive)
             return Result.Failure<CustomizationMutationResponse>(CustomizationErrors.InvalidRequest);
         site.AssignOwner(user.Id);

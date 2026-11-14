@@ -1,18 +1,20 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Auth.Queries;
+namespace OnePortal.Application.UseCases.V1.Auth.Queries;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Auth;
-using TemplateLandingPage.Contract.Services.V1.Users;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Auth;
+using OnePortal.Contract.Services.V1.Users;
+using OnePortal.Domain.Repositories;
 
 public sealed class GetCurrentUserQueryHandler : IQueryHandler<GetCurrentUserQuery, UserResponse>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IRequestActor? _actor;
 
-    public GetCurrentUserQueryHandler(IUserRepository userRepository)
+    public GetCurrentUserQueryHandler(IUserRepository userRepository, IRequestActor? actor = null)
     {
         _userRepository = userRepository;
+        _actor = actor;
     }
 
     public async Task<Result<UserResponse>> Handle(GetCurrentUserQuery request, CancellationToken cancellationToken)
@@ -27,10 +29,10 @@ public sealed class GetCurrentUserQueryHandler : IQueryHandler<GetCurrentUserQue
             user.Id,
             user.Email,
             user.FullName,
-            user.Role,
+            _actor?.Role ?? "User",
             user.IsActive,
             user.AvatarUrl,
-            user.CreatedAtUtc);
+            user.CreatedAtUtc, user.IsPlatformAdmin);
 
         return Result.Success(response);
     }

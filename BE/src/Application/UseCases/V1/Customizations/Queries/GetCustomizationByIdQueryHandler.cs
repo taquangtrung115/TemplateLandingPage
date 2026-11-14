@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Customizations.Queries;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Customizations.Helpers;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Domain.Repositories;
+namespace OnePortal.Application.UseCases.V1.Customizations.Queries;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Customizations.Helpers;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Domain.Repositories;
 
 public sealed class GetCustomizationByIdQueryHandler(ICustomizationRepository customizationRepository, ITemplateRepository templateRepository)
     : IQueryHandler<GetCustomizationByIdQuery, CustomizationResponse>

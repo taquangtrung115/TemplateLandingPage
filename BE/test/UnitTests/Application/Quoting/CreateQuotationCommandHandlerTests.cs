@@ -1,15 +1,15 @@
-namespace TemplateLandingPage.UnitTests.Application.Quoting;
+namespace OnePortal.UnitTests.Application.Quoting;
 
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Commands;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Customers;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Commands;
+using OnePortal.Contract.Services.V1.Quoting.Customers;
+using OnePortal.Contract.Services.V1.Quoting.Quotations;
+using OnePortal.Contract.Services.V1.Quoting.Templates;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Repositories.Quoting;
 using Xunit;
 
 public class CreateQuotationCommandHandlerTests

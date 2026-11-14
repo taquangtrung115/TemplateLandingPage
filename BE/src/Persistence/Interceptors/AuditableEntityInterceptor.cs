@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Interceptors;
+namespace OnePortal.Persistence.Interceptors;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using TemplateLandingPage.Domain.Abstractions;
+using OnePortal.Domain.Abstractions;
 
 public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
 {

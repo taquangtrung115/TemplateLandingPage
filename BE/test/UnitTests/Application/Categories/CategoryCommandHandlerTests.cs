@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.UnitTests.Application.Categories;
+namespace OnePortal.UnitTests.Application.Categories;
 
 using FluentAssertions;
 using Moq;
-using TemplateLandingPage.Application.UseCases.V1.Categories.Commands;
-using TemplateLandingPage.Contract.Services.V1.Categories;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.UseCases.V1.Categories.Commands;
+using OnePortal.Contract.Services.V1.Categories;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 using Xunit;
 
 public class CategoryCommandHandlerTests

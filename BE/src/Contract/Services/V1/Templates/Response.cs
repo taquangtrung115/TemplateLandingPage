@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Templates;
+namespace OnePortal.Contract.Services.V1.Templates;
 
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Shared;
 
 public record TemplateResponse(
     Guid Id,

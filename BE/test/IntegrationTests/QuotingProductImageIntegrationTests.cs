@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.IntegrationTests;
+namespace OnePortal.IntegrationTests;
 
 using System.Net;
 using System.Net.Http.Headers;
@@ -21,7 +21,7 @@ public sealed class QuotingProductImageIntegrationTests(PostgresApiFixture fixtu
     {
         var user = await fixture.AddUserAsync("Admin");
         using var client = fixture.CreateClientFor(user.Id, "Admin");
-        await fixture.WithDatabaseAsync(async db => { await TemplateLandingPage.Persistence.Data.QuotingSeeder.SeedAsync(db); return true; });
+        await fixture.WithDatabaseAsync(async db => { await OnePortal.Persistence.Data.QuotingSeeder.SeedAsync(db); return true; });
         var quote = await SendAsync(client, HttpMethod.Post, "/api/v1/quoting/quotations", new
         {
             issueDate = DateTime.UtcNow,
@@ -63,13 +63,13 @@ public sealed class QuotingProductImageIntegrationTests(PostgresApiFixture fixtu
     {
         var user = await fixture.AddUserAsync("Admin"); using var admin = fixture.CreateClientFor(user.Id, "Admin");
         using var upload = await UploadAsync(admin, Png(SKColors.Red)); var uploaded = (await ValueAsync(upload)).GetProperty("image");
-        var url = uploaded.GetProperty("imageUrl").GetString()!; url.Should().StartWith("/api/v1/quoting/product-images/uploads/");
+        var url = uploaded.GetProperty("imageUrl").GetString()!; url.Should().StartWith("/t/quoting-default/api/v1/quoting/product-images/uploads/");
         using var anonymous = fixture.CreateAnonymousClient(); using var imageResponse = await anonymous.GetAsync(url);
         imageResponse.StatusCode.Should().Be(HttpStatusCode.OK); imageResponse.Content.Headers.ContentType!.MediaType.Should().Be("image/png");
         var photo = await imageResponse.Content.ReadAsByteArrayAsync(); using var decoded = SKBitmap.Decode(photo); decoded.Width.Should().Be(113); decoded.Height.Should().Be(79);
         var code = "IMAGE-" + Guid.NewGuid().ToString("N");
         var product = await SendAsync(admin, HttpMethod.Post, "/api/v1/quoting/products", new { code, name = "Sản phẩm có ảnh tải lên", unit = "Gói", price = 18000, category = "A/ DÒNG COMBO", imageUrl = url });
-        await fixture.WithDatabaseAsync(async db => { await TemplateLandingPage.Persistence.Data.QuotingSeeder.SeedAsync(db); return true; });
+        await fixture.WithDatabaseAsync(async db => { await OnePortal.Persistence.Data.QuotingSeeder.SeedAsync(db); return true; });
         var quote = await SendAsync(admin, HttpMethod.Post, "/api/v1/quoting/quotations", new { issueDate = DateTime.UtcNow, items = new[] { new { productId = product.GetGuid(), productCode = code, productName = "Ảnh theo báo giá", unit = "Gói", unitPrice = 20000, quantity = 1, imageUrl = url } } });
         using var secondUpload = await UploadAsync(admin, Png(SKColors.Blue)); var replacement = (await ValueAsync(secondUpload)).GetProperty("image").GetProperty("imageUrl").GetString(); replacement.Should().NotBe(url);
         await SendAsync(admin, HttpMethod.Put, $"/api/v1/quoting/products/{product.GetGuid()}", new { code, name = "Sản phẩm đã đổi ảnh", unit = "Gói", price = 18000, category = "A/ DÒNG COMBO", imageUrl = replacement, isActive = true });

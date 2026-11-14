@@ -379,3 +379,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Local multi-tenant verification binaries and runtime secrets
+PromtAI/.codex/results/multi-tenant-20261114/tools/
+PromtAI/.codex/results/multi-tenant-20261114/runtime/
+
+# Generated verification reports (summary/manifests remain reviewable)
+PromtAI/.codex/results/multi-tenant-20261114/browser/
+PromtAI/.codex/results/multi-tenant-20261114/*.trx
+PromtAI/.codex/results/multi-tenant-20261114/*-tests.json
+PromtAI/.codex/results/multi-tenant-20261114/*.log

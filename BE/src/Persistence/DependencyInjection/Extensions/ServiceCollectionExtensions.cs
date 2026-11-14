@@ -1,20 +1,27 @@
-namespace TemplateLandingPage.Persistence.DependencyInjection.Extensions;
+namespace OnePortal.Persistence.DependencyInjection.Extensions;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Repositories;
-using TemplateLandingPage.Domain.Repositories.Quoting;
-using TemplateLandingPage.Persistence.Interceptors;
-using TemplateLandingPage.Persistence.Repositories;
-using TemplateLandingPage.Persistence.Repositories.Quoting;
-using TemplateLandingPage.Application.Abstractions;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Repositories;
+using OnePortal.Domain.Repositories.Quoting;
+using OnePortal.Persistence.Interceptors;
+using OnePortal.Persistence.Repositories;
+using OnePortal.Persistence.Repositories.Quoting;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.Services.Tenancy;
+using OnePortal.Persistence.Initialization;
 
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<TenantContext>();
+        services.AddScoped<ITenantContext>(provider => provider.GetRequiredService<TenantContext>());
+        services.AddScoped<RequestActor>();
+        services.AddScoped<IRequestActor>(provider => provider.GetRequiredService<RequestActor>());
+        services.AddScoped<ITenantStore, OnePortal.Persistence.Repositories.Tenancy.TenantStore>();
         services.AddSingleton<AuditableEntityInterceptor>();
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
@@ -31,7 +38,8 @@ public static class ServiceCollectionExtensions
                 npgsqlOptions.CommandTimeout(60);
                 npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
             })
-            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning))
+            .UseSeeding((context, _) => DatabaseInitializer.SeedAsync((ApplicationDbContext)context).GetAwaiter().GetResult())
+            .UseAsyncSeeding((context, _, token) => DatabaseInitializer.SeedAsync((ApplicationDbContext)context, token))
             .AddInterceptors(interceptor);
         });
 

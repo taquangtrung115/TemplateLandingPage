@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.IntegrationTests;
+namespace OnePortal.IntegrationTests;
 
 using System.Collections.Concurrent;
 using System.Net;
@@ -20,15 +20,15 @@ internal sealed class FakeSupabaseImageHandler : HttpMessageHandler
             if (content.RootElement.GetProperty("public").GetBoolean()) throw new InvalidOperationException("Product image bucket must be private.");
             _hasBucket = true; return new(HttpStatusCode.OK) { Content = new StringContent("{}") };
         }
-        if (path.StartsWith("/storage/v1/object/product-images/uploads/", StringComparison.Ordinal) && request.Method == HttpMethod.Post)
+        if (path.StartsWith("/storage/v1/object/product-images/", StringComparison.Ordinal) && request.Method == HttpMethod.Post)
         {
-            var key = path.Split('/')[^1];
+            var key = path["/storage/v1/object/product-images/".Length..];
             if (!_objects.TryAdd(key, (await request.Content!.ReadAsByteArrayAsync(cancellationToken), request.Content.Headers.ContentType!.MediaType!))) return new(HttpStatusCode.Conflict);
             return new(HttpStatusCode.OK) { Content = new StringContent("{}") };
         }
-        if (path.StartsWith("/storage/v1/object/authenticated/product-images/uploads/", StringComparison.Ordinal) && request.Method == HttpMethod.Get)
+        if (path.StartsWith("/storage/v1/object/authenticated/product-images/", StringComparison.Ordinal) && request.Method == HttpMethod.Get)
         {
-            if (!_objects.TryGetValue(path.Split('/')[^1], out var image)) return new(HttpStatusCode.NotFound);
+            if (!_objects.TryGetValue(path["/storage/v1/object/authenticated/product-images/".Length..], out var image)) return new(HttpStatusCode.NotFound);
             var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(image.Bytes) };
             response.Content.Headers.ContentType = new(image.Mime); return response;
         }

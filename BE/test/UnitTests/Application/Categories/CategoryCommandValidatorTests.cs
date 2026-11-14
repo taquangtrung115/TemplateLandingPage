@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.UnitTests.Application.Categories;
+namespace OnePortal.UnitTests.Application.Categories;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Categories.Commands.Validators;
-using TemplateLandingPage.Contract.Services.V1.Categories;
+using OnePortal.Application.UseCases.V1.Categories.Commands.Validators;
+using OnePortal.Contract.Services.V1.Categories;
 using Xunit;
 
 public class CategoryCommandValidatorTests

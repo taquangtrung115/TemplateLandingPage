@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Contract.Services.V1.Customizations;
+namespace OnePortal.Contract.Services.V1.Customizations;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Shared;
 
 public record GetCustomizationByIdQuery(Guid Id, Guid? CurrentUserId = null, string? CurrentUserRole = null) : IQuery<CustomizationResponse>;
 public record GetCustomizationBySlugQuery(string Slug, int? VersionNumber = null) : IQuery<PublicCustomizationResponse>;

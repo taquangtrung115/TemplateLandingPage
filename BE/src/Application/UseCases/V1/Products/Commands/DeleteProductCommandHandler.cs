@@ -1,11 +1,11 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Products.Commands;
+namespace OnePortal.Application.UseCases.V1.Products.Commands;
 
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Products;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Products;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Repositories;
 
 public sealed class DeleteProductCommandHandler : ICommandHandler<DeleteProductCommand>
 {

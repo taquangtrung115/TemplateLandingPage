@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.UnitTests.Application.Quoting.Validators;
+namespace OnePortal.UnitTests.Application.Quoting.Validators;
 
 using FluentAssertions;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Commands.Validators;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Commands.Validators;
+using OnePortal.Contract.Services.V1.Quoting.Quotations;
 using Xunit;
 
 public sealed class QuotationPrecisionValidationTests

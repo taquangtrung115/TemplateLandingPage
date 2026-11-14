@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.UnitTests.Persistence;
+namespace OnePortal.UnitTests.Persistence;
 
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Persistence;
-using TemplateLandingPage.Persistence.Data;
+using OnePortal.Application.Abstractions;
+using OnePortal.Domain.Entities;
+using OnePortal.Persistence;
+using OnePortal.Persistence.Data;
 using Xunit;
 
 public class DataSeederTests : IDisposable
@@ -21,7 +21,7 @@ public class DataSeederTests : IDisposable
             .UseInMemoryDatabase(databaseName: $"SeederTestDb_{Guid.NewGuid()}")
             .Options;
 
-        _dbContext = new ApplicationDbContext(options);
+        _dbContext = new ApplicationDbContext(options, OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.LandingId, "landing"));
 
         _passwordHasherMock = new Mock<IPasswordHasher>();
         _passwordHasherMock
@@ -678,7 +678,7 @@ public class DataSeederTests : IDisposable
             .UseInMemoryDatabase(databaseName: $"DisposedSeederDb_{Guid.NewGuid()}")
             .Options;
 
-        var disposedContext = new ApplicationDbContext(options);
+        var disposedContext = new ApplicationDbContext(options, OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.LandingId, "landing"));
         disposedContext.Dispose();
 
         // Act

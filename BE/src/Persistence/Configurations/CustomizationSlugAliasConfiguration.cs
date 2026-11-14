@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Configurations;
+namespace OnePortal.Persistence.Configurations;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using TemplateLandingPage.Domain.Entities;
+using OnePortal.Domain.Entities;
 
 public sealed class CustomizationSlugAliasConfiguration : IEntityTypeConfiguration<CustomizationSlugAlias>
 {

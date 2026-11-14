@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Categories;
+namespace OnePortal.Contract.Services.V1.Categories;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Message;
 
 public record CreateCategoryCommand(
     string Name,

@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Repositories.Quoting;
+namespace OnePortal.Persistence.Repositories.Quoting;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Domain.Repositories.Quoting;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Repositories.Quoting;
 
 public sealed class QuotingSupportRepository(ApplicationDbContext context)
     : RepositoryBase<QuotingSupportRequest, Guid>(context), IQuotingSupportRepository

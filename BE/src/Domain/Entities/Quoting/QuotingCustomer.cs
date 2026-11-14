@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Domain.Entities.Quoting;
+namespace OnePortal.Domain.Entities.Quoting;
 
-using TemplateLandingPage.Domain.Abstractions;
+using OnePortal.Domain.Abstractions;
 
 public sealed class QuotingCustomer : AggregateRoot<Guid>, IAuditableEntity, ISoftDelete
 {

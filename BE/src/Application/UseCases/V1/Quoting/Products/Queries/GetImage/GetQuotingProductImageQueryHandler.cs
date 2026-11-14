@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Queries.GetImage;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
+namespace OnePortal.Application.UseCases.V1.Quoting.Products.Queries.GetImage;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
 public sealed class GetQuotingProductImageQueryHandler(IQuotingProductImageService imageService) : IQueryHandler<GetQuotingProductImageQuery, GetQuotingProductImageResult>
 {
     #region Fields

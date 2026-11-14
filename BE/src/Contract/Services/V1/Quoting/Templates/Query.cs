@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Quoting.Templates;
+namespace OnePortal.Contract.Services.V1.Quoting.Templates;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Message;
 
 public record GetQuotationTemplatesQuery(bool IncludeInactive = false) : IQuery<List<QuotationTemplateResponse>>;
 

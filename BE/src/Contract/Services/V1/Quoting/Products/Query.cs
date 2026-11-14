@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Quoting.Products;
+namespace OnePortal.Contract.Services.V1.Quoting.Products;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Message;
 
 public record GetQuotingProductsQuery(
     string? SearchTerm = null,

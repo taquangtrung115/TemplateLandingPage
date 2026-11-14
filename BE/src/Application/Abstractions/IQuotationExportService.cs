@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Application.Abstractions;
+namespace OnePortal.Application.Abstractions;
 
-using TemplateLandingPage.Domain.Entities.Quoting;
+using OnePortal.Domain.Entities.Quoting;
 
 public interface IQuotationExportService
 {

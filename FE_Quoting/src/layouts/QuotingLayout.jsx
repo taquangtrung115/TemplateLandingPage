@@ -50,6 +50,7 @@ const MENU_SECTIONS = [
     title: 'Cấu hình',
     items: [
       { label: 'Mẫu báo giá', path: '/templates', icon: Cog6ToothIcon },
+      { label: 'Thành viên workspace', path: '/members', icon: UserGroupIcon, adminOnly: true },
     ],
   },
   {
@@ -96,7 +97,7 @@ export default function QuotingLayout() {
           resizable={{ defaultWidth: 260, minWidth: 220, maxWidth: 360 }}
           header={
             <SideNavHeading
-              heading="CHUỖI ĂN VẶT"
+              heading="Quoting"
               icon={<NavIcon icon={<Icon icon={BuildingStorefrontIcon} size="sm" />} />}
               headingHref="/"
             />

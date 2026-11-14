@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Commands.Validators;
+namespace OnePortal.Application.UseCases.V1.Quoting.Quotations.Commands.Validators;
 
 using FluentValidation;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Helpers;
-using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Helpers;
+using OnePortal.Contract.Services.V1.Quoting.Quotations;
 
 public sealed class CreateQuotationCommandValidator : AbstractValidator<CreateQuotationCommand>
 {

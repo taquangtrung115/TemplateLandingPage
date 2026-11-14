@@ -6,7 +6,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const data = path.join(root, 'BE/src/Persistence/Data');
 const categories = JSON.parse(await readFile(path.join(data, 'TemplateCatalog.json'), 'utf8'));
 const styles = JSON.parse(await readFile(path.join(data, 'TemplateCatalogStyles.json'), 'utf8'));
-const output = path.join(root, 'FE/public/catalog-previews');
+const output = path.join(root, 'FE_TemplateLandingPage/public/catalog-previews');
 await mkdir(output, { recursive: true });
 const escape = (value) => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 

@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Admin.Queries;
+namespace OnePortal.Application.UseCases.V1.Admin.Queries;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Admin;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Admin;
+using OnePortal.Domain.Repositories;
 
 public sealed class GetAdminOverviewQueryHandler : IQueryHandler<GetAdminOverviewQuery, AdminOverviewResponse>
 {

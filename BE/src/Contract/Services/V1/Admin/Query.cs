@@ -1,5 +1,5 @@
-namespace TemplateLandingPage.Contract.Services.V1.Admin;
+namespace OnePortal.Contract.Services.V1.Admin;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Message;
 
 public record GetAdminOverviewQuery() : IQuery<AdminOverviewResponse>;

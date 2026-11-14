@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Products.Queries;
+namespace OnePortal.Application.UseCases.V1.Products.Queries;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Products;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Products;
+using OnePortal.Domain.Repositories;
 
 public sealed class GetProductsQueryHandler : IQueryHandler<GetProductsQuery, List<ProductResponse>>
 {

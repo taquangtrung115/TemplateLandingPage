@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
+namespace OnePortal.Contract.Services.V1.Quoting.Quotations;
 
-using TemplateLandingPage.Contract.Abstractions.Message;
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Message;
+using OnePortal.Contract.Abstractions.Shared;
 
 public record GetQuotationsQuery(
     string? Status = null,

@@ -19,57 +19,58 @@ afterEach(() => { client.defaults.adapter = originalAdapter; clearAuthSession();
 describe('Real FE service request contracts', () => {
   const body = { name: 'Test' };
   it.each([
-    ['create quote', () => quotationApi.createQuotation(body), 'post', '/quoting/quotations', body],
-    ['update quote', () => quotationApi.updateQuotation('q', body), 'put', '/quoting/quotations/q', body],
-    ['change status', () => quotationApi.changeStatus('q', 'Sent', 'Đã gửi'), 'put', '/quoting/quotations/q/status', { status: 'Sent', reason: 'Đã gửi' }],
-    ['PDF export', () => quotationApi.exportFile('q', 'pdf'), 'post', '/quoting/quotations/q/export', { fileType: 'pdf' }],
-    ['HTML export', () => quotationApi.exportFile('q', 'html'), 'post', '/quoting/quotations/q/export', { fileType: 'html' }],
-    ['create product', () => quotingProductApi.createProduct(body), 'post', '/quoting/products', body],
-    ['update product', () => quotingProductApi.updateProduct('p', body), 'put', '/quoting/products/p', body],
-    ['create customer', () => quotingCustomerApi.createCustomer(body), 'post', '/quoting/customers', body],
-    ['update customer', () => quotingCustomerApi.updateCustomer('c', body), 'put', '/quoting/customers/c', body],
-    ['create template', () => quotingTemplateApi.createTemplate(body), 'post', '/quoting/templates', body],
-    ['template version', () => quotingTemplateApi.createVersion('t', body), 'post', '/quoting/templates/t/versions', body],
-    ['update template', () => quotingTemplateApi.updateTemplate('t', body), 'put', '/quoting/templates/t', body],
-    ['support', () => quotingSupportApi.submitRequest(body), 'post', '/quoting/support-requests', body],
-    ['support status', () => quotingSupportApi.changeStatus('s', 'Resolved', 2), 'put', '/quoting/support-requests/s/status', { status: 'Resolved', expectedRevision: 2 }],
+    ['create quote', () => quotationApi.createQuotation(body), 'post', '/quotations', body],
+    ['update quote', () => quotationApi.updateQuotation('q', body), 'put', '/quotations/q', body],
+    ['change status', () => quotationApi.changeStatus('q', 'Sent', 'Đã gửi'), 'put', '/quotations/q/status', { status: 'Sent', reason: 'Đã gửi' }],
+    ['PDF export', () => quotationApi.exportFile('q', 'pdf'), 'post', '/quotations/q/export', { fileType: 'pdf' }],
+    ['HTML export', () => quotationApi.exportFile('q', 'html'), 'post', '/quotations/q/export', { fileType: 'html' }],
+    ['create product', () => quotingProductApi.createProduct(body), 'post', '/products', body],
+    ['update product', () => quotingProductApi.updateProduct('p', body), 'put', '/products/p', body],
+    ['create customer', () => quotingCustomerApi.createCustomer(body), 'post', '/customers', body],
+    ['update customer', () => quotingCustomerApi.updateCustomer('c', body), 'put', '/customers/c', body],
+    ['create template', () => quotingTemplateApi.createTemplate(body), 'post', '/templates', body],
+    ['template version', () => quotingTemplateApi.createVersion('t', body), 'post', '/templates/t/versions', body],
+    ['update template', () => quotingTemplateApi.updateTemplate('t', body), 'put', '/templates/t', body],
+    ['support', () => quotingSupportApi.submitRequest(body), 'post', '/support-requests', body],
+    ['support status', () => quotingSupportApi.changeStatus('s', 'Resolved', 2), 'put', '/support-requests/s/status', { status: 'Resolved', expectedRevision: 2 }],
   ])('%s sends the flat DTO and unwraps Result.Value once', async (_, call, method, url, payload) => {
     expect(await call()).toBe('result-id');
+    expect(new URL(requests[0].baseURL, 'http://localhost').pathname).toBe('/t/quoting-default/api/v1/quoting');
     expect(requests[0].method).toBe(method);
     expect(requests[0].url).toBe(url);
     expect(JSON.parse(requests[0].data)).toEqual(payload);
   });
   it.each([
-    [() => quotationApi.getQuotations({ page: 3, pageSize: 20 }), '/quoting/quotations'],
-    [() => quotationApi.getSummary(), '/quoting/quotations/summary'],
-    [() => quotationApi.getQuotationById('q'), '/quoting/quotations/q'],
-    [() => quotationApi.previewQuotation('q'), '/quoting/quotations/q/preview'],
-    [() => quotationApi.getHistories('q'), '/quoting/quotations/q/histories'],
-    [() => quotationApi.getFiles('q'), '/quoting/quotations/q/files'],
-    [() => quotingProductApi.getProducts(), '/quoting/products'],
-    [() => quotingSupportApi.searchRequests({ status: 'New', page: 2, pageSize: 20 }), '/quoting/support-requests'],
-    [() => quotingProductApi.getProductById('p'), '/quoting/products/p'],
-    [() => quotingCustomerApi.getCustomers(), '/quoting/customers'],
-    [() => quotingCustomerApi.getCustomerById('c'), '/quoting/customers/c'],
-    [() => quotingTemplateApi.getTemplates(), '/quoting/templates'],
-    [() => quotingTemplateApi.getTemplateById('t'), '/quoting/templates/t'],
-    [() => quotingTemplateApi.getTemplateVersion('t', 2), '/quoting/templates/t/versions/2'],
+    [() => quotationApi.getQuotations({ page: 3, pageSize: 20 }), '/quotations'],
+    [() => quotationApi.getSummary(), '/quotations/summary'],
+    [() => quotationApi.getQuotationById('q'), '/quotations/q'],
+    [() => quotationApi.previewQuotation('q'), '/quotations/q/preview'],
+    [() => quotationApi.getHistories('q'), '/quotations/q/histories'],
+    [() => quotationApi.getFiles('q'), '/quotations/q/files'],
+    [() => quotingProductApi.getProducts(), '/products'],
+    [() => quotingSupportApi.searchRequests({ status: 'New', page: 2, pageSize: 20 }), '/support-requests'],
+    [() => quotingProductApi.getProductById('p'), '/products/p'],
+    [() => quotingCustomerApi.getCustomers(), '/customers'],
+    [() => quotingCustomerApi.getCustomerById('c'), '/customers/c'],
+    [() => quotingTemplateApi.getTemplates(), '/templates'],
+    [() => quotingTemplateApi.getTemplateById('t'), '/templates/t'],
+    [() => quotingTemplateApi.getTemplateVersion('t', 2), '/templates/t/versions/2'],
   ])('reads %s through the shared client', async (call, url) => { await call(); expect(requests[0].url).toBe(url); expect(requests[0].method).toBe('get'); });
   it.each([
-    [() => quotationApi.deleteQuotation('q'), '/quoting/quotations/q'],
-    [() => quotingProductApi.deleteProduct('p'), '/quoting/products/p'],
-    [() => quotingCustomerApi.deleteCustomer('c'), '/quoting/customers/c'],
+    [() => quotationApi.deleteQuotation('q'), '/quotations/q'],
+    [() => quotingProductApi.deleteProduct('p'), '/products/p'],
+    [() => quotingCustomerApi.deleteCustomer('c'), '/customers/c'],
   ])('deletes through %s', async (call, url) => { await call(); expect(requests[0]).toMatchObject({ method: 'delete', url }); });
   it('downloads a binary file with JWT through the authorized endpoint', async () => {
     writeAuthSession('test-token', { role: 'User' });
     await quotationApi.downloadFile('q', 'f');
-    expect(requests[0]).toMatchObject({ url: '/quoting/quotations/q/files/f/download', responseType: 'blob' });
+    expect(requests[0]).toMatchObject({ url: '/quotations/q/files/f/download', responseType: 'blob' });
     expect(requests[0].headers.Authorization).toBe('Bearer test-token');
   });
   it('uploads the native File through multipart without forcing a JSON content type', async () => {
     const file = new File(['image'], 'photo.png', { type: 'image/png' });
     await quotingProductApi.uploadImage(file);
-    expect(requests[0].url).toBe('/quoting/products/images'); expect(requests[0].data).toBeInstanceOf(FormData);
+    expect(requests[0].url).toBe('/products/images'); expect(requests[0].data).toBeInstanceOf(FormData);
     expect(requests[0].data.get('file').name).toBe('photo.png'); expect(requests[0].headers['Content-Type']).not.toBe('application/json');
   });
   it('rejects an application failure carried by HTTP 200', async () => {

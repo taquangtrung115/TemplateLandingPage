@@ -108,6 +108,16 @@ export const AuthProvider = ({ children }) => {
     setAuthError(null);
   }, []);
 
+  const applyWorkspaceRole = useCallback((role) => {
+    setUser(previous => {
+      if (!previous || previous.role === role) return previous;
+      const profile = { ...previous, role };
+      const savedToken = readAuthToken();
+      if (savedToken) writeAuthSession(savedToken, profile);
+      return profile;
+    });
+  }, []);
+
   const isAuthenticated = !!token && !!user;
   const isAdmin = user?.role === 'Admin';
 
@@ -117,6 +127,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     authError,
     isAuthenticated,
+    applyWorkspaceRole,
     isAdmin,
     login,
     logout,

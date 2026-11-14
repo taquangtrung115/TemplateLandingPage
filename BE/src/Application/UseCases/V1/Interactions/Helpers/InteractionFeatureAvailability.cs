@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Interactions.Helpers;
+namespace OnePortal.Application.UseCases.V1.Interactions.Helpers;
 
 using System.Text.Json;
 

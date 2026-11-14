@@ -1,3 +1,3 @@
-namespace TemplateLandingPage.Domain.ReadModels;
+namespace OnePortal.Domain.ReadModels;
 
 public sealed record CustomizationAccess(Guid Id, Guid? UserId, string Slug, Guid? PublishedVersionId);

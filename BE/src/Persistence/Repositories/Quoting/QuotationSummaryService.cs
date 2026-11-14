@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Repositories.Quoting;
+namespace OnePortal.Persistence.Repositories.Quoting;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Queries.Summary;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries.Summary;
 
 public sealed class QuotationSummaryService(ApplicationDbContext context) : IQuotationSummaryService
 {

@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.UnitTests.Application.Templates;
+namespace OnePortal.UnitTests.Application.Templates;
 
 using FluentAssertions;
 using Moq;
-using TemplateLandingPage.Application.UseCases.V1.Templates.Commands;
-using TemplateLandingPage.Contract.Services.V1.Templates;
-using TemplateLandingPage.Domain.Abstractions.Repositories;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.UseCases.V1.Templates.Commands;
+using OnePortal.Contract.Services.V1.Templates;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 using Xunit;
 
 public class CreateTemplateCommandHandlerTests

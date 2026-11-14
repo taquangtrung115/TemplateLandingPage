@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Categories.Commands.Validators;
+namespace OnePortal.Application.UseCases.V1.Categories.Commands.Validators;
 
 using FluentValidation;
-using TemplateLandingPage.Contract.Services.V1.Categories;
+using OnePortal.Contract.Services.V1.Categories;
 
 public sealed class UpdateCategoryCommandValidator : AbstractValidator<UpdateCategoryCommand>
 {

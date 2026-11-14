@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Application.Behaviors;
+namespace OnePortal.Application.Behaviors;
 
 using MediatR;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Shared;
 
 public class LoggingPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>

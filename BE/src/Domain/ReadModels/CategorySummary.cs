@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Domain.ReadModels;
+namespace OnePortal.Domain.ReadModels;
 
 public sealed record CategorySummary(
     Guid Id,

@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Contract.Services.V1.Categories;
+namespace OnePortal.Contract.Services.V1.Categories;
 
-using TemplateLandingPage.Contract.Abstractions.Shared;
+using OnePortal.Contract.Abstractions.Shared;
 
 public record CategoryResponse(
     Guid Id,

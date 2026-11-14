@@ -1,10 +1,10 @@
-namespace TemplateLandingPage.UnitTests.Persistence.Quoting;
+namespace OnePortal.UnitTests.Persistence.Quoting;
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Domain.Entities.Quoting;
-using TemplateLandingPage.Persistence;
-using TemplateLandingPage.Persistence.Data;
+using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Persistence;
+using OnePortal.Persistence.Data;
 using Xunit;
 
 public class QuotingSeederTests : IDisposable
@@ -17,7 +17,7 @@ public class QuotingSeederTests : IDisposable
             .UseInMemoryDatabase(databaseName: $"SeederQuotingDb_{Guid.NewGuid()}")
             .Options;
 
-        _dbContext = new ApplicationDbContext(options);
+        _dbContext = new ApplicationDbContext(options, OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.QuotingId, "quoting"));
     }
 
     public void Dispose()
@@ -176,7 +176,7 @@ public class QuotingSeederTests : IDisposable
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: $"DisposedDb_{Guid.NewGuid()}")
             .Options;
-        var disposedContext = new ApplicationDbContext(options);
+        var disposedContext = new ApplicationDbContext(options, OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.QuotingId, "quoting"));
         disposedContext.Dispose();
 
         // Act & Assert

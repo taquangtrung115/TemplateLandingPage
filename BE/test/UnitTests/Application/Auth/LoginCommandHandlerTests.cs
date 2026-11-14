@@ -1,12 +1,12 @@
-namespace TemplateLandingPage.UnitTests.Application.Auth;
+namespace OnePortal.UnitTests.Application.Auth;
 
 using FluentAssertions;
 using Moq;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Application.UseCases.V1.Auth.Commands;
-using TemplateLandingPage.Contract.Services.V1.Auth;
-using TemplateLandingPage.Domain.Entities;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Application.UseCases.V1.Auth.Commands;
+using OnePortal.Contract.Services.V1.Auth;
+using OnePortal.Domain.Entities;
+using OnePortal.Domain.Repositories;
 using Xunit;
 
 public class LoginCommandHandlerTests
@@ -52,7 +52,7 @@ public class LoginCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_ReturnLoginResponse_WithAdminRole_WhenAdminCredentialsAreValid()
+    public async Task Handle_Should_ReturnLoginResponse_WithoutGlobalTenantRole_WhenAdminCredentialsAreValid()
     {
         // Arrange
         var admin = User.Create("admin@template.com", "hashed_admin_pwd", "Admin User", "Admin");
@@ -72,7 +72,7 @@ public class LoginCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         result.Value.Token.Should().Be("admin_jwt_token");
         result.Value.User.Email.Should().Be("admin@template.com");
-        result.Value.User.Role.Should().Be("Admin");
+        result.Value.User.Role.Should().Be("User");
     }
 
     [Fact]

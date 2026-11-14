@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Application.Abstractions;
+namespace OnePortal.Application.Abstractions;
 
-using TemplateLandingPage.Domain.Entities;
+using OnePortal.Domain.Entities;
 
 public interface IJwtTokenGenerator
 {

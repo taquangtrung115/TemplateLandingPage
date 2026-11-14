@@ -1,10 +1,10 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Users.Queries;
+namespace OnePortal.Application.UseCases.V1.Users.Queries;
 
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Auth;
-using TemplateLandingPage.Contract.Services.V1.Users;
-using TemplateLandingPage.Domain.Repositories;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Auth;
+using OnePortal.Contract.Services.V1.Users;
+using OnePortal.Domain.Repositories;
 
 public sealed class GetUsersQueryHandler : IQueryHandler<GetUsersQuery, List<UserResponse>>
 {

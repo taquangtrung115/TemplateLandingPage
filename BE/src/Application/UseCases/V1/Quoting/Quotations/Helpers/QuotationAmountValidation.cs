@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Quotations.Helpers;
+namespace OnePortal.Application.UseCases.V1.Quoting.Quotations.Helpers;
 
-using TemplateLandingPage.Contract.Services.V1.Quoting.Quotations;
+using OnePortal.Contract.Services.V1.Quoting.Quotations;
 
 internal static class QuotationAmountValidation
 {

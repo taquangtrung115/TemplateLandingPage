@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace TemplateLandingPage.Persistence.Migrations
+namespace OnePortal.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class UseDomainAssignedQuotingIds : Migration

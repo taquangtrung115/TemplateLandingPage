@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Data;
+namespace OnePortal.Persistence.Data;
 
 using Microsoft.EntityFrameworkCore;
-using TemplateLandingPage.Application.Abstractions;
-using TemplateLandingPage.Domain.Entities;
+using OnePortal.Application.Abstractions;
+using OnePortal.Domain.Entities;
 
 public static class DataSeeder
 {

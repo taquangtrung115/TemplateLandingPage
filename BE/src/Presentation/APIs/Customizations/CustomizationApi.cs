@@ -1,13 +1,13 @@
-namespace TemplateLandingPage.Presentation.APIs.Customizations;
+namespace OnePortal.Presentation.APIs.Customizations;
 
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using TemplateLandingPage.Contract.Abstractions.Shared;
-using TemplateLandingPage.Contract.Services.V1.Customizations;
-using TemplateLandingPage.Presentation.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Customizations;
+using OnePortal.Presentation.Abstractions;
 
 public sealed class CustomizationApi : IEndpoint
 {

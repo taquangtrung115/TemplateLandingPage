@@ -1,8 +1,8 @@
-namespace TemplateLandingPage.Persistence.Configurations.Quoting;
+namespace OnePortal.Persistence.Configurations.Quoting;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using TemplateLandingPage.Domain.Entities.Quoting;
+using OnePortal.Domain.Entities.Quoting;
 
 public sealed class QuotingProductGroupConfiguration : IEntityTypeConfiguration<QuotingProductGroup>
 {

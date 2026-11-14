@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Products.Commands.UploadImage;
+namespace OnePortal.Application.UseCases.V1.Quoting.Products.Commands.UploadImage;
 using FluentValidation;
 public sealed class UploadQuotingProductImageCommandValidator : AbstractValidator<UploadQuotingProductImageCommand>
 {

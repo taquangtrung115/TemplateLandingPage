@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Application.UseCases.V1.Quoting.Support.Commands.ChangeStatus;
+namespace OnePortal.Application.UseCases.V1.Quoting.Support.Commands.ChangeStatus;
 using FluentValidation;
 public sealed class ChangeQuotingSupportStatusCommandValidator : AbstractValidator<ChangeQuotingSupportStatusCommand>
 {

@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Domain.Abstractions.Repositories;
+namespace OnePortal.Domain.Abstractions.Repositories;
 
-using TemplateLandingPage.Domain.Abstractions;
+using OnePortal.Domain.Abstractions;
 
 public interface IRepositoryBase<TEntity, in TKey> where TEntity : Entity<TKey>
 {

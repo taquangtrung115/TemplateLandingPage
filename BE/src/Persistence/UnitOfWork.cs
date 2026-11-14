@@ -1,9 +1,9 @@
-namespace TemplateLandingPage.Persistence;
+namespace OnePortal.Persistence;
 
-using TemplateLandingPage.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Abstractions.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using TemplateLandingPage.Domain.Exceptions;
+using OnePortal.Domain.Exceptions;
 
 public sealed class UnitOfWork : IUnitOfWork
 {

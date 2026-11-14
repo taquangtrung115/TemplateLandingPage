@@ -1,7 +1,7 @@
-namespace TemplateLandingPage.Infrastructure.Services;
+namespace OnePortal.Infrastructure.Services;
 
 using System.Security.Cryptography;
-using TemplateLandingPage.Application.Abstractions;
+using OnePortal.Application.Abstractions;
 
 public sealed class PasswordHasher : IPasswordHasher
 {

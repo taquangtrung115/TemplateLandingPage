@@ -1,6 +1,6 @@
-namespace TemplateLandingPage.Domain.Abstractions;
+namespace OnePortal.Domain.Abstractions;
 
-public abstract class AggregateRoot<TKey> : Entity<TKey>
+public abstract class AggregateRoot<TKey> : TenantEntity<TKey>
 {
     private readonly List<IDomainEvent> _domainEvents = new();
 

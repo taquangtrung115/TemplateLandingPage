@@ -1,4 +1,4 @@
-namespace TemplateLandingPage.Infrastructure.Abstractions;
+namespace OnePortal.Infrastructure.Abstractions;
 
 public interface IDateTimeProvider
 {
