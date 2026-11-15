@@ -41,15 +41,15 @@ internal static class QuotationPdfRenderer
         XGraphics graphics = null!;
         double y = 0;
         const double left = 40, usableWidth = 515;
-        var columns = new List<(string Key, string Label, double Width)> { ("sequence", "STT", 23), ("product", "Sản phẩm / ĐVT", 172) };
-        if (quotation.ShowQuantity) columns.Add(("quantity", "SL", 48));
-        if (quotation.ShowDiscount) columns.Add(("discount", "CK %", 35));
-        columns.Add(("price", "Đơn giá", 64));
-        if (quotation.ShowGrandTotal) columns.Add(("total", "Thành tiền", 65));
-        columns.Add(("image", "Hình ảnh", 108));
-        var availableWidth = usableWidth - columns.Sum(column => column.Width);
-        columns[1] = ("product", "Sản phẩm / ĐVT", columns[1].Width + availableWidth);
-        var widths = columns.Select(column => column.Width).ToArray();
+        var columns = QuotationExportColumns.Create(quotation);
+        var widths = columns.Select(column => column.Key switch
+        {
+            "sequence" => 23d, "unit" => 55d, "quantity" => 42d,
+            "price" => 75d, "discount" => 39d, "total" => 80d, "image" => 90d,
+            _ => 0d
+        }).ToArray();
+        widths[1] = usableWidth - widths.Sum();
+        var unitColumn = columns.ToList().FindIndex(column => column.Key == "unit");
 
         void NewPage()
         {
@@ -100,17 +100,19 @@ internal static class QuotationPdfRenderer
 
         void TableHeader()
         {
-            EnsureSpace(28);
-            var labels = columns.Select(column => column.Label).ToArray();
+            var lines = columns.Select((column, index) => Wrap(column.Label, headerFont, widths[index] - 6)).ToArray();
+            var height = Math.Max(26, lines.Max(column => column.Count) * 11 + 8);
+            EnsureSpace(height);
             var x = left;
-            for (var index = 0; index < labels.Length; index++)
+            for (var index = 0; index < columns.Count; index++)
             {
-                graphics.DrawRectangle(new XSolidBrush(XColor.FromArgb(224, 242, 254)), x, y, widths[index], 26);
-                graphics.DrawRectangle(rule, x, y, widths[index], 26);
-                graphics.DrawString(labels[index], headerFont, ink, new XRect(x + 3, y + 3, widths[index] - 6, 20), XStringFormats.Center);
+                graphics.DrawRectangle(new XSolidBrush(XColor.FromArgb(224, 242, 254)), x, y, widths[index], height);
+                graphics.DrawRectangle(rule, x, y, widths[index], height);
+                for (var line = 0; line < lines[index].Count; line++)
+                    graphics.DrawString(lines[index][line], headerFont, ink, new XRect(x + 3, y + 4 + line * 11, widths[index] - 6, 11), XStringFormats.TopCenter);
                 x += widths[index];
             }
-            y += 26;
+            y += height;
         }
 
         try
@@ -142,8 +144,10 @@ internal static class QuotationPdfRenderer
             foreach (var item in quotation.Items.OrderBy(item => item.GroupSortOrder).ThenBy(item => item.SortOrder))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var textLines = Wrap($"{item.ProductName}\n{item.Unit}" + (string.IsNullOrWhiteSpace(item.Description) ? "" : $"\n{item.Description}"), body, widths[1] - 8);
-                var fullHeight = Math.Max(60, textLines.Count * 13 + 8);
+                var textLines = Wrap(item.ProductName + (string.IsNullOrWhiteSpace(item.Description) ? "" : $"\n{item.Description}"), body, widths[1] - 8);
+                var unitLines = Wrap(item.Unit, body, widths[unitColumn] - 8);
+                var rowLineCount = Math.Max(textLines.Count, unitLines.Count);
+                var fullHeight = Math.Max(60, rowLineCount * 13 + 8);
                 if (y + Math.Min(fullHeight, 100) + 22 > page.Height.Point - 42) { NewPage(); TableHeader(); currentGroup = null; }
                 if (!string.IsNullOrWhiteSpace(item.ItemGroup) && item.ItemGroup != currentGroup)
                 {
@@ -155,27 +159,37 @@ internal static class QuotationPdfRenderer
                 {
                     "sequence" => sequence.ToString(),
                     "quantity" => item.Quantity.ToString("0.####", Vietnamese),
-                    "discount" => item.DiscountPercent.ToString("0.##", Vietnamese),
+                    "discount" => item.DiscountPercent.ToString("0.##", Vietnamese) + "%",
                     "price" => item.UnitPrice.ToString("N2", Vietnamese),
                     "total" => item.TotalAmount.ToString("N2", Vietnamese),
                     _ => ""
                 }).ToArray();
                 var firstSegment = true;
-                while (textLines.Count > 0)
+                var offset = 0;
+                while (offset < rowLineCount)
                 {
                     var capacity = Math.Max(1, (int)((page.Height.Point - 42 - y - 8) / 13));
-                    var segment = textLines.Take(capacity).ToList();
-                    textLines.RemoveRange(0, segment.Count);
-                    var height = Math.Max(60, segment.Count * 13 + 8);
+                    var lineCount = Math.Min(capacity, rowLineCount - offset);
+                    var height = Math.Max(60, lineCount * 13 + 8);
                     var x = left;
                     for (var column = 0; column < widths.Length; column++)
                     {
                         graphics.DrawRectangle(rule, x, y, widths[column], height);
-                        if (column == 1)
+                        if (columns[column].Key is "product" or "unit")
                         {
-                            for (var line = 0; line < segment.Count; line++) graphics.DrawString(segment[line], body, ink, new XPoint(x + 4, y + 14 + line * 13));
+                            var segment = (column == unitColumn ? unitLines : textLines).Skip(offset).Take(lineCount).ToList();
+                            for (var line = 0; line < segment.Count; line++)
+                            {
+                                if (column == unitColumn)
+                                    graphics.DrawString(segment[line], body, ink, new XRect(x + 4, y + (height - segment.Count * 13) / 2 + line * 13, widths[column] - 8, 13), XStringFormats.TopCenter);
+                                else graphics.DrawString(segment[line], body, ink, new XPoint(x + 4, y + 14 + line * 13));
+                            }
                         }
-                        else if (firstSegment) graphics.DrawString(rowValues[column], body, ink, new XRect(x + 3, y + 4, widths[column] - 6, height - 8), XStringFormats.Center);
+                        else if (firstSegment)
+                        {
+                            var alignment = columns[column].Key is "price" or "total" ? XStringFormats.CenterRight : XStringFormats.Center;
+                            graphics.DrawString(rowValues[column], body, ink, new XRect(x + 3, y + 4, widths[column] - 6, height - 8), alignment);
+                        }
                         x += widths[column];
                     }
                     var uploadedImage = item.ImageUrl is not null && uploadedImages?.TryGetValue(item.ImageUrl, out _) == true ? uploadedImages[item.ImageUrl] : null;
@@ -192,7 +206,8 @@ internal static class QuotationPdfRenderer
                     }
                     y += height;
                     firstSegment = false;
-                    if (textLines.Count > 0) { NewPage(); TableHeader(); }
+                    offset += lineCount;
+                    if (offset < rowLineCount) { NewPage(); TableHeader(); }
                 }
             }
 

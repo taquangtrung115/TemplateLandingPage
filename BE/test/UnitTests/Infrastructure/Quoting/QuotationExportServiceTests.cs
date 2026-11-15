@@ -352,4 +352,63 @@ public class QuotationExportServiceTests
             actualImages[index].Stream.UnfilteredValue.Should().Equal(expectedImages[index].Stream.UnfilteredValue);
     }
 
+    #region Shared HTML and PDF table contract
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public async Task Pdf_DrawsTheSameSeparateColumnsInTheSameOrderAsHtml(bool quantity, bool discount, bool total)
+    {
+        var quote = Quotation.Create("BG-COLUMNS", null, null, null, null, null, null, null,
+            Guid.NewGuid(), 1, new DateTime(2026, 11, 15), null, 0, 0, null, Guid.NewGuid());
+        quote.SetDisplayOptions(discount, quantity, false, total);
+        quote.SetItems([QuotationItem.Create(quote.Id, null, "TEST", "Sản phẩm kiểm tra", "Quy cách riêng", "10 CUỘN/GÓI", null, null, 2, 18000, 5, null, 1)], Guid.NewGuid());
+        var version = CreateTestTemplateVersion();
+        var html = QuotationHtmlExportService.BuildHtmlContent(quote, version);
+        var headers = System.Text.RegularExpressions.Regex.Matches(html, "<th>(.*?)</th>").Select(match => match.Groups[1].Value).ToArray();
+        var expected = new List<string> { "STT", "Tên sản phẩm / Quy cách", "ĐVT" };
+        if (quantity) expected.Add("Số lượng");
+        expected.Add("Đơn giá (VNĐ)");
+        if (discount) expected.Add("CK (%)");
+        if (total) expected.Add("Thành tiền (VNĐ)");
+        expected.Add("Hình ảnh");
+        headers.Should().Equal(expected);
+        var text = string.Join(" ", QuotationPdfText.Read(await _exportService.GeneratePdfAsync(quote, version)));
+        var cursor = text.IndexOf("STT", StringComparison.Ordinal);
+        cursor.Should().BeGreaterThanOrEqualTo(0);
+        foreach (var heading in expected)
+        {
+            var index = text.IndexOf(heading, cursor, StringComparison.Ordinal);
+            index.Should().BeGreaterThanOrEqualTo(cursor, $"PDF must draw HTML column '{heading}' in table order");
+            cursor = index + heading.Length;
+        }
+        text.Should().NotContain("Sản phẩm / ĐVT");
+        if (!quantity) text.Should().NotContain("Số lượng");
+        if (!discount) text.Should().NotContain("CK (%)");
+        if (!total) text.Should().NotContain("Thành tiền (VNĐ)");
+        text.Should().Contain("10 CUỘN/GÓI");
+    }
+
+    [Fact]
+    public async Task Pdf_LongUnitValuesWrapInTheirOwnColumnAndContinueAcrossPages()
+    {
+        var quote = Quotation.Create("BG-LONG-UNIT", null, null, null, null, null, null, null,
+            Guid.NewGuid(), 1, DateTime.UtcNow, null, 0, 0, null, Guid.NewGuid());
+        quote.SetDisplayOptions(false, false, false, false);
+        var unit = new string('W', 800);
+        quote.SetItems([QuotationItem.Create(quote.Id, null, "TEST", "Sản phẩm", "Mô tả", unit, null, null, 1, 18000, 0, null, 1)], Guid.NewGuid());
+        var bytes = await _exportService.GeneratePdfAsync(quote, CreateTestTemplateVersion());
+        using var document = PdfReader.Open(new MemoryStream(bytes), PdfDocumentOpenMode.Import);
+        document.PageCount.Should().BeGreaterThan(1);
+        var text = QuotationPdfText.Read(bytes);
+        text.Where(value => value.Length > 0 && value.All(character => character == 'W')).Sum(value => value.Length).Should().Be(unit.Length);
+        text.Count(value => value == "ĐVT").Should().Be(document.PageCount);
+    }
+    #endregion
+
 }

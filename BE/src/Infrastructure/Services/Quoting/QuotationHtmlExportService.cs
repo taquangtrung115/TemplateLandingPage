@@ -280,16 +280,12 @@ public sealed class QuotationHtmlExportService : IQuotationExportService
   </div>");
         }
 
-        var columnCount = 5 + (quotation.ShowQuantity ? 1 : 0) + (quotation.ShowDiscount ? 1 : 0) + (quotation.ShowGrandTotal ? 1 : 0);
+        var columns = QuotationExportColumns.Create(quotation);
+        var columnCount = columns.Count;
         sb.Append($@"
   <table class=""table-data"">
     <thead><tr>
-      <th>STT</th><th>Tên sản phẩm / Quy cách</th><th>ĐVT</th>
-      {(quotation.ShowQuantity ? "<th>Số lượng</th>" : "")}
-      <th>Đơn giá (VNĐ)</th>
-      {(quotation.ShowDiscount ? "<th>CK (%)</th>" : "")}
-      {(quotation.ShowGrandTotal ? "<th>Thành tiền (VNĐ)</th>" : "")}
-      <th>Hình ảnh</th>
+      {string.Concat(columns.Select(column => $"<th>{Html(column.Label)}</th>"))}
     </tr></thead><tbody>");
 
         var groupedItems = quotation.Items.OrderBy(item => item.GroupSortOrder).ThenBy(item => item.SortOrder)
