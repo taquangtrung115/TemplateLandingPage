@@ -158,4 +158,85 @@ public sealed class QuotationStorageTests
         Directory.Exists(path).Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData("pdf", "application/pdf")]
+    [InlineData("html", "text/html")]
+    public async Task MissingPrivateBucket_IsCreated_AndOriginalExportBytesAreRetried(string extension, string contentType)
+    {
+        var tenantId = Guid.NewGuid(); var uploads = 0; var lookups = 0; var creations = 0;
+        var expectedBytes = Encoding.UTF8.GetBytes("export tiếng Việt \u0111\u1ea7y \u0111\u1ee7");
+        using var http = new HttpClient(new StubHandler(async (request, ct) =>
+        {
+            request.Headers.GetValues("apikey").Should().ContainSingle();
+            if (request.RequestUri!.AbsolutePath == "/storage/v1/bucket/quotations")
+            {
+                lookups++; return new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("{\"statusCode\":\"404\",\"message\":\"Bucket not found\"}") };
+            }
+            if (request.RequestUri.AbsolutePath == "/storage/v1/bucket")
+            {
+                creations++; request.Method.Should().Be(HttpMethod.Post);
+                using var json = System.Text.Json.JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct));
+                json.RootElement.GetProperty("public").GetBoolean().Should().BeFalse();
+                json.RootElement.GetProperty("id").GetString().Should().Be("quotations");
+                json.RootElement.GetProperty("allowed_mime_types").EnumerateArray().Select(value => value.GetString()).Should().BeEquivalentTo("application/pdf", "text/html");
+                return new HttpResponseMessage(HttpStatusCode.Created);
+            }
+            request.RequestUri.AbsolutePath.Should().Be($"/storage/v1/object/quotations/tenants/{tenantId:N}/quoting/exports/quote.{extension}");
+            request.Content!.Headers.ContentType!.MediaType.Should().Be(contentType);
+            (await request.Content.ReadAsByteArrayAsync(ct)).Should().Equal(expectedBytes);
+            uploads++;
+            return uploads == 1 ? new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("{\"statusCode\":\"404\",\"error\":\"Bucket not found\"}") } : new HttpResponseMessage(HttpStatusCode.OK);
+        }));
+        var service = new SupabaseStorageService(http, Configuration(), NullLogger<SupabaseStorageService>.Instance,
+            OnePortal.Application.Services.Tenancy.TenantContext.For(tenantId, "quoting"));
+        using var bytes = new MemoryStream(expectedBytes);
+        var result = await service.UploadFileAsync("quote." + extension, contentType, bytes);
+        result.StorageProvider.Should().Be("Supabase"); result.FileUrl.Should().Contain($"/object/authenticated/quotations/tenants/{tenantId:N}/");
+        uploads.Should().Be(2); lookups.Should().Be(1); creations.Should().Be(1); bytes.CanRead.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ConcurrentBucketCreation_HandlesRealAndLegacyConflictResponses(bool legacy)
+    {
+        var calls = 0;
+        var service = Service(new StubHandler((request, _) =>
+        {
+            calls++;
+            return Task.FromResult(calls switch
+            {
+                1 => new HttpResponseMessage(HttpStatusCode.NotFound),
+                2 => new HttpResponseMessage(HttpStatusCode.NotFound),
+                3 => new HttpResponseMessage(legacy ? HttpStatusCode.BadRequest : HttpStatusCode.Conflict) { Content = new StringContent("{\"statusCode\":409}") },
+                _ => new HttpResponseMessage(HttpStatusCode.OK)
+            });
+        }));
+        using var bytes = new MemoryStream([1, 2, 3]);
+        (await service.UploadFileAsync("quote.pdf", "application/pdf", bytes)).StorageProvider.Should().Be("Supabase"); calls.Should().Be(4);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    [InlineData(HttpStatusCode.BadRequest)]
+    public async Task OtherProviderErrors_DoNotCreateBuckets_OrExposePrivateResponseDetails(HttpStatusCode status)
+    {
+        var calls = 0;
+        var service = Service(new StubHandler((_, _) => { calls++; return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent("{\"code\":\"InvalidJWT\",\"message\":\"private credentials response\"}") }); }));
+        using var bytes = new MemoryStream([1, 2, 3]);
+        var thrown = await ((Func<Task>)(async () => await service.UploadFileAsync("quote.pdf", "application/pdf", bytes))).Should().ThrowAsync<HttpRequestException>();
+        thrown.Which.StatusCode.Should().Be(status); thrown.Which.Message.Should().NotContain("private credentials response"); calls.Should().Be(1);
+    }
+
+    [Fact]
+    public void StorageConfiguration_UsesNonEmptySecretAlias_AndRejectsInsecureRemoteOrigins()
+    {
+        var values = new Dictionary<string,string?> { ["Supabase:Url"]="https://storage.example.test", ["Supabase:ServiceRoleKey"]="", ["Supabase:SecretKey"]="sb_secret_synthetic" };
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+        var service = Service(new StubHandler((_, _) => throw new Exception("No HTTP expected")), configuration); service.IsConfigured.Should().BeTrue();
+        values["Supabase:Url"]="http://storage.example.test";
+        Service(new StubHandler((_, _) => throw new Exception("No HTTP expected")), new ConfigurationBuilder().AddInMemoryCollection(values).Build()).IsConfigured.Should().BeFalse();
+    }
+
 }
