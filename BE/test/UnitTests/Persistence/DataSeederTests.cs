@@ -1,11 +1,13 @@
 namespace OnePortal.UnitTests.Persistence;
 
+using OnePortal.Domain.Entities.Categories;
+using OnePortal.Domain.Entities.Templates;
+using OnePortal.Domain.Entities.Users;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using OnePortal.Application.Abstractions;
-using OnePortal.Domain.Entities;
 using OnePortal.Persistence;
 using OnePortal.Persistence.Data;
 using Xunit;

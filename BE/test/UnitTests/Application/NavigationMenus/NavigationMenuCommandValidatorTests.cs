@@ -1,7 +1,7 @@
 namespace OnePortal.UnitTests.Application.NavigationMenus;
 
 using FluentAssertions;
-using OnePortal.Application.UseCases.V1.NavigationMenus.Commands.Validators;
+using OnePortal.Application.UseCases.V1.Commands.NavigationMenus.Validators;
 using OnePortal.Contract.Services.V1.NavigationMenus;
 using Xunit;
 

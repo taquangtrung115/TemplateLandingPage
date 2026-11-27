@@ -1,10 +1,11 @@
 namespace OnePortal.UnitTests.Application.Templates;
 
+using OnePortal.Domain.Entities.Categories;
+using OnePortal.Domain.Entities.Templates;
 using FluentAssertions;
 using Moq;
-using OnePortal.Application.UseCases.V1.Templates.Queries;
+using OnePortal.Application.UseCases.V1.Queries.Templates;
 using OnePortal.Contract.Services.V1.Templates;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.ReadModels;
 using OnePortal.Domain.Repositories;
 using Xunit;
@@ -271,4 +272,3 @@ public class GetTemplatesQueryHandlerTests
             t.IsCommunity, t.AuthorName, t.CreatedAtUtc))
         .ToList();
 }
-

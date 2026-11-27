@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
 import useAuth from '../hooks/useAuth';
 import { deleteDraft, duplicateDraft, listDrafts, migrateLegacyDrafts } from '../utils/draftStore';
+import { showActionDialog } from '../utils/actionDialog';
 
 export default function DraftsPage() {
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ export default function DraftsPage() {
 
   const handleDelete = async (draft) => {
     if (busyDraftId) return;
-    if (!window.confirm(`Xóa bản nháp “${draft.metadata?.title || 'Chưa đặt tên'}” khỏi thiết bị này?`)) return;
+    if (!await showActionDialog(`Xóa bản nháp “${draft.metadata?.title || 'Chưa đặt tên'}” khỏi thiết bị này?`, { confirm: true })) return;
     setBusyDraftId(draft.draftId);
     try {
       await deleteDraft(draft.draftId);

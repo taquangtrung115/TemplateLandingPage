@@ -1,10 +1,10 @@
 namespace OnePortal.UnitTests.Application.Quoting.Validators;
 
 using FluentAssertions;
-using OnePortal.Application.UseCases.V1.Quoting.Customers.Commands.Validators;
-using OnePortal.Application.UseCases.V1.Quoting.Products.Commands.Validators;
-using OnePortal.Application.UseCases.V1.Quoting.Quotations.Commands.Validators;
-using OnePortal.Application.UseCases.V1.Quoting.Templates.Commands.Validators;
+using OnePortal.Application.UseCases.V1.Commands.Quoting.Customers.Validators;
+using OnePortal.Application.UseCases.V1.Commands.Quoting.Products.Validators;
+using OnePortal.Application.UseCases.V1.Commands.Quoting.Quotations.Validators;
+using OnePortal.Application.UseCases.V1.Commands.Quoting.Templates.Validators;
 using OnePortal.Contract.Services.V1.Quoting.Customers;
 using OnePortal.Contract.Services.V1.Quoting.Products;
 using OnePortal.Contract.Services.V1.Quoting.Quotations;

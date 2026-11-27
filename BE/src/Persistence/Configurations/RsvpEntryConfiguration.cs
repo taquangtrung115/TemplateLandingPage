@@ -1,8 +1,9 @@
 namespace OnePortal.Persistence.Configurations;
 
+using OnePortal.Domain.Entities.Customizations;
+using OnePortal.Domain.Entities.Interactions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using OnePortal.Domain.Entities;
 using OnePortal.Persistence.Constants;
 
 public sealed class RsvpEntryConfiguration : IEntityTypeConfiguration<RsvpEntry>

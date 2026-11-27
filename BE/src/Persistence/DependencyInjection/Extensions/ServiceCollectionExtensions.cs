@@ -22,6 +22,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RequestActor>();
         services.AddScoped<IRequestActor>(provider => provider.GetRequiredService<RequestActor>());
         services.AddScoped<ITenantStore, OnePortal.Persistence.Repositories.Tenancy.TenantStore>();
+        services.AddScoped<IPhotoPrintStore, OnePortal.Persistence.Repositories.PhotoPrint.PhotoPrintStore>();
         services.AddSingleton<AuditableEntityInterceptor>();
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>

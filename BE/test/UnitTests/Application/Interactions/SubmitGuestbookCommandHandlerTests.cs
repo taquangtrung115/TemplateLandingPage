@@ -1,11 +1,11 @@
 namespace OnePortal.UnitTests.Application.Interactions;
 
+using OnePortal.Domain.Entities.Interactions;
 using FluentAssertions;
 using Moq;
-using OnePortal.Application.UseCases.V1.Interactions.Commands;
+using OnePortal.Application.UseCases.V1.Commands.Interactions;
 using OnePortal.Contract.Services.V1.Interactions;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Repositories;
 using OnePortal.Domain.ReadModels;
 using Xunit;

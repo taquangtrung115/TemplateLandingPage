@@ -4,6 +4,9 @@ PromtAI
 FE_TemplateLandingPage
 FE_Quoting
 FE_Tenant
+FE_Portal
+FE_PhotoPrint
+packages
 BE/test
 BE/tools
 **/bin

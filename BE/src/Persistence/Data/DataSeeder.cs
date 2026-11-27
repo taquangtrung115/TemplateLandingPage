@@ -1,9 +1,14 @@
 namespace OnePortal.Persistence.Data;
 
+using OnePortal.Domain.Entities.Categories;
+using OnePortal.Domain.Entities.Customizations;
+using OnePortal.Domain.Entities.Interactions;
+using OnePortal.Domain.Entities.NavigationMenus;
+using OnePortal.Domain.Entities.Products;
+using OnePortal.Domain.Entities.Templates;
+using OnePortal.Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using OnePortal.Application.Abstractions;
-using OnePortal.Domain.Entities;
-
 public static class DataSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context, IPasswordHasher passwordHasher)

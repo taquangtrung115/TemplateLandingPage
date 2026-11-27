@@ -17,3 +17,9 @@ public record GetQuotationHistoriesQuery(Guid QuotationId) : IQuery<List<Quotati
 public record GetQuotationFilesQuery(Guid QuotationId) : IQuery<List<QuotationFileResponse>>;
 
 public record PreviewQuotationQuery(Guid QuotationId, decimal? TaxPercent = null) : IQuery<QuotationPreviewResponse>;
+
+public sealed record DownloadQuotationFileQuery(Guid QuotationId, Guid FileId) : IQuery<DownloadQuotationFileResult>;
+
+public sealed record PreviewQuotationDraftQuery(CreateQuotationCommand Draft) : IQuery<PreviewQuotationDraftResult>;
+
+public sealed record GetQuotationSummaryQuery : IQuery<GetQuotationSummaryResult>;

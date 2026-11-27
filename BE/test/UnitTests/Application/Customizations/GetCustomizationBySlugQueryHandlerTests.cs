@@ -2,7 +2,7 @@ namespace OnePortal.UnitTests.Application.Customizations;
 
 using FluentAssertions;
 using Moq;
-using OnePortal.Application.UseCases.V1.Customizations.Queries;
+using OnePortal.Application.UseCases.V1.Queries.Customizations;
 using OnePortal.Contract.Services.V1.Customizations;
 using OnePortal.Domain.ReadModels;
 using OnePortal.Domain.Repositories;

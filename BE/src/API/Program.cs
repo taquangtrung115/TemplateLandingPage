@@ -74,7 +74,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Configure CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:5173", "http://localhost:5174", "http://localhost:3000" };
+    ?? new[] { "http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://localhost:5176", "http://localhost:5177" };
 
 builder.Services.AddCors(options =>
 {
@@ -149,9 +149,10 @@ await using (var initializationScope = app.Services.CreateAsyncScope())
         if (builder.Configuration.GetValue<bool>("SeedData:IncludeCatalog", true)) await TemplateCatalogSeeder.SeedAsync(landing);
         await using var quoting = new ApplicationDbContext(database.GetOptions(), OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.QuotingId, "quoting"));
         await QuotingSeeder.SeedAsync(quoting);
+        await using var photoPrint = new ApplicationDbContext(database.GetOptions(), OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.PhotoPrintId, "photoprint"));
         var demoEmails = new List<string> { "admin@template.com", "user@template.com", "minhlinh@template.com" };
         var demoUsers = await database.Users.AsNoTracking().Where(user => demoEmails.Contains(user.Email) && user.IsActive).Select(user => new { user.Id, user.Role }).ToListAsync();
-        foreach (var demoContext in new[] { landing, quoting })
+        foreach (var demoContext in new[] { landing, quoting, photoPrint })
         {
             var existing = await demoContext.TenantMemberships.Select(membership => membership.UserId).ToListAsync();
             foreach (var demoUser in demoUsers.Where(user => !existing.Contains(user.Id)))

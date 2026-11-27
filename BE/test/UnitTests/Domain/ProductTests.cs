@@ -1,7 +1,7 @@
 namespace OnePortal.UnitTests.Domain;
 
+using OnePortal.Domain.Entities.Products;
 using FluentAssertions;
-using OnePortal.Domain.Entities;
 using Xunit;
 
 public class ProductTests

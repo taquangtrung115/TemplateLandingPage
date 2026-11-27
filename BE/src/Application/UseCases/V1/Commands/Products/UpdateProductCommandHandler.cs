@@ -1,0 +1,42 @@
+namespace OnePortal.Application.UseCases.V1.Commands.Products;
+
+using Microsoft.Extensions.Logging;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Products;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Repositories;
+
+public sealed class UpdateProductCommandHandler : ICommandHandler<UpdateProductCommand>
+{
+    private readonly IProductRepository _productRepository;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<UpdateProductCommandHandler> _logger;
+
+    public UpdateProductCommandHandler(
+        IProductRepository productRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<UpdateProductCommandHandler> logger)
+    {
+        _productRepository = productRepository;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
+
+    public async Task<Result> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
+    {
+        var product = await _productRepository.GetByIdAsync(request.Id, cancellationToken);
+        if (product is null)
+        {
+            return Result.Failure(ProductErrors.NotFound);
+        }
+
+        product.Update(request.Name, request.Description, request.Price, request.IsActive);
+        _productRepository.Update(product);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Product {ProductId} updated successfully", product.Id);
+
+        return Result.Success();
+    }
+}

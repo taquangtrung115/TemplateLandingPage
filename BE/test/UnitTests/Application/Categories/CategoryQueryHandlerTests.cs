@@ -1,10 +1,10 @@
 namespace OnePortal.UnitTests.Application.Categories;
 
+using OnePortal.Domain.Entities.Categories;
 using FluentAssertions;
 using Moq;
-using OnePortal.Application.UseCases.V1.Categories.Queries;
+using OnePortal.Application.UseCases.V1.Queries.Categories;
 using OnePortal.Contract.Services.V1.Categories;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.ReadModels;
 using OnePortal.Domain.Repositories;
 using Xunit;

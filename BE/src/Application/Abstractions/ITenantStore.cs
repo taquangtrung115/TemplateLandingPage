@@ -1,11 +1,12 @@
 namespace OnePortal.Application.Abstractions;
 
-using OnePortal.Application.UseCases.V1.Tenancy.Dtos;
+using OnePortal.Contract.Services.V1.Tenancy;
 using OnePortal.Contract.Abstractions.Shared;
 
 public interface ITenantStore
 {
     Task<IReadOnlyList<TenantDto>> SearchAsync(int page, int pageSize, CancellationToken cancellationToken, string? search = null);
+    Task<WorkspaceApplicationsDto?> GetWorkspaceApplicationsAsync(string tenantKey, CancellationToken cancellationToken);
     Task<RegistrationSettingsDto?> GetRegistrationAsync(Guid tenantId, string appKey, CancellationToken cancellationToken);
     Task<Result<RegistrationSettingsDto>> ConfigureRegistrationAsync(Guid tenantId, string appKey, bool allowSelfRegistration, CancellationToken cancellationToken);
     Task<Result<TenantMemberDto>> CreateMemberAsync(Guid tenantId, string appKey, string email, string fullName, string passwordHash, string role, CancellationToken cancellationToken);

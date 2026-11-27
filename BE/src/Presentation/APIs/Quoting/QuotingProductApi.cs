@@ -2,8 +2,8 @@ namespace OnePortal.Presentation.APIs.Quoting;
 
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using OnePortal.Application.UseCases.V1.Quoting.Products.Commands.UploadImage;
-using OnePortal.Application.UseCases.V1.Quoting.Products.Queries.GetImage;
+using OnePortal.Application.UseCases.V1.Commands.Quoting.Products.Validators;
+using OnePortal.Application.UseCases.V1.Queries.Quoting.Products;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

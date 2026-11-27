@@ -1,0 +1,31 @@
+import { Aperture, ArrowUpRight, LogOut } from 'lucide-react';
+import { Link, NavLink, Outlet } from 'react-router-dom';
+import { UiverseButton } from '@oneportal/uiverse-ui';
+import { useAuth } from '../contexts/AuthContext';
+import { useContactConfig } from '../contexts/ContactConfigContext';
+import { workspaceKey } from '../utils/tenantScope';
+import { WorkspaceOptions } from '../components/common/WorkspaceGate';
+import { paths } from '../routes/paths';
+
+const menus = [[paths.admin, 'Tổng quan'], [paths.adminServices, 'Sản phẩm'], [paths.adminDemos, 'Mẫu 3D'],
+  [paths.adminOrders, 'Đơn in'], [paths.adminSupport, 'Hỗ trợ'], [paths.adminSettings, 'Cài đặt']];
+
+export default function AdminLayout() {
+  const auth = useAuth();
+  const { config } = useContactConfig();
+  return <div className="admin-shell">
+    <header className="site-header"><div className="shell admin-top">
+      <Link className="brand" to={paths.admin}><span className="brand-mark"><Aperture size={20} /></span>{config.brandName || 'Photo Print'}</Link>
+      <div className="action-row"><Link className="text-link" to={paths.home} target="_blank" rel="noreferrer">Mở tiệm ảnh <ArrowUpRight size={16} /></Link>
+        <UiverseButton variant="outline" size="small" icon={<LogOut size={15} />} onClick={auth.logout}>Đăng xuất</UiverseButton></div>
+    </div></header>
+    <div className="shell admin-grid">
+      <aside className="admin-sidebar">
+        <small>Workspace</small><strong className="mono">{workspaceKey()}</strong>
+        <nav aria-label="Quản trị tiệm ảnh">{menus.map(([path, label]) => <NavLink end={path === paths.admin} to={path} key={path}>{label}</NavLink>)}</nav>
+        <details><summary>Đổi workspace</summary><WorkspaceOptions /></details>
+      </aside>
+      <main className="admin-content"><Outlet /></main>
+    </div>
+  </div>;
+}

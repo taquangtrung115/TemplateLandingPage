@@ -9,7 +9,7 @@ using OnePortal.Domain.Entities.Tenancy;
 public static class DatabaseInitializer
 {
     #region Seed registry
-    public static IReadOnlyList<ITenantSeedStep> Steps { get; } = [new LandingFoundationSeed(), new QuotingFoundationSeed()];
+    public static IReadOnlyList<ITenantSeedStep> Steps { get; } = [new LandingFoundationSeed(), new QuotingFoundationSeed(), new PhotoPrintFoundationSeed()];
     public static int RequiredVersion(string appKey) => Steps.Where(step => step.AppKey == appKey).Max(step => step.Version);
     #endregion
 
@@ -23,7 +23,15 @@ public static class DatabaseInitializer
         if (!await context.Database.SqlQueryRaw<bool>("SELECT to_regclass('platform.\"Tenants\"') IS NOT NULL AS \"Value\"").SingleAsync(cancellationToken)) return;
         var existingApps = await context.Applications.Select(application => application.Id).ToListAsync(cancellationToken);
         foreach (var appKey in TenantDefaults.ApplicationKeys.Except(existingApps))
-            context.Applications.Add(PlatformApplication.Create(appKey, appKey == "landing" ? "Landing Page" : "Quoting"));
+        {
+            // A downgraded database can run an older schema through the current binary.
+            if (appKey == "photoprint" && !await context.Database.SqlQueryRaw<bool>("SELECT to_regclass('photo.\"Products\"') IS NOT NULL AS \"Value\"").SingleAsync(cancellationToken)) continue;
+            context.Applications.Add(PlatformApplication.Create(appKey, appKey switch
+            {
+                "landing" => "Landing Page", "quoting" => "Quoting", "photoprint" => "Photo Print",
+                _ => throw new InvalidOperationException("Unknown application key.")
+            }));
+        }
         if (!await context.SystemSeedHistory.AnyAsync(history => history.Id == "platform-v1", cancellationToken))
             context.SystemSeedHistory.Add(SystemSeedHistory.Complete("platform-v1", 1));
         await context.SaveChangesAsync(cancellationToken);
@@ -40,7 +48,7 @@ public static class DatabaseInitializer
             pending.AddRange(targets.Select(application => (application.TenantId, application.AppKey)));
         }
         foreach (var batch in pending.Chunk(50))
-        foreach (var application in batch.Where(application => application.AppKey is "landing" or "quoting"))
+        foreach (var application in batch)
         {
             var scopedOptions = context.Database.CurrentTransaction is null ? options
                 : new DbContextOptionsBuilder<ApplicationDbContext>(options).UseNpgsql(context.Database.GetDbConnection()).Options;

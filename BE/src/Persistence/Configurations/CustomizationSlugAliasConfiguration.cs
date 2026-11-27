@@ -1,9 +1,8 @@
 namespace OnePortal.Persistence.Configurations;
 
+using OnePortal.Domain.Entities.Customizations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using OnePortal.Domain.Entities;
-
 public sealed class CustomizationSlugAliasConfiguration : IEntityTypeConfiguration<CustomizationSlugAlias>
 {
     public void Configure(EntityTypeBuilder<CustomizationSlugAlias> builder)

@@ -1,8 +1,9 @@
 namespace OnePortal.Persistence.Configurations;
 
+using OnePortal.Domain.Entities.Categories;
+using OnePortal.Domain.Entities.Templates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using OnePortal.Domain.Entities;
 using OnePortal.Persistence.Constants;
 
 public sealed class TemplateConfiguration : IEntityTypeConfiguration<Template>

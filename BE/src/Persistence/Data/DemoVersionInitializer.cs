@@ -1,8 +1,7 @@
 namespace OnePortal.Persistence.Data;
 
+using OnePortal.Domain.Entities.Customizations;
 using Microsoft.EntityFrameworkCore;
-using OnePortal.Domain.Entities;
-
 internal static class DemoVersionInitializer
 {
     public static async Task InitializeAsync(ApplicationDbContext context)

@@ -87,3 +87,12 @@ public record QuotationPreviewResponse(
     Guid QuotationId,
     string QuotationNumber,
     string HtmlContent);
+
+public sealed record DownloadQuotationFileResult(Stream Content, string ContentType, string FileName);
+
+public sealed record PreviewQuotationDraftResult(string HtmlContent);
+
+public sealed record GetQuotationSummaryResult(
+    int TotalCount, int DraftCount, int SentCount, int ApprovedCount,
+    int RejectedCount, int CancelledCount, decimal TotalAmount,
+    IReadOnlyDictionary<string, decimal> MonthlyAmounts);

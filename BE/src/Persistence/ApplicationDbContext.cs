@@ -1,5 +1,12 @@
 namespace OnePortal.Persistence;
 
+using OnePortal.Domain.Entities.Categories;
+using OnePortal.Domain.Entities.Customizations;
+using OnePortal.Domain.Entities.Interactions;
+using OnePortal.Domain.Entities.NavigationMenus;
+using OnePortal.Domain.Entities.Products;
+using OnePortal.Domain.Entities.Templates;
+using OnePortal.Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Linq.Expressions;
@@ -8,8 +15,8 @@ using OnePortal.Domain.Abstractions;
 using OnePortal.Domain.Entities.Tenancy;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Entities.Quoting;
+using OnePortal.Domain.Entities.PhotoPrint;
 
 public sealed class ApplicationDbContext : DbContext, IUnitOfWork
 {
@@ -53,6 +60,14 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<QuotationHistory> QuotationHistories => Set<QuotationHistory>();
     public DbSet<QuotationFile> QuotationFiles => Set<QuotationFile>();
     public DbSet<QuotingSupportRequest> QuotingSupportRequests => Set<QuotingSupportRequest>();
+
+    public DbSet<PhotoCategory> PhotoCategories => Set<PhotoCategory>();
+    public DbSet<PhotoProduct> PhotoProducts => Set<PhotoProduct>();
+    public DbSet<PhotoDemo> PhotoDemos => Set<PhotoDemo>();
+    public DbSet<PhotoOrder> PhotoOrders => Set<PhotoOrder>();
+    public DbSet<PhotoOrderItem> PhotoOrderItems => Set<PhotoOrderItem>();
+    public DbSet<PhotoSupportRequest> PhotoSupportRequests => Set<PhotoSupportRequest>();
+    public DbSet<PhotoContactConfig> PhotoContactConfigs => Set<PhotoContactConfig>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -115,7 +130,8 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
     }
 
     public static string? ApplicationFor(Type type) => type.Namespace?.Contains(".Entities.Tenancy", StringComparison.Ordinal) == true ? null
-        : type.Namespace?.Contains(".Quoting", StringComparison.Ordinal) == true ? "quoting" : "landing";
+        : type.Namespace?.Contains(".Quoting", StringComparison.Ordinal) == true ? "quoting"
+        : type.Namespace?.Contains(".PhotoPrint", StringComparison.Ordinal) == true ? "photoprint" : "landing";
 
     private void EnsureTenantWrites()
     {

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
 using OnePortal.Application.Abstractions;
-using OnePortal.Application.UseCases.V1.Quoting.Products.Dtos;
+using OnePortal.Contract.Services.V1.Quoting.Products;
 using OnePortal.Application.UseCases.V1.Quoting.Products.Helpers;
 using OnePortal.Contract.Abstractions.Shared;
 

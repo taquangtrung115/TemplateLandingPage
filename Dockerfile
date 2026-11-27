@@ -21,8 +21,10 @@ RUN dotnet publish BE/src/API/OnePortal.API.csproj -c Release --no-restore -o /a
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
+COPY scripts/start-oneportal-api.sh /app/start-oneportal-api.sh
+RUN sed -i 's/\r$//' /app/start-oneportal-api.sh
 
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "OnePortal.API.dll"]
+ENTRYPOINT ["/bin/sh", "/app/start-oneportal-api.sh"]

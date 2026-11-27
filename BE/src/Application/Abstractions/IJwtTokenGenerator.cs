@@ -1,6 +1,7 @@
 namespace OnePortal.Application.Abstractions;
 
-using OnePortal.Domain.Entities;
+using OnePortal.Domain.Entities.Users;
+
 
 public interface IJwtTokenGenerator
 {

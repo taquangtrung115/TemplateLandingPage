@@ -1,9 +1,15 @@
 namespace OnePortal.UnitTests.Persistence;
 
+using OnePortal.Domain.Entities.Categories;
+using OnePortal.Domain.Entities.Customizations;
+using OnePortal.Domain.Entities.Interactions;
+using OnePortal.Domain.Entities.NavigationMenus;
+using OnePortal.Domain.Entities.Products;
+using OnePortal.Domain.Entities.Templates;
+using OnePortal.Domain.Entities.Users;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using OnePortal.Domain.Entities;
 using OnePortal.Persistence;
 using Xunit;
 

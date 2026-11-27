@@ -15,6 +15,39 @@ public sealed class TenantWorkflowIntegrationTests(PostgresApiFixture fixture)
 {
     #region Full workflows
     [Fact]
+    public async Task Portal_OnlyListsReadyEnabledAppsForTheRequestedActiveWorkspace()
+    {
+        var owner = await fixture.AddUserAsync("User", isPlatformAdmin: true);
+        using var admin = fixture.CreateClientFor(owner.Id, "User");
+        using var visitor = fixture.CreateAnonymousClient();
+        var tenant = await CreateAsync(admin, owner.Email, "landing", "quoting");
+        var other = await CreateAsync(admin, owner.Email, "quoting");
+        var url = $"/api/v1/portal/workspaces/{tenant.Key}/applications";
+
+        using var before = await visitor.GetAsync(url);
+        before.EnsureSuccessStatusCode();
+        before.Headers.CacheControl!.NoStore.Should().BeTrue();
+        (await ValueAsync(before)).GetProperty("appKeys").EnumerateArray().Select(app => app.GetString())
+            .Should().Equal("landing", "quoting");
+
+        using var disableApp = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Put,
+            $"/api/v1/platform/tenants/{tenant.Id}/applications/quoting", new { isEnabled = false, allowSelfRegistration = false });
+        disableApp.EnsureSuccessStatusCode();
+        using var updated = await visitor.GetAsync(url);
+        updated.EnsureSuccessStatusCode();
+        (await ValueAsync(updated)).GetProperty("appKeys").EnumerateArray().Select(app => app.GetString()).Should().Equal("landing");
+
+        using var throughOtherTenant = await visitor.GetAsync(Root(other, "quoting") + $"/portal/workspaces/{tenant.Key}/applications");
+        throughOtherTenant.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        using var disableTenant = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Put,
+            $"/api/v1/platform/tenants/{tenant.Id}", new { name = "Disabled", isActive = false });
+        disableTenant.EnsureSuccessStatusCode();
+        using var inactive = await visitor.GetAsync(url);
+        inactive.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Store_ProvisionsAndDescribesANewTenant()
     {
         var owner = await fixture.AddUserAsync("User", isPlatformAdmin: true);

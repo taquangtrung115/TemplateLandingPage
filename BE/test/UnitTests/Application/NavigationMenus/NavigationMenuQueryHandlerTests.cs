@@ -1,10 +1,10 @@
 namespace OnePortal.UnitTests.Application.NavigationMenus;
 
+using OnePortal.Domain.Entities.NavigationMenus;
 using FluentAssertions;
 using Moq;
-using OnePortal.Application.UseCases.V1.NavigationMenus.Queries;
+using OnePortal.Application.UseCases.V1.Queries.NavigationMenus;
 using OnePortal.Contract.Services.V1.NavigationMenus;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Repositories;
 using Xunit;
 

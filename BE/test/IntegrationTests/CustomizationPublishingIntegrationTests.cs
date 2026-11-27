@@ -1,10 +1,10 @@
 namespace OnePortal.IntegrationTests;
 
+using OnePortal.Domain.Entities.Users;
 using System.Net;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using OnePortal.Domain.Entities;
 using OnePortal.Persistence;
 using Xunit;
 

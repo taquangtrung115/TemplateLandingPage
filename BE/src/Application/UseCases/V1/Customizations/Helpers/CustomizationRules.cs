@@ -1,5 +1,6 @@
 namespace OnePortal.Application.UseCases.V1.Customizations.Helpers;
 
+using OnePortal.Domain.Entities.Customizations;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -7,7 +8,6 @@ using System.Text.RegularExpressions;
 using OnePortal.Application.Common.Validation;
 using OnePortal.Contract.Abstractions.Shared;
 using OnePortal.Contract.Services.V1.Customizations;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.ReadModels;
 using OnePortal.Domain.Repositories;
 

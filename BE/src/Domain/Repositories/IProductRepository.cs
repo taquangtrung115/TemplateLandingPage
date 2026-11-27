@@ -1,8 +1,7 @@
 namespace OnePortal.Domain.Repositories;
 
+using OnePortal.Domain.Entities.Products;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
-
 public interface IProductRepository : IRepositoryBase<Product, Guid>
 {
     Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default);

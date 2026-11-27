@@ -1,13 +1,13 @@
 namespace OnePortal.Presentation.APIs.Quoting;
 
+using OnePortal.Contract.Services.V1.Quoting.ProductGroups;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Commands.Create;
-using OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Commands.Update;
-using OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Commands.Delete;
-using OnePortal.Application.UseCases.V1.Quoting.ProductGroups.Queries.Search;
+using OnePortal.Application.UseCases.V1.Commands.Quoting.ProductGroups.Validators;
+using OnePortal.Application.UseCases.V1.Commands.Quoting.ProductGroups;
+using OnePortal.Application.UseCases.V1.Queries.Quoting.ProductGroups;
 using OnePortal.Contract.Abstractions.Shared;
 using OnePortal.Presentation.Abstractions;
 using OnePortal.Presentation.Authorization;

@@ -1,9 +1,8 @@
 namespace OnePortal.IntegrationTests;
 
+using OnePortal.Domain.Entities.Categories;
 using OnePortal.Persistence;
 using OnePortal.Persistence.Initialization;
-using OnePortal.Domain.Entities;
-
 internal sealed class FailedTenantSeedStep : ITenantSeedStep
 {
     public string AppKey => "landing";

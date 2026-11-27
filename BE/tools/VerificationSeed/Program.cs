@@ -1,7 +1,7 @@
+using OnePortal.Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using OnePortal.Application.Services.Tenancy;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Entities.Tenancy;
 using OnePortal.Infrastructure.Services;
 using OnePortal.Persistence;

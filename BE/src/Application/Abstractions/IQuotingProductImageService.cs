@@ -1,5 +1,5 @@
 namespace OnePortal.Application.Abstractions;
-using OnePortal.Application.UseCases.V1.Quoting.Products.Dtos;
+using OnePortal.Contract.Services.V1.Quoting.Products;
 using OnePortal.Contract.Abstractions.Shared;
 public interface IQuotingProductImageService
 {

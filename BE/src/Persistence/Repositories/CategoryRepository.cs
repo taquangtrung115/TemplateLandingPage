@@ -1,7 +1,7 @@
 namespace OnePortal.Persistence.Repositories;
 
+using OnePortal.Domain.Entities.Categories;
 using Microsoft.EntityFrameworkCore;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Repositories;
 using OnePortal.Domain.ReadModels;
 

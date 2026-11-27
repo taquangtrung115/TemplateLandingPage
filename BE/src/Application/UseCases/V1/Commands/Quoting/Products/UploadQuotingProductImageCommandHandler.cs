@@ -1,0 +1,17 @@
+namespace OnePortal.Application.UseCases.V1.Commands.Quoting.Products;
+using OnePortal.Contract.Services.V1.Quoting.Products;
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+public sealed class UploadQuotingProductImageCommandHandler(IQuotingProductImageService imageService) : ICommandHandler<UploadQuotingProductImageCommand, UploadQuotingProductImageResult>
+{
+    #region Fields
+    private readonly IQuotingProductImageService _imageService = imageService;
+    #endregion
+    #region Upload
+    public async Task<Result<UploadQuotingProductImageResult>> Handle(UploadQuotingProductImageCommand request, CancellationToken cancellationToken)
+    {
+        var uploaded = await _imageService.UploadAsync(request.Content, request.ContentType, cancellationToken);
+        return uploaded.IsSuccess ? Result.Success(new UploadQuotingProductImageResult(uploaded.Value)) : Result.Failure<UploadQuotingProductImageResult>(uploaded.Error);
+    }
+    #endregion
+}

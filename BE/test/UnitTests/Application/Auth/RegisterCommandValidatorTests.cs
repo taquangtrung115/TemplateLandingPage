@@ -1,7 +1,7 @@
 namespace OnePortal.UnitTests.Application.Auth;
 
 using FluentAssertions;
-using OnePortal.Application.UseCases.V1.Auth.Validators;
+using OnePortal.Application.UseCases.V1.Commands.Auth.Validators;
 using OnePortal.Contract.Services.V1.Auth;
 using Xunit;
 

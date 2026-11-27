@@ -4,8 +4,7 @@ using FluentAssertions;
 using Moq;
 using OnePortal.Application.Abstractions;
 using OnePortal.Application.Services.Tenancy;
-using OnePortal.Application.UseCases.V1.Tenancy.Commands.CreateMember;
-using OnePortal.Application.UseCases.V1.Tenancy.Commands.ConfigureRegistration;
+using OnePortal.Application.UseCases.V1.Commands.Tenancy;
 using Xunit;
 
 public sealed class CreateMemberTests

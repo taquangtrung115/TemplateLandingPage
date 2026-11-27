@@ -1,7 +1,7 @@
 namespace OnePortal.Persistence.Repositories;
 
+using OnePortal.Domain.Entities.Interactions;
 using Microsoft.EntityFrameworkCore;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Repositories;
 
 public sealed class GuestbookRepository : RepositoryBase<GuestbookEntry, Guid>, IGuestbookRepository

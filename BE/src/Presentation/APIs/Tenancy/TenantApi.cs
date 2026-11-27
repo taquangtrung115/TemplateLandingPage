@@ -1,20 +1,13 @@
 namespace OnePortal.Presentation.APIs.Tenancy;
 
+using OnePortal.Contract.Services.V1.Tenancy;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using OnePortal.Application.Abstractions;
-using OnePortal.Application.UseCases.V1.Tenancy.Commands.Create;
-using OnePortal.Application.UseCases.V1.Tenancy.Commands.CreateMember;
-using OnePortal.Application.UseCases.V1.Tenancy.Commands.ConfigureRegistration;
-using OnePortal.Application.UseCases.V1.Tenancy.Queries.GetRegistration;
-using OnePortal.Application.UseCases.V1.Tenancy.Commands.Update;
-using OnePortal.Application.UseCases.V1.Tenancy.Commands.ConfigureApplication;
-using OnePortal.Application.UseCases.V1.Tenancy.Commands.SetMembership;
-using OnePortal.Application.UseCases.V1.Tenancy.Queries.Search;
-using OnePortal.Application.UseCases.V1.Tenancy.Queries.GetContexts;
-using OnePortal.Application.UseCases.V1.Tenancy.Queries.GetMembers;
+using OnePortal.Application.UseCases.V1.Commands.Tenancy;
+using OnePortal.Application.UseCases.V1.Queries.Tenancy;
 using OnePortal.Contract.Abstractions.Shared;
 using OnePortal.Presentation.Abstractions;
 
@@ -23,6 +16,11 @@ public sealed class TenantApi : IEndpoint
     #region Routes
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
+        app.MapGet("/api/v1/portal/workspaces/{tenantKey}/applications", async (string tenantKey, ISender sender, HttpContext context, CancellationToken ct) =>
+        {
+            context.Response.Headers.CacheControl = "no-store";
+            return Respond(await sender.Send(new GetWorkspaceApplicationsQuery(tenantKey), ct));
+        }).AllowAnonymous();
         app.MapGet("/api/v1/auth/contexts", async (string appKey, int? page, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(new GetTenantContextsQuery(appKey, page ?? 1), ct))).RequireAuthorization();
         app.MapGet("/api/v1/context", (ITenantContext scope, IRequestActor actor) => Results.Ok(Result.Success(new { scope.TenantId, scope.AppKey, actor.Role, actor.IsPlatformAdmin }))).RequireAuthorization();
