@@ -4,7 +4,7 @@ export function notifyPortalNavigation() {
 
   const localPortal = new URL(window.location.origin);
   localPortal.port = '5176';
-  const portal = import.meta.env.VITE_PORTAL_ORIGIN || (import.meta.env.DEV ? localPortal.origin : '');
+  const portal = import.meta.env.VITE_PORTAL_ORIGIN || (import.meta.env.DEV ? localPortal.origin : 'https://oneportal-workspace.vercel.app');
   if (!/^https?:\/\/[^/]+$/.test(portal)) return;
 
   const { pathname, search, hash } = window.location;
