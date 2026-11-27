@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowUpRight, Focus, ImageUp, Layers3, PackageCheck, ScanLine, WandSparkles } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Focus, ImageUp, Layers3, PackageCheck, ScanLine, WandSparkles, Box } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { photoProductApi } from '../api/photoProductApi';
 import useRequest from '../hooks/useRequest';
@@ -30,7 +30,7 @@ export default function HomePage() {
         <h1>In ảnh để<br className="desktop-break" /> giữ lại <em>kỷ niệm.</em></h1>
         <p>In ảnh giấy lụa, ảnh tráng gương, khung gỗ và photobook. Tải ảnh, kiểm tra độ nét và xem thử thành phẩm trước khi đặt in.</p>
         <div className="action-row"><Link to={paths.services} className="uv-button uv-button--push3d"><ImageUp size={18} /> Tải ảnh & đặt in <ArrowRight size={17} /></Link>
-          <Link to={paths.demo} className="uv-button uv-button--outline">Thử khung 3D</Link></div>
+          <Link to={paths.demo} className="uv-button uv-button--outline"><Box className="control-icon" aria-hidden="true" /> Thử khung 3D</Link></div>
       </div>
       <Hero3DShowcase />
     </div></section>

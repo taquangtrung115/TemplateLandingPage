@@ -1,3 +1,4 @@
+import { List } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { photoOrderApi } from '../../api/photoOrderApi';
 import { photoSupportApi } from '../../api/photoSupportApi';
@@ -29,7 +30,7 @@ export default function AdminDashboardPage() {
           [data.support, 'Hỗ trợ mới', paths.adminSupport], [data.products, 'Sản phẩm đang bán', paths.adminServices]].map(([value, label, to]) =>
           <Link to={to} className="panel metric" key={label}><span>{label}</span><strong>{value}</strong></Link>)}
       </div>
-      <section className="panel mt-6"><div className="section-heading"><h2>Đơn in gần đây</h2><Link className="text-link" to={paths.adminOrders}>Xem danh sách</Link></div>
+      <section className="panel mt-6"><div className="section-heading"><h2>Đơn in gần đây</h2><Link className="text-link" to={paths.adminOrders}><List className="control-icon" aria-hidden="true" /> Xem danh sách</Link></div>
         {data.orders.items.length ? <ul className="admin-list">{data.orders.items.map(order =>
           <li key={order.id}><strong className="mono">{order.orderCode}</strong><span>{order.totalPhotoCount} bản · {formatMoney(order.grandTotal)}</span></li>)}</ul>
           : <p className="muted">Chưa có đơn in.</p>}

@@ -1,3 +1,4 @@
+import { ArrowDownWideNarrow, Layers, Search, Target } from 'lucide-react';
 import { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PageHeading from '../components/common/PageHeading';
@@ -38,14 +39,14 @@ export default function ServicesPage() {
   return <div className="shell page-section">
     <PageHeading title="Sản phẩm & in ảnh" trail="Sản phẩm" description="Chọn cỡ, chất liệu và kiểu hoàn thiện. Xem giá trước khi gửi ảnh." />
     <div className="filter-bar">
-      <UiverseInput label="Tìm theo tên hoặc kích thước" type="search" placeholder="10x15, Polaroid, khung gỗ…" value={search} onChange={event => filter('q', event.target.value)} />
-      <UiverseInput as="select" label="Nhóm sản phẩm" value={category} onChange={event => filter('category', event.target.value)}>
+      <UiverseInput labelIcon={Search} label="Tìm theo tên hoặc kích thước" type="search" placeholder="10x15, Polaroid, khung gỗ…" value={search} onChange={event => filter('q', event.target.value)} />
+      <UiverseInput as="select" labelIcon={Layers} label="Nhóm sản phẩm" value={category} onChange={event => filter('category', event.target.value)}>
         <option value="">Tất cả</option>{categories.data?.map(item => <option key={item.id} value={item.slug}>{item.name}</option>)}
       </UiverseInput>
-      <UiverseInput as="select" label="Mục đích" value={usage} onChange={event => filter('usage', event.target.value)}>
+      <UiverseInput as="select" labelIcon={Target} label="Mục đích" value={usage} onChange={event => filter('usage', event.target.value)}>
         <option value="">Tất cả</option>{Object.entries(UsageTypes).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </UiverseInput>
-      <UiverseInput as="select" label="Sắp xếp" value={sort} onChange={event => filter('sort', event.target.value)}>
+      <UiverseInput as="select" labelIcon={ArrowDownWideNarrow} label="Sắp xếp" value={sort} onChange={event => filter('sort', event.target.value)}>
         <option value="featured">Nổi bật</option><option value="priceAsc">Giá thấp đến cao</option><option value="priceDesc">Giá cao đến thấp</option><option value="fastest">In lấy liền</option>
       </UiverseInput>
     </div>

@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
-import { Box, Check, ImageUp, ShoppingBag } from 'lucide-react';
+import { Box, Check, ImageUp, ShoppingBag, Clock, Files, FolderUp, Frame, Image, Images, Layers, Link2, Ruler, SlidersHorizontal, ZoomIn } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { UiverseBadge, UiverseButton, UiverseCheckbox, UiverseInput } from '@oneportal/uiverse-ui';
+import { UiverseBadge, UiverseButton, UiverseCheckbox, UiverseIconLabel, UiverseInput } from '@oneportal/uiverse-ui';
 import { photoProductApi } from '../api/photoProductApi';
 import { uploadPhoto } from '../api/photoUploadApi';
 import RequestState from '../components/common/RequestState';
@@ -95,16 +95,16 @@ function ProductDetail({ product }) {
     <div className="detail-grid">
       <section className="detail-media">
         <div className="tabs" aria-label="Nội dung sản phẩm">
-          <button type="button" className="tab" aria-pressed={tab === 'gallery'} onClick={() => setTab('gallery')}>Ảnh mẫu</button>
+          <button type="button" className="tab" aria-pressed={tab === 'gallery'} onClick={() => setTab('gallery')}><Images className="control-icon" aria-hidden="true" /> Ảnh mẫu</button>
           {product.supportsBatchUpload && <button type="button" className="tab" aria-pressed={tab === 'upload'} onClick={() => setTab('upload')}><ImageUp size={16} /> Ảnh của bạn {photos.length > 0 && '(' + photos.length + ')'}</button>}
         </div>
-        {tab === 'gallery' ? <>
-          <button className="gallery-image-button" type="button" onClick={() => setZoom(true)} aria-label="Phóng to ảnh mẫu"><PhotoImage src={gallery[activeImage]} className="detail-image" alt={product.name} eager /></button>
-          {gallery.length > 1 && <div className="gallery-thumbs">{gallery.map((item, index) => <button className="gallery-thumb" type="button" key={index} aria-pressed={index === activeImage} onClick={() => setActiveImage(index)} aria-label={'Ảnh mẫu ' + (index + 1)}><PhotoImage src={item} /></button>)}</div>}
+        <div className="uv-view-enter" key={tab}>{tab === 'gallery' ? <>
+          <button className="gallery-image-button" type="button" onClick={() => setZoom(true)} aria-label="Phóng to ảnh mẫu"><PhotoImage key={activeImage} src={gallery[activeImage]} className="detail-image uv-view-enter" alt={product.name} eager /><span className="gallery-control"><ZoomIn size={18} aria-hidden="true" /></span></button>
+          {gallery.length > 1 && <div className="gallery-thumbs">{gallery.map((item, index) => <button className="gallery-thumb" type="button" key={index} aria-pressed={index === activeImage} onClick={() => setActiveImage(index)} aria-label={'Ảnh mẫu ' + (index + 1)}><PhotoImage src={item} /><span className="gallery-control">{index === activeImage ? <Check size={12} aria-hidden="true" /> : <Image size={12} aria-hidden="true" />}</span></button>)}</div>}
           <p>{product.description}</p>
-          {!!product.printSizes.length && <details className="specifications"><summary>Các cỡ ảnh của sản phẩm</summary><ul>{product.printSizes.map(item => <li key={item.label}>{item.label} {item.priceDeltaOrBase != null && ' · ' + formatMoney(item.priceDeltaOrBase)}</li>)}</ul></details>}
+          {!!product.printSizes.length && <details className="specifications"><summary><UiverseIconLabel icon={Ruler}>Các cỡ ảnh của sản phẩm</UiverseIconLabel></summary><ul>{product.printSizes.map(item => <li key={item.label}>{item.label} {item.priceDeltaOrBase != null && ' · ' + formatMoney(item.priceDeltaOrBase)}</li>)}</ul></details>}
         </> : <BatchPhotoUploader photos={photos} setPhotos={setPhotos} widthCm={config.widthCm} heightCm={config.heightCm}
-          limit={product.maxPhotosPerBatch} captions={product.defaultModel3DType === 'polaroid_card'} disabled={action.busy || config.sendAlbumLater} />}
+          limit={product.maxPhotosPerBatch} captions={product.defaultModel3DType === 'polaroid_card'} disabled={action.busy || config.sendAlbumLater} />}</div>
         {product.defaultModel3DType && <UiverseButton variant="outline" className="mt-4" icon={<Box size={18} />} onClick={showDemo}>
           {photos.length ? 'Thử ảnh này trên khung 3D' : 'Xem mẫu trên khung 3D'}
         </UiverseButton>}
@@ -112,38 +112,38 @@ function ProductDetail({ product }) {
       <form className="panel configurator form-stack" onSubmit={addToCart}>
         <h2>Quy cách in</h2>
         <fieldset disabled={action.busy} className="form-stack">
-          <legend>Cỡ ảnh</legend>
+          <legend><UiverseIconLabel icon={Ruler}>Cỡ ảnh</UiverseIconLabel></legend>
           <div className="tabs">{product.printSizes.map(size => <button type="button" key={size.label} className="tab"
-            aria-pressed={size.label === config.sizeLabel} onClick={() => changeSize(size)}>{size.label}</button>)}
-            {product.pricingMode === 'PerSqm' && <button type="button" className="tab" aria-pressed={!config.sizeLabel} onClick={() => changeSize(null)}>Tùy chỉnh</button>}</div>
+            aria-pressed={size.label === config.sizeLabel} onClick={() => changeSize(size)}><UiverseIconLabel icon={Ruler}>{size.label}</UiverseIconLabel></button>)}
+            {product.pricingMode === 'PerSqm' && <button type="button" className="tab" aria-pressed={!config.sizeLabel} onClick={() => changeSize(null)}><SlidersHorizontal className="control-icon" aria-hidden="true" /> Tùy chỉnh</button>}</div>
           {!actualSize && product.pricingMode === 'PerSqm' && <div className="form-columns">
-            <UiverseInput label="Rộng (cm)" required type="number" min="0.1" max="500" step="0.1" value={config.widthCm} onChange={event => set('widthCm', event.target.value)} />
-            <UiverseInput label="Cao (cm)" required type="number" min="0.1" max="500" step="0.1" value={config.heightCm} onChange={event => set('heightCm', event.target.value)} />
+            <UiverseInput labelIcon={Ruler} label="Rộng (cm)" required type="number" min="0.1" max="500" step="0.1" value={config.widthCm} onChange={event => set('widthCm', event.target.value)} />
+            <UiverseInput labelIcon={Ruler} label="Cao (cm)" required type="number" min="0.1" max="500" step="0.1" value={config.heightCm} onChange={event => set('heightCm', event.target.value)} />
           </div>}
-          {!!product.paperOrSurfaceOptions.length && <UiverseInput as="select" label="Giấy / Bề mặt" value={config.surfaceName} onChange={event => set('surfaceName', event.target.value)}>
+          {!!product.paperOrSurfaceOptions.length && <UiverseInput as="select" labelIcon={Layers} label="Giấy / Bề mặt" value={config.surfaceName} onChange={event => set('surfaceName', event.target.value)}>
             {product.paperOrSurfaceOptions.map(surface => <option key={surface.name} value={surface.name}>{surface.name}{surface.pricePerUnitOrSqm > 0 ? ' (+' + formatMoney(surface.pricePerUnitOrSqm) + ')' : ''}</option>)}
           </UiverseInput>}
-          {!!product.finishingOptions.length && <fieldset className="form-stack"><legend>Khung & gia công</legend>
+          {!!product.finishingOptions.length && <fieldset className="form-stack"><legend><UiverseIconLabel icon={Frame}>Khung & gia công</UiverseIconLabel></legend>
             {product.finishingOptions.map(item => <UiverseCheckbox key={item.name} checked={config.finishingNames.includes(item.name)}
               onChange={enabled => set('finishingNames', enabled ? [...config.finishingNames, item.name] : config.finishingNames.filter(name => name !== item.name))}
-              label={item.name} priceLabel={'+' + formatMoney(item.price) + ' / ' + (item.mode === 'PerSqm' ? 'm²' : 'tấm')} />)}
+              labelIcon={Frame} label={item.name} priceLabel={'+' + formatMoney(item.price) + ' / ' + (item.mode === 'PerSqm' ? 'm²' : 'tấm')} />)}
           </fieldset>}
           {album && <div className="form-columns">
-            <UiverseInput as="select" label="Số trang" value={config.productOptions.pageCount} onChange={event => set('productOptions', { ...config.productOptions, pageCount: Number(event.target.value) })}>
+            <UiverseInput as="select" labelIcon={Files} label="Số trang" value={config.productOptions.pageCount} onChange={event => set('productOptions', { ...config.productOptions, pageCount: Number(event.target.value) })}>
               {[20, 30, 40, 50].map(number => <option key={number}>{number}</option>)}
             </UiverseInput>
-            <UiverseInput as="select" label="Loại bìa" value={config.productOptions.coverType} onChange={event => set('productOptions', { ...config.productOptions, coverType: event.target.value })}>
+            <UiverseInput as="select" labelIcon={Frame} label="Loại bìa" value={config.productOptions.coverType} onChange={event => set('productOptions', { ...config.productOptions, coverType: event.target.value })}>
               {['Bìa cứng', 'Bìa vải', 'Bìa da'].map(name => <option key={name}>{name}</option>)}
             </UiverseInput>
           </div>}
-          <UiverseInput as="select" label="Thời gian in" value={config.turnaroundMode} onChange={event => set('turnaroundMode', event.target.value)}>
+          <UiverseInput as="select" labelIcon={Clock} label="Thời gian in" value={config.turnaroundMode} onChange={event => set('turnaroundMode', event.target.value)}>
             <option value="Standard">Tiêu chuẩn {product.productionTimeLabel && '· ' + product.productionTimeLabel}</option>
             {product.rushSurchargePercent > 0 && <option value="Rush">In nhanh lấy liền ( +{product.rushSurchargePercent}% )</option>}
           </UiverseInput>
-          {product.supportsBatchUpload && <UiverseCheckbox checked={config.sendAlbumLater} onChange={value => set('sendAlbumLater', value)} label="Tôi sẽ gửi album gốc qua Zalo / Drive sau khi đặt" />}
-          {config.sendAlbumLater && <UiverseInput label="Liên kết album (tùy chọn)" type="url" placeholder="https://…" value={config.albumUrl} onChange={event => set('albumUrl', event.target.value)} />}
-          {config.sendAlbumLater || !product.supportsBatchUpload ? <UiverseInput label="Số bản in" required type="number" min="1" max="50000" value={config.quantity} onChange={event => set('quantity', event.target.value)} />
-            : <p className="muted">{quantity} bản in từ {photos.length} ảnh. <button type="button" className="text-link" onClick={() => setTab('upload')}>Chọn ảnh</button></p>}
+          {product.supportsBatchUpload && <UiverseCheckbox checked={config.sendAlbumLater} onChange={value => set('sendAlbumLater', value)} labelIcon={FolderUp} label="Tôi sẽ gửi album gốc qua Zalo / Drive sau khi đặt" />}
+          {config.sendAlbumLater && <UiverseInput labelIcon={Link2} label="Liên kết album (tùy chọn)" type="url" placeholder="https://…" value={config.albumUrl} onChange={event => set('albumUrl', event.target.value)} />}
+          {config.sendAlbumLater || !product.supportsBatchUpload ? <UiverseInput labelIcon={Files} label="Số bản in" required type="number" min="1" max="50000" value={config.quantity} onChange={event => set('quantity', event.target.value)} />
+            : <p className="muted">{quantity} bản in từ {photos.length} ảnh. <button type="button" className="text-link" onClick={() => setTab('upload')}><ImageUp className="control-icon" aria-hidden="true" /> Chọn ảnh</button></p>}
         </fieldset>
         {nextTier && <UiverseBadge tone="cyan">Từ {nextTier.minQty} bản giảm {nextTier.discountPercent}%</UiverseBadge>}
         <dl className="price-summary">
@@ -154,9 +154,9 @@ function ProductDetail({ product }) {
           {price.discountTotal > 0 && <div><dt>Chiết khấu ({price.discountPercent}%)</dt><dd>−{formatMoney(price.discountTotal)}</dd></div>}
           <div className="price-total"><dt>Tạm tính</dt><dd>{formatMoney(price.lineTotal)}</dd></div>
         </dl>
-        {progress && action.busy && <label>Tải ảnh gốc {progress.completed}/{progress.total}<progress value={progress.completed} max={progress.total} /></label>}
+        {progress && action.busy && <label><UiverseIconLabel icon={ImageUp}>Tải ảnh gốc {progress.completed}/{progress.total}</UiverseIconLabel><progress value={progress.completed} max={progress.total} /></label>}
         {action.error && <p role="alert" className="notice notice-error">{action.error}</p>}
-        {added && <p className="notice" role="status"><Check size={16} /> Đã thêm vào giỏ. <Link to={paths.cart} className="text-link">Xem giỏ hàng</Link></p>}
+        {added && <p className="notice" role="status"><Check size={16} /> Đã thêm vào giỏ. <Link to={paths.cart} className="text-link"><ShoppingBag className="control-icon" aria-hidden="true" /> Xem giỏ hàng</Link></p>}
         <UiverseButton type="submit" isLoading={action.busy} icon={<ShoppingBag size={17} />}>Thêm vào giỏ</UiverseButton>
         <ContactActions message={'Tư vấn ' + product.name + ', cỡ ' + config.widthCm + ' × ' + config.heightCm + ' cm, ' + quantity + ' bản, tạm tính ' + formatMoney(price.lineTotal)} />
       </form>

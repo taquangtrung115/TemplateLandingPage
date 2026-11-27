@@ -1,3 +1,4 @@
+import { Clock3, NotebookPen, Save } from 'lucide-react';
 import { useState } from 'react';
 import { UiverseButton, UiverseInput } from '@oneportal/uiverse-ui';
 import Modal from '../../components/common/Modal';
@@ -28,13 +29,13 @@ export default function StateEditor({ title, record, states, update, onClose, on
     <div className="form-stack">{children}</div>
     <form className="form-stack mt-5" onSubmit={save}>
       <fieldset disabled={action.busy || stale} className="form-stack">
-        <UiverseInput label="Trạng thái" as="select" value={state} onChange={event => setState(event.target.value)}>
+        <UiverseInput labelIcon={Clock3} label="Trạng thái" as="select" value={state} onChange={event => setState(event.target.value)}>
           {Object.entries(states).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
         </UiverseInput>
-        <UiverseInput label="Phản hồi cho khách" as="textarea" rows={3} value={note} maxLength={2000} onChange={event => setNote(event.target.value)} />
+        <UiverseInput labelIcon={NotebookPen} label="Phản hồi cho khách" as="textarea" rows={3} value={note} maxLength={2000} onChange={event => setNote(event.target.value)} />
       </fieldset>
       {action.error && <p role="alert" className="notice notice-error">{action.error}</p>}
-      <UiverseButton type="submit" disabled={stale} isLoading={action.busy}>Lưu trạng thái</UiverseButton>
+      <UiverseButton icon={<Save className="control-icon" aria-hidden="true" />} type="submit" disabled={stale} isLoading={action.busy}>Lưu trạng thái</UiverseButton>
     </form>
   </Modal>;
 }

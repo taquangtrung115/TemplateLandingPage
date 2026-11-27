@@ -6,3 +6,4 @@ export { default as UiverseToggle } from './UiverseToggle.jsx';
 export { default as UiverseBadge } from './UiverseBadge.jsx';
 export { default as UiverseLoader } from './UiverseLoader.jsx';
 export { default as UiverseSocialDock } from './UiverseSocialDock.jsx';
+export { default as UiverseIconLabel } from './UiverseIconLabel.jsx';

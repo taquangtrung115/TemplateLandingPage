@@ -1,12 +1,14 @@
 import React, { useId } from "react";
 import { UiverseInput } from "@oneportal/uiverse-ui";
-export default function Field({ label, hint, ...props }) {
+
+export default function Field({ label, icon, hint, ...props }) {
   const id = useId(),
     hintId = id + "-hint";
   return (
     <div className="field-label">
       <UiverseInput
         label={label}
+        labelIcon={icon}
         id={id}
         className="portal-field"
         aria-describedby={hint ? hintId : undefined}

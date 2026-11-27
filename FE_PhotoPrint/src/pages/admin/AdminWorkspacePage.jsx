@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight, KeyRound, Mail, Save, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { UiverseButton, UiverseInput, UiverseToggle } from '@oneportal/uiverse-ui';
 import { workspaceApi } from '../../api/workspaceApi';
@@ -14,9 +15,9 @@ function RegistrationForm({ settings, reload }) {
     event.preventDefault();
     action.run(async () => { await workspaceApi.configureRegistration({ allowSelfRegistration: allowed }); reload(); });
   }}>
-    <UiverseToggle label="Cho phép khách tự đăng ký tài khoản" checked={allowed} onChange={setAllowed} />
+    <UiverseToggle labelIcon={UserPlus} label="Cho phép khách tự đăng ký tài khoản" checked={allowed} onChange={setAllowed} />
     {action.error && <p role="alert" className="notice notice-error">{action.error}</p>}
-    <UiverseButton type="submit" isLoading={action.busy}>Lưu</UiverseButton>
+    <UiverseButton icon={<Save className="control-icon" aria-hidden="true" />} type="submit" isLoading={action.busy}>Lưu</UiverseButton>
   </form>;
 }
 
@@ -42,25 +43,25 @@ function Members() {
     <RequestState result={members}>
       {rows.length ? <ul className="admin-list panel">{rows.map(member => <li key={member.id ?? member.userId}>
         <div><strong>{member.fullName}</strong><p>{member.email} · {member.role}</p></div>
-        <UiverseButton variant="outline" size="small" disabled={action.busy} onClick={() => action.run(async () => {
+        <UiverseButton icon={<ShieldCheck className="control-icon" aria-hidden="true" />} variant="outline" size="small" disabled={action.busy} onClick={() => action.run(async () => {
           await workspaceApi.setMember({ email: member.email, role: member.role, isActive: !member.isActive });
           members.reload();
         })}>{member.isActive ? 'Tạm khóa' : 'Kích hoạt'}</UiverseButton>
       </li>)}</ul> : <p className="notice">Chưa có thành viên.</p>}
       {(page > 1 || rows.length === 100) && <div className="action-row">
-        <UiverseButton variant="outline" size="small" disabled={page <= 1} onClick={() => setPage(page - 1)}>Trước</UiverseButton>
-        <UiverseButton variant="outline" size="small" disabled={rows.length < 100} onClick={() => setPage(page + 1)}>Sau</UiverseButton>
+        <UiverseButton icon={<ChevronLeft className="control-icon" aria-hidden="true" />} variant="outline" size="small" disabled={page <= 1} onClick={() => setPage(page - 1)}>Trước</UiverseButton>
+        <UiverseButton icon={<ChevronRight className="control-icon" aria-hidden="true" />} variant="outline" size="small" disabled={rows.length < 100} onClick={() => setPage(page + 1)}>Sau</UiverseButton>
       </div>}
     </RequestState>
     <form className="panel form-stack" onSubmit={submit}>
-      <UiverseInput as="select" label="Thêm thành viên" value={mode} onChange={event => setMode(event.target.value)}>
+      <UiverseInput as="select" labelIcon={UserPlus} label="Thêm thành viên" value={mode} onChange={event => setMode(event.target.value)}>
         <option value="existing">Gán tài khoản đã có hoặc đổi vai trò</option><option value="create">Tạo tài khoản mới</option>
       </UiverseInput>
-      <UiverseInput required label="Email" name="email" type="email" />
-      {mode === 'create' && <div className="form-columns"><UiverseInput required label="Họ tên" name="fullName" /><UiverseInput required label="Mật khẩu" type="password" name="password" minLength={8} /></div>}
-      <UiverseInput label="Vai trò" name="role" as="select"><option>User</option><option>Admin</option></UiverseInput>
+      <UiverseInput required labelIcon={Mail} label="Email" name="email" type="email" />
+      {mode === 'create' && <div className="form-columns"><UiverseInput required labelIcon={UserRound} label="Họ tên" name="fullName" /><UiverseInput required labelIcon={KeyRound} label="Mật khẩu" type="password" name="password" minLength={8} /></div>}
+      <UiverseInput labelIcon={ShieldCheck} label="Vai trò" name="role" as="select"><option>User</option><option>Admin</option></UiverseInput>
       {action.error && <p role="alert" className="notice notice-error">{action.error}</p>}
-      <UiverseButton type="submit" isLoading={action.busy}>Lưu thành viên</UiverseButton>
+      <UiverseButton icon={<Save className="control-icon" aria-hidden="true" />} type="submit" isLoading={action.busy}>Lưu thành viên</UiverseButton>
     </form>
   </div>;
 }

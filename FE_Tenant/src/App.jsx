@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Building2, LogOut, Plus } from "lucide-react";
+import {
+  Building2, CircleAlert, CircleCheck, CircleMinus, Fingerprint, KeyRound,
+  LoaderCircle, LockKeyhole, LogIn, LogOut, Mail, Plus, Search, Settings,
+  Store, UserCog, Users, X,
+} from "lucide-react";
 import { tenantApi } from "./api/tenantApi";
 import Field from "./components/Field";
 import MemberPanel from "./components/MemberPanel";
 import Modal from "./components/Modal";
 import ApplicationSettings from "./components/ApplicationSettings";
 import AppStore from "./components/AppStore";
+import { UiverseButton, UiverseIconLabel as IconLabel } from "@oneportal/uiverse-ui";
+import Pagination from "./components/Pagination";
 import { applications, getApplicationName } from "./applications";
-import { UiverseButton } from "@oneportal/uiverse-ui";
 
 const requestedTenant = new URLSearchParams(window.location.search).get("tenant") || "";
 const initialSection = new URLSearchParams(window.location.search).get("view") === "store" ? "store" : "members";
@@ -183,15 +188,15 @@ export default function App() {
   if (checking)
     return (
       <main className="portal-login" role="status">
-        Đang kiểm tra phiên đăng nhập…
+        <span className="portal-pending"><IconLabel icon={LoaderCircle}>Đang kiểm tra phiên đăng nhập…</IconLabel></span>
       </main>
     );
   if (!user)
     return (
       <main className="portal-login">
-        <section className="login-panel">
+        <section className="login-panel uv-page-enter">
           <div className="portal-brand">
-            <Building2 size={24} />
+            <Building2 size={24} aria-hidden="true" />
             OnePortal
           </div>
           <h1>Quản trị nền tảng</h1>
@@ -200,7 +205,7 @@ export default function App() {
           </p>
           {error && (
             <p role="alert" className="portal-notice portal-error">
-              {error}
+              <IconLabel icon={CircleAlert}>{error}</IconLabel>
             </p>
           )}
           <form onSubmit={login} className="form-stack">
@@ -208,6 +213,7 @@ export default function App() {
               name="email"
               type="email"
               label="Email"
+              icon={Mail}
               autoComplete="username"
               required
             />
@@ -215,12 +221,13 @@ export default function App() {
               name="password"
               type="password"
               label="Mật khẩu"
+              icon={KeyRound}
               autoComplete="current-password"
               required
             />
-            <button className="portal-button" disabled={busy}>
+            <UiverseButton type="submit" isLoading={busy} icon={<LogIn className="tenant-icon" aria-hidden="true" />}>
               {busy ? "Đang đăng nhập…" : "Đăng nhập"}
-            </button>
+            </UiverseButton>
           </form>
         </section>
       </main>
@@ -233,57 +240,66 @@ export default function App() {
     application?.isEnabled &&
     application.provisioningStatus === "Ready";
   const appName = getApplicationName(appKey);
+  const appStatus = !selected?.isActive
+    ? { label: "Công ty đã khóa", icon: LockKeyhole }
+    : !application?.isEnabled
+      ? { label: "Chưa bật ứng dụng", icon: CircleMinus }
+      : ready
+        ? { label: "Sẵn sàng", icon: CircleCheck, tone: "ready" }
+        : application.provisioningStatus === "Failed"
+          ? { label: "Khởi tạo thất bại", icon: CircleAlert, tone: "failed" }
+          : { label: "Đang khởi tạo", icon: LoaderCircle, tone: "portal-pending" };
   return (
     <div>
       <header className="portal-header">
         <div className="portal-brand">
-          <Building2 size={24} />
+          <Building2 size={24} aria-hidden="true" />
           OnePortal <span className="portal-caption">Quản trị nền tảng</span>
         </div>
         <button className="portal-secondary" onClick={logout}>
-          <LogOut size={16} />
-          Đăng xuất
+          <IconLabel icon={LogOut}>Đăng xuất</IconLabel>
         </button>
       </header>
-      <main className="portal-main">
+      <main className="portal-main uv-page-enter">
         <div className="page-heading">
           <div>
             <h1>Quản trị công ty</h1>
             <p>Cài ứng dụng và quản lý quyền truy cập theo từng công ty.</p>
           </div>
           <UiverseButton
+            icon={<Plus className="tenant-icon" aria-hidden="true" />}
             onClick={() => {
               setCreating(true);
               setError("");
             }}
           >
-            <Plus size={16} />
             Thêm công ty
           </UiverseButton>
         </div>
         {error && !creating && (
           <p role="alert" className="portal-notice portal-error">
-            {error}
+            <IconLabel icon={CircleAlert}>{error}</IconLabel>
           </p>
         )}
         {notice && (
           <p role="status" className="portal-notice">
-            {notice}
+            <IconLabel icon={CircleCheck}>{notice}</IconLabel>
           </p>
         )}
         <div className="portal-workbench">
           <aside className="directory" aria-label="Danh sách công ty">
-            <h2 className="directory-title">Công ty</h2>
+            <h2 className="directory-title"><IconLabel icon={Building2}>Công ty</IconLabel></h2>
             <Field
               label="Tìm công ty"
+              icon={Search}
               type="search"
               placeholder="Tên hoặc mã công ty"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
             {listing && (
-              <p role="status" className="muted mt-3">
-                Đang tải công ty…
+              <p role="status" className="muted mt-3 portal-pending">
+                <IconLabel icon={LoaderCircle}>Đang tải công ty…</IconLabel>
               </p>
             )}
             <ul className="directory-list" aria-busy={listing}>
@@ -304,11 +320,13 @@ export default function App() {
                       setNotice("");
                     }}
                   >
-                    <strong>{tenant.name}</strong>
-                    <small>
-                      {tenant.key}
-                      {!tenant.isActive && " · Đã khóa"}
-                    </small>
+                    <IconLabel icon={tenant.isActive ? Building2 : LockKeyhole}>
+                      <strong>{tenant.name}</strong>
+                      <small>
+                        {tenant.key}
+                        {!tenant.isActive && " · Đã khóa"}
+                      </small>
+                    </IconLabel>
                   </button>
                 </li>
               ))}
@@ -320,53 +338,20 @@ export default function App() {
                   : "Chưa có công ty. Thêm công ty để bắt đầu."}
               </p>
             )}
-            <div className="pagination">
-              <button
-                className="portal-secondary"
-                disabled={listing || page === 1}
-                onClick={() => setPage(page - 1)}
-              >
-                Trước
-              </button>
-              <span>Trang {page}</span>
-              <button
-                className="portal-secondary"
-                disabled={listing || tenants.length < 20}
-                onClick={() => setPage(page + 1)}
-              >
-                Sau
-              </button>
-            </div>
+            <Pagination page={page} canGoNext={tenants.length >= 20} busy={listing} onChange={setPage} />
           </aside>
           <section className="tenant-detail" aria-label="Quản lý công ty">
             {selected ? (
               <>
                 <h2>{selected.name}</h2>
                 <div className="context-line">
-                  <span>{selected.key}</span>
-                  <span
-                    className={
-                      "status " +
-                      (ready
-                        ? "ready"
-                        : application?.provisioningStatus === "Failed"
-                          ? "failed"
-                          : "")
-                    }
-                  >
-                    {!selected.isActive
-                      ? "Công ty đã khóa"
-                      : !application?.isEnabled
-                        ? "Chưa bật ứng dụng"
-                        : application.provisioningStatus === "Ready"
-                          ? "Sẵn sàng"
-                          : application.provisioningStatus === "Failed"
-                            ? "Khởi tạo thất bại"
-                            : "Đang khởi tạo"}
+                  <IconLabel icon={Fingerprint}>{selected.key}</IconLabel>
+                  <span className={"status " + (appStatus.tone || "")}>
+                    <IconLabel icon={appStatus.icon}>{appStatus.label}</IconLabel>
                   </span>
                 </div>
                 <div className="app-tabs" aria-label="Ứng dụng">
-                  {applications.map(({ key, name }) => (
+                  {applications.map(({ key, name, icon }) => (
                     <button
                       key={key}
                       aria-pressed={appKey === key}
@@ -377,7 +362,7 @@ export default function App() {
                         setNotice("");
                       }}
                     >
-                      {name}
+                      <IconLabel icon={icon}>{name}</IconLabel>
                     </button>
                   ))}
                 </div>
@@ -386,71 +371,73 @@ export default function App() {
                     aria-pressed={section === "members"}
                     onClick={() => setSection("members")}
                   >
-                    Người dùng
+                    <IconLabel icon={Users}>Người dùng</IconLabel>
                   </button>
                   <button
                     aria-pressed={section === "settings"}
                     onClick={() => setSection("settings")}
                   >
-                    Cấu hình
+                    <IconLabel icon={Settings}>Cấu hình</IconLabel>
                   </button>
-                  <button aria-pressed={section === "store"} onClick={() => setSection("store")}>Store</button>
+                  <button aria-pressed={section === "store"} onClick={() => setSection("store")}><IconLabel icon={Store}>Store</IconLabel></button>
                 </div>
-                {section === "store" ? <AppStore tenant={selected} loading={busy}
-                  onConfigure={key => { setAppKey(key); setSection("settings"); }}
-                  onInstall={(key, allowSelfRegistration) => mutate(
-                    () => tenantApi.configure(selected.id, key, { isEnabled: true, allowSelfRegistration }),
-                    "Đã cài " + getApplicationName(key) + ".",
-                  )}
-                /> : section === "members" ? (
-                  ready ? (
-                    <MemberPanel
-                      key={selected.id + appKey}
+                <div className="uv-view-enter" key={selected.id + ":" + (section === "store" ? section : appKey + ":" + section)}>
+                  {section === "store" ? <AppStore tenant={selected} loading={busy}
+                    onConfigure={key => { setAppKey(key); setSection("settings"); }}
+                    onInstall={(key, allowSelfRegistration) => mutate(
+                      () => tenantApi.configure(selected.id, key, { isEnabled: true, allowSelfRegistration }),
+                      "Đã cài " + getApplicationName(key) + ".",
+                    )}
+                  /> : section === "members" ? (
+                    ready ? (
+                      <MemberPanel
+                        key={selected.id + appKey}
+                        tenant={selected}
+                        appKey={appKey}
+                      />
+                    ) : (
+                      <div className="empty-state">
+                        <h3>Ứng dụng chưa sẵn sàng</h3>
+                        <p>
+                          Mở Cấu hình để bật ứng dụng hoặc kiểm tra khởi tạo dữ
+                          liệu.
+                        </p>
+                        <button
+                          className="portal-secondary mt-4"
+                          onClick={() => setSection("settings")}
+                        >
+                          <IconLabel icon={Settings}>Mở cấu hình</IconLabel>
+                        </button>
+                      </div>
+                    )
+                  ) : (
+                    <ApplicationSettings
+                      key={
+                        selected.id +
+                        appKey +
+                        JSON.stringify(application) +
+                        selected.isActive +
+                        selected.name
+                      }
                       tenant={selected}
                       appKey={appKey}
+                      application={application}
+                      busy={busy}
+                      onConfigure={(value) =>
+                        mutate(
+                          () => tenantApi.configure(selected.id, appKey, value),
+                          "Đã lưu cấu hình ứng dụng.",
+                        )
+                      }
+                      onUpdate={(value) =>
+                        mutate(
+                          () => tenantApi.update(selected.id, value),
+                          "Đã cập nhật công ty.",
+                        )
+                      }
                     />
-                  ) : (
-                    <div className="empty-state">
-                      <h3>Ứng dụng chưa sẵn sàng</h3>
-                      <p>
-                        Mở Cấu hình để bật ứng dụng hoặc kiểm tra khởi tạo dữ
-                        liệu.
-                      </p>
-                      <button
-                        className="portal-secondary mt-4"
-                        onClick={() => setSection("settings")}
-                      >
-                        Mở cấu hình
-                      </button>
-                    </div>
-                  )
-                ) : (
-                  <ApplicationSettings
-                    key={
-                      selected.id +
-                      appKey +
-                      JSON.stringify(application) +
-                      selected.isActive +
-                      selected.name
-                    }
-                    tenant={selected}
-                    appKey={appKey}
-                    application={application}
-                    busy={busy}
-                    onConfigure={(value) =>
-                      mutate(
-                        () => tenantApi.configure(selected.id, appKey, value),
-                        "Đã lưu cấu hình ứng dụng.",
-                      )
-                    }
-                    onUpdate={(value) =>
-                      mutate(
-                        () => tenantApi.update(selected.id, value),
-                        "Đã cập nhật công ty.",
-                      )
-                    }
-                  />
-                )}
+                  )}
+                </div>
               </>
             ) : (
               <div className="empty-state">
@@ -464,18 +451,20 @@ export default function App() {
       {creating && (
         <Modal
           title="Thêm công ty"
+          icon={Building2}
           onClose={() => setCreating(false)}
           busy={busy}
         >
           <form className="form-stack" onSubmit={createTenant}>
             {error && (
               <p role="alert" className="portal-notice portal-error">
-                {error}
+                <IconLabel icon={CircleAlert}>{error}</IconLabel>
               </p>
             )}
-            <Field label="Tên công ty" name="name" maxLength={200} required />
+            <Field label="Tên công ty" icon={Building2} name="name" maxLength={200} required />
             <Field
               label="Mã workspace"
+              icon={Fingerprint}
               name="key"
               pattern="[a-z0-9](?:[a-z0-9]|-){1,62}"
               maxLength={63}
@@ -483,26 +472,19 @@ export default function App() {
               required
             />
             <fieldset>
-              <legend className="field-label mb-2">Ứng dụng sử dụng</legend>
-              <div className="flex flex-wrap gap-5">
-                <label>
-                  <input
-                    type="checkbox"
-                    name="applications"
-                    value="quoting"
-                    defaultChecked
-                  />{" "}
-                  Quoting
-                </label>
-                <label>
-                  <input type="checkbox" name="applications" value="landing" />{" "}
-                  Landing Page
-                </label>
-                <label><input type="checkbox" name="applications" value="photoprint" />{" "}Photo Print</label>
+              <legend className="field-label mb-2"><IconLabel icon={Store}>Ứng dụng sử dụng</IconLabel></legend>
+              <div className="application-options">
+                {applications.map(({ key, name, icon }) => (
+                  <label key={key}>
+                    <input type="checkbox" name="applications" value={key} defaultChecked={key === "quoting"} />
+                    <IconLabel icon={icon}>{name}</IconLabel>
+                  </label>
+                ))}
               </div>
             </fieldset>
             <Field
               label="Email quản trị viên đã có"
+              icon={UserCog}
               name="adminEmail"
               type="email"
               hint="Không bắt buộc. Bạn có thể thêm quản trị viên sau khi tạo công ty."
@@ -514,11 +496,11 @@ export default function App() {
                 disabled={busy}
                 onClick={() => setCreating(false)}
               >
-                Hủy
+                <IconLabel icon={X}>Hủy</IconLabel>
               </button>
-              <button className="portal-button" disabled={busy}>
+              <UiverseButton type="submit" isLoading={busy} icon={<Plus className="tenant-icon" aria-hidden="true" />}>
                 {busy ? "Đang khởi tạo…" : "Tạo công ty"}
-              </button>
+              </UiverseButton>
             </div>
           </form>
         </Modal>

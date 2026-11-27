@@ -1,7 +1,9 @@
+import { Aperture, FileText, PanelsTopLeft } from 'lucide-react';
+
 export const applications = [
-  { key: 'quoting', name: 'Quoting', description: 'Sản phẩm, khách hàng và báo giá.' },
-  { key: 'landing', name: 'Landing Page', description: 'Thiết kế và xuất bản landing page.' },
-  { key: 'photoprint', name: 'Photo Print', description: 'Sản phẩm ảnh, đơn in và hỗ trợ khách hàng.' },
+  { key: 'quoting', name: 'Quoting', icon: FileText, description: 'Sản phẩm, khách hàng và báo giá.' },
+  { key: 'landing', name: 'Landing Page', icon: PanelsTopLeft, description: 'Thiết kế và xuất bản landing page.' },
+  { key: 'photoprint', name: 'Photo Print', icon: Aperture, description: 'Sản phẩm ảnh, đơn in và hỗ trợ khách hàng.' },
 ];
 
 export const getApplicationName = key => applications.find(item => item.key === key)?.name ?? key;

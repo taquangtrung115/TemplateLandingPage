@@ -1,6 +1,9 @@
-export default function UiverseToggle({ checked, onChange, label, variant = 'pill' }) {
+import UiverseIconLabel from './UiverseIconLabel.jsx';
+
+export default function UiverseToggle({ checked, onChange, label, labelIcon, variant = 'pill' }) {
   return <label className={'uv-switch uv-switch--' + variant}>
     <input type="checkbox" role="switch" checked={checked} onChange={event => onChange(event.target.checked)} />
-    <span className="uv-switch-track" aria-hidden="true" /> {label}
+    <span className="uv-switch-track" aria-hidden="true" />
+    {labelIcon ? <UiverseIconLabel icon={labelIcon}>{label}</UiverseIconLabel> : label}
   </label>;
 }

@@ -1,4 +1,4 @@
-import { ArrowRight, ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Trash2, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import PageHeading from '../components/common/PageHeading';
@@ -28,7 +28,7 @@ export default function CartPage() {
       <aside className="panel form-stack"><h2>Tóm tắt đơn in</h2><dl className="price-summary"><div><dt>Số bản</dt><dd>{cart.photoCount}</dd></div>
         <div className="price-total"><dt>Tạm tính</dt><dd>{formatMoney(cart.total)}</dd></div></dl>
         <Link to={paths.checkout} className="uv-button uv-button--push3d">Tiếp tục đặt in <ArrowRight size={17} /></Link>
-        <Link to={paths.services} className="text-link">Chọn thêm sản phẩm</Link>
+        <Link to={paths.services} className="text-link"><Plus className="control-icon" aria-hidden="true" /> Chọn thêm sản phẩm</Link>
       </aside>
     </div> : <div className="panel empty-panel"><ShoppingBag size={34} /><h2>Giỏ hàng đang trống</h2><p>Chọn một sản phẩm và tải ảnh để bắt đầu.</p>
       <Link to={paths.services} className="uv-button uv-button--push3d">Xem sản phẩm <ArrowRight size={17} /></Link></div>}

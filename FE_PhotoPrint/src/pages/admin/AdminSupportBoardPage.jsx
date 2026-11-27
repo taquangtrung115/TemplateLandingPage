@@ -1,3 +1,4 @@
+import { Flag, MessageSquareText, Search } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { UiverseBadge, UiverseButton, UiverseCard, UiverseInput } from '@oneportal/uiverse-ui';
 import { photoSupportApi } from '../../api/photoSupportApi';
@@ -26,8 +27,8 @@ export default function AdminSupportBoardPage() {
   return <>
     <PageHeading title="Yêu cầu hỗ trợ" description="Tiếp nhận, xử lý và trả lời khách tại một chỗ." />
     <div className="admin-toolbar">
-      <UiverseInput label="Tìm tên, mã yêu cầu, email hoặc SĐT" type="search" value={query} onChange={event => { setQuery(event.target.value); setPages({}); }} />
-      <UiverseInput label="Mức độ" as="select" value={priority} onChange={event => { setPriority(event.target.value); setPages({}); }}>
+      <UiverseInput labelIcon={Search} label="Tìm tên, mã yêu cầu, email hoặc SĐT" type="search" value={query} onChange={event => { setQuery(event.target.value); setPages({}); }} />
+      <UiverseInput labelIcon={Flag} label="Mức độ" as="select" value={priority} onChange={event => { setPriority(event.target.value); setPages({}); }}>
         <option value="">Tất cả</option>{Object.entries(Priorities).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </UiverseInput>
     </div>
@@ -37,7 +38,7 @@ export default function AdminSupportBoardPage() {
         {items.map(ticket => <UiverseCard key={ticket.id} className="ticket-card">
           <small className="mono">{ticket.ticketCode}</small><strong>{ticket.topic}</strong>
           <p>{ticket.fullName}</p><UiverseBadge tone={ticket.priority === 'urgent' ? 'rose' : ticket.priority === 'high' ? 'amber' : 'neutral'}>{Priorities[ticket.priority]}</UiverseBadge>
-          <UiverseButton size="small" variant="outline" onClick={() => setSelected(ticket)}>Mở yêu cầu</UiverseButton>
+          <UiverseButton icon={<MessageSquareText className="control-icon" aria-hidden="true" />} size="small" variant="outline" onClick={() => setSelected(ticket)}>Mở yêu cầu</UiverseButton>
         </UiverseCard>)}
         {!items.length && <p className="muted">Chưa có yêu cầu.</p>}
         <Pagination page={pages[status] || 1} pageSize={pageSize} totalCount={totalCount} onPage={page => setPages(current => ({ ...current, [status]: page }))} />

@@ -1,4 +1,4 @@
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, CreditCard, ImageUp, Mail, MapPin, NotebookPen, Pencil, Phone, Search, Send, Truck, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { UiverseButton, UiverseInput } from '@oneportal/uiverse-ui';
 import { useState } from 'react';
@@ -41,32 +41,32 @@ export default function CheckoutPage() {
       <p>Tiệm sẽ kiểm tra file ảnh và liên hệ để xác nhận đơn.</p>
       {order.grandTotal != null && <p>Thành tiền đã xác nhận {formatMoney(order.grandTotal)}</p>}
       <ContactActions message={'Xin chào, mình gửi ảnh gốc và xác nhận đơn ' + order.orderCode + '.'} />
-      <Link className="uv-button uv-button--outline" to={withQuery(paths.trackOrder, { code: order.orderCode })}>Tra cứu đơn</Link></div>
+      <Link className="uv-button uv-button--outline" to={withQuery(paths.trackOrder, { code: order.orderCode })}><Search className="control-icon" aria-hidden="true" /> Tra cứu đơn</Link></div>
     : cart.items.length ? <div className="detail-grid">
       <form className="panel form-stack" onSubmit={submit}>
         <h2>Thông tin người đặt</h2>
         <fieldset className="form-stack" disabled={action.busy}>
-          <UiverseInput required label="Họ và tên" name="customerName" autoComplete="name" maxLength={120} />
+          <UiverseInput required labelIcon={UserRound} label="Họ và tên" name="customerName" autoComplete="name" maxLength={120} />
           <div className="form-columns">
-            <UiverseInput required label="Số điện thoại" name="customerPhone" type="tel" autoComplete="tel" maxLength={30} />
-            <UiverseInput label="Email (tùy chọn)" name="customerEmail" type="email" autoComplete="email" maxLength={160} />
+            <UiverseInput required labelIcon={Phone} label="Số điện thoại" name="customerPhone" type="tel" autoComplete="tel" maxLength={30} />
+            <UiverseInput labelIcon={Mail} label="Email (tùy chọn)" name="customerEmail" type="email" autoComplete="email" maxLength={160} />
           </div>
-          <UiverseInput as="select" name="deliveryMethod" label="Cách nhận ảnh" value={delivery} onChange={event => setDelivery(event.target.value)}>
+          <UiverseInput as="select" name="deliveryMethod" labelIcon={Truck} label="Cách nhận ảnh" value={delivery} onChange={event => setDelivery(event.target.value)}>
             <option value="Pickup">Nhận tại tiệm ảnh</option><option value="LocalDelivery">Giao nhanh nội thành</option><option value="NationwideCod">Ship COD toàn quốc</option>
           </UiverseInput>
-          {delivery !== 'Pickup' && <UiverseInput required label="Địa chỉ giao ảnh" name="deliveryAddress" autoComplete="street-address" maxLength={350} />}
-          <UiverseInput as="select" name="paymentMethod" label="Thanh toán">
+          {delivery !== 'Pickup' && <UiverseInput required labelIcon={MapPin} label="Địa chỉ giao ảnh" name="deliveryAddress" autoComplete="street-address" maxLength={350} />}
+          <UiverseInput as="select" name="paymentMethod" labelIcon={CreditCard} label="Thanh toán">
             <option value="VietQr">Chuyển khoản VietQR</option><option value="Cash">Tiền mặt khi nhận</option><option value="Deposit">Đặt cọc</option>
           </UiverseInput>
-          <UiverseInput as="textarea" label="Ghi chú cho tiệm" name="notes" rows={3} maxLength={1000} />
+          <UiverseInput as="textarea" labelIcon={NotebookPen} label="Ghi chú cho tiệm" name="notes" rows={3} maxLength={1000} />
         </fieldset>
         {action.error && <p role="alert" className="notice notice-error">{action.error}</p>}
-        <UiverseButton type="submit" isLoading={action.busy}>Gửi đơn đặt in</UiverseButton>
+        <UiverseButton icon={<Send className="control-icon" aria-hidden="true" />} type="submit" isLoading={action.busy}>Gửi đơn đặt in</UiverseButton>
       </form>
       <aside className="panel form-stack"><h2>Đơn in của bạn</h2><dl className="price-summary">
         {cart.items.map(item => <div key={item.id}><dt>{item.productName} · {item.quantity} bản</dt><dd>{formatMoney(item.lineTotal)}</dd></div>)}
         <div className="price-total"><dt>Tạm tính</dt><dd>{formatMoney(cart.total)}</dd></div>
-      </dl><p className="muted">Máy chủ xác nhận giá theo quy cách tại thời điểm gửi đơn.</p><Link className="text-link" to={paths.cart}>Sửa giỏ hàng</Link></aside>
-    </div> : <p className="notice">Giỏ hàng đang trống. <Link className="text-link" to={paths.services}>Chọn ảnh để đặt in</Link>.</p>}
+      </dl><p className="muted">Máy chủ xác nhận giá theo quy cách tại thời điểm gửi đơn.</p><Link className="text-link" to={paths.cart}><Pencil className="control-icon" aria-hidden="true" /> Sửa giỏ hàng</Link></aside>
+    </div> : <p className="notice">Giỏ hàng đang trống. <Link className="text-link" to={paths.services}><ImageUp className="control-icon" aria-hidden="true" /> Chọn ảnh để đặt in</Link>.</p>}
   </div>;
 }

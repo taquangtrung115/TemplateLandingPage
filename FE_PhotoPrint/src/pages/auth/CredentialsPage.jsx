@@ -1,3 +1,4 @@
+import { KeyRound, LogIn, Mail, UserRound } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { UiverseButton, UiverseInput } from '@oneportal/uiverse-ui';
 import { useAuth } from '../../contexts/AuthContext';
@@ -40,12 +41,12 @@ export default function CredentialsPage({ register = false }) {
       <RequestState result={registration}>
         {register && registration.data?.settings?.allowSelfRegistration !== true ? <p className="notice">Tiệm đang tắt tự đăng ký.</p> :
           <form className="panel form-stack" onSubmit={submit}>
-            {register && <UiverseInput label="Họ và tên" name="fullName" required autoComplete="name" maxLength={120} />}
-            <UiverseInput label="Email" name="email" type="email" required autoComplete="username" />
-            <UiverseInput label="Mật khẩu" name="password" type="password" required minLength={register ? 8 : undefined} autoComplete={register ? 'new-password' : 'current-password'} />
+            {register && <UiverseInput labelIcon={UserRound} label="Họ và tên" name="fullName" required autoComplete="name" maxLength={120} />}
+            <UiverseInput labelIcon={Mail} label="Email" name="email" type="email" required autoComplete="username" />
+            <UiverseInput labelIcon={KeyRound} label="Mật khẩu" name="password" type="password" required minLength={register ? 8 : undefined} autoComplete={register ? 'new-password' : 'current-password'} />
             {action.error && <p className="notice notice-error" role="alert">{action.error}</p>}
-            <UiverseButton type="submit" isLoading={action.busy}>{register ? 'Đăng ký' : 'Đăng nhập'}</UiverseButton>
-            {isDemoMode && !register && <UiverseButton variant="outline" onClick={tryDemo} disabled={action.busy}>Vào quản trị demo</UiverseButton>}
+            <UiverseButton icon={<LogIn className="control-icon" aria-hidden="true" />} type="submit" isLoading={action.busy}>{register ? 'Đăng ký' : 'Đăng nhập'}</UiverseButton>
+            {isDemoMode && !register && <UiverseButton icon={<LogIn className="control-icon" aria-hidden="true" />} variant="outline" onClick={tryDemo} disabled={action.busy}>Vào quản trị demo</UiverseButton>}
             <Link to={register ? paths.login : paths.register} className="text-link">{register ? 'Đã có tài khoản' : 'Tạo tài khoản'}</Link>
           </form>}
       </RequestState>

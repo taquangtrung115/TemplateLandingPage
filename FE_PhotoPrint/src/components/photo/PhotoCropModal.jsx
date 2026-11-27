@@ -1,3 +1,4 @@
+import { Check, Crop, Frame, NotebookPen, Type } from 'lucide-react';
 import { useRef, useState } from 'react';
 import Modal from '../common/Modal';
 import { UiverseInput } from '@oneportal/uiverse-ui';
@@ -42,24 +43,24 @@ export default function PhotoCropModal({ photo, widthCm, heightCm, captions, onC
           color: draft.borderTone === 'black' ? '#fff' : '#211c1a' }}>{draft.caption}</p>}
       </div>
       <div className="form-stack">
-        <UiverseInput as="select" label="Cách căn ảnh" value={draft.fitMode} onChange={event => update('fitMode', event.target.value)}>
+        <UiverseInput as="select" labelIcon={Crop} label="Cách căn ảnh" value={draft.fitMode} onChange={event => update('fitMode', event.target.value)}>
           <option value="Fill">Fill · Tràn khung</option><option value="Fit">Fit · Giữ toàn ảnh</option>
         </UiverseInput>
         {draft.fitMode === 'Fill' && <>
-          <UiverseInput label="Vùng lấy nét ngang" type="range" min="0" max="1" step="0.01" value={draft.focalX} onChange={event => update('focalX', Number(event.target.value))} />
-          <UiverseInput label="Vùng lấy nét dọc" type="range" min="0" max="1" step="0.01" value={draft.focalY} onChange={event => update('focalY', Number(event.target.value))} />
+          <UiverseInput labelIcon={Crop} label="Vùng lấy nét ngang" type="range" min="0" max="1" step="0.01" value={draft.focalX} onChange={event => update('focalX', Number(event.target.value))} />
+          <UiverseInput labelIcon={Crop} label="Vùng lấy nét dọc" type="range" min="0" max="1" step="0.01" value={draft.focalY} onChange={event => update('focalY', Number(event.target.value))} />
         </>}
         {captions && <>
-          <UiverseInput label="Chữ dưới ảnh" maxLength={100} value={draft.caption} onChange={event => update('caption', event.target.value)} />
-          <UiverseInput as="select" label="Kiểu chữ" value={draft.captionFont} onChange={event => update('captionFont', event.target.value)}>
+          <UiverseInput labelIcon={Type} label="Chữ dưới ảnh" maxLength={100} value={draft.caption} onChange={event => update('caption', event.target.value)} />
+          <UiverseInput as="select" labelIcon={Type} label="Kiểu chữ" value={draft.captionFont} onChange={event => update('captionFont', event.target.value)}>
             <option value="serif">Có chân</option><option value="sans">Không chân</option><option value="script">Viết tay</option>
           </UiverseInput>
-          <UiverseInput as="select" label="Viền ảnh" value={draft.borderTone} onChange={event => update('borderTone', event.target.value)}>
+          <UiverseInput as="select" labelIcon={Frame} label="Viền ảnh" value={draft.borderTone} onChange={event => update('borderTone', event.target.value)}>
             <option value="white">Trắng</option><option value="cream">Kem</option><option value="black">Đen</option>
           </UiverseInput>
         </>}
-        <UiverseInput label="Ghi chú retouch" as="textarea" rows={2} maxLength={500} value={draft.note} onChange={event => update('note', event.target.value)} />
-        <UiverseButton type="submit">Áp dụng cho ảnh này</UiverseButton>
+        <UiverseInput labelIcon={NotebookPen} label="Ghi chú retouch" as="textarea" rows={2} maxLength={500} value={draft.note} onChange={event => update('note', event.target.value)} />
+        <UiverseButton icon={<Check className="control-icon" aria-hidden="true" />} type="submit">Áp dụng cho ảnh này</UiverseButton>
       </div>
     </form>
   </Modal>;

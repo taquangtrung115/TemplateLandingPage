@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { UserPlus } from "lucide-react";
+import {
+  CircleAlert, CircleCheck, KeyRound, LoaderCircle, LockKeyhole, LockKeyholeOpen,
+  Mail, ShieldCheck, UserPlus, UserRound, UserRoundCheck, Users, X,
+} from "lucide-react";
+import { UiverseButton, UiverseIconLabel as IconLabel } from "@oneportal/uiverse-ui";
 import { tenantApi } from "../api/tenantApi";
 import Field from "./Field";
 import Modal from "./Modal";
+import Pagination from "./Pagination";
 import { getApplicationName } from "../applications";
 
 export default function MemberPanel({ tenant, appKey }) {
@@ -76,7 +81,7 @@ export default function MemberPanel({ tenant, appKey }) {
     <section aria-label={"Thành viên " + appName}>
       <div className="panel-heading">
         <div>
-          <h3 className="font-semibold">Người dùng ứng dụng</h3>
+          <h3 className="font-semibold"><IconLabel icon={Users}>Người dùng ứng dụng</IconLabel></h3>
           <p className="muted mt-1">
             Quyền chỉ áp dụng cho {appName} tại công ty này.
           </p>
@@ -89,23 +94,22 @@ export default function MemberPanel({ tenant, appKey }) {
             setMode("new");
           }}
         >
-          <UserPlus size={16} />
-          Thêm người dùng
+          <IconLabel icon={UserPlus}>Thêm người dùng</IconLabel>
         </button>
       </div>
       {error && !adding && (
         <p role="alert" className="portal-notice portal-error">
-          {error}
+          <IconLabel icon={CircleAlert}>{error}</IconLabel>
         </p>
       )}
       {notice && (
         <p role="status" className="portal-notice">
-          {notice}
+          <IconLabel icon={CircleCheck}>{notice}</IconLabel>
         </p>
       )}
       {loading && (
-        <p role="status" className="muted">
-          Đang tải thành viên…
+        <p role="status" className="muted portal-pending">
+          <IconLabel icon={LoaderCircle}>Đang tải thành viên…</IconLabel>
         </p>
       )}
       <ul className="member-list" aria-busy={loading}>
@@ -115,33 +119,36 @@ export default function MemberPanel({ tenant, appKey }) {
               <strong>{member.fullName}</strong>
               <small>{member.email}</small>
             </div>
-            <select
-              className="portal-field"
-              aria-label={"Vai trò của " + member.email}
-              value={member.role}
-              disabled={saving || loading}
-              onChange={(event) =>
-                save({
-                  email: member.email,
-                  role: event.target.value,
-                  isActive: member.isActive,
-                })
-              }
-            >
-              <option value="User">Người dùng</option>
-              <option value="Admin">Quản trị viên</option>
-            </select>
+            <div className="member-role">
+              <ShieldCheck className="tenant-icon" aria-hidden="true" />
+              <select
+                className="portal-field"
+                aria-label={"Vai trò của " + member.email}
+                value={member.role}
+                disabled={saving || loading}
+                onChange={(event) =>
+                  save({
+                    email: member.email,
+                    role: event.target.value,
+                    isActive: member.isActive,
+                  })
+                }
+              >
+                <option value="User">Người dùng</option>
+                <option value="Admin">Quản trị viên</option>
+              </select>
+            </div>
             <span
               className={
                 "status " +
                 (member.isActive && member.accountIsActive ? "ready" : "")
               }
             >
-              {!member.accountIsActive
+              <IconLabel icon={member.isActive && member.accountIsActive ? CircleCheck : LockKeyhole}>{!member.accountIsActive
                 ? "Tài khoản khóa"
                 : member.isActive
                   ? "Hoạt động"
-                  : "Đã khóa quyền"}
+                  : "Đã khóa quyền"}</IconLabel>
             </span>
             <button
               className="portal-secondary"
@@ -154,7 +161,7 @@ export default function MemberPanel({ tenant, appKey }) {
                 })
               }
             >
-              {member.isActive ? "Khóa quyền" : "Mở quyền"}
+              <IconLabel icon={member.isActive ? LockKeyhole : LockKeyholeOpen}>{member.isActive ? "Khóa quyền" : "Mở quyền"}</IconLabel>
             </button>
           </li>
         ))}
@@ -165,26 +172,11 @@ export default function MemberPanel({ tenant, appKey }) {
           <p>Thêm tài khoản mới hoặc cấp quyền cho tài khoản đã có.</p>
         </div>
       )}
-      <div className="pagination">
-        <button
-          className="portal-secondary"
-          disabled={saving || loading || page === 1}
-          onClick={() => setPage(page - 1)}
-        >
-          Trước
-        </button>
-        <span>Trang {page}</span>
-        <button
-          className="portal-secondary"
-          disabled={saving || loading || members.length < 20}
-          onClick={() => setPage(page + 1)}
-        >
-          Sau
-        </button>
-      </div>
+      <Pagination page={page} canGoNext={members.length >= 20} busy={saving || loading} onChange={setPage} />
       {adding && (
         <Modal
           title="Thêm người dùng"
+          icon={UserPlus}
           onClose={() => setAdding(false)}
           busy={saving}
         >
@@ -202,7 +194,7 @@ export default function MemberPanel({ tenant, appKey }) {
                 disabled={saving}
                 onClick={() => setMode("new")}
               >
-                Tạo tài khoản mới
+                <IconLabel icon={UserPlus}>Tạo tài khoản mới</IconLabel>
               </button>
               <button
                 type="button"
@@ -211,17 +203,19 @@ export default function MemberPanel({ tenant, appKey }) {
                 disabled={saving}
                 onClick={() => setMode("existing")}
               >
-                Tài khoản đã có
+                <IconLabel icon={UserRoundCheck}>Tài khoản đã có</IconLabel>
               </button>
             </div>
             {error && (
               <p role="alert" className="portal-notice portal-error">
-                {error}
+                <IconLabel icon={CircleAlert}>{error}</IconLabel>
               </p>
             )}
             {mode === "new" && (
               <Field
                 label="Họ tên"
+                icon={UserRound}
+                className="portal-field uv-view-enter"
                 name="fullName"
                 maxLength={100}
                 autoComplete="name"
@@ -230,6 +224,7 @@ export default function MemberPanel({ tenant, appKey }) {
             )}
             <Field
               label="Email"
+              icon={Mail}
               name="email"
               type="email"
               maxLength={256}
@@ -239,6 +234,8 @@ export default function MemberPanel({ tenant, appKey }) {
             {mode === "new" && (
               <Field
                 label="Mật khẩu ban đầu"
+                icon={KeyRound}
+                className="portal-field uv-view-enter"
                 name="password"
                 type="password"
                 minLength={8}
@@ -249,7 +246,7 @@ export default function MemberPanel({ tenant, appKey }) {
               />
             )}
             <label className="field-label">
-              Vai trò
+              <IconLabel icon={ShieldCheck}>Vai trò</IconLabel>
               <select className="portal-field" name="role" defaultValue="User">
                 <option value="User">Người dùng — sử dụng nghiệp vụ</option>
                 <option value="Admin">Quản trị viên — quản lý ứng dụng</option>
@@ -262,15 +259,15 @@ export default function MemberPanel({ tenant, appKey }) {
                 disabled={saving}
                 onClick={() => setAdding(false)}
               >
-                Hủy
+                <IconLabel icon={X}>Hủy</IconLabel>
               </button>
-              <button className="portal-button" disabled={saving}>
+              <UiverseButton type="submit" isLoading={saving} icon={<ShieldCheck className="tenant-icon" aria-hidden="true" />}>
                 {saving
                   ? "Đang lưu…"
                   : mode === "new"
                     ? "Tạo & cấp quyền"
                     : "Cấp quyền"}
-              </button>
+              </UiverseButton>
             </div>
           </form>
         </Modal>

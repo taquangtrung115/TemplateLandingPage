@@ -1,12 +1,13 @@
 import { lazy, Suspense, useState } from 'react';
-import { ArrowUpRight, Box } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Box, Frame, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { UiverseIconLabel } from '@oneportal/uiverse-ui';
 import PhotoImage from '../common/PhotoImage';
 import { ModelNames, FrameHex, standardDimensions } from '../../models/photoPrint';
 import { paths, withQuery } from '../../routes/paths';
 
 const ThreeStageCanvas = lazy(() => import('./ThreeStageCanvas'));
-const presets = ['framed_photo', 'crystal_mirror', 'photobook_open'];
+const presets = [['framed_photo', Frame], ['crystal_mirror', Layers], ['photobook_open', BookOpen]];
 
 export default function Hero3DShowcase() {
   const [preset, setPreset] = useState('framed_photo');
@@ -23,8 +24,8 @@ export default function Hero3DShowcase() {
     </div>
     <div className="hero-caption">
       <div className="preset-switch" aria-label="Mẫu xem trước">
-        {presets.map(model => <button key={model} type="button" aria-pressed={model === preset} onClick={() => { setPreset(model); setInteractive(true); }}>
-          {ModelNames[model]}
+        {presets.map(([model, icon]) => <button key={model} type="button" aria-pressed={model === preset} onClick={() => { setPreset(model); setInteractive(true); }}>
+          <UiverseIconLabel icon={icon}>{ModelNames[model]}</UiverseIconLabel>
         </button>)}
       </div>
       <Link to={withQuery(paths.demo, { preset })} className="icon-button" aria-label="Mở studio 3D"><ArrowUpRight size={19} /></Link>

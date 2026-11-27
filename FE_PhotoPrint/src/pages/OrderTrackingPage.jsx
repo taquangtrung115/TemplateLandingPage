@@ -1,3 +1,4 @@
+import { Phone, ReceiptText, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { UiverseBadge, UiverseButton, UiverseInput } from '@oneportal/uiverse-ui';
@@ -29,10 +30,10 @@ export default function OrderTrackingPage() {
     <PageHeading title="Tra cứu đơn in" trail="Tra cứu" description="Nhập mã đơn và số điện thoại đã dùng để đặt in." />
     <div className="detail-grid">
       <form className="panel form-stack" onSubmit={submit}>
-        <UiverseInput required label="Mã đơn" name="code" defaultValue={params.get('code') || ''} placeholder="PA-YYYYMMDD-XXXX" maxLength={36} />
-        <UiverseInput required label="Số điện thoại" type="tel" name="phone" maxLength={30} />
+        <UiverseInput required labelIcon={ReceiptText} label="Mã đơn" name="code" defaultValue={params.get('code') || ''} placeholder="PA-YYYYMMDD-XXXX" maxLength={36} />
+        <UiverseInput required labelIcon={Phone} label="Số điện thoại" type="tel" name="phone" maxLength={30} />
         {action.error && <p className="notice notice-error" role="alert">{action.error}</p>}
-        <UiverseButton type="submit" isLoading={action.busy}>Tra cứu</UiverseButton>
+        <UiverseButton icon={<Search className="control-icon" aria-hidden="true" />} type="submit" isLoading={action.busy}>Tra cứu</UiverseButton>
       </form>
       {order && <section className="panel form-stack" aria-live="polite">
         <h2 className="mono">{order.orderCode}</h2>

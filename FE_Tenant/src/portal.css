@@ -1,6 +1,6 @@
 /* Hallmark · pre-emit critique: P4 H5 E4 S5 R5 V4
  * macrostructure: Index-First / operational master-detail; nav: N3; theme: existing blue/slate, Cobalt restraint
- * genre: modern-minimal; motion: cut; footer: compact context; enrichment: none
+ * genre: modern-minimal; footer: compact context; enrichment: none
  */
 html, body { overflow-x: clip; }
 body { background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-body); }
@@ -121,3 +121,26 @@ button:active:not(:disabled) { transform: translateY(1px); }
 .store-icon { display:grid; place-items:center; width:42px; height:42px; background:var(--color-accent-soft); color:var(--color-accent); border-radius:10px; }
 .store-app h4 { font-weight:700; }
 .store-app p { margin-top:5px; color:var(--color-muted); font-size:13px; }
+
+.tenant-icon { width:1rem; height:1rem; flex:none; stroke-width:1.8; }
+.status,.store-app-header .uv-badge { --uv-icon-size:.8rem; }
+.portal-secondary,.portal-button,.tenant-choice,.app-tabs button,.section-tabs button {
+  transition:background-color 140ms ease-out,border-color 140ms ease-out,color 140ms ease-out,transform 140ms ease-out;
+}
+.app-tabs button:hover,.section-tabs button:hover { color:var(--color-accent); }
+.portal-notice { animation:uv-enter 160ms ease-out both; }
+.portal-pending .uv-icon-label > svg { animation:uv-spin .85s linear infinite; }
+.technical-details[open] .details-content { animation:uv-enter 160ms ease-out both; }
+.application-options { display:flex; flex-wrap:wrap; gap:8px 16px; }
+.application-options label { display:inline-flex; min-height:36px; align-items:center; gap:8px; cursor:pointer; }
+.application-options input { accent-color:var(--color-accent); }
+.member-role { position:relative; min-width:0; }
+.member-role > svg { position:absolute; top:50%; left:10px; transform:translateY(-50%); color:var(--color-muted); pointer-events:none; }
+.member-role .portal-field { padding-left:32px; }
+.member-row { grid-template-columns:minmax(0,1fr) minmax(138px,max-content) auto auto; }
+@media (max-width:1100px) { .member-row { grid-template-columns:minmax(0,1fr) minmax(138px,max-content); } }
+@media (max-width:767px) { .member-row { grid-template-columns:minmax(0,1fr); } }
+@media (prefers-reduced-motion:reduce) {
+  .portal-secondary,.portal-button,.tenant-choice,.app-tabs button,.section-tabs button { transition:none; }
+  .portal-notice,.portal-pending .uv-icon-label > svg,.technical-details[open] .details-content { animation:none; }
+}

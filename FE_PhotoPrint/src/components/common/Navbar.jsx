@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Aperture, Menu, Search, ShoppingBag, Sun, Moon, UserRound, X } from 'lucide-react';
+import { Aperture, Box, Headphones, House, Menu, Package, ReceiptText, Search, ShoppingBag, Sun, Moon, UserRound, X } from 'lucide-react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { UiverseIconLabel } from '@oneportal/uiverse-ui';
 import { useCart } from '../../contexts/CartContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,7 +9,8 @@ import { useContactConfig } from '../../contexts/ContactConfigContext';
 import { paths, withQuery } from '../../routes/paths';
 import ContactActions from '../social/ContactActions';
 
-const links = [[paths.home, 'Trang chủ'], [paths.services, 'Sản phẩm'], [paths.demo, 'Studio 3D'], [paths.trackOrder, 'Tra cứu đơn'], [paths.support, 'Hỗ trợ']];
+const links = [[paths.home, 'Trang chủ', House], [paths.services, 'Sản phẩm', Package], [paths.demo, 'Studio 3D', Box],
+  [paths.trackOrder, 'Tra cứu đơn', ReceiptText], [paths.support, 'Hỗ trợ', Headphones]];
 
 export default function Navbar() {
   const { config } = useContactConfig();
@@ -22,7 +24,7 @@ export default function Navbar() {
     <div className="shell nav-inner">
       <Link to={paths.home} className="brand" onClick={() => setMenu(false)}><span className="brand-mark"><Aperture size={20} /></span>{config.brandName || 'Photo Print'}</Link>
       <nav aria-label="Điều hướng chính" className={menu ? 'main-nav is-open' : 'main-nav'}>
-        {links.map(([path, label]) => <NavLink to={path} key={path} end={path === paths.home} onClick={() => setMenu(false)}>{label}</NavLink>)}
+        {links.map(([path, label, icon]) => <NavLink to={path} key={path} end={path === paths.home} onClick={() => setMenu(false)}><UiverseIconLabel icon={icon}>{label}</UiverseIconLabel></NavLink>)}
         <form className="nav-search" role="search" onSubmit={event => { event.preventDefault(); navigate(withQuery(paths.services, { q: search.trim() })); setMenu(false); }}>
           <input aria-label="Tìm sản phẩm" placeholder="Tìm ảnh, khung..." value={search} onChange={event => setSearch(event.target.value)} />
           <button type="submit" aria-label="Tìm kiếm"><Search size={16} /></button>

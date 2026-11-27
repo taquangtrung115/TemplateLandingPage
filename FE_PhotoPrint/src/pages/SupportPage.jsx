@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import { Focus, PackageCheck, WandSparkles } from 'lucide-react';
-import { UiverseBadge, UiverseButton, UiverseInput } from '@oneportal/uiverse-ui';
+import { CircleHelp, Focus, PackageCheck, WandSparkles, Flag, ImageUp, Mail, MessageSquare, Phone, ReceiptText, Search, Send, Tag, UserRound } from 'lucide-react';
+import { UiverseBadge, UiverseButton, UiverseIconLabel, UiverseInput } from '@oneportal/uiverse-ui';
 import PageHeading from '../components/common/PageHeading';
 import CopyButton from '../components/common/CopyButton';
 import ContactActions from '../components/social/ContactActions';
@@ -62,33 +62,33 @@ export default function SupportPage() {
       <form className="panel form-stack" onSubmit={send}>
         <h2>Gửi yêu cầu</h2>
         <fieldset disabled={submit.busy} className="form-stack">
-          <UiverseInput required label="Họ và tên" name="fullName" maxLength={120} />
-          <div className="form-columns"><UiverseInput required label="Số điện thoại" name="phone" type="tel" maxLength={30} />
-            <UiverseInput label="Email" name="email" type="email" maxLength={160} /></div>
-          <UiverseInput as="select" label="Chủ đề" name="topic">{Topics.map(topic => <option key={topic}>{topic}</option>)}</UiverseInput>
-          <div className="form-columns"><UiverseInput as="select" label="Mức độ" name="priority">
+          <UiverseInput required labelIcon={UserRound} label="Họ và tên" name="fullName" maxLength={120} />
+          <div className="form-columns"><UiverseInput required labelIcon={Phone} label="Số điện thoại" name="phone" type="tel" maxLength={30} />
+            <UiverseInput labelIcon={Mail} label="Email" name="email" type="email" maxLength={160} /></div>
+          <UiverseInput as="select" labelIcon={Tag} label="Chủ đề" name="topic">{Topics.map(topic => <option key={topic}>{topic}</option>)}</UiverseInput>
+          <div className="form-columns"><UiverseInput as="select" labelIcon={Flag} label="Mức độ" name="priority">
             {Object.entries(Priorities).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</UiverseInput>
-            <UiverseInput label="Mã đơn (nếu có)" name="orderCode" maxLength={36} /></div>
-          <UiverseInput required as="textarea" label="Nội dung cần hỗ trợ" name="message" rows={4} maxLength={2000} />
-          <UiverseInput label="Ảnh đính kèm (tối đa 10 MB)" name="attachment" type="file" accept={photoAccept} />
+            <UiverseInput labelIcon={ReceiptText} label="Mã đơn (nếu có)" name="orderCode" maxLength={36} /></div>
+          <UiverseInput required as="textarea" labelIcon={MessageSquare} label="Nội dung cần hỗ trợ" name="message" rows={4} maxLength={2000} />
+          <UiverseInput labelIcon={ImageUp} label="Ảnh đính kèm (tối đa 10 MB)" name="attachment" type="file" accept={photoAccept} />
         </fieldset>
         {submit.error && <p role="alert" className="notice notice-error">{submit.error}</p>}
-        <UiverseButton type="submit" isLoading={submit.busy}>Gửi yêu cầu</UiverseButton>
+        <UiverseButton icon={<Send className="control-icon" aria-hidden="true" />} type="submit" isLoading={submit.busy}>Gửi yêu cầu</UiverseButton>
         {ticket && <div className="notice form-stack" role="status"><strong>Mã hỗ trợ {ticket}</strong><CopyButton value={ticket} />
-          <button type="button" className="text-link" onClick={() => formRef.current?.querySelector('[name=contact]')?.focus()}>Tra cứu yêu cầu</button>
+          <button type="button" className="text-link" onClick={() => formRef.current?.querySelector('[name=contact]')?.focus()}><Search className="control-icon" aria-hidden="true" /> Tra cứu yêu cầu</button>
           <ContactActions message={'Mình cần xác nhận yêu cầu hỗ trợ ' + ticket + '.'} /></div>}
       </form>
       <div className="form-stack">
         <form className="panel form-stack" ref={formRef} onSubmit={lookup}>
           <h2>Tra cứu yêu cầu hỗ trợ</h2>
-          <UiverseInput required label="Mã hỗ trợ" value={code} maxLength={36} onChange={event => setCode(event.target.value)} />
-          <UiverseInput required label="Số điện thoại hoặc email" name="contact" maxLength={160} />
+          <UiverseInput required labelIcon={Tag} label="Mã hỗ trợ" value={code} maxLength={36} onChange={event => setCode(event.target.value)} />
+          <UiverseInput required labelIcon={Phone} label="Số điện thoại hoặc email" name="contact" maxLength={160} />
           {track.error && <p role="alert" className="notice notice-error">{track.error}</p>}
-          <UiverseButton type="submit" variant="outline" isLoading={track.busy}>Tra cứu</UiverseButton>
+          <UiverseButton icon={<Search className="control-icon" aria-hidden="true" />} type="submit" variant="outline" isLoading={track.busy}>Tra cứu</UiverseButton>
           {tracked && <div className="notice" role="status"><UiverseBadge>{TicketStates[tracked.status] || tracked.status}</UiverseBadge>{tracked.adminNote && <p>{tracked.adminNote}</p>}</div>}
         </form>
         <section className="panel faq"><h2>Câu hỏi thường gặp</h2>
-          {faqs.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
+          {faqs.map(([question, answer]) => <details key={question}><summary><UiverseIconLabel icon={CircleHelp}>{question}</UiverseIconLabel></summary><p className="uv-view-enter">{answer}</p></details>)}
         </section>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { Camera, RotateCcw } from 'lucide-react';
+import { Camera, RotateCcw, ArrowLeftRight, Box, Frame, ImageUp, Lightbulb, ListFilter, Palette, Printer, RotateCw, Ruler, Type } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { UiverseButton, UiverseInput, UiverseLoader, UiverseToggle } from '@oneportal/uiverse-ui';
 import PageHeading from '../components/common/PageHeading';
@@ -104,7 +104,7 @@ function Studio({ linkedProduct, preset }) {
         <Suspense fallback={<UiverseLoader label="Đang dựng khung ảnh…" />}><Stage ref={stage} options={options} /></Suspense>
         <div className="studio-toolbar">
           <button type="button" className="icon-button" aria-label="Đặt lại góc nhìn" onClick={() => stage.current?.resetCamera()}><RotateCcw size={18} /></button>
-          <UiverseToggle label="Tự xoay" checked={autoRotate} onChange={setAutoRotate} />
+          <UiverseToggle labelIcon={RotateCw} label="Tự xoay" checked={autoRotate} onChange={setAutoRotate} />
           <UiverseButton isLoading={action.busy} variant="outline" icon={<Camera size={17} />} onClick={() => action.run(async () => {
             const snapshot = await stage.current?.captureSnapshot();
             if (!snapshot) throw new Error('Khung ảnh đang tải. Hãy thử lại.');
@@ -116,38 +116,38 @@ function Studio({ linkedProduct, preset }) {
         </div>
       </div>
       <aside className="panel form-stack" aria-label="Cấu hình Studio">
-        <UiverseInput as="select" label="Kiểu thành phẩm" value={model} onChange={event => presetModel(event.target.value)}>
+        <UiverseInput as="select" labelIcon={Box} label="Kiểu thành phẩm" value={model} onChange={event => presetModel(event.target.value)}>
           {Object.entries(ModelNames).map(([key, label]) => <option value={key} key={key}>{label}</option>)}
         </UiverseInput>
-        <UiverseInput label={model === 'photobook_open' ? 'Ảnh trang trái' : 'Tải ảnh xem thử'} type="file" accept={photoAccept} onChange={event => { pickPhoto(event.target.files[0], false); event.target.value = ''; }} />
+        <UiverseInput labelIcon={ImageUp} label={model === 'photobook_open' ? 'Ảnh trang trái' : 'Tải ảnh xem thử'} type="file" accept={photoAccept} onChange={event => { pickPhoto(event.target.files[0], false); event.target.value = ''; }} />
         {model === 'photobook_open' && <>
-          <UiverseInput label="Ảnh trang phải" type="file" accept={photoAccept} onChange={event => { pickPhoto(event.target.files[0], true); event.target.value = ''; }} />
-          <UiverseButton variant="outline" onClick={() => setFlip(value => !value)}>Đổi hai trang</UiverseButton>
+          <UiverseInput labelIcon={ImageUp} label="Ảnh trang phải" type="file" accept={photoAccept} onChange={event => { pickPhoto(event.target.files[0], true); event.target.value = ''; }} />
+          <UiverseButton icon={<ArrowLeftRight className="control-icon" aria-hidden="true" />} variant="outline" onClick={() => setFlip(value => !value)}>Đổi hai trang</UiverseButton>
         </>}
         <div className="form-columns">
-          <UiverseInput label="Rộng (cm)" type="number" min="1" max="500" value={size.widthCm} onChange={event => setSize(value => ({ ...value, widthCm: event.target.value }))} />
-          <UiverseInput label="Cao (cm)" type="number" min="1" max="500" value={size.heightCm} onChange={event => setSize(value => ({ ...value, heightCm: event.target.value }))} />
+          <UiverseInput labelIcon={Ruler} label="Rộng (cm)" type="number" min="1" max="500" value={size.widthCm} onChange={event => setSize(value => ({ ...value, widthCm: event.target.value }))} />
+          <UiverseInput labelIcon={Ruler} label="Cao (cm)" type="number" min="1" max="500" value={size.heightCm} onChange={event => setSize(value => ({ ...value, heightCm: event.target.value }))} />
         </div>
-        {model === 'polaroid_card' && <UiverseInput label="Chữ dưới ảnh" maxLength={100} value={caption} onChange={event => setCaption(event.target.value)} />}
-        <UiverseInput as="select" label="Màu khung / cạnh" value={frame} onChange={event => setFrame(event.target.value)}>
+        {model === 'polaroid_card' && <UiverseInput labelIcon={Type} label="Chữ dưới ảnh" maxLength={100} value={caption} onChange={event => setCaption(event.target.value)} />}
+        <UiverseInput as="select" labelIcon={Palette} label="Màu khung / cạnh" value={frame} onChange={event => setFrame(event.target.value)}>
           {Object.entries(FrameColors).map(([key, label]) => <option value={key} key={key}>{label}</option>)}
         </UiverseInput>
-        {model === 'framed_photo' && <UiverseToggle label="Bo viền trắng" checked={mat} onChange={setMat} />}
-        <UiverseToggle label="Đèn vàng gallery" variant="day-night" checked={warm} onChange={setWarm} />
+        {model === 'framed_photo' && <UiverseToggle labelIcon={Frame} label="Bo viền trắng" checked={mat} onChange={setMat} />}
+        <UiverseToggle labelIcon={Lightbulb} label="Đèn vàng gallery" variant="day-night" checked={warm} onChange={setWarm} />
         {action.error && <p role="alert" className="notice notice-error">{action.error}</p>}
-        <UiverseButton onClick={savePrint} disabled={Number(size.widthCm) < 1 || Number(size.heightCm) < 1 || Number(size.widthCm) > 500 || Number(size.heightCm) > 500}>{productSlug ? 'Đặt in theo mẫu này' : 'Chọn sản phẩm để đặt in'}</UiverseButton>
+        <UiverseButton icon={<Printer className="control-icon" aria-hidden="true" />} onClick={savePrint} disabled={Number(size.widthCm) < 1 || Number(size.heightCm) < 1 || Number(size.widthCm) > 500 || Number(size.heightCm) > 500}>{productSlug ? 'Đặt in theo mẫu này' : 'Chọn sản phẩm để đặt in'}</UiverseButton>
       </aside>
     </div>
     <section className="mt-12" aria-labelledby="demo-title">
       <div className="section-heading"><div><h2 id="demo-title">Thư viện thành phẩm</h2><p>Chọn mẫu để xem trong studio.</p></div>
-        <UiverseInput as="select" label="Lọc theo kiểu in" value={filter} onChange={event => setFilter(event.target.value)}><option value="">Tất cả</option>
+        <UiverseInput as="select" labelIcon={ListFilter} label="Lọc theo kiểu in" value={filter} onChange={event => setFilter(event.target.value)}><option value="">Tất cả</option>
           {Object.entries(ModelNames).map(([key, label]) => <option value={key} key={key}>{label}</option>)}
         </UiverseInput>
       </div>
       <RequestState result={gallery}>{gallery.data?.items.length ? <div className="product-grid">{gallery.data.items.map(item => <article className="uv-card product-card" key={item.id}>
         <PhotoImage src={item.previewImageUrl} className="product-image" alt={item.title} /><div className="product-content">
           <h3>{item.title}</h3><p>{item.widthCm} × {item.heightCm} cm · {item.description}</p>
-          <UiverseButton variant="outline" onClick={() => pickSample(item)}>Thử trên Studio 3D</UiverseButton></div>
+          <UiverseButton icon={<Box className="control-icon" aria-hidden="true" />} variant="outline" onClick={() => pickSample(item)}>Thử trên Studio 3D</UiverseButton></div>
       </article>)}</div> : <p className="notice">Chưa có mẫu phù hợp.</p>}</RequestState>
     </section>
   </>;

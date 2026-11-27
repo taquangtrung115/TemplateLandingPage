@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { ImageUp, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { ImageUp, SlidersHorizontal, Trash2, Files } from 'lucide-react';
 import { photoAccept, readPhoto, validateUpload } from '../../utils/fileUpload';
 import { evaluatePhotoPrintQuality } from '../../utils/photoQuality';
 import useAction from '../../hooks/useAction';
@@ -18,7 +18,7 @@ function PhotoRow({ photo, widthCm, heightCm, onEdit, onRemove, onQuantity, disa
       <small>{photo.widthPx} × {photo.heightPx} px</small>
       <UiverseBadge tone={quality.level}>{quality.dpi} DPI · {quality.label}</UiverseBadge>
     </div>
-    <UiverseInput type="number" label="Bản in" aria-label={'Bản in ' + photo.file.name} min="1" max="999" value={photo.printQty}
+    <UiverseInput type="number" labelIcon={Files} label="Bản in" aria-label={'Bản in ' + photo.file.name} min="1" max="999" value={photo.printQty}
       disabled={disabled} onChange={event => onQuantity(Math.min(999, Math.max(1, Number(event.target.value) || 1)))} />
     <div className="photo-row-actions">
       <button className="icon-button" type="button" disabled={disabled} onClick={onEdit} aria-label={'Căn ảnh ' + photo.file.name}><SlidersHorizontal size={18} /></button>
@@ -66,7 +66,7 @@ export default function BatchPhotoUploader({ photos, setPhotos, widthCm, heightC
       <div><strong>{action.busy ? 'Đang đọc ảnh…' : 'Kéo thả hoặc chọn ảnh'}</strong><p>PNG, JPEG, WebP · tối đa {maxPhotos} ảnh, 15 MB mỗi ảnh</p></div>
       <input id={id} type="file" multiple accept={photoAccept} disabled={blocked} className="sr-only"
         onChange={event => { addPhotos(event.target.files); event.target.value = ''; }} />
-      <label className="uv-button uv-button--outline" htmlFor={id} aria-disabled={blocked}>Chọn ảnh</label>
+      <label className="uv-button uv-button--outline" htmlFor={id} aria-disabled={blocked}><ImageUp className="control-icon" aria-hidden="true" /> Chọn ảnh</label>
     </div>
     {action.error && <p className="notice notice-error whitespace-pre-line" role="alert">{action.error}</p>}
     {!!photos.length && <><p className="muted mt-4">Cỡ {widthCm} × {heightCm} cm đang áp dụng cho cả {photos.length} ảnh.</p>

@@ -1,5 +1,6 @@
+import { Clock, Link2, Mail, MapPin, MessageSquare, Phone, QrCode, Save, Store, ToggleRight, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { UiverseButton, UiverseInput, UiverseToggle } from '@oneportal/uiverse-ui';
+import { UiverseButton, UiverseIconLabel, UiverseInput, UiverseToggle } from '@oneportal/uiverse-ui';
 import { useContactConfig } from '../../contexts/ContactConfigContext';
 import { contactConfigApi } from '../../api/contactConfigApi';
 import { uploadPhoto, photoAssetUrl } from '../../api/photoUploadApi';
@@ -23,6 +24,7 @@ function ChannelPreview({ path, current }) {
 }
 
 const business = { brandName: 'Tên tiệm', hotline: 'Hotline', email: 'Email', address: 'Địa chỉ', workingHours: 'Giờ mở cửa' };
+const businessIcons = { brandName: Store, hotline: Phone, email: Mail, address: MapPin, workingHours: Clock };
 const channels = [
   { key: 'zalo', label: 'Zalo', fields: { zaloAccountName: 'Tên tài khoản', zaloPhoneOrOaId: 'SĐT hoặc ID OA', zaloLinkOverride: 'Liên kết Zalo', zaloPrefillText: 'Tin nhắn gợi ý' }, resolve: resolveZaloUrl },
   { key: 'messenger', label: 'Messenger', fields: { messengerPageIdOrUsername: 'Page ID hoặc username', messengerLinkOverride: 'Liên kết Messenger', messengerPrefillText: 'Tin nhắn gợi ý' }, resolve: resolveMessengerUrl },
@@ -51,27 +53,27 @@ function ContactForm({ config, onSaved }) {
   }
 
   return <form className="form-stack" onSubmit={save}>
-    <fieldset className="panel form-columns" disabled={action.busy}><legend>Thông tin tiệm ảnh</legend>
-      {Object.entries(business).map(([name, label]) => <UiverseInput key={name} label={label} required={name === 'brandName'} type={name === 'email' ? 'email' : 'text'}
+    <fieldset className="panel form-columns" disabled={action.busy}><legend><UiverseIconLabel icon={Store}>Thông tin tiệm ảnh</UiverseIconLabel></legend>
+      {Object.entries(business).map(([name, label]) => <UiverseInput key={name} labelIcon={businessIcons[name]} label={label} required={name === 'brandName'} type={name === 'email' ? 'email' : 'text'}
         value={draft[name] || ''} onChange={event => set(name, event.target.value)} />)}
     </fieldset>
     <div className="form-columns">
       {channels.map(({ key, label, fields, resolve }) => <fieldset key={key} className="panel form-stack" disabled={action.busy}>
-        <legend>{label}</legend>
-        <UiverseToggle label={'Bật ' + label} checked={!!draft[key + 'Enabled']} onChange={checked => set(key + 'Enabled', checked)} />
-        {Object.entries(fields).map(([name, label]) => <UiverseInput key={name} label={label} value={draft[name] || ''} onChange={event => set(name, event.target.value)} />)}
-        <UiverseInput label={'Tải QR ' + label} type="file" accept={photoAccept} onChange={event => {
+        <legend><UiverseIconLabel icon={MessageSquare}>{label}</UiverseIconLabel></legend>
+        <UiverseToggle labelIcon={ToggleRight} label={'Bật ' + label} checked={!!draft[key + 'Enabled']} onChange={checked => set(key + 'Enabled', checked)} />
+        {Object.entries(fields).map(([name, label]) => <UiverseInput key={name} labelIcon={Link2} label={label} value={draft[name] || ''} onChange={event => set(name, event.target.value)} />)}
+        <UiverseInput labelIcon={QrCode} label={'Tải QR ' + label} type="file" accept={photoAccept} onChange={event => {
           const file = event.target.files[0];
           event.target.value = '';
           if (file) action.run(async signal => set(key + 'QrImageUrl', (await uploadPhoto(file, 'qr', signal)).fileUrl));
         }} />
-        {draft[key + 'QrImageUrl'] && <UiverseButton size="small" variant="outline" onClick={() => set(key + 'QrImageUrl', null)}>Bỏ QR đã tải</UiverseButton>}
+        {draft[key + 'QrImageUrl'] && <UiverseButton icon={<Trash2 className="control-icon" aria-hidden="true" />} size="small" variant="outline" onClick={() => set(key + 'QrImageUrl', null)}>Bỏ QR đã tải</UiverseButton>}
         <ChannelPreview current={draft[key + 'QrImageUrl']} path={resolve({ ...draft, [key + 'Enabled']: true })} />
       </fieldset>)}
     </div>
     {action.error && <p className="notice notice-error" role="alert">{action.error}</p>}
     {saved && <p className="notice" role="status">Đã lưu kênh liên hệ.</p>}
-    <UiverseButton type="submit" isLoading={action.busy}>Lưu kênh liên hệ</UiverseButton>
+    <UiverseButton icon={<Save className="control-icon" aria-hidden="true" />} type="submit" isLoading={action.busy}>Lưu kênh liên hệ</UiverseButton>
   </form>;
 }
 

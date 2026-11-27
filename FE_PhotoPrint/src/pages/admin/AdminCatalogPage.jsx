@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
-import { UiverseButton, UiverseCheckbox, UiverseInput } from '@oneportal/uiverse-ui';
+import { Box, Clock, CreditCard, Eye, Files, Frame, ImageUp, Images, Layers, Link2, ListFilter, NotebookPen, Package, Palette, Pencil, Percent, Plus, Ruler, Save, Search, Star, Tag, Target, Trash2, Type } from 'lucide-react';
+import { UiverseButton, UiverseCheckbox, UiverseIconLabel, UiverseInput } from '@oneportal/uiverse-ui';
 import { photoProductApi } from '../../api/photoProductApi';
 import { photoDemoApi } from '../../api/photoDemoApi';
 import { uploadPhoto } from '../../api/photoUploadApi';
@@ -24,21 +24,26 @@ const rowSchemas = {
   discountTiers: { minQty: 'Từ số bản', discountPercent: 'Giảm (%)' },
 };
 const numbers = new Set(['widthCm', 'heightCm', 'priceDeltaOrBase', 'pricePerUnitOrSqm', 'price', 'minQty', 'discountPercent']);
+const rowFieldIcons = {
+  label: Tag, name: Type, widthCm: Ruler, heightCm: Ruler, priceDeltaOrBase: CreditCard,
+  finishType: Layers, pricePerUnitOrSqm: CreditCard, description: NotebookPen,
+  pricingUnit: ListFilter, price: CreditCard, mode: ListFilter, minQty: Files, discountPercent: Percent,
+};
 
 function Rows({ group, label, rows, onChange }) {
   const schema = rowSchemas[group];
   function update(index, field, value) {
     onChange(rows.map((row, number) => number === index ? { ...row, [field]: value } : row));
   }
-  return <fieldset className="form-stack"><legend>{label}</legend>
+  return <fieldset className="form-stack"><legend><UiverseIconLabel icon={ListFilter}>{label}</UiverseIconLabel></legend>
     {rows.map((row, index) => <div className="editor-row" key={index}>
       <div className="form-columns">{Object.entries(schema).map(([field, name]) => ['mode', 'pricingUnit'].includes(field)
-        ? <UiverseInput as="select" label={name} key={field} value={row[field] || 'PerUnit'} onChange={event => update(index, field, event.target.value)}>
+        ? <UiverseInput as="select" labelIcon={rowFieldIcons[field]} label={name} key={field} value={row[field] || 'PerUnit'} onChange={event => update(index, field, event.target.value)}>
           <option value="PerUnit">Theo tấm</option><option value="PerSqm">Theo m²</option></UiverseInput>
-        : <UiverseInput key={field} label={name} type={numbers.has(field) ? 'number' : 'text'} required={['label', 'name', 'widthCm', 'heightCm', 'minQty', 'discountPercent'].includes(field)}
+        : <UiverseInput key={field} labelIcon={rowFieldIcons[field]} label={name} type={numbers.has(field) ? 'number' : 'text'} required={['label', 'name', 'widthCm', 'heightCm', 'minQty', 'discountPercent'].includes(field)}
           min={numbers.has(field) ? 0 : undefined} max={field === 'discountPercent' ? 100 : undefined} step={numbers.has(field) ? 'any' : undefined}
           value={row[field] ?? ''} onChange={event => update(index, field, numbers.has(field) && event.target.value !== '' ? Number(event.target.value) : event.target.value)} />)}</div>
-      <UiverseButton size="small" variant="outline" onClick={() => onChange(rows.filter((_, number) => number !== index))}>Xóa dòng</UiverseButton>
+      <UiverseButton icon={<Trash2 className="control-icon" aria-hidden="true" />} size="small" variant="outline" onClick={() => onChange(rows.filter((_, number) => number !== index))}>Xóa dòng</UiverseButton>
     </div>)}
     <UiverseButton size="small" variant="outline" icon={<Plus size={15} />} onClick={() => onChange([...rows, Object.fromEntries(Object.keys(schema).map(field => [field, ['mode', 'pricingUnit'].includes(field) ? 'PerUnit' : '']))])}>Thêm dòng</UiverseButton>
   </fieldset>;
@@ -78,61 +83,61 @@ function CatalogEditor({ record, kind, categories, products, onClose, onSave, on
     <form className="form-stack" onSubmit={save}>
       <fieldset className="form-stack" disabled={action.busy}>
         <div className="form-columns">
-          <UiverseInput label="Tên" value={value[titleField]} required maxLength={150} onChange={event => set(titleField, event.target.value)} />
-          {!isDemo && <UiverseInput label="Slug" value={value.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" onChange={event => set('slug', event.target.value)} />}
+          <UiverseInput labelIcon={Type} label="Tên" value={value[titleField]} required maxLength={150} onChange={event => set(titleField, event.target.value)} />
+          {!isDemo && <UiverseInput labelIcon={Link2} label="Slug" value={value.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" onChange={event => set('slug', event.target.value)} />}
         </div>
         {isProduct && <>
-          <div className="form-columns"><UiverseInput label="Mã sản phẩm" value={value.code || ''} required onChange={event => set('code', event.target.value)} />
-            <UiverseInput label="Nhóm" as="select" value={value.categoryId || ''} required onChange={event => set('categoryId', event.target.value)}>
+          <div className="form-columns"><UiverseInput labelIcon={Tag} label="Mã sản phẩm" value={value.code || ''} required onChange={event => set('code', event.target.value)} />
+            <UiverseInput labelIcon={Layers} label="Nhóm" as="select" value={value.categoryId || ''} required onChange={event => set('categoryId', event.target.value)}>
               <option value="">Chọn nhóm</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</UiverseInput></div>
-          <UiverseInput label="Mô tả ngắn" value={value.shortDescription || ''} onChange={event => set('shortDescription', event.target.value)} />
+          <UiverseInput labelIcon={NotebookPen} label="Mô tả ngắn" value={value.shortDescription || ''} onChange={event => set('shortDescription', event.target.value)} />
         </>}
-        <UiverseInput label="Mô tả" as="textarea" rows={3} value={value.description || ''} onChange={event => set('description', event.target.value)} />
-        <UiverseInput label="Địa chỉ ảnh mẫu" value={value[imageField] || ''} onChange={event => set(imageField, event.target.value)} />
-        <UiverseInput label="Tải ảnh mẫu" type="file" accept={photoAccept} onChange={event => upload(event, imageField)} />
+        <UiverseInput labelIcon={NotebookPen} label="Mô tả" as="textarea" rows={3} value={value.description || ''} onChange={event => set('description', event.target.value)} />
+        <UiverseInput labelIcon={Link2} label="Địa chỉ ảnh mẫu" value={value[imageField] || ''} onChange={event => set(imageField, event.target.value)} />
+        <UiverseInput labelIcon={ImageUp} label="Tải ảnh mẫu" type="file" accept={photoAccept} onChange={event => upload(event, imageField)} />
         {value[imageField] && <PhotoImage src={value[imageField]} className="admin-preview" />}
-        {(isProduct || isDemo) && <UiverseInput label="Mô hình 3D" as="select" value={value[isDemo ? 'model3DType' : 'defaultModel3DType']}
+        {(isProduct || isDemo) && <UiverseInput labelIcon={Box} label="Mô hình 3D" as="select" value={value[isDemo ? 'model3DType' : 'defaultModel3DType']}
           onChange={event => set(isDemo ? 'model3DType' : 'defaultModel3DType', event.target.value)}>
           {Object.entries(ModelNames).map(([key, name]) => <option key={key} value={key}>{name}</option>)}</UiverseInput>}
         {isProduct && <>
           <div className="form-columns">
-            <UiverseInput label="Kiểu tính giá" as="select" value={value.pricingMode} onChange={event => set('pricingMode', event.target.value)}>
+            <UiverseInput labelIcon={CreditCard} label="Kiểu tính giá" as="select" value={value.pricingMode} onChange={event => set('pricingMode', event.target.value)}>
               {Object.entries(variants).map(([key, name]) => <option key={key} value={key}>{name}</option>)}</UiverseInput>
-            <UiverseInput label="Giá niêm yết" type="number" min="0" required value={value.basePrice} onChange={event => set('basePrice', Number(event.target.value))} />
-            <UiverseInput label="Diện tích tối thiểu (m²)" type="number" min="0" step="0.01" value={value.minBillableAreaSqm} onChange={event => set('minBillableAreaSqm', Number(event.target.value))} />
-            <UiverseInput label="Phụ phí in nhanh (%)" type="number" min="0" max="100" value={value.rushSurchargePercent} onChange={event => set('rushSurchargePercent', Number(event.target.value))} />
-            <UiverseInput label="Nhãn thời gian in" value={value.productionTimeLabel || ''} onChange={event => set('productionTimeLabel', event.target.value)} />
-            <UiverseInput label="Thời gian in (giờ)" type="number" min="1" value={value.productionHours || ''} onChange={event => set('productionHours', Number(event.target.value) || null)} />
+            <UiverseInput labelIcon={CreditCard} label="Giá niêm yết" type="number" min="0" required value={value.basePrice} onChange={event => set('basePrice', Number(event.target.value))} />
+            <UiverseInput labelIcon={Ruler} label="Diện tích tối thiểu (m²)" type="number" min="0" step="0.01" value={value.minBillableAreaSqm} onChange={event => set('minBillableAreaSqm', Number(event.target.value))} />
+            <UiverseInput labelIcon={CreditCard} label="Phụ phí in nhanh (%)" type="number" min="0" max="100" value={value.rushSurchargePercent} onChange={event => set('rushSurchargePercent', Number(event.target.value))} />
+            <UiverseInput labelIcon={Clock} label="Nhãn thời gian in" value={value.productionTimeLabel || ''} onChange={event => set('productionTimeLabel', event.target.value)} />
+            <UiverseInput labelIcon={Clock} label="Thời gian in (giờ)" type="number" min="1" value={value.productionHours || ''} onChange={event => set('productionHours', Number(event.target.value) || null)} />
           </div>
-          <UiverseInput label="Ảnh gallery (mỗi dòng một địa chỉ)" as="textarea" rows={2} value={value.galleryText ?? value.gallery.join('\n')} onChange={event => set('galleryText', event.target.value)} />
-          <fieldset className="form-columns"><legend>Mục đích</legend>{Object.entries(UsageTypes).map(([key, name]) =>
-            <UiverseCheckbox key={key} checked={value.usageTypes.includes(key)} label={name}
+          <UiverseInput labelIcon={Images} label="Ảnh gallery (mỗi dòng một địa chỉ)" as="textarea" rows={2} value={value.galleryText ?? value.gallery.join('\n')} onChange={event => set('galleryText', event.target.value)} />
+          <fieldset className="form-columns"><legend><UiverseIconLabel icon={Target}>Mục đích</UiverseIconLabel></legend>{Object.entries(UsageTypes).map(([key, name]) =>
+            <UiverseCheckbox key={key} checked={value.usageTypes.includes(key)} labelIcon={Target} label={name}
               onChange={checked => set('usageTypes', checked ? [...value.usageTypes, key] : value.usageTypes.filter(item => item !== key))} />)}</fieldset>
           {[['printSizes', 'Cỡ ảnh'], ['paperOrSurfaceOptions', 'Bề mặt'], ['finishingOptions', 'Khung & gia công'], ['discountTiers', 'Bậc giảm giá']].map(([group, label]) =>
             <Rows key={group} group={group} label={label} rows={value[group]} onChange={rows => set(group, rows)} />)}
-          <UiverseCheckbox label="Cho phép tải ảnh hàng loạt" checked={value.supportsBatchUpload} onChange={checked => set('supportsBatchUpload', checked)} />
+          <UiverseCheckbox labelIcon={ImageUp} label="Cho phép tải ảnh hàng loạt" checked={value.supportsBatchUpload} onChange={checked => set('supportsBatchUpload', checked)} />
         </>}
         {isDemo && <>
-          <UiverseInput label="Sản phẩm liên kết" as="select" value={value.linkedProductId || ''} onChange={event => set('linkedProductId', event.target.value || null)}>
+          <UiverseInput labelIcon={Link2} label="Sản phẩm liên kết" as="select" value={value.linkedProductId || ''} onChange={event => set('linkedProductId', event.target.value || null)}>
             <option value="">Không liên kết</option>{products.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</UiverseInput>
-          <UiverseInput label="Địa chỉ ảnh đặt vào mẫu" value={value.textureImageUrl || ''} onChange={event => set('textureImageUrl', event.target.value)} />
-          <UiverseInput label="Tải ảnh đặt vào mẫu" type="file" accept={photoAccept} onChange={event => upload(event, 'textureImageUrl')} />
+          <UiverseInput labelIcon={Link2} label="Địa chỉ ảnh đặt vào mẫu" value={value.textureImageUrl || ''} onChange={event => set('textureImageUrl', event.target.value)} />
+          <UiverseInput labelIcon={ImageUp} label="Tải ảnh đặt vào mẫu" type="file" accept={photoAccept} onChange={event => upload(event, 'textureImageUrl')} />
           <div className="form-columns">
-            <UiverseInput label="Rộng (cm)" type="number" min="0.1" max="500" step="any" required value={value.widthCm} onChange={event => set('widthCm', Number(event.target.value))} />
-            <UiverseInput label="Cao (cm)" type="number" min="0.1" max="500" step="any" required value={value.heightCm} onChange={event => set('heightCm', Number(event.target.value))} />
+            <UiverseInput labelIcon={Ruler} label="Rộng (cm)" type="number" min="0.1" max="500" step="any" required value={value.widthCm} onChange={event => set('widthCm', Number(event.target.value))} />
+            <UiverseInput labelIcon={Ruler} label="Cao (cm)" type="number" min="0.1" max="500" step="any" required value={value.heightCm} onChange={event => set('heightCm', Number(event.target.value))} />
           </div>
-          <UiverseInput label="Màu khung" as="select" value={value.frameColor} onChange={event => set('frameColor', event.target.value)}>
+          <UiverseInput labelIcon={Palette} label="Màu khung" as="select" value={value.frameColor} onChange={event => set('frameColor', event.target.value)}>
             {Object.entries(FrameColors).map(([key, name]) => <option key={key} value={key}>{name}</option>)}</UiverseInput>
-          <UiverseCheckbox label="Bo viền trắng" checked={value.hasMatboard} onChange={checked => set('hasMatboard', checked)} />
+          <UiverseCheckbox labelIcon={Frame} label="Bo viền trắng" checked={value.hasMatboard} onChange={checked => set('hasMatboard', checked)} />
         </>}
-        {(isProduct || isDemo) && <UiverseCheckbox label="Nổi bật" checked={value.isFeatured} onChange={checked => set('isFeatured', checked)} />}
-        <UiverseCheckbox label="Đang hiển thị" checked={value.isActive} onChange={checked => set('isActive', checked)} />
+        {(isProduct || isDemo) && <UiverseCheckbox labelIcon={Star} label="Nổi bật" checked={value.isFeatured} onChange={checked => set('isFeatured', checked)} />}
+        <UiverseCheckbox labelIcon={Eye} label="Đang hiển thị" checked={value.isActive} onChange={checked => set('isActive', checked)} />
       </fieldset>
       {action.error && <p role="alert" className="notice notice-error">{action.error}</p>}
       <div className="action-row">
-        <UiverseButton type="submit" isLoading={action.busy}>Lưu</UiverseButton>
+        <UiverseButton icon={<Save className="control-icon" aria-hidden="true" />} type="submit" isLoading={action.busy}>Lưu</UiverseButton>
         {record.id && <UiverseButton variant="outline" icon={<Trash2 size={16} />} disabled={action.busy} onClick={() => setConfirm(true)}>Xóa</UiverseButton>}
-        {confirm && <div className="notice">Xóa mục này khỏi danh mục? <UiverseButton size="small" variant="outline" isLoading={action.busy} onClick={() => action.run(() => onDelete(record.id))}>Xác nhận xóa</UiverseButton></div>}
+        {confirm && <div className="notice">Xóa mục này khỏi danh mục? <UiverseButton icon={<Trash2 className="control-icon" aria-hidden="true" />} size="small" variant="outline" isLoading={action.busy} onClick={() => action.run(() => onDelete(record.id))}>Xác nhận xóa</UiverseButton></div>}
       </div>
     </form>
   </Modal>;
@@ -183,8 +188,8 @@ export default function AdminCatalogPage({ kind }) {
     <PageHeading title={kind === 'products' ? 'Danh mục sản phẩm' : 'Thư viện mẫu 3D'} />
     <div className="admin-toolbar">
       {kind === 'products' && <div className="tabs">{['products', 'categories'].map(key => <button type="button" className="tab" key={key} aria-pressed={key === group}
-        onClick={() => { setGroup(key); setPage(1); }}>{names[key]}</button>)}</div>}
-      {group !== 'categories' && <UiverseInput label="Tìm kiếm" type="search" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} />}
+        onClick={() => { setGroup(key); setPage(1); }}><UiverseIconLabel icon={key === 'products' ? Package : Layers}>{names[key]}</UiverseIconLabel></button>)}</div>}
+      {group !== 'categories' && <UiverseInput labelIcon={Search} label="Tìm kiếm" type="search" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} />}
       <UiverseButton icon={<Plus size={16} />} onClick={() => setEditing({ ...presets[group] })}>Thêm {names[group].toLowerCase()}</UiverseButton>
     </div>
     <RequestState result={current}>

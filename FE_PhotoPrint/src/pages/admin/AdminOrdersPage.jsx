@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Download } from 'lucide-react';
+import { Download, Clock3, Eye, Search } from 'lucide-react';
 import { UiverseBadge, UiverseButton, UiverseInput } from '@oneportal/uiverse-ui';
 import { photoOrderApi } from '../../api/photoOrderApi';
 import { photoAssetUrl } from '../../api/photoUploadApi';
@@ -56,8 +56,8 @@ export default function AdminOrdersPage() {
   return <>
     <PageHeading title="Đơn in ảnh" description="Kiểm tra file gốc, quy cách cắt và tiến độ từng đơn." />
     <div className="admin-toolbar">
-      <UiverseInput type="search" label="Tìm mã đơn, tên hoặc SĐT" value={query} onChange={event => { setQuery(event.target.value); setPage(1); }} />
-      <UiverseInput label="Trạng thái" as="select" value={status} onChange={event => { setStatus(event.target.value); setPage(1); }}>
+      <UiverseInput type="search" labelIcon={Search} label="Tìm mã đơn, tên hoặc SĐT" value={query} onChange={event => { setQuery(event.target.value); setPage(1); }} />
+      <UiverseInput labelIcon={Clock3} label="Trạng thái" as="select" value={status} onChange={event => { setStatus(event.target.value); setPage(1); }}>
         <option value="">Tất cả</option>{Object.entries(OrderStates).map(([key, label]) => <option value={key} key={key}>{label}</option>)}
       </UiverseInput>
     </div>
@@ -65,7 +65,7 @@ export default function AdminOrdersPage() {
       {orders.data?.items.length ? <ul className="admin-list panel">{orders.data.items.map(order => <li key={order.id}>
         <div><strong className="mono">{order.orderCode}</strong><p>{order.customerName} · {order.totalPhotoCount} bản</p></div>
         <UiverseBadge>{OrderStates[order.status] || order.status}</UiverseBadge><strong>{formatMoney(order.grandTotal)}</strong>
-        <UiverseButton variant="outline" size="small" onClick={() => setSelected(order)}>Chi tiết</UiverseButton>
+        <UiverseButton icon={<Eye className="control-icon" aria-hidden="true" />} variant="outline" size="small" onClick={() => setSelected(order)}>Chi tiết</UiverseButton>
       </li>)}</ul> : <p className="notice">Chưa có đơn phù hợp.</p>}
       <Pagination page={page} pageSize={pageSize} totalCount={orders.data?.totalCount} onPage={setPage} />
     </RequestState>
