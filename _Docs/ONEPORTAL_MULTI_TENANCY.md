@@ -116,7 +116,7 @@ PlatformAdmin chọn công ty và cài Quoting, Landing Page hoặc Photo Print 
 
 - Portal nhúng các màn quản trị theo URL như `/t/{tenantKey}/photoprint/admin/orders`. Các deep link ngoài khu vực admin mở trên origin của ứng dụng, giữ lại đường dẫn và tham số.
 - Đặt `VITE_QUOTING_ORIGIN`, `VITE_LANDING_ORIGIN`, `VITE_TENANT_ORIGIN` và `VITE_PHOTOPRINT_ORIGIN` trong project `FE_Portal`. Các origin HTTPS độc lập có thể dùng subdomain cùng site để hỗ trợ lưu phiên đăng nhập trong iframe.
-- Trong các project app, đặt `VITE_PORTAL_ORIGIN` thành origin Portal. Cấu hình Vercel của `FE_Tenant` và `FE_PhotoPrint` dùng biến này làm CSP `frame-ancestors`. Portal kiểm tra origin, cửa sổ gửi và đường dẫn trước khi đồng bộ URL.
+- Trong các project app, đặt `VITE_PORTAL_ORIGIN` thành origin Portal. Nếu đổi origin khi triển khai, cập nhật cả CSP `frame-ancestors` trong `FE_Tenant/vercel.json` và `FE_PhotoPrint/vercel.json`. Portal kiểm tra origin, cửa sổ gửi và đường dẫn trước khi đồng bộ URL.
 - Các app giữ phiên đăng nhập tại origin của mình. `/platform` nhúng `FE_Tenant` và app kiểm tra PlatformAdmin. Portal không nhận token quản trị. Nút **Mở trong tab mới** mở trực tiếp app khi trình duyệt hoặc cấu hình hosting giới hạn iframe.
 - Khi thêm module, đăng ký khóa ứng dụng trong OnePortal, định nghĩa cấp quyền và khởi tạo theo nghiệp vụ, rồi thêm khóa ứng dụng và origin deploy vào `FE_Portal/src/applications.js`. Release mỗi app trên origin ổn định của app đó để không phải build lại Portal khi cập nhật nghiệp vụ.
 

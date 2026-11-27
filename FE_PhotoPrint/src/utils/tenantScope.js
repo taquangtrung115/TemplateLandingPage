@@ -1,7 +1,10 @@
 export const APP_KEY = 'photoprint';
 export const DEFAULT_TENANT_KEY = 'photoprint-default';
 
-const configuredBase = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '');
+const productionApi = window.location.hostname === 'photoprint-oneportal.vercel.app'
+  ? 'https://templatelandingpage.onrender.com'
+  : '';
+const configuredBase = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '') || productionApi;
 const globalApiBase = configuredBase
   ? configuredBase.replace(/\/api\/v1$/, '') + '/api/v1'
   : '/api/v1';

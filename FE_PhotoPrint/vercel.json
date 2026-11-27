@@ -1,0 +1,11 @@
+{
+  "framework": "vite",
+  "headers": [{
+    "source": "/((?!assets/|api/|t/[^/]+/api/).*)",
+    "headers": [
+      { "key": "Cache-Control", "value": "no-store, max-age=0" },
+      { "key": "Content-Security-Policy", "value": "frame-ancestors https://oneportal-workspace.vercel.app" }
+    ]
+  }],
+  "rewrites": [{ "source": "/((?!assets/|api/|t/[^/]+/api/).*)", "destination": "/index.html" }]
+}

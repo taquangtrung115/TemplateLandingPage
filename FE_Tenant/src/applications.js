@@ -9,7 +9,7 @@ export const getApplicationName = key => applications.find(item => item.key === 
 export function getPortalAdminUrl(tenantKey, appKey) {
   const local = new URL(window.location.origin);
   local.port = '5176';
-  const configured = import.meta.env.VITE_PORTAL_ORIGIN || (import.meta.env.DEV ? local.origin : '');
+  const configured = import.meta.env.VITE_PORTAL_ORIGIN || (import.meta.env.DEV ? local.origin : 'https://oneportal-workspace.vercel.app');
   try {
     const url = new URL(configured);
     if (url.origin !== configured || !['https:', 'http:'].includes(url.protocol)) return null;
