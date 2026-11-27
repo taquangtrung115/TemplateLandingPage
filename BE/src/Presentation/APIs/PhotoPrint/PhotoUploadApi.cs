@@ -10,12 +10,15 @@ using OnePortal.Presentation.Abstractions;
 
 public sealed class PhotoUploadApi : IEndpoint
 {
+    public const string UploadRatePolicy = "photoprint-uploads";
+
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/photoprint/uploads").WithTags("Photo Print");
         group.MapPost("/photos", UploadAsync)
             .DisableAntiforgery()
             .WithMetadata(new RequestSizeLimitAttribute(16 * 1024 * 1024))
+            .RequireRateLimiting(UploadRatePolicy)
             .AllowAnonymous();
         group.MapGet("/{fileName}", DownloadAsync).AllowAnonymous();
     }

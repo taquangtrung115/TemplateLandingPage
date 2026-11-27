@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
@@ -15,6 +17,7 @@ using OnePortal.Infrastructure.DependencyInjection.Extensions;
 using OnePortal.Persistence;
 using OnePortal.Persistence.Data;
 using OnePortal.Persistence.DependencyInjection.Extensions;
+using OnePortal.Presentation.APIs.PhotoPrint;
 using OnePortal.Presentation.Authorization;
 using OnePortal.Presentation.DependencyInjection.Extensions;
 
@@ -109,6 +112,22 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser().RequireRole("Admin"));
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter(PhotoUploadApi.UploadRatePolicy, limiter =>
+    {
+        limiter.PermitLimit = builder.Configuration.GetValue("PhotoPrint:UploadsPerMinute", 180);
+        limiter.Window = TimeSpan.FromMinutes(1);
+    });
+    options.OnRejected = (context, _) =>
+    {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            context.HttpContext.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return ValueTask.CompletedTask;
+    };
+});
+
 // Clean Architecture Layers
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
@@ -179,6 +198,7 @@ app.UseCors("DefaultCorsPolicy");
 // HTTPS terminates at the public edge; the private backend receives internal HTTP.
 app.UseMiddleware<TenantRoutingMiddleware>();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseMiddleware<TenantAccessMiddleware>();
 app.UseAuthorization();
