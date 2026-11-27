@@ -2,6 +2,7 @@ namespace OnePortal.Infrastructure.Services.PhotoPrint;
 
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using OnePortal.Application.Abstractions;
 using OnePortal.Contract.Services.V1.PhotoPrint.Uploads;
@@ -53,7 +54,7 @@ public sealed class PhotoFileStorage(HttpClient client, IConfiguration configura
         var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         try
         {
-            if (response.StatusCode is HttpStatusCode.NotFound) { response.Dispose(); return null; }
+            if (await IsMissingObjectAsync(response, cancellationToken)) { response.Dispose(); return null; }
             if (!response.IsSuccessStatusCode) throw new HttpRequestException("Photo storage read failed.", null, response.StatusCode);
             var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             return new PhotoDownloadResponse(stream, contentType, response);
@@ -63,6 +64,25 @@ public sealed class PhotoFileStorage(HttpClient client, IConfiguration configura
             response.Dispose();
             throw;
         }
+    }
+
+    private static async Task<bool> IsMissingObjectAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.StatusCode == HttpStatusCode.NotFound) return true;
+        if (response.StatusCode != HttpStatusCode.BadRequest) return false;
+
+        // Supabase's legacy storage response uses HTTP 400 with an embedded 404.
+        try
+        {
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+            var error = document.RootElement;
+            if (error.ValueKind != JsonValueKind.Object) return false;
+            var code = error.TryGetProperty("code", out var currentCode) ? currentCode.ToString() : null;
+            if (code == "NoSuchKey") return true;
+            return error.TryGetProperty("statusCode", out var status) && status.ToString() == "404";
+        }
+        catch (JsonException) { return false; }
     }
 
     private bool UseLocalStorage() => (string.IsNullOrWhiteSpace(_origin) || string.IsNullOrWhiteSpace(_key)) && !string.IsNullOrWhiteSpace(_localPath);
