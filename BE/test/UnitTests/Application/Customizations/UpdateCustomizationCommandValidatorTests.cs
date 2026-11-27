@@ -1,7 +1,7 @@
 namespace OnePortal.UnitTests.Application.Customizations;
 
 using FluentAssertions;
-using OnePortal.Application.UseCases.V1.Customizations.Commands.Validators;
+using OnePortal.Application.UseCases.V1.Commands.Customizations.Validators;
 using OnePortal.Contract.Services.V1.Customizations;
 using Xunit;
 

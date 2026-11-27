@@ -59,7 +59,7 @@ test('Gateway validates signatures, exposes trace and CORS, and preserves server
 test('FE_Tenant creates and seeds a workspace through the real Gateway and backend', async ({ page }, testInfo) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/'); await login(page);
-  await expect(page.getByRole('heading', { name: 'Công ty & người dùng' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Quản trị công ty' })).toBeVisible();
   await page.getByRole('button', { name: 'Thêm công ty', exact: true }).click();
   const key = 'ui-' + Date.now().toString(36) + '-' + testInfo.project.name;
   await page.getByLabel('Tên công ty', { exact: true }).fill('UI ' + key);

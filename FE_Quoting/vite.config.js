@@ -5,6 +5,7 @@ export default defineConfig({
   // The app consumes Astryx's compiled components and CSS. The source-build
   // plugin requires Vite 8 and splits context modules when used with Vite 6.
   plugins: [react()],
+  resolve: { dedupe: ['react', 'react-dom'] },
   server: {
     port: 5174,
     proxy: {

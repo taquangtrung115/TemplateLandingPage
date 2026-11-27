@@ -1,8 +1,7 @@
 namespace OnePortal.Domain.Repositories;
 
+using OnePortal.Domain.Entities.NavigationMenus;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
-
 public interface INavigationMenuRepository : IRepositoryBase<NavigationMenu, Guid>
 {
     Task<List<NavigationMenu>> GetTreeAsync(bool? isActiveOnly = null, CancellationToken cancellationToken = default);

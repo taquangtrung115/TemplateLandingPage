@@ -1,5 +1,6 @@
 namespace OnePortal.Architecture.Tests;
 
+using OnePortal.Domain.Entities.Users;
 using System.Reflection;
 using System.Xml.Linq;
 using FluentAssertions;
@@ -8,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using OnePortal.Application.Abstractions;
 using OnePortal.Application.Services.Tenancy;
 using OnePortal.Domain.Abstractions;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Entities.Tenancy;
 using OnePortal.Infrastructure.DependencyInjection.Extensions;
 using OnePortal.Infrastructure.Services.Quoting;
@@ -17,6 +17,9 @@ using Xunit;
 
 public sealed class TenantArchitectureTests
 {
+    private const string UseCases = "OnePortal.Application.UseCases.V1.";
+    private const string UseCasePattern = @"OnePortal\.Application\.UseCases\.V1\.(?:(?:Commands|Queries)\.)?";
+
     [Fact]
     public void EveryDomainEntity_IsTenantOwned_OrAnExplicitGlobalIdentity()
     {
@@ -67,9 +70,18 @@ public sealed class TenantArchitectureTests
     public void QuotingModule_DoesNotCallLandingUseCases()
     {
         var result = NetArchTest.Rules.Types.InAssembly(typeof(ITenantContext).Assembly)
-            .That().ResideInNamespaceMatching(@"OnePortal.Application.UseCases.V1.Quoting.*")
-            .ShouldNot().HaveDependencyOnAny("OnePortal.Application.UseCases.V1.Customizations",
-                "OnePortal.Application.UseCases.V1.Templates", "OnePortal.Application.UseCases.V1.Categories")
+            .That().ResideInNamespaceMatching(UseCasePattern + @"Quoting(?:\.|$)")
+            .ShouldNot().HaveDependencyOnAny(UseCaseNamespaces("Customizations", "Templates", "Categories"))
+            .GetResult();
+        result.IsSuccessful.Should().BeTrue();
+    }
+
+    [Fact]
+    public void PhotoPrintModule_DoesNotCallLandingOrQuotingUseCases()
+    {
+        var result = NetArchTest.Rules.Types.InAssembly(typeof(ITenantContext).Assembly)
+            .That().ResideInNamespaceMatching(UseCasePattern + @"PhotoPrint(?:\.|$)")
+            .ShouldNot().HaveDependencyOnAny(UseCaseNamespaces("Customizations", "Templates", "Categories", "Quoting"))
             .GetResult();
         result.IsSuccessful.Should().BeTrue();
     }
@@ -78,9 +90,13 @@ public sealed class TenantArchitectureTests
     public void LandingUseCases_DoNotCallQuotingUseCases()
     {
         var result = NetArchTest.Rules.Types.InAssembly(typeof(ITenantContext).Assembly)
-            .That().ResideInNamespaceMatching(@"OnePortal.Application.UseCases.V1.(Customizations|Templates|Categories|Menus|Rsvps|Guestbooks).*")
-            .ShouldNot().HaveDependencyOn("OnePortal.Application.UseCases.V1.Quoting").GetResult();
+            .That().ResideInNamespaceMatching(UseCasePattern + @"(?:Customizations|Templates|Categories|NavigationMenus|Interactions)(?:\.|$)")
+            .ShouldNot().HaveDependencyOnAny(UseCaseNamespaces("Quoting", "PhotoPrint")).GetResult();
         result.IsSuccessful.Should().BeTrue();
     }
-}
 
+    private static string[] UseCaseNamespaces(params string[] modules) => modules.SelectMany(module => new[]
+    {
+        UseCases + module, UseCases + "Commands." + module, UseCases + "Queries." + module,
+    }).ToArray();
+}

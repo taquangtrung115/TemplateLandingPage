@@ -1,0 +1,14 @@
+{
+  "framework": "vite",
+  "headers": [
+    {
+      "source": "/((?!assets/|api/).*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-store, max-age=0" }]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [{ "key": "Content-Security-Policy", "value": "frame-ancestors 'none'" }]
+    }
+  ],
+  "rewrites": [{ "source": "/((?!assets/|api/).*)", "destination": "/index.html" }]
+}

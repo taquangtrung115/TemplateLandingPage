@@ -1,10 +1,11 @@
 namespace OnePortal.UnitTests.Persistence;
 
+using OnePortal.Domain.Entities.Products;
+using OnePortal.Domain.Entities.Users;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using OnePortal.Application.Services.Tenancy;
 using OnePortal.Domain.Abstractions;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Entities.Tenancy;
 using OnePortal.Persistence;
 using Xunit;

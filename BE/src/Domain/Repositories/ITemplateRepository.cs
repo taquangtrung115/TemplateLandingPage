@@ -1,7 +1,7 @@
 namespace OnePortal.Domain.Repositories;
 
+using OnePortal.Domain.Entities.Templates;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.ReadModels;
 
 public interface ITemplateRepository : IRepositoryBase<Template, Guid>

@@ -1,14 +1,14 @@
 namespace OnePortal.Persistence.Repositories.Tenancy;
 
+using OnePortal.Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using OnePortal.Application.Abstractions;
 using OnePortal.Application.Services.Tenancy;
-using OnePortal.Application.UseCases.V1.Tenancy.Dtos;
+using OnePortal.Contract.Services.V1.Tenancy;
 using OnePortal.Application.UseCases.V1.Tenancy.Helpers;
 using OnePortal.Contract.Abstractions.Shared;
 using OnePortal.Domain.Entities.Tenancy;
-using OnePortal.Domain.Entities;
 using OnePortal.Persistence.Initialization;
 
 public sealed class TenantStore(ApplicationDbContext database) : ITenantStore
@@ -21,6 +21,16 @@ public sealed class TenantStore(ApplicationDbContext database) : ITenantStore
         var tenants = await query.OrderBy(tenant => tenant.Key).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
         return await DescribeAsync(tenants, cancellationToken);
     }
+
+    public Task<WorkspaceApplicationsDto?> GetWorkspaceApplicationsAsync(string tenantKey, CancellationToken cancellationToken) =>
+        database.Tenants.AsNoTracking()
+            .Where(tenant => tenant.Key == tenantKey && tenant.IsActive)
+            .Select(tenant => new WorkspaceApplicationsDto(tenant.Name, database.TenantApplications
+                .IgnoreQueryFilters().AsNoTracking()
+                .Where(application => application.TenantId == tenant.Id && application.IsEnabled && application.ProvisioningStatus == "Ready")
+                .OrderBy(application => application.AppKey)
+                .Select(application => application.AppKey).ToArray()))
+            .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<IReadOnlyList<TenantContextDto>> GetContextsAsync(Guid userId, string appKey, int page, int pageSize, CancellationToken cancellationToken) =>
         await (from membership in database.TenantMemberships.IgnoreQueryFilters().AsNoTracking()

@@ -1,11 +1,13 @@
 import WorkspaceGate from './components/WorkspaceGate';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AppRoutes from './routes';
 import { AuthProvider } from './contexts/AuthContext';
+import { notifyPortalNavigation } from './utils/portalNavigation';
+import '@oneportal/uiverse-ui/styles.css';
 
 function AppContent() {
   const location = useLocation();
@@ -29,9 +31,12 @@ function AppContent() {
 }
 
 export default function App() {
+  const location = useLocation();
+  useEffect(() => { notifyPortalNavigation(); }, [location]);
+
   return (
     <AuthProvider>
-      <WorkspaceGate><AppContent /></WorkspaceGate>
+      <WorkspaceGate enabled={/^\/admin(?:\/|$)/.test(location.pathname)}><AppContent /></WorkspaceGate>
       <SpeedInsights />
     </AuthProvider>
   );

@@ -1,11 +1,11 @@
 namespace OnePortal.UnitTests.Application.Templates;
 
+using OnePortal.Domain.Entities.Templates;
 using FluentAssertions;
 using Moq;
-using OnePortal.Application.UseCases.V1.Templates.Commands;
+using OnePortal.Application.UseCases.V1.Commands.Templates;
 using OnePortal.Contract.Services.V1.Templates;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Repositories;
 using Xunit;
 

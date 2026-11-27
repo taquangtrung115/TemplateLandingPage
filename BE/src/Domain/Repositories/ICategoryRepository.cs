@@ -1,7 +1,7 @@
 namespace OnePortal.Domain.Repositories;
 
+using OnePortal.Domain.Entities.Categories;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.ReadModels;
 
 public interface ICategoryRepository : IRepositoryBase<Category, Guid>

@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
@@ -15,6 +17,7 @@ using OnePortal.Infrastructure.DependencyInjection.Extensions;
 using OnePortal.Persistence;
 using OnePortal.Persistence.Data;
 using OnePortal.Persistence.DependencyInjection.Extensions;
+using OnePortal.Presentation.APIs.PhotoPrint;
 using OnePortal.Presentation.Authorization;
 using OnePortal.Presentation.DependencyInjection.Extensions;
 
@@ -74,7 +77,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Configure CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:5173", "http://localhost:5174", "http://localhost:3000" };
+    ?? new[] { "http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://localhost:5176", "http://localhost:5177" };
 
 builder.Services.AddCors(options =>
 {
@@ -107,6 +110,22 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("PlatformAdmin", policy => policy.RequireAuthenticatedUser().RequireClaim("platform_admin", "true"));
     options.AddPolicy(AuthorizationPolicies.AdminOnly, policy =>
         policy.RequireAuthenticatedUser().RequireRole("Admin"));
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter(PhotoUploadApi.UploadRatePolicy, limiter =>
+    {
+        limiter.PermitLimit = builder.Configuration.GetValue("PhotoPrint:UploadsPerMinute", 180);
+        limiter.Window = TimeSpan.FromMinutes(1);
+    });
+    options.OnRejected = (context, _) =>
+    {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            context.HttpContext.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return ValueTask.CompletedTask;
+    };
 });
 
 // Clean Architecture Layers
@@ -149,9 +168,10 @@ await using (var initializationScope = app.Services.CreateAsyncScope())
         if (builder.Configuration.GetValue<bool>("SeedData:IncludeCatalog", true)) await TemplateCatalogSeeder.SeedAsync(landing);
         await using var quoting = new ApplicationDbContext(database.GetOptions(), OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.QuotingId, "quoting"));
         await QuotingSeeder.SeedAsync(quoting);
+        await using var photoPrint = new ApplicationDbContext(database.GetOptions(), OnePortal.Application.Services.Tenancy.TenantContext.For(OnePortal.Domain.Entities.Tenancy.TenantDefaults.PhotoPrintId, "photoprint"));
         var demoEmails = new List<string> { "admin@template.com", "user@template.com", "minhlinh@template.com" };
         var demoUsers = await database.Users.AsNoTracking().Where(user => demoEmails.Contains(user.Email) && user.IsActive).Select(user => new { user.Id, user.Role }).ToListAsync();
-        foreach (var demoContext in new[] { landing, quoting })
+        foreach (var demoContext in new[] { landing, quoting, photoPrint })
         {
             var existing = await demoContext.TenantMemberships.Select(membership => membership.UserId).ToListAsync();
             foreach (var demoUser in demoUsers.Where(user => !existing.Contains(user.Id)))
@@ -178,6 +198,7 @@ app.UseCors("DefaultCorsPolicy");
 // HTTPS terminates at the public edge; the private backend receives internal HTTP.
 app.UseMiddleware<TenantRoutingMiddleware>();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseMiddleware<TenantAccessMiddleware>();
 app.UseAuthorization();

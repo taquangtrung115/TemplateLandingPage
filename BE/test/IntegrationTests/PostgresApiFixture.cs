@@ -1,5 +1,8 @@
 namespace OnePortal.IntegrationTests;
 
+using OnePortal.Domain.Entities.Customizations;
+using OnePortal.Domain.Entities.Templates;
+using OnePortal.Domain.Entities.Users;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -16,7 +19,6 @@ using OnePortal.Infrastructure.Services.Quoting;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using Xunit;
-using OnePortal.Domain.Entities;
 using OnePortal.Persistence;
 using OnePortal.Application.Services.Tenancy;
 using OnePortal.Domain.Entities.Tenancy;
@@ -267,6 +269,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
                     ["Supabase:Key"] = "",
                     ["SupabaseStorage:Url"] = "",
                     ["SupabaseStorage:ServiceRoleKey"] = "",
+                    ["PhotoPrint:Storage:LocalPath"] = Path.Combine(AppContext.BaseDirectory, "photoprint-test-files", new NpgsqlConnectionStringBuilder(connectionString).Database!),
                     ["Quoting:Storage:LocalPath"] = Path.Combine(AppContext.BaseDirectory, "quoting-test-files", new NpgsqlConnectionStringBuilder(connectionString).Database!)
                 }));
         }

@@ -1,10 +1,10 @@
 namespace OnePortal.UnitTests.Infrastructure;
 
+using OnePortal.Domain.Entities.Users;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
-using OnePortal.Domain.Entities;
 using OnePortal.Infrastructure.Authentication;
 using OnePortal.Infrastructure.Services;
 using Xunit;

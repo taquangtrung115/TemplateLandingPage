@@ -16,6 +16,7 @@ import { templateApi } from '../../api/templateApi';
 import categoryApi from '../../api/categoryApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { DEFAULT_WEDDING_CONFIG } from '../../utils/defaultTemplates';
+import { showActionDialog } from '../../utils/actionDialog';
 
 export default function AdminTemplatesPage() {
   const [templates, setTemplates] = useState([]);
@@ -120,7 +121,7 @@ export default function AdminTemplatesPage() {
       setJsonError(null);
       setModalOpen(true);
     } catch (err) {
-      alert(err.message || 'Lỗi khi tải chi tiết template');
+      await showActionDialog(err.message || 'Lỗi khi tải chi tiết template');
     } finally {
       setLoadingTemplateId(null);
     }
@@ -175,19 +176,19 @@ export default function AdminTemplatesPage() {
       const updated = await templateApi.getTemplates();
       setTemplates(Array.isArray(updated) ? updated : []);
     } catch (err) {
-      alert(err.message || 'Lỗi khi lưu master template');
+      await showActionDialog(err.message || 'Lỗi khi lưu master template');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa master template này?')) return;
+    if (!await showActionDialog('Bạn có chắc chắn muốn xóa master template này?', { confirm: true })) return;
     try {
       await templateApi.deleteTemplate(id);
       setTemplates((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
-      alert(err.message || 'Lỗi khi xóa template');
+      await showActionDialog(err.message || 'Lỗi khi xóa template');
     }
   };
 

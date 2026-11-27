@@ -1,0 +1,16 @@
+namespace OnePortal.Application.UseCases.V1.Commands.Interactions.Validators;
+
+using FluentValidation;
+using OnePortal.Contract.Services.V1.Interactions;
+
+public sealed class SubmitGuestbookCommandValidator : AbstractValidator<SubmitGuestbookCommand>
+{
+    public SubmitGuestbookCommandValidator()
+    {
+        RuleFor(x => x.CustomizationVersionId)
+            .NotNull().WithMessage("CustomizationVersionId is required.")
+            .NotEqual(Guid.Empty).WithMessage("CustomizationVersionId is required.");
+        RuleFor(x => x.SenderName).NotEmpty().WithMessage("Tên người gửi không được để trống.");
+        RuleFor(x => x.Message).NotEmpty().WithMessage("Lời chúc không được để trống.");
+    }
+}

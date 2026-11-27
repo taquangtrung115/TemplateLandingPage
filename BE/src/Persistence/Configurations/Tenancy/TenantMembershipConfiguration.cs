@@ -1,8 +1,8 @@
 namespace OnePortal.Persistence.Configurations.Tenancy;
 
+using OnePortal.Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Entities.Tenancy;
 
 public sealed class TenantMembershipConfiguration : IEntityTypeConfiguration<TenantMembership>

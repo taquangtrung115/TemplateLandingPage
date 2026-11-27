@@ -1,12 +1,12 @@
 namespace OnePortal.UnitTests.Application.Products;
 
+using OnePortal.Domain.Entities.Products;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using OnePortal.Application.UseCases.V1.Products.Commands;
+using OnePortal.Application.UseCases.V1.Commands.Products;
 using OnePortal.Contract.Services.V1.Products;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Repositories;
 using Xunit;
 

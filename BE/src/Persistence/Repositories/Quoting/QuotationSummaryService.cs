@@ -1,8 +1,9 @@
 namespace OnePortal.Persistence.Repositories.Quoting;
 
+using OnePortal.Contract.Services.V1.Quoting.Quotations;
 using Microsoft.EntityFrameworkCore;
 using OnePortal.Application.Abstractions;
-using OnePortal.Application.UseCases.V1.Quoting.Quotations.Queries.Summary;
+using OnePortal.Application.UseCases.V1.Queries.Quoting.Quotations;
 
 public sealed class QuotationSummaryService(ApplicationDbContext context) : IQuotationSummaryService
 {

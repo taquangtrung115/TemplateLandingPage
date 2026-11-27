@@ -49,6 +49,7 @@ api_pid=$!
         ReverseProxy__Clusters__platform__Destinations__backend__Address=http://127.0.0.1:54611/ \
         ReverseProxy__Clusters__landing__Destinations__backend__Address=http://127.0.0.1:54611/ \
         ReverseProxy__Clusters__quoting__Destinations__backend__Address=http://127.0.0.1:54611/ \
+        ReverseProxy__Clusters__photoprint__Destinations__backend__Address=http://127.0.0.1:54611/ \
         dotnet OnePortal.Gateway.dll
 ) &
 gateway_pid=$!

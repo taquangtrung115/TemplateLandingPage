@@ -1,8 +1,9 @@
 namespace OnePortal.Persistence.Initialization;
 
+using OnePortal.Domain.Entities.Categories;
+using OnePortal.Domain.Entities.NavigationMenus;
+using OnePortal.Domain.Entities.Templates;
 using Microsoft.EntityFrameworkCore;
-using OnePortal.Domain.Entities;
-
 public sealed class LandingFoundationSeed : ITenantSeedStep
 {
     public string AppKey => "landing";

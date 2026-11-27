@@ -1,12 +1,12 @@
 namespace OnePortal.Infrastructure.Services;
 
+using OnePortal.Domain.Entities.Users;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using OnePortal.Application.Abstractions;
-using OnePortal.Domain.Entities;
 using OnePortal.Infrastructure.Authentication;
 
 public sealed class JwtTokenGenerator : IJwtTokenGenerator

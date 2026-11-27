@@ -1,7 +1,7 @@
 namespace OnePortal.Domain.Repositories;
 
+using OnePortal.Domain.Entities.Customizations;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.ReadModels;
 
 public interface ICustomizationRepository : IRepositoryBase<UserCustomization, Guid>

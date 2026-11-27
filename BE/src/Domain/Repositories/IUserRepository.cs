@@ -1,8 +1,7 @@
 namespace OnePortal.Domain.Repositories;
 
+using OnePortal.Domain.Entities.Users;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
-
 public interface IUserRepository : IRepositoryBase<User, Guid>
 {
     Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);

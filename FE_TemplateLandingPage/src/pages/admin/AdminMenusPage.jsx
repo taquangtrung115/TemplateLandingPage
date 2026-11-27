@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import navigationMenuApi from '../../api/navigationMenuApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { showActionDialog } from '../../utils/actionDialog';
 import { resolveIcon } from '../../utils/iconResolver';
 
 export default function AdminMenusPage() {
@@ -113,12 +114,12 @@ export default function AdminMenusPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa menu này?')) return;
+    if (!await showActionDialog('Bạn có chắc chắn muốn xóa menu này?', { confirm: true })) return;
     try {
       await navigationMenuApi.deleteMenu(id);
       fetchMenus();
     } catch (err) {
-      alert(err.message || 'Lỗi khi xóa menu');
+      await showActionDialog(err.message || 'Lỗi khi xóa menu');
     }
   };
 

@@ -1,9 +1,8 @@
 namespace OnePortal.Persistence.Configurations;
 
+using OnePortal.Domain.Entities.Customizations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using OnePortal.Domain.Entities;
-
 public sealed class CustomizationVersionConfiguration : IEntityTypeConfiguration<CustomizationVersion>
 {
     public void Configure(EntityTypeBuilder<CustomizationVersion> builder)

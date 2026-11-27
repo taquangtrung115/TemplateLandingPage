@@ -1,12 +1,12 @@
 namespace OnePortal.UnitTests.Application.Tenancy;
 
+using OnePortal.Contract.Services.V1.Tenancy;
 using FluentAssertions;
 using Moq;
 using OnePortal.Application.Abstractions;
 using OnePortal.Application.Services.Tenancy;
-using OnePortal.Application.UseCases.V1.Tenancy.Commands.Create;
-using OnePortal.Application.UseCases.V1.Tenancy.Commands.SetMembership;
-using OnePortal.Application.UseCases.V1.Tenancy.Queries.GetContexts;
+using OnePortal.Application.UseCases.V1.Commands.Tenancy;
+using OnePortal.Application.UseCases.V1.Queries.Tenancy;
 using OnePortal.Domain.Entities.Tenancy;
 using Xunit;
 

@@ -1,9 +1,9 @@
 namespace OnePortal.Persistence.Data;
 
+using OnePortal.Domain.Entities.Categories;
+using OnePortal.Domain.Entities.Templates;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using OnePortal.Domain.Entities;
-
 public static class TemplateCatalogSeeder
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };

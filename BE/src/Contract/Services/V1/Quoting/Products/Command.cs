@@ -32,3 +32,5 @@ public record UpdateQuotingProductCommand(
     bool IsActive, Guid? GroupId = null) : ICommand;
 
 public record DeleteQuotingProductCommand(Guid Id) : ICommand;
+
+public sealed record UploadQuotingProductImageCommand(Stream Content, string ContentType, long Length) : ICommand<UploadQuotingProductImageResult>;

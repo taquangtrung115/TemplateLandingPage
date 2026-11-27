@@ -1,0 +1,36 @@
+namespace OnePortal.Application.UseCases.V1.Commands.Users;
+
+using OnePortal.Application.Abstractions;
+using OnePortal.Contract.Abstractions.Shared;
+using OnePortal.Contract.Services.V1.Users;
+using OnePortal.Domain.Abstractions.Repositories;
+using OnePortal.Domain.Repositories;
+
+public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand>
+{
+    private readonly IUserRepository _userRepository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public UpdateUserCommandHandler(
+        IUserRepository userRepository,
+        IUnitOfWork unitOfWork)
+    {
+        _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<Result> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetByIdAsync(request.Id, cancellationToken);
+        if (user is null)
+        {
+            return Result.Failure(UserErrors.NotFound);
+        }
+
+        user.UpdateProfile(request.FullName, request.Role, request.IsActive);
+        _userRepository.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+}

@@ -11,3 +11,15 @@ public record UpdateCustomizationCommand(Guid Id, string Title, string Slug, str
 
 public record DeleteCustomizationCommand(Guid Id, Guid? CurrentUserId = null,
     string? CurrentUserRole = null, int? ExpectedRevision = null) : ICommand;
+
+public sealed record AssignCustomizationOwnerCommand(Guid Id, Guid UserId, int ExpectedRevision,
+    Guid CurrentUserId, string CurrentUserRole) : ICommand<CustomizationMutationResponse>;
+
+public sealed record CreateCustomizationVersionCommand(Guid Id, string Title, string Slug, string ConfigJson,
+    int ExpectedRevision, Guid RequestId, Guid CurrentUserId, string CurrentUserRole) : ICommand<CustomizationMutationResponse>;
+
+public sealed record RemoveCustomizationPublicationCommand(Guid Id, Guid? VersionId, int ExpectedRevision,
+    Guid CurrentUserId, string CurrentUserRole) : ICommand<CustomizationMutationResponse>;
+
+public sealed record SetCustomizationPublicationCommand(Guid Id, Guid VersionId, int ExpectedRevision,
+    Guid CurrentUserId, string CurrentUserRole) : ICommand<CustomizationMutationResponse>;

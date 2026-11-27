@@ -8,3 +8,5 @@ public record GetQuotingProductsQuery(
     bool IncludeInactive = false) : IQuery<List<QuotingProductResponse>>;
 
 public record GetQuotingProductByIdQuery(Guid Id) : IQuery<QuotingProductResponse>;
+
+public sealed record GetQuotingProductImageQuery(string FileName) : IQuery<GetQuotingProductImageResult>;

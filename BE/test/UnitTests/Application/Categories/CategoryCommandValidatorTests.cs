@@ -1,7 +1,7 @@
 namespace OnePortal.UnitTests.Application.Categories;
 
 using FluentAssertions;
-using OnePortal.Application.UseCases.V1.Categories.Commands.Validators;
+using OnePortal.Application.UseCases.V1.Commands.Categories.Validators;
 using OnePortal.Contract.Services.V1.Categories;
 using Xunit;
 

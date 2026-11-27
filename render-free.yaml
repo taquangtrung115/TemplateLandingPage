@@ -31,9 +31,15 @@ services:
         value: quotations
       - key: Quoting__Images__Bucket
         value: product-images
+      - key: PhotoPrint__Storage__Bucket
+        value: photoprint
       - key: Cors__AllowedOrigins__0
         sync: false
       - key: Cors__AllowedOrigins__1
         sync: false
       - key: Cors__AllowedOrigins__2
+        sync: false
+      - key: Cors__AllowedOrigins__3
+        sync: false
+      - key: Cors__AllowedOrigins__4
         sync: false

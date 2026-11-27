@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using OnePortal.Application.Abstractions;
 using OnePortal.Application.Exceptions;
-using OnePortal.Application.UseCases.V1.Quoting.Quotations.Commands;
+using OnePortal.Application.UseCases.V1.Commands.Quoting.Quotations;
 using OnePortal.Contract.Services.V1.Quoting.Customers;
 using OnePortal.Contract.Services.V1.Quoting.Quotations;
 using OnePortal.Contract.Services.V1.Quoting.Templates;

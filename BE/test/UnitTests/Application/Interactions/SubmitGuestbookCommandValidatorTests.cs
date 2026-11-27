@@ -1,7 +1,7 @@
 namespace OnePortal.UnitTests.Application.Interactions;
 
 using FluentAssertions;
-using OnePortal.Application.UseCases.V1.Interactions.Commands.Validators;
+using OnePortal.Application.UseCases.V1.Commands.Interactions.Validators;
 using OnePortal.Contract.Services.V1.Interactions;
 using Xunit;
 

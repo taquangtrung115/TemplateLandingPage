@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import LandingPageRenderer from '../components/templates/LandingPageRenderer';
 import useAuth from '../hooks/useAuth';
 import { createDraftId, saveDraft } from '../utils/draftStore';
+import { showActionDialog } from '../utils/actionDialog';
 
 const PAGE_SIZE = 12;
 const getItems = (result) => Array.isArray(result) ? result : (result?.data || []);
@@ -213,7 +214,7 @@ export default function MyCustomizationsPage() {
   };
 
   const handleDelete = async (item) => {
-    if (busyId || !window.confirm(`Xóa trang “${item.title || item.slug}”? Các URL công khai sẽ ngừng hoạt động.`)) return;
+    if (busyId || !await showActionDialog(`Xóa trang “${item.title || item.slug}”? Các URL công khai sẽ ngừng hoạt động.`, { confirm: true })) return;
     setBusyId(item.id);
     setError('');
     try {

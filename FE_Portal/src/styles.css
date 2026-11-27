@@ -1,0 +1,72 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #20242a;
+  background: #f5f6f7;
+  font-synthesis: none;
+  --surface: #fff;
+  --border: #dfe3e7;
+  --muted: #525c67;
+  --accent: #205745;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+button, input { font: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.portal-shell { height: 100vh; height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.portal-bar, .workspace-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  flex-wrap: wrap;
+  padding: 8px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.portal-bar nav, .workspace-apps { display: flex; flex-wrap: wrap; gap: 4px; }
+.portal-brand { color: inherit; text-decoration: none; font-size: 1.125rem; font-weight: 600; }
+.portal-bar nav a, .workspace-apps a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: .875rem;
+  text-decoration: none;
+}
+.portal-bar nav a:hover, .workspace-apps a:hover { background: #f0f2f4; }
+.portal-bar nav a[aria-current], .workspace-apps a[aria-current] { background: #e6f0ec; color: var(--accent); font-weight: 600; }
+.portal-main { min-height: 0; overflow: auto; }
+.portal-workspace, .portal-frame { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.workspace-identity { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.workspace-identity strong { font-size: .9375rem; font-weight: 600; }
+.workspace-identity span { font-size: .75rem; color: var(--muted); }
+.portal-frame-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  background: var(--surface);
+  padding: 6px 24px;
+  font-size: .75rem;
+  border-bottom: 1px solid var(--border);
+}
+.portal-frame iframe { width: 100%; height: 100%; border: 0; background: var(--surface); }
+.portal-state { width: min(100%, 680px); margin: 0 auto; padding: 40px 24px; overflow: auto; }
+.portal-state h1 { margin: 0 0 24px; font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 600; }
+.portal-home form, .app-list { display: grid; gap: 12px; }
+.workspace-form-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.workspace-form-row input { flex: 1 1 220px; min-width: 0; padding: 8px 12px; border: 1px solid #858f99; border-radius: 6px; }
+.portal-state button { min-height: 44px; cursor: pointer; border: 1px solid var(--accent); border-radius: 6px; padding: 8px 16px; background: var(--accent); color: #fff; }
+.portal-state button:hover { background: #194735; }
+.app-option { display: grid; gap: 4px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; }
+.app-option:hover { border-color: var(--accent); }
+.app-option span { color: var(--muted); font-size: .875rem; }
+
+@media (max-width: 520px) {
+  .portal-bar, .workspace-bar, .portal-frame-toolbar { padding-inline: 12px; }
+  .portal-bar nav a, .workspace-apps a { padding-inline: 8px; }
+  .portal-state { padding: 24px 12px; }
+}

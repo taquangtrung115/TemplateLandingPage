@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import categoryApi from '../../api/categoryApi';
+import { showActionDialog } from '../../utils/actionDialog';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { resolveIcon } from '../../utils/iconResolver';
 
@@ -124,12 +125,12 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa danh mục này?')) return;
+    if (!await showActionDialog('Bạn có chắc chắn muốn xóa danh mục này?', { confirm: true })) return;
     try {
       await categoryApi.deleteCategory(id);
       setCategories((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
-      alert(err.message || 'Lỗi khi xóa danh mục');
+      await showActionDialog(err.message || 'Lỗi khi xóa danh mục');
     }
   };
 

@@ -1,11 +1,12 @@
 namespace OnePortal.UnitTests.Application.Customizations;
 
+using OnePortal.Domain.Entities.Customizations;
+using OnePortal.Domain.Entities.Users;
 using FluentAssertions;
 using Moq;
-using OnePortal.Application.UseCases.V1.Customizations.Commands;
+using OnePortal.Application.UseCases.V1.Commands.Customizations;
 using OnePortal.Contract.Services.V1.Customizations;
 using OnePortal.Domain.Abstractions.Repositories;
-using OnePortal.Domain.Entities;
 using OnePortal.Domain.Repositories;
 using Xunit;
 

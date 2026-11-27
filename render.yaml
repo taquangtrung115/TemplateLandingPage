@@ -23,6 +23,12 @@ services:
         value: OnePortal
       - key: Quoting__Storage__AllowLocalFallback
         value: false
+      - key: Supabase__Url
+        sync: false
+      - key: Supabase__ServiceRoleKey
+        sync: false
+      - key: PhotoPrint__Storage__Bucket
+        value: photoprint
   - type: web
     name: oneportal-gateway
     runtime: docker
@@ -41,9 +47,15 @@ services:
         sync: false
       - key: ReverseProxy__Clusters__quoting__Destinations__backend__Address
         sync: false
+      - key: ReverseProxy__Clusters__photoprint__Destinations__backend__Address
+        sync: false
       - key: Cors__AllowedOrigins__0
         sync: false
       - key: Cors__AllowedOrigins__1
         sync: false
       - key: Cors__AllowedOrigins__2
+        sync: false
+      - key: Cors__AllowedOrigins__3
+        sync: false
+      - key: Cors__AllowedOrigins__4
         sync: false

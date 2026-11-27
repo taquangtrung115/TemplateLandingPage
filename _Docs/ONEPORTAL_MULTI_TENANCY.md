@@ -92,6 +92,10 @@ Khi tách service: giữ contract tenant URL, thay destination cluster; tách pe
 
 ## Render / Vercel
 
+### Một API trực tiếp trên Render Free
+
+Service hiện có dùng `./Dockerfile`. Đặt `ONEPORTAL_INITIALIZE_ON_START=true` để container chạy initializer bằng kết nối migration rồi khởi động API ở chế độ `Verify`. Dùng `/health/ready` cho health check. Cấu hình `Cors__AllowedOrigins__*` trên chính service API.
+
 ### Render Free: Gateway và API cùng một instance
 
 `Dockerfile.render-free` chạy hai executable độc lập trong một Web Service Free: Gateway lắng nghe cổng `PORT` public; API chỉ lắng nghe `127.0.0.1:54611` trong container. `scripts/start-oneportal-render-free.sh` chạy initializer trước khi mở server, giới hạn biến môi trường của Gateway để không nhận private key/DB/storage key, và dừng container nếu một process lỗi. Health Check Path là `/health/ready`, được Gateway proxy đến API/DB.
@@ -104,7 +108,24 @@ Free có thể ngủ khi idle và tài nguyên 512 MB được chia cho hai proc
 
 `render.yaml` khai báo private backend và public Gateway; preDeploy chạy initializer. Cấu hình private service hostname/port vào cả ba destination, DB runtime/migration, RSA, Supabase storage và ba CORS frontend origins. Pre-deploy/private service cần plan Render hỗ trợ các tính năng này. Không có deployment tự động từ task coding.
 
-Tạo ba Vercel project với Root Directory lần lượt `FE_TemplateLandingPage`, `FE_Quoting`, `FE_Tenant`, build `npm run build`, output `dist`. Đặt `VITE_API_BASE_URL=https://<gateway>/api/v1`. Đổi Root Directory project Landing hiện tại sau rename. SPA rewrites hỗ trợ deep link `/t/{key}/...`; không rewrite API/assets sang HTML. Vite dev proxy mặc định trỏ Gateway localhost:54612.
+Tạo hoặc giữ năm Vercel project với Root Directory lần lượt `FE_TemplateLandingPage`, `FE_Quoting`, `FE_Tenant`, `FE_Portal` và `FE_PhotoPrint`. Bật **Include source files outside of the Root Directory** để các project truy cập package `packages/uiverse-ui`. Mỗi project build bằng `npm run build`, output `dist`. Đặt `VITE_API_BASE_URL=https://<gateway>/api/v1` và thêm từng origin frontend vào `Cors__AllowedOrigins__*` của Gateway. Vite dev proxy mặc định trỏ Gateway `127.0.0.1:54612`. [Vercel Monorepos FAQ](https://vercel.com/docs/monorepos/monorepo-faq)
+
+### Portal và cài đặt ứng dụng theo workspace
+
+PlatformAdmin chọn công ty và cài Quoting, Landing Page hoặc Photo Print từ Store. Khi mở `/t/{tenantKey}`, Portal lấy danh sách app đã bật và khởi tạo xong. Các API quản trị xác thực quyền theo từng tenant và app. Website khách mở trực tiếp trên origin của app và sử dụng dữ liệu theo tenant đã định tuyến.
+
+- Portal nhúng các màn quản trị theo URL như `/t/{tenantKey}/photoprint/admin/orders`. Các deep link ngoài khu vực admin mở trên origin của ứng dụng, giữ lại đường dẫn và tham số.
+- Đặt `VITE_QUOTING_ORIGIN`, `VITE_LANDING_ORIGIN`, `VITE_TENANT_ORIGIN` và `VITE_PHOTOPRINT_ORIGIN` trong project `FE_Portal`. Các origin HTTPS độc lập có thể dùng subdomain cùng site để hỗ trợ lưu phiên đăng nhập trong iframe.
+- Trong các project app, đặt `VITE_PORTAL_ORIGIN` thành origin Portal. Nếu đổi origin khi triển khai, cập nhật cả CSP `frame-ancestors` trong `FE_Tenant/vercel.json` và `FE_PhotoPrint/vercel.json`. Portal kiểm tra origin, cửa sổ gửi và đường dẫn trước khi đồng bộ URL.
+- Các app giữ phiên đăng nhập tại origin của mình. `/platform` nhúng `FE_Tenant` và app kiểm tra PlatformAdmin. Portal không nhận token quản trị. Nút **Mở trong tab mới** mở trực tiếp app khi trình duyệt hoặc cấu hình hosting giới hạn iframe.
+- Khi thêm module, đăng ký khóa ứng dụng trong OnePortal, định nghĩa cấp quyền và khởi tạo theo nghiệp vụ, rồi thêm khóa ứng dụng và origin deploy vào `FE_Portal/src/applications.js`. Release mỗi app trên origin ổn định của app đó để không phải build lại Portal khi cập nhật nghiệp vụ.
+
+### Photo Print trên Render và Supabase
+
+- Giữ một API OnePortal dùng chung trên Render. Gateway chuyển `/t/{tenantKey}/api/v1/photoprint/*` đến cùng API đang phục vụ Landing và Quoting. Cấu hình `ReverseProxy__Clusters__photoprint__Destinations__backend__Address` theo địa chỉ service backend hiện tại nếu Gateway chạy riêng.
+- Chạy cùng lệnh initializer `dotnet OnePortal.API.dll --initialize-database` với chuỗi kết nối migration ở Render. Migration tạo schema `photo` và tenant `photoprint-default`. Initializer seed sáu nhóm, tám sản phẩm, năm mẫu 3D và cấu hình liên hệ cho tenant.
+- Tạo bucket riêng tư `photoprint` bằng Supabase Storage và giới hạn ảnh PNG, JPEG, WebP tối đa 15 MB. Backend Render dùng `Supabase__Url` và `Supabase__ServiceRoleKey`. File lưu theo tenant và thợ in tải file gốc từ chi tiết đơn. Biến `PhotoPrint__Storage__LocalPath` dành cho môi trường local.
+- Tạo tài khoản nghiệm thu từ Store hoặc mục Thành viên trong FE_Tenant và cấp `Admin` riêng cho `photoprint` của tenant test. Trang khách có thể thử đặt và tra cứu đơn khi chưa đăng nhập.
 
 ## Kiểm thử
 

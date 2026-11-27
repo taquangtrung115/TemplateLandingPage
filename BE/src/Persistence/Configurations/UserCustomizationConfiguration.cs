@@ -1,8 +1,8 @@
 namespace OnePortal.Persistence.Configurations;
 
+using OnePortal.Domain.Entities.Customizations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using OnePortal.Domain.Entities;
 using OnePortal.Persistence.Constants;
 
 public sealed class UserCustomizationConfiguration : IEntityTypeConfiguration<UserCustomization>

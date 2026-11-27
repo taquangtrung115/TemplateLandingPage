@@ -1,7 +1,7 @@
 namespace OnePortal.UnitTests.Application.Templates;
 
 using FluentAssertions;
-using OnePortal.Application.UseCases.V1.Templates.Commands.Validators;
+using OnePortal.Application.UseCases.V1.Commands.Templates.Validators;
 using OnePortal.Contract.Services.V1.Templates;
 using Xunit;
 

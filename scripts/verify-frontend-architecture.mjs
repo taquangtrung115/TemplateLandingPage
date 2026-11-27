@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const apps = ['FE_TemplateLandingPage', 'FE_Quoting', 'FE_Tenant'];
+const apps = ['FE_TemplateLandingPage', 'FE_Quoting', 'FE_Tenant', 'FE_Portal', 'FE_PhotoPrint'];
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   return (await Promise.all(entries.map(entry => entry.isDirectory() ? walk(path.join(directory, entry.name)) : path.join(directory, entry.name)))).flat();
@@ -13,11 +13,13 @@ for (const app of apps) {
   const files = (await walk(path.join(root, app, 'src'))).filter(file => /\.[jt]sx?$/.test(file));
   for (const file of files) {
     const content = await readFile(file, 'utf8');
-    if (/(?:from\s*|import\s*\()['"](?:[^'"]*\.\.\/)+(?:FE_TemplateLandingPage|FE_Quoting|FE_Tenant)\//.test(content)) failures.push(`${app}: cross-app source import in ${path.relative(root, file)}`);
+    if (/(?:from\s*|import\s*\()['"](?:[^'"]*\.\.\/)+(?:FE_TemplateLandingPage|FE_Quoting|FE_Tenant|FE_Portal|FE_PhotoPrint)\//.test(content)) failures.push(`${app}: cross-app source import in ${path.relative(root, file)}`);
     if (/src[\\/]components[\\/](WorkspaceGate|WorkspaceMembers|MemberPanel)/.test(file) && /\b(?:fetch|axios)\s*\(/.test(content)) failures.push(`${app}: component bypasses API layer in ${path.relative(root, file)}`);
   }
-  const client = await readFile(path.join(root, app, 'src/api', app === 'FE_Tenant' ? 'client.js' : 'axios.js'), 'utf8');
-  if (app !== 'FE_Tenant' && (!client.includes('scopeRequest') || !client.includes('assertCurrentScope'))) failures.push(`${app}: missing scoped request/response boundary`);
+  if (app === 'FE_TemplateLandingPage' || app === 'FE_Quoting' || app === 'FE_PhotoPrint') {
+    const client = await readFile(path.join(root, app, 'src/api/axios.js'), 'utf8');
+    if (!client.includes('scopeRequest') || !client.includes('assertCurrentScope')) failures.push(`${app}: missing scoped request/response boundary`);
+  }
   const manifest = JSON.parse(await readFile(path.join(root, app, 'package.json'), 'utf8'));
   if (!manifest.scripts.test || !manifest.scripts.build) failures.push(`${app}: missing verification command`);
 }
