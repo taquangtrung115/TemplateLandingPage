@@ -6,7 +6,7 @@ public sealed record PhotoFileDto(string FileUrl, string OriginalFileName, int W
 public sealed record PhotoProductOptionsDto(int PageCount, string CoverType);
 
 public sealed record PhotoOrderItemInput(Guid ProductId, string? SizeLabel, decimal WidthCm, decimal HeightCm, string? SurfaceName, string[]? FinishingNames, string TurnaroundMode,
-    int Quantity, PhotoFileDto[]? PhotoFiles, bool SendAlbumLater, string? AlbumUrl, PhotoProductOptionsDto? ProductOptions);
+    int Quantity, PhotoFileDto[]? PhotoFiles, bool SendAlbumLater, string? AlbumUrl, PhotoProductOptionsDto? ProductOptions, Guid? ComboGroupId = null);
 
 public sealed record PhotoOrderInput(string CustomerName, string CustomerPhone, string? CustomerEmail, string? DeliveryAddress, string DeliveryMethod,
     string PaymentMethod, string? Notes, PhotoOrderItemInput[] Items);

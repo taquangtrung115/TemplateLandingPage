@@ -24,5 +24,11 @@ public sealed class PhotoContactConfig : AggregateRoot<Guid>
     public string? ZaloLinkOverride { get; set; }
     public string? ZaloPrefillText { get; set; }
     public string? ZaloQrImageUrl { get; set; }
+    public bool VietQrEnabled { get; set; }
+    public string? BankCode { get; set; }
+    public string? BankName { get; set; }
+    public string? BankAccountNumber { get; set; }
+    public string? BankAccountName { get; set; }
+    public string? BankBranch { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }
 }

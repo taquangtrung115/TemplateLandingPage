@@ -1,7 +1,8 @@
-import { KeyRound, LogIn, Mail, UserRound } from 'lucide-react';
+import { Aperture, KeyRound, LogIn, Mail, UserRound } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { UiverseButton, UiverseInput } from '@oneportal/uiverse-ui';
 import { useAuth } from '../../contexts/AuthContext';
+import { useContactConfig } from '../../contexts/ContactConfigContext';
 import { workspaceApi } from '../../api/workspaceApi';
 import { isDemoMode } from '../../api/axios';
 import useRequest from '../../hooks/useRequest';
@@ -14,6 +15,7 @@ const loginAvailability = () => Promise.resolve(null);
 
 export default function CredentialsPage({ register = false }) {
   const auth = useAuth();
+  const { config } = useContactConfig();
   const location = useLocation();
   const navigate = useNavigate();
   const action = useAction();
@@ -36,8 +38,9 @@ export default function CredentialsPage({ register = false }) {
     });
   }
   return <div className="shell page-section">
-    <PageHeading title={register ? 'Tạo tài khoản' : 'Đăng nhập'} />
     <div className="auth-panel">
+      <div className="studio-auth-brand"><span className="brand-mark"><Aperture size={22} aria-hidden="true" /></span><strong>{config.brandName || 'Photo Print'}</strong></div>
+      <PageHeading title={register ? 'Tạo tài khoản' : 'Đăng nhập'} />
       <RequestState result={registration}>
         {register && registration.data?.settings?.allowSelfRegistration !== true ? <p className="notice">Tiệm đang tắt tự đăng ký.</p> :
           <form className="panel form-stack" onSubmit={submit}>

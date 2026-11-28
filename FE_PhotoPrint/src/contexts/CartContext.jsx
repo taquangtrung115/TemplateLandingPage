@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { workspaceKey } from '../utils/tenantScope';
 import { isDemoMode } from '../api/axios';
+import { comboDiscountFor, validCombo } from '../utils/photoPricing';
 
 const CartContext = createContext(null);
 
@@ -37,15 +38,26 @@ export function CartProvider({ children }) {
   }
 
   const add = item => update(previous => [...previous, { ...item, id: crypto.randomUUID() }]);
-  const remove = id => update(previous => previous.filter(item => item.id !== id));
+  const addCombo = lines => {
+    if (!validCombo(lines)) return false;
+    const comboGroupId = crypto.randomUUID();
+    update(previous => [...previous, ...lines.map(item => ({ ...item, comboGroupId, id: crypto.randomUUID() }))]);
+    return true;
+  };
+  const remove = id => update(previous => {
+    const removedGroup = previous.find(item => item.id === id)?.comboGroupId;
+    return previous.filter(item => item.id !== id).map(item => removedGroup && item.comboGroupId === removedGroup
+      ? { ...item, comboGroupId: undefined } : item);
+  });
   const clear = () => update(() => []);
   const removeOrdered = submitted => {
     const ids = new Set(submitted.map(item => item.id));
     update(previous => previous.filter(item => !ids.has(item.id)));
   };
-  const total = items.reduce((sum, item) => sum + item.lineTotal, 0);
+  const comboDiscount = comboDiscountFor(items);
+  const total = items.reduce((sum, item) => sum + item.lineTotal, 0) - comboDiscount;
   const photoCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  return <CartContext.Provider value={{ items, add, remove, clear, removeOrdered, total, photoCount }}>{children}</CartContext.Provider>;
+  return <CartContext.Provider value={{ items, add, addCombo, remove, clear, removeOrdered, total, comboDiscount, photoCount }}>{children}</CartContext.Provider>;
 }
 
 export const useCart = () => useContext(CartContext);

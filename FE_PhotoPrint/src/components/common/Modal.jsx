@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
-export default function Modal({ title, onClose, children, wide = false, locked = false }) {
+export default function Modal({ title, onClose, children, id, wide = false, locked = false }) {
   const dialog = useRef(null);
   useEffect(() => {
     const element = dialog.current;
@@ -12,7 +12,7 @@ export default function Modal({ title, onClose, children, wide = false, locked =
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true });
     };
   }, []);
-  return <dialog ref={dialog} className={'modal uv-modal-motion' + (wide ? ' modal-wide' : '')} aria-label={title}
+  return <dialog ref={dialog} id={id} className={'modal uv-modal-motion' + (wide ? ' modal-wide' : '')} aria-label={title}
     onCancel={event => { event.preventDefault(); if (!locked) onClose(); }}>
     <div className="modal-header"><h2>{title}</h2>
       <button className="icon-button" aria-label="Đóng" type="button" disabled={locked} onClick={onClose}><X size={20} /></button>

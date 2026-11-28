@@ -4,6 +4,7 @@ using OnePortal.Contract.Services.V1.Tenancy;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using OnePortal.Application.Abstractions;
 using OnePortal.Application.UseCases.V1.Commands.Tenancy;
@@ -29,14 +30,32 @@ public sealed class TenantApi : IEndpoint
         platform.MapGet("", async (int? page, int? pageSize, string? search, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(new SearchTenantsQuery(page ?? 1, pageSize ?? 20, search), ct)));
         platform.MapPost("", async (CreateTenantCommand request, ISender sender, CancellationToken ct) => Respond(await sender.Send(request, ct), 201));
+        platform.MapGet("/{tenantId:guid}", async (Guid tenantId, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new GetTenantDetailQuery(tenantId), ct)));
+        platform.MapGet("/by-key/{tenantKey}", async (string tenantKey, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new GetTenantDetailQuery(null, tenantKey), ct)));
         platform.MapPut("/{tenantId:guid}", async (Guid tenantId, UpdateTenantCommand request, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(request with { TenantId = tenantId }, ct)));
+        platform.MapDelete("/{tenantId:guid}", async (Guid tenantId, [FromBody] DeleteTenantCommand request, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(request with { TenantId = tenantId }, ct)));
         platform.MapPut("/{tenantId:guid}/applications/{appKey}", async (Guid tenantId, string appKey, ConfigureTenantApplicationCommand request, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(request with { TenantId = tenantId, AppKey = appKey }, ct)));
+        platform.MapDelete("/{tenantId:guid}/applications/{appKey}", async (Guid tenantId, string appKey, bool? purgeData, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new UninstallTenantApplicationCommand(tenantId, appKey, purgeData ?? false), ct)));
+        platform.MapGet("/{tenantId:guid}/members", async (Guid tenantId, string? search, int? page, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new GetTenantUsersQuery(tenantId, search, page ?? 1), ct)));
+        platform.MapPut("/{tenantId:guid}/workspace-membership", async (Guid tenantId, SetTenantWorkspaceMembershipCommand request, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(request with { TenantId = tenantId }, ct)));
+        platform.MapPut("/{tenantId:guid}/members/{userId:guid}", async (Guid tenantId, Guid userId, UpdateTenantMemberProfileCommand request, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(request with { TenantId = tenantId, UserId = userId, AppKey = null }, ct)));
         platform.MapGet("/{tenantId:guid}/applications/{appKey}/members", async (Guid tenantId, string appKey, int? page, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(new GetTenantMembersQuery(tenantId, appKey, page ?? 1), ct)));
         platform.MapPut("/{tenantId:guid}/applications/{appKey}/members", async (Guid tenantId, string appKey, SetTenantMembershipCommand request, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(request with { TenantId = tenantId, AppKey = appKey }, ct)));
+        platform.MapPut("/{tenantId:guid}/applications/{appKey}/members/{userId:guid}", async (Guid tenantId, string appKey, Guid userId, UpdateTenantMemberProfileCommand request, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(request with { TenantId = tenantId, AppKey = appKey, UserId = userId }, ct)));
+        platform.MapDelete("/{tenantId:guid}/applications/{appKey}/members/{userId:guid}", async (Guid tenantId, string appKey, Guid userId, ISender sender, CancellationToken ct) =>
+            Respond(await sender.Send(new RemoveTenantMemberCommand(tenantId, appKey, userId), ct)));
 
         platform.MapPost("/{tenantId:guid}/applications/{appKey}/members", async (Guid tenantId, string appKey, CreateTenantMemberCommand request, ISender sender, CancellationToken ct) =>
             Respond(await sender.Send(request with { TenantId = tenantId, AppKey = appKey }, ct), 201));

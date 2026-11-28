@@ -42,6 +42,7 @@ function Studio({ linkedProduct, preset }) {
   const [warm, setWarm] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [flip, setFlip] = useState(false);
+  const [back, setBack] = useState(false);
   const [filter, setFilter] = useState('');
   const src = useObjectUrl(photo?.file);
   const rightSrc = useObjectUrl(rightPhoto?.file);
@@ -53,7 +54,7 @@ function Studio({ linkedProduct, preset }) {
     model, ...effectiveSize, src: flip ? rightSrc || defaultRight : src || photoAssetUrl(sample?.textureImageUrl) || defaultImage,
     rightSrc: flip ? src || defaultImage : rightSrc || defaultRight,
     fitMode: photo?.fitMode || 'Fill', focalX: photo?.focalX, focalY: photo?.focalY, caption, captionFont: photo?.captionFont, borderTone: photo?.borderTone,
-    frameColor: FrameHex[frame], hasMatboard: mat, warm, autoRotate,
+    frameColor: FrameHex[frame], hasMatboard: mat, warm, autoRotate: autoRotate && !back, flipped: back,
   };
 
   function presetModel(value) {
@@ -99,11 +100,20 @@ function Studio({ linkedProduct, preset }) {
 
   return <>
     <div className="studio-grid" id="studio-preview">
-      <div className="studio-stage">
+      <div className="studio-stage" data-back={back}>
         <div className="studio-toolbar"><span>{ModelNames[model]}</span><small>{effectiveSize.widthCm} × {effectiveSize.heightCm} cm</small></div>
         <Suspense fallback={<UiverseLoader label="Đang dựng khung ảnh…" />}><Stage ref={stage} options={options} /></Suspense>
+        {back && <div className="studio-back-spec print-back-spec" aria-live="polite">
+          <h3>Thông số thành phẩm</h3>
+          <p>{ModelNames[model]}</p>
+          <p className="mono">{effectiveSize.widthCm} × {effectiveSize.heightCm} cm</p>
+          <p>{FrameColors[frame]}{mat && model === 'framed_photo' ? ' · Có bo viền trắng' : ''}</p>
+        </div>}
         <div className="studio-toolbar">
           <button type="button" className="icon-button" aria-label="Đặt lại góc nhìn" onClick={() => stage.current?.resetCamera()}><RotateCcw size={18} /></button>
+          <UiverseButton variant="outline" aria-pressed={back} onClick={() => setBack(value => !value)} icon={<RotateCw size={17} />}>
+            {back ? 'Xem mặt trước' : 'Lật mặt sau 180°'}
+          </UiverseButton>
           <UiverseToggle labelIcon={RotateCw} label="Tự xoay" checked={autoRotate} onChange={setAutoRotate} />
           <UiverseButton isLoading={action.busy} variant="outline" icon={<Camera size={17} />} onClick={() => action.run(async () => {
             const snapshot = await stage.current?.captureSnapshot();

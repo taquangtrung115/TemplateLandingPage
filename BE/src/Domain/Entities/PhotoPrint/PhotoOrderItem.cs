@@ -18,6 +18,7 @@ public sealed class PhotoOrderItem : TenantEntity<Guid>
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal LineTotal { get; set; }
+    public Guid? ComboGroupId { get; set; }
     public string PhotoFilesJson { get; set; } = "[]";
     public bool SendAlbumLater { get; set; }
     public string? AlbumUrl { get; set; }

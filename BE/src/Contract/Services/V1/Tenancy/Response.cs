@@ -6,9 +6,13 @@ public sealed record TenantApplicationDto(string AppKey, bool IsEnabled, bool Al
 
 public sealed record TenantContextDto(Guid TenantId, string TenantKey, string TenantName, string AppKey, string Role);
 
-public sealed record TenantDto(Guid Id, string Key, string Name, bool IsActive, IReadOnlyList<TenantApplicationDto> Applications);
+public sealed record TenantDto(Guid Id, string Key, string Name, bool IsActive, IReadOnlyList<TenantApplicationDto> Applications, int ActiveMemberCount = 0);
 
 public sealed record TenantMemberDto(Guid Id, string Email, string FullName, string Role, bool IsActive, bool AccountIsActive);
+
+public sealed record TenantUserAppRoleDto(string AppKey, string Role, bool IsActive);
+public sealed record TenantUserDto(Guid Id, string Email, string FullName, bool AccountIsActive, string? WorkspaceRole, IReadOnlyList<TenantUserAppRoleDto> Applications);
+public sealed record GetTenantUsersResult(IReadOnlyList<TenantUserDto> Items, int TotalCount, int Page, int PageSize);
 
 public sealed record WorkspaceApplicationsDto(string TenantName, IReadOnlyList<string> AppKeys);
 

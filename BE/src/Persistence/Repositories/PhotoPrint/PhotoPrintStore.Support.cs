@@ -113,6 +113,14 @@ public sealed partial class PhotoPrintStore
     {
         if (_actor.Role != "Admin") return Forbidden();
         var messenger = SocialUrl(input.MessengerLinkOverride, MessengerHosts);
+        var bankCode = Trim(input.BankCode)?.ToUpperInvariant() ?? "";
+        VietQrBanks.TryGetValue(bankCode, out var bankName);
+        var accountNumber = Trim(input.BankAccountNumber);
+        if (input.VietQrEnabled is not null && ((bankCode.Length > 0 && bankName is null)
+            || (accountNumber is not null && !Regex.IsMatch(accountNumber, "^[0-9]{1,19}$"))
+            || !Fits(input.BankAccountName, 120) || !Fits(input.BankBranch, 150)
+            || (input.VietQrEnabled == true && (bankName is null || accountNumber is null || !Required(input.BankAccountName, 120)))))
+            return Invalid("Chọn ngân hàng và nhập số tài khoản cùng tên chủ tài khoản VietQR.");
         var zalo = SocialUrl(input.ZaloLinkOverride, ZaloHosts);
         var messengerId = Handle(input.MessengerPageIdOrUsername, "^[0-9a-zA-Z.]{1,120}$");
         var zaloId = Phone(input.ZaloPhoneOrOaId) ?? Handle(input.ZaloPhoneOrOaId, "^[0-9a-zA-Z_-]{1,120}$");
@@ -148,6 +156,15 @@ public sealed partial class PhotoPrintStore
         row.ZaloLinkOverride = zalo;
         row.ZaloPrefillText = Trim(input.ZaloPrefillText);
         row.ZaloQrImageUrl = AssetForStorage(input.ZaloQrImageUrl);
+        if (input.VietQrEnabled is bool enabled)
+        {
+            row.VietQrEnabled = enabled;
+            row.BankCode = bankName is null ? null : bankCode;
+            row.BankName = bankName;
+            row.BankAccountNumber = accountNumber;
+            row.BankAccountName = Trim(input.BankAccountName);
+            row.BankBranch = Trim(input.BankBranch);
+        }
         row.UpdatedAtUtc = DateTime.UtcNow;
         return await SaveAsync(() => ContactView(row), cancellationToken);
     }
@@ -168,11 +185,18 @@ public sealed partial class PhotoPrintStore
             ? uri.AbsoluteUri : null;
     }
 
-    private static object ContactView(PhotoContactConfig row) => new
+    private object ContactView(PhotoContactConfig row)
     {
-        row.BrandName, row.Hotline, row.Email, row.Address, row.WorkingHours, row.MessengerEnabled, row.MessengerPageIdOrUsername,
-        row.MessengerLinkOverride, row.MessengerPrefillText, row.MessengerQrImageUrl, row.FbCustomerChatEnabled, row.FbAppId,
-        row.ZaloEnabled, row.ZaloAccountName, row.ZaloPhoneOrOaId, row.ZaloLinkOverride, row.ZaloPrefillText, row.ZaloQrImageUrl,
-    };
+        var showBank = row.VietQrEnabled || _actor.Role == "Admin";
+        return new
+        {
+            row.BrandName, row.Hotline, row.Email, row.Address, row.WorkingHours, row.MessengerEnabled, row.MessengerPageIdOrUsername,
+            row.MessengerLinkOverride, row.MessengerPrefillText, row.MessengerQrImageUrl, row.FbCustomerChatEnabled, row.FbAppId,
+            row.ZaloEnabled, row.ZaloAccountName, row.ZaloPhoneOrOaId, row.ZaloLinkOverride, row.ZaloPrefillText, row.ZaloQrImageUrl,
+            row.VietQrEnabled, BankCode = showBank ? row.BankCode : null, BankName = showBank ? row.BankName : null,
+            BankAccountNumber = showBank ? row.BankAccountNumber : null, BankAccountName = showBank ? row.BankAccountName : null,
+            BankBranch = showBank ? row.BankBranch : null,
+        };
+    }
     #endregion
 }

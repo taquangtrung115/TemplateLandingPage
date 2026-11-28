@@ -35,6 +35,7 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<PlatformApplication> Applications => Set<PlatformApplication>();
     public DbSet<TenantApplication> TenantApplications => Set<TenantApplication>();
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
+    public DbSet<TenantWorkspaceMembership> TenantWorkspaceMemberships => Set<TenantWorkspaceMembership>();
     public DbSet<SystemSeedHistory> SystemSeedHistory => Set<SystemSeedHistory>();
     public DbSet<TenantSeedHistory> TenantSeedHistory => Set<TenantSeedHistory>();
 
@@ -68,6 +69,7 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<PhotoOrderItem> PhotoOrderItems => Set<PhotoOrderItem>();
     public DbSet<PhotoSupportRequest> PhotoSupportRequests => Set<PhotoSupportRequest>();
     public DbSet<PhotoContactConfig> PhotoContactConfigs => Set<PhotoContactConfig>();
+    public DbSet<PhotoPaymentTransaction> PhotoPaymentTransactions => Set<PhotoPaymentTransaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -7,11 +7,15 @@ import { uploadPhoto, photoAssetUrl } from '../../api/photoUploadApi';
 import { resolveMessengerUrl, resolveZaloUrl } from '../../utils/socialLinks';
 import { photoAccept } from '../../utils/fileUpload';
 import { sanitizePhone } from '../../utils/safeUrl';
+import { canUseVietQr, vietQrBanks, vietQrPayload } from '../../utils/vietQr';
 import { useChannelQr } from '../../components/social/SocialConnectModal';
 import PageHeading from '../../components/common/PageHeading';
 import RequestState from '../../components/common/RequestState';
 import useAction from '../../hooks/useAction';
 import useDebounce from '../../hooks/useDebounce';
+import useRequest from '../../hooks/useRequest';
+import useVietQrImage from '../../hooks/useVietQrImage';
+import { isDemoMode } from '../../api/axios';
 import SettingsNavigation from './SettingsNavigation';
 
 function ChannelPreview({ path, current }) {
@@ -34,6 +38,8 @@ function ContactForm({ config, onSaved }) {
   const [draft, setDraft] = useState(config);
   const [saved, setSaved] = useState(false);
   const action = useAction();
+  const qrPayload = useDebounce(vietQrPayload(draft), 180);
+  const bankQr = useVietQrImage(isDemoMode && qrPayload ? 'PHOTOPRINT DEMO' : qrPayload);
   const set = (name, value) => { setSaved(false); setDraft(current => ({ ...current, [name]: value })); };
 
   function save(event) {
@@ -41,6 +47,7 @@ function ContactForm({ config, onSaved }) {
     action.run(async () => {
       if (!draft.brandName?.trim()) throw new Error('Nhập tên tiệm ảnh.');
       if (draft.hotline && !sanitizePhone(draft.hotline)) throw new Error('Hotline không hợp lệ.');
+      if (draft.vietQrEnabled && !canUseVietQr(draft)) throw new Error('Chọn ngân hàng và kiểm tra số tài khoản, tên chủ tài khoản.');
       for (const { key, label, resolve } of channels) {
         if (draft[key + 'Enabled'] && !resolve(draft) && (draft[key + 'LinkOverride'] || !draft[key + 'QrImageUrl'])) {
           throw new Error('Kiểm tra liên kết hoặc ID ' + label + '.');
@@ -56,6 +63,22 @@ function ContactForm({ config, onSaved }) {
     <fieldset className="panel form-columns" disabled={action.busy}><legend><UiverseIconLabel icon={Store}>Thông tin tiệm ảnh</UiverseIconLabel></legend>
       {Object.entries(business).map(([name, label]) => <UiverseInput key={name} labelIcon={businessIcons[name]} label={label} required={name === 'brandName'} type={name === 'email' ? 'email' : 'text'}
         value={draft[name] || ''} onChange={event => set(name, event.target.value)} />)}
+    </fieldset>
+    <fieldset className="panel form-stack" disabled={action.busy}>
+      <legend><UiverseIconLabel icon={QrCode}>Cấu hình VietQR & ngân hàng nhận tiền</UiverseIconLabel></legend>
+      <UiverseToggle label="Bật chuyển khoản VietQR" checked={!!draft.vietQrEnabled} onChange={checked => set('vietQrEnabled', checked)} />
+      <div className="form-columns">
+        <UiverseInput as="select" label="Ngân hàng" value={draft.bankCode || ''} required={draft.vietQrEnabled} onChange={event => set('bankCode', event.target.value)}>
+          <option value="">Chọn ngân hàng</option>
+          {Object.entries(vietQrBanks).map(([code, bank]) => <option key={code} value={code}>{bank.name}</option>)}
+        </UiverseInput>
+        <UiverseInput label="Số tài khoản" inputMode="numeric" pattern="[0-9]{1,19}" maxLength={19} required={draft.vietQrEnabled} value={draft.bankAccountNumber || ''}
+          onChange={event => set('bankAccountNumber', event.target.value)} />
+        <UiverseInput label="Tên chủ tài khoản" maxLength={120} required={draft.vietQrEnabled} value={draft.bankAccountName || ''}
+          onChange={event => set('bankAccountName', event.target.value)} />
+        <UiverseInput label="Chi nhánh (tùy chọn)" maxLength={150} value={draft.bankBranch || ''} onChange={event => set('bankBranch', event.target.value)} />
+      </div>
+      {bankQr.url && <div className="settings-qr"><img className="qr-image" src={bankQr.url} alt="Xem thử mã VietQR của tiệm" /><span>Xem thử QR tài khoản{isDemoMode && ' demo'}</span></div>}
     </fieldset>
     <div className="form-columns">
       {channels.map(({ key, label, fields, resolve }) => <fieldset key={key} className="panel form-stack" disabled={action.busy}>
@@ -78,8 +101,9 @@ function ContactForm({ config, onSaved }) {
 }
 
 export default function AdminContactSettingsPage() {
-  const { config, error, loading, reload, setUpdatedConfig } = useContactConfig();
+  const config = useRequest(contactConfigApi.get);
+  const { setUpdatedConfig } = useContactConfig();
   return <><PageHeading title="Cài đặt tiệm ảnh" /><SettingsNavigation />
-    <RequestState result={{ error, loading, reload }}><ContactForm config={config} onSaved={setUpdatedConfig} /></RequestState>
+    <RequestState result={config}>{config.data && <ContactForm config={config.data} onSaved={setUpdatedConfig} />}</RequestState>
   </>;
 }

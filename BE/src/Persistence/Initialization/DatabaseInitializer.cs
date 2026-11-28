@@ -89,7 +89,8 @@ public static class DatabaseInitializer
     private static async Task ApplyStepsAsync(ApplicationDbContext context, IReadOnlyList<ITenantSeedStep> seedSteps, CancellationToken cancellationToken)
     {
         await context.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({context.CurrentTenantId.ToString() + ":" + context.CurrentAppKey}, 0))", cancellationToken);
-        var application = await context.TenantApplications.SingleAsync(application => application.AppKey == context.CurrentAppKey, cancellationToken);
+        var application = await context.TenantApplications.SingleOrDefaultAsync(application => application.AppKey == context.CurrentAppKey && application.IsEnabled, cancellationToken);
+        if (application is null) return;
         var tenantName = await context.Tenants.Where(tenant => tenant.Id == context.CurrentTenantId).Select(tenant => tenant.Name).SingleAsync(cancellationToken);
         var completed = await context.TenantSeedHistory.Where(history => history.AppKey == context.CurrentAppKey).ToListAsync(cancellationToken);
         foreach (var step in seedSteps.Where(step => step.AppKey == context.CurrentAppKey).OrderBy(step => step.Version).ThenBy(step => step.Key))

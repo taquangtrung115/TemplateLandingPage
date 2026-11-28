@@ -16,6 +16,7 @@ public sealed partial class PhotoPrintStore
     private static readonly string[] OrderStatuses = ["Pending", "FileChecking", "Printing", "Finishing", "Shipped", "Completed", "Cancelled"];
     private static readonly string[] Deliveries = ["Pickup", "LocalDelivery", "NationwideCod"];
     private static readonly string[] Payments = ["VietQr", "Cash", "Deposit"];
+    private static readonly string[] ComboServiceSlugs = ["anh-the", "in-anh-10x15", "anh-polaroid", "in-mau-photo-a4"];
     private static readonly TimeZoneInfo StudioZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
 
     #region Order queries
@@ -33,7 +34,10 @@ public sealed partial class PhotoPrintStore
         var totalCount = await orders.CountAsync(cancellationToken);
         var rows = await orders.Include(row => row.Items).OrderByDescending(row => row.CreatedAtUtc).ThenBy(row => row.Id)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
-        return Success(new { items = rows.Select(row => OrderView(row, false)).ToArray(), totalCount, page, pageSize });
+        var ids = rows.Where(row => row.PaymentStatus is "PendingVerify" or "Paid").Select(row => row.Id).ToList();
+        var receipts = ids.Count == 0 ? [] : await _database.PhotoPaymentTransactions.AsNoTracking()
+            .Where(row => ids.Contains(row.OrderId) && row.Status != "Rejected").ToDictionaryAsync(row => row.OrderId, cancellationToken);
+        return Success(new { items = rows.Select(row => OrderView(row, false, receipts.GetValueOrDefault(row.Id))).ToArray(), totalCount, page, pageSize });
     }
 
     public async Task<Result<object>> GetOrderStatusAsync(string code, string phone, CancellationToken cancellationToken)
@@ -82,6 +86,16 @@ public sealed partial class PhotoPrintStore
             order.DiscountTotal += discount;
         }
         if (order.TotalPhotoCount > 50_000) return Invalid("Một đơn có tối đa 50.000 bản in.");
+        foreach (var group in order.Items.Where(item => item.ComboGroupId.HasValue).GroupBy(item => item.ComboGroupId))
+        {
+            var serviceSlugs = group.Select(item => products[item.ProductId!.Value].Slug).ToArray();
+            if (group.Key == Guid.Empty || serviceSlugs.Length != 3 || serviceSlugs.Distinct().Count() != 3
+                || serviceSlugs.Any(slug => !ComboServiceSlugs.Contains(slug)) || group.Any(item => item.TurnaroundMode != "Standard"))
+                return Invalid("Combo 3 cần ba dịch vụ lấy liền khác nhau, với thời gian in tiêu chuẩn.");
+            order.ComboDiscountTotal += Math.Round(group.Sum(item => item.LineTotal) * .15m, 0, MidpointRounding.AwayFromZero);
+        }
+        order.GrandTotal -= order.ComboDiscountTotal;
+        order.DiscountTotal += order.ComboDiscountTotal;
         order.SubTotal = order.GrandTotal + order.DiscountTotal;
         var number = await _database.Database.SqlQueryRaw<long>("SELECT nextval('photo.\"OrderNumbers\"') AS \"Value\"").SingleAsync(cancellationToken);
         order.OrderCode = DocumentCode("PA", now, number);
@@ -148,6 +162,7 @@ public sealed partial class PhotoPrintStore
         item.Quantity = input.Quantity;
         item.UnitPrice = price.UnitPrice;
         item.LineTotal = price.LineTotal;
+        item.ComboGroupId = input.ComboGroupId;
         item.SendAlbumLater = input.SendAlbumLater;
         item.AlbumUrl = Trim(input.AlbumUrl);
         item.ProductOptionsJson = productOptions is null ? null : Serialize(productOptions);
@@ -187,18 +202,21 @@ public sealed partial class PhotoPrintStore
     private static string DocumentCode(string prefix, DateTime now, long number) =>
         FormattableString.Invariant($"{prefix}-{TimeZoneInfo.ConvertTimeFromUtc(now, StudioZone):yyyyMMdd}-{number:D4}");
 
-    private static object OrderView(PhotoOrder row, bool guest) => new
+    private static object OrderView(PhotoOrder row, bool guest, PhotoPaymentTransaction? payment = null) => new
     {
         id = guest ? (Guid?)null : row.Id,
         row.OrderCode, row.Status, row.AdminNote, row.Revision, row.CreatedAtUtc, row.UpdatedAtUtc,
         customerName = guest ? null : row.CustomerName, customerPhone = guest ? null : row.CustomerPhone,
         customerEmail = guest ? null : row.CustomerEmail, deliveryAddress = guest ? null : row.DeliveryAddress,
         deliveryMethod = guest ? null : row.DeliveryMethod, paymentMethod = guest ? null : row.PaymentMethod, notes = guest ? null : row.Notes,
-        row.SubTotal, row.DiscountTotal, row.GrandTotal, row.TotalPhotoCount,
+        row.SubTotal, row.DiscountTotal, row.ComboDiscountTotal, row.GrandTotal, row.TotalPhotoCount, row.PaymentStatus, row.PaidAtUtc,
+        canPayVietQr = row.PaymentMethod == "VietQr" && row.Status != "Cancelled" && row.PaymentStatus == "Unpaid" && row.GrandTotal is > 0 and <= MaximumVietQrAmount,
+        transferMemo = row.PaymentMethod == "VietQr" ? TransferMemo(row.OrderCode) : null,
+        paymentReceipt = !guest && payment is not null ? ReceiptView(payment) : null,
         items = row.Items.Select(item => new
         {
             item.ProductName, item.SizeLabel, item.WidthCm, item.HeightCm, item.SurfaceName, item.FinishingSummary,
-            item.TurnaroundMode, item.Quantity, item.UnitPrice, item.LineTotal,
+            item.TurnaroundMode, item.Quantity, item.UnitPrice, item.LineTotal, item.ComboGroupId,
             photoFilesJson = guest ? null : item.PhotoFilesJson, item.SendAlbumLater,
             albumUrl = guest ? null : item.AlbumUrl,
             productOptions = !guest && item.ProductOptionsJson is not null ? System.Text.Json.JsonSerializer.Deserialize<PhotoProductOptionsDto>(item.ProductOptionsJson, Json) : null,

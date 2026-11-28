@@ -5,6 +5,8 @@ import App from './App';
 import { workspaceBasename } from './utils/tenantScope';
 import '@oneportal/uiverse-ui/styles.css';
 import './index.css';
+import './studio.css';
+import './stride.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

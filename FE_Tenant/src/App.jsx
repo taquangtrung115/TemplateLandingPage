@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useMatch, useNavigate } from "react-router-dom";
 import {
   Building2, CircleAlert, CircleCheck, CircleMinus, Fingerprint, KeyRound,
-  LoaderCircle, LockKeyhole, LogIn, LogOut, Mail, Plus, Search, Settings,
-  Store, UserCog, Users, X,
+  LoaderCircle, LockKeyhole, LockKeyholeOpen, LogIn, Mail, Plus, Settings,
+  Store, UserCog, X,
 } from "lucide-react";
 import { tenantApi } from "./api/tenantApi";
 import Field from "./components/Field";
@@ -11,14 +12,30 @@ import Modal from "./components/Modal";
 import ApplicationSettings from "./components/ApplicationSettings";
 import AppStore from "./components/AppStore";
 import { UiverseButton, UiverseIconLabel as IconLabel } from "@oneportal/uiverse-ui";
-import Pagination from "./components/Pagination";
+import CommandRail from "./components/CommandRail";
+import TenantSwitcher from "./components/TenantSwitcher";
+import TenantAccessDialog from "./components/TenantAccessDialog";
+import TenantRemovalDialog from "./components/TenantRemovalDialog";
+import PortalHeader from "./components/PortalHeader";
 import { applications, getApplicationName } from "./applications";
+import { paths, tenantPath } from "./routes/paths";
 
-const requestedTenant = new URLSearchParams(window.location.search).get("tenant") || "";
-const initialSection = new URLSearchParams(window.location.search).get("view") === "store" ? "store" : "members";
+function spotlight(event) {
+  if (event.pointerType === "touch" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  const box = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty("--mx", (event.clientX - box.left) + "px");
+  event.currentTarget.style.setProperty("--my", (event.clientY - box.top) + "px");
+}
 
 export default function App() {
   // #region State and effects
+  const location = useLocation();
+  const route = useMatch(paths.tenants + "/:tenantKey/:view");
+  const navigate = useNavigate();
+  const routeKey = route?.params.tenantKey;
+  const section = { apps: "store", members: "members", settings: "settings" }[route?.params.view]
+    || (location.pathname === paths.tenants ? "tenants" : "overview");
+  const requestedApp = new URLSearchParams(location.search).get("app");
   const [user, setUser] = useState(null),
     [checking, setChecking] = useState(true),
     [busy, setBusy] = useState(false),
@@ -27,14 +44,20 @@ export default function App() {
     [notice, setNotice] = useState(""),
     [tenants, setTenants] = useState([]),
     [page, setPage] = useState(1);
-  const [selected, setSelected] = useState(null),
+  const [lastSelected, setSelected] = useState(null),
     [chosenAppKey, setAppKey] = useState(null),
-    [revision, setRevision] = useState(0),
-    [section, setSection] = useState(initialSection);
+    [revision, setRevision] = useState(0);
   const [creating, setCreating] = useState(false),
-    [search, setSearch] = useState(requestedTenant),
-    [query, setQuery] = useState(requestedTenant);
+    [changingAccess, setChangingAccess] = useState(false),
+    [removal, setRemoval] = useState(null),
+    [search, setSearch] = useState(""),
+    [query, setQuery] = useState("");
+  const searchInput = useRef(null);
+  const selected = routeKey
+    ? (lastSelected?.key === routeKey ? lastSelected : tenants.find(tenant => tenant.key === routeKey))
+    : lastSelected;
   const appKey =
+    applications.find(app => app.key === requestedApp)?.key ||
     chosenAppKey ||
     selected?.applications.find(
       (app) => app.appKey === "quoting" && app.isEnabled,
@@ -64,6 +87,17 @@ export default function App() {
       });
     return () => controller.abort();
   }, []);
+  useEffect(() => {
+    if (!user) return;
+    const focusSearch = event => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k" && !document.querySelector("dialog[open]")) {
+        event.preventDefault();
+        searchInput.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", focusSearch);
+    return () => window.removeEventListener("keydown", focusSearch);
+  }, [user]);
   useEffect(() => {
     const expired = () => {
       setUser(null);
@@ -106,6 +140,23 @@ export default function App() {
       });
     return () => controller.abort();
   }, [user, page, revision, query]);
+  useEffect(() => {
+    if (!user || !routeKey || selected) return;
+    const controller = new AbortController();
+    tenantApi.detailByKey(routeKey, controller.signal)
+      .then(tenant => { if (!controller.signal.aborted) setSelected(tenant); })
+      .catch(error => { if (!controller.signal.aborted) setError(error.message); });
+    return () => controller.abort();
+  }, [user, routeKey, selected]);
+  const selectedId = selected?.id;
+  useEffect(() => {
+    if (!user || !selectedId || !revision) return;
+    const controller = new AbortController();
+    tenantApi.detail(selectedId, controller.signal).then(tenant => {
+      if (!controller.signal.aborted) setSelected(previous => previous?.id === selectedId ? tenant : previous);
+    }).catch(() => { /* The company directory also refreshes after changes. */ });
+    return () => controller.abort();
+  }, [user, selectedId, revision]);
   // #endregion
   // #region Handlers
   async function login(event) {
@@ -172,7 +223,7 @@ export default function App() {
       setAppKey(
         data.getAll("applications")[0],
       );
-      setSection("members");
+      navigate(tenantPath(data.get("key"), "members", data.getAll("applications")[0]));
     }
   }
   function logout() {
@@ -181,10 +232,40 @@ export default function App() {
     setTenants([]);
     setSelected(null);
     setAppKey(null);
+    setCreating(false);
+    setChangingAccess(false);
+    setRemoval(null);
     setError("");
     setNotice("");
   }
   // #endregion
+  function selectSection(next) {
+    navigate(tenantPath(selected?.key, next, next === "settings" || next === "members" ? appKey : undefined));
+  }
+
+  function openRemoval(tenant, appToRemove) {
+    setError("");
+    setRemoval({ tenant, appKey: appToRemove });
+  }
+
+  async function confirmRemoval(confirmKey, purge) {
+    if (!removal || busy || (!removal.appKey && confirmKey !== removal.tenant.key)) return;
+    const { tenant, appKey: appToRemove } = removal;
+    const saved = await mutate(
+      () => appToRemove ? tenantApi.uninstall(tenant.id, appToRemove, purge) : tenantApi.remove(tenant.id, { confirmKey, force: purge }),
+      appToRemove ? "Đã gỡ cài đặt " + getApplicationName(appToRemove) + "." : "Đã xóa công ty.",
+    );
+    if (!saved) return;
+    setRemoval(null);
+    if (!appToRemove) {
+      setTenants(previous => previous.filter(item => item.id !== tenant.id));
+      if (selected?.id === tenant.id) setSelected(tenants.find(item => item.id !== tenant.id) ?? null);
+      setAppKey(null);
+      setSearch("");
+      setPage(1);
+      navigate(paths.tenants, { replace: true });
+    }
+  }
   if (checking)
     return (
       <main className="portal-login" role="status">
@@ -249,205 +330,101 @@ export default function App() {
         : application.provisioningStatus === "Failed"
           ? { label: "Khởi tạo thất bại", icon: CircleAlert, tone: "failed" }
           : { label: "Đang khởi tạo", icon: LoaderCircle, tone: "portal-pending" };
+  const configure = key => {
+    setAppKey(key);
+    navigate(tenantPath(selected.key, "settings", key));
+  };
+  const chooseTenant = tenant => {
+    setSelected(tenant);
+    setAppKey(null);
+    setError("");
+    setNotice("");
+    if (routeKey) navigate(tenantPath(tenant.key, section));
+  };
+  const memberKey = selected?.id + ":" + appKey;
+
   return (
-    <div>
-      <header className="portal-header">
-        <div className="portal-brand">
-          <Building2 size={24} aria-hidden="true" />
-          OnePortal <span className="portal-caption">Quản trị nền tảng</span>
-        </div>
-        <button className="portal-secondary" onClick={logout}>
-          <IconLabel icon={LogOut}>Đăng xuất</IconLabel>
-        </button>
-      </header>
-      <main className="portal-main uv-page-enter">
-        <div className="page-heading">
+    <div className="cr-shell">
+      <CommandRail section={section} onSectionChange={selectSection} hasTenant={Boolean(selected)}
+        onCreate={() => { setCreating(true); setError(""); }} onLogout={logout} />
+      <main className="portal-main">
+        <PortalHeader tenant={selected} appKey={appKey} search={search} searchInput={searchInput} onSearch={setSearch} onLogout={logout}
+          onCreate={() => { setCreating(true); setError(""); }} />
+        <header className="page-heading cr-heading">
           <div>
-            <h1>Quản trị công ty</h1>
-            <p>Cài ứng dụng và quản lý quyền truy cập theo từng công ty.</p>
+            <p className="cr-context">OnePortal / Quản trị nền tảng</p>
+            <h1>{{ overview: "Tổng quan công ty", tenants: "Quản lý công ty", members: "Quản lý User", settings: "Cấu hình công ty", store: "App Store" }[section]}</h1>
           </div>
-          <UiverseButton
-            icon={<Plus className="tenant-icon" aria-hidden="true" />}
-            onClick={() => {
-              setCreating(true);
-              setError("");
-            }}
-          >
-            Thêm công ty
-          </UiverseButton>
-        </div>
-        {error && !creating && (
-          <p role="alert" className="portal-notice portal-error">
-            <IconLabel icon={CircleAlert}>{error}</IconLabel>
-          </p>
-        )}
-        {notice && (
-          <p role="status" className="portal-notice">
-            <IconLabel icon={CircleCheck}>{notice}</IconLabel>
-          </p>
-        )}
-        <div className="portal-workbench">
-          <aside className="directory" aria-label="Danh sách công ty">
-            <h2 className="directory-title"><IconLabel icon={Building2}>Công ty</IconLabel></h2>
-            <Field
-              label="Tìm công ty"
-              icon={Search}
-              type="search"
-              placeholder="Tên hoặc mã công ty"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            {listing && (
-              <p role="status" className="muted mt-3 portal-pending">
-                <IconLabel icon={LoaderCircle}>Đang tải công ty…</IconLabel>
-              </p>
-            )}
-            <ul className="directory-list" aria-busy={listing}>
-              {tenants.map((tenant) => (
-                <li key={tenant.id}>
-                  <button
-                    className="tenant-choice"
-                    aria-current={
-                      selected?.id === tenant.id ? "true" : undefined
-                    }
-                    onClick={() => {
-                      setSelected(tenant);
-                      setAppKey(
-                        tenant.applications.find(app => app.isEnabled)?.appKey || applications[0].key,
-                      );
-                      setSection("members");
-                      setError("");
-                      setNotice("");
-                    }}
-                  >
-                    <IconLabel icon={tenant.isActive ? Building2 : LockKeyhole}>
-                      <strong>{tenant.name}</strong>
-                      <small>
-                        {tenant.key}
-                        {!tenant.isActive && " · Đã khóa"}
-                      </small>
-                    </IconLabel>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {!tenants.length && !listing && (
-              <p className="empty-state">
-                {query
-                  ? "Không tìm thấy công ty phù hợp."
-                  : "Chưa có công ty. Thêm công ty để bắt đầu."}
-              </p>
-            )}
-            <Pagination page={page} canGoNext={tenants.length >= 20} busy={listing} onChange={setPage} />
-          </aside>
-          <section className="tenant-detail" aria-label="Quản lý công ty">
-            {selected ? (
-              <>
-                <h2>{selected.name}</h2>
-                <div className="context-line">
-                  <IconLabel icon={Fingerprint}>{selected.key}</IconLabel>
-                  <span className={"status " + (appStatus.tone || "")}>
-                    <IconLabel icon={appStatus.icon}>{appStatus.label}</IconLabel>
-                  </span>
-                </div>
-                <div className="app-tabs" aria-label="Ứng dụng">
-                  {applications.map(({ key, name, icon }) => (
-                    <button
-                      key={key}
-                      aria-pressed={appKey === key}
-                      onClick={() => {
-                        setAppKey(key);
-                        if (section === "store") setSection("members");
-                        setError("");
-                        setNotice("");
-                      }}
-                    >
-                      <IconLabel icon={icon}>{name}</IconLabel>
-                    </button>
-                  ))}
-                </div>
-                <div className="section-tabs" aria-label={"Quản lý " + appName}>
-                  <button
-                    aria-pressed={section === "members"}
-                    onClick={() => setSection("members")}
-                  >
-                    <IconLabel icon={Users}>Người dùng</IconLabel>
-                  </button>
-                  <button
-                    aria-pressed={section === "settings"}
-                    onClick={() => setSection("settings")}
-                  >
-                    <IconLabel icon={Settings}>Cấu hình</IconLabel>
-                  </button>
-                  <button aria-pressed={section === "store"} onClick={() => setSection("store")}><IconLabel icon={Store}>Store</IconLabel></button>
-                </div>
-                <div className="uv-view-enter" key={selected.id + ":" + (section === "store" ? section : appKey + ":" + section)}>
-                  {section === "store" ? <AppStore tenant={selected} loading={busy}
-                    onConfigure={key => { setAppKey(key); setSection("settings"); }}
-                    onInstall={(key, allowSelfRegistration) => mutate(
-                      () => tenantApi.configure(selected.id, key, { isEnabled: true, allowSelfRegistration }),
-                      "Đã cài " + getApplicationName(key) + ".",
-                    )}
-                  /> : section === "members" ? (
-                    ready ? (
-                      <MemberPanel
-                        key={selected.id + appKey}
-                        tenant={selected}
-                        appKey={appKey}
-                      />
-                    ) : (
-                      <div className="empty-state">
-                        <h3>Ứng dụng chưa sẵn sàng</h3>
-                        <p>
-                          Mở Cấu hình để bật ứng dụng hoặc kiểm tra khởi tạo dữ
-                          liệu.
-                        </p>
-                        <button
-                          className="portal-secondary mt-4"
-                          onClick={() => setSection("settings")}
-                        >
-                          <IconLabel icon={Settings}>Mở cấu hình</IconLabel>
-                        </button>
-                      </div>
-                    )
-                  ) : (
-                    <ApplicationSettings
-                      key={
-                        selected.id +
-                        appKey +
-                        JSON.stringify(application) +
-                        selected.isActive +
-                        selected.name
-                      }
-                      tenant={selected}
-                      appKey={appKey}
-                      application={application}
-                      busy={busy}
-                      onConfigure={(value) =>
-                        mutate(
-                          () => tenantApi.configure(selected.id, appKey, value),
-                          "Đã lưu cấu hình ứng dụng.",
-                        )
-                      }
-                      onUpdate={(value) =>
-                        mutate(
-                          () => tenantApi.update(selected.id, value),
-                          "Đã cập nhật công ty.",
-                        )
-                      }
-                    />
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="empty-state">
-                <h3>Chọn công ty để quản lý</h3>
-                <p>Ứng dụng và người dùng của công ty sẽ hiển thị tại đây.</p>
-              </div>
-            )}
+        </header>
+        {error && !creating && !changingAccess && !removal && <p role="alert" className="portal-notice portal-error"><IconLabel icon={CircleAlert}>{error}</IconLabel></p>}
+        {notice && <p role="status" className="portal-notice"><IconLabel icon={CircleCheck}>{notice}</IconLabel></p>}
+        <TenantSwitcher tenants={tenants} selected={selected} query={query} listing={listing} page={page}
+          onSelect={chooseTenant} onPageChange={setPage} onRemove={section === "tenants" ? openRemoval : undefined} />
+        {selected ? <div className="bento-grid" aria-label="Quản lý công ty">
+          {section === "members" && <section className="bento-box bento-detail" key={selected.id + ":members"}>
+            <MemberPanel tenant={selected} appKey={appKey} onChanged={() => setRevision(value => value + 1)} />
+          </section>}
+          <section className="bento-box bento-workspace" onPointerMove={spotlight}>
+            <p className="cr-context"><IconLabel icon={Building2}>Workspace</IconLabel></p>
+            <h2>{selected.name}</h2>
+            <div className="context-line">
+              <code>{selected.key}</code>
+              <span className={"status " + (selected.isActive ? "ready" : "failed")}>
+                <IconLabel icon={selected.isActive ? CircleCheck : LockKeyhole}>{selected.isActive ? "Đang hoạt động" : "Công ty đã khóa"}</IconLabel>
+              </span>
+            </div>
+            <dl className="workspace-metrics">
+              <div><dt>Ứng dụng đã bật</dt><dd>{selected.applications.filter(app => app.isEnabled).length} / {applications.length}</dd></div>
+              <div><dt>Người dùng đang hoạt động</dt><dd>{selected.activeMemberCount ?? "—"}</dd></div>
+            </dl>
+            <div className="workspace-actions">
+              <button type="button" className="portal-secondary" onClick={() => configure(appKey)}><IconLabel icon={Settings}>Mở cấu hình</IconLabel></button>
+              {section !== "settings" && <button type="button" className="portal-secondary" disabled={busy} onClick={() => { setError(""); setChangingAccess(true); }}>
+                <IconLabel icon={selected.isActive ? LockKeyhole : LockKeyholeOpen}>{selected.isActive ? "Khóa công ty" : "Mở công ty"}</IconLabel>
+              </button>}
+            </div>
           </section>
-        </div>
+          <section className="bento-box bento-apps" onPointerMove={spotlight}>
+            <AppStore tenant={selected} loading={busy} appKey={appKey} full={section === "store"}
+              onSelect={key => {
+                setAppKey(key);
+                if (routeKey) navigate(tenantPath(selected.key, section === "store" ? "members" : section, key));
+                setError(""); setNotice("");
+              }}
+              onConfigure={configure}
+              onUninstall={key => openRemoval(selected, key)}
+              onInstall={(key, allowSelfRegistration) => mutate(
+                () => tenantApi.configure(selected.id, key, { isEnabled: true, allowSelfRegistration }),
+                "Đã cài " + getApplicationName(key) + ".",
+              )}
+            />
+          </section>
+          {section === "settings" &&
+            <section className="bento-box bento-detail" key={memberKey + ":settings"}>
+              <div className="bento-detail-context">
+                <span>{appName}</span>
+                <span className={"status " + (appStatus.tone || "")}><IconLabel icon={appStatus.icon}>{appStatus.label}</IconLabel></span>
+              </div>
+              <ApplicationSettings
+                key={memberKey + JSON.stringify(application) + selected.isActive + selected.name}
+                tenant={selected} appKey={appKey} application={application} busy={busy}
+                onConfigure={value => mutate(() => tenantApi.configure(selected.id, appKey, value), "Đã lưu cấu hình ứng dụng.")}
+                onUpdate={value => mutate(() => tenantApi.update(selected.id, value), "Đã cập nhật công ty.")}
+                onChangeAccess={() => { setError(""); setChangingAccess(true); }}
+                onUninstall={application?.isEnabled ? () => openRemoval(selected, appKey) : null}
+                onDelete={() => openRemoval(selected)}
+              />
+            </section>
+          }
+        </div> : !listing && <p className="empty-state">Chọn công ty để quản lý ứng dụng và người dùng.</p>}
       </main>
+      {removal && <TenantRemovalDialog removal={removal} busy={busy} error={error} onConfirm={confirmRemoval}
+        onClose={() => { setRemoval(null); setError(""); }} />}
+      {changingAccess && selected && <TenantAccessDialog tenant={selected} busy={busy} error={error}
+        onClose={() => { setError(""); setChangingAccess(false); }} onConfirm={async () => {
+          const saved = await mutate(() => tenantApi.update(selected.id, { name: selected.name, isActive: !selected.isActive }), "Đã cập nhật công ty.");
+          if (saved) setChangingAccess(false);
+        }} />}
       {creating && (
         <Modal
           title="Thêm công ty"

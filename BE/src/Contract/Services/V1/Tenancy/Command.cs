@@ -13,3 +13,9 @@ public sealed record CreateTenantMemberCommand(Guid TenantId, string AppKey, str
 public sealed record SetTenantMembershipCommand(Guid TenantId, string AppKey, string Email, string Role, bool IsActive) : ICommand<SetTenantMembershipResult>;
 
 public sealed record UpdateTenantCommand(Guid TenantId, string Name, bool IsActive) : ICommand<UpdateTenantResult>;
+
+public sealed record DeleteTenantCommand(Guid TenantId, string ConfirmKey, bool Force = false) : ICommand<bool>;
+public sealed record UninstallTenantApplicationCommand(Guid TenantId, string AppKey, bool PurgeData = false) : ICommand<ConfigureTenantApplicationResult>;
+public sealed record RemoveTenantMemberCommand(Guid TenantId, string AppKey, Guid UserId) : ICommand<bool>;
+public sealed record UpdateTenantMemberProfileCommand(Guid TenantId, Guid UserId, string FullName, string? NewPassword, string? AppKey = null) : ICommand<TenantMemberDto>;
+public sealed record SetTenantWorkspaceMembershipCommand(Guid TenantId, string Email, string? Role, string? FullName = null, string? NewPassword = null) : ICommand<bool>;

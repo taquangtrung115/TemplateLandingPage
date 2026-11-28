@@ -59,18 +59,18 @@ test('Gateway validates signatures, exposes trace and CORS, and preserves server
 test('FE_Tenant creates and seeds a workspace through the real Gateway and backend', async ({ page }, testInfo) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/'); await login(page);
-  await expect(page.getByRole('heading', { name: 'Quản trị công ty' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tổng quan công ty' })).toBeVisible();
   await page.getByRole('button', { name: 'Thêm công ty', exact: true }).click();
   const key = 'ui-' + Date.now().toString(36) + '-' + testInfo.project.name;
   await page.getByLabel('Tên công ty', { exact: true }).fill('UI ' + key);
   await page.getByLabel('Mã workspace', { exact: true }).fill(key);
   await page.getByLabel('Email quản trị viên đã có', { exact: true }).fill(email);
   await page.getByLabel('Landing Page', { exact: true }).check();
-  await page.getByRole('button', { name: 'Tạo công ty', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Tạo công ty', exact: true }).click();
   await expect(page.getByText('Đã tạo công ty và khởi tạo dữ liệu nền tảng.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'UI ' + key })).toBeVisible();
-  await expect(page.getByText('Sẵn sàng', { exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Người dùng ứng dụng' })).toBeVisible();
+  await expect(page.getByText('Sẵn sàng', { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ma trận quyền người dùng' })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('tenant-admin.png'), fullPage: true });
   expect(errors).toEqual([]);
 });

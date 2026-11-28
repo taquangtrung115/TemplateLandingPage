@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+  <title>20 Kiến Trúc UI Mới — 10 FE_Tenant & 10 FE_PhotoPrint</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f4f6fa, #090b12); --surface: light-dark(#ffffff, #121624);
+      --subtle: light-dark(#e9eef6, #1c2235); --ink: light-dark(#0f172a, #f8fafc);
+      --muted: light-dark(#475569, #94a3b8); --line: light-dark(#dbe3ef, #28314b);
+      --accent: light-dark(#2563eb, #38bdf8); --on-accent: light-dark(#ffffff, #082f49);
+    }
+    html, body, header, aside, section, div, button, a, iframe, span { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+    button { font: inherit; color: inherit; cursor: pointer; border: 0; background: transparent; }
+    .top-bar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 14px 24px; background: color-mix(in oklab, var(--surface) 88%, transparent); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
+    .top-bar h1 { margin: 0; font-size: 18px; font-weight: 800; }
+    .top-bar p { margin: 2px 0 0; font-size: 12.5px; color: var(--muted); }
+    .tab-group { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--subtle); gap: 4px; }
+    .tab-btn { padding: 8px 16px; border-radius: 9px; font-size: 13.5px; font-weight: 700; color: var(--muted); }
+    .tab-btn[aria-pressed="true"] { background: var(--surface); color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .hub-grid { display: grid; grid-template-columns: 400px minmax(0, 1fr); min-height: calc(100dvh - 72px); }
+    .list-col { border-right: 1px solid var(--line); padding: 18px; display: grid; align-content: start; gap: 10px; max-height: calc(100dvh - 72px); overflow-y: auto; }
+    .theme-card { text-align: left; padding: 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); display: grid; gap: 6px; transition: transform 160ms ease, border-color 160ms ease; }
+    .theme-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .theme-card[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent); }
+    .card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .swatches { display: inline-flex; gap: 4px; }
+    .swatch { width: 13px; height: 13px; border-radius: 50%; border: 1px solid rgba(128,128,128,0.35); }
+    .stage-col { padding: 18px 22px; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; }
+    .stage-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+    .vp-btn, .action-btn { padding: 7px 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--subtle); font-size: 12.5px; font-weight: 700; text-decoration: none; color: var(--ink); }
+    .vp-btn[aria-pressed="true"], .action-btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+    .frame-shell { display: grid; place-items: start center; background: var(--subtle); border-radius: 16px; border: 1px solid var(--line); padding: 14px; overflow: auto; }
+    iframe { width: 100%; height: calc(100dvh - 185px); min-height: 620px; border: 1px solid var(--line); border-radius: 12px; background: #fff; transition: width 260ms cubic-bezier(.22,1,.36,1); }
+    @media (max-width: 980px) { .hub-grid { grid-template-columns: 1fr; } .list-col { max-height: 360px; border-right: 0; border-bottom: 1px solid var(--line); } }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <div><h1>20 Kiến Trúc UI Mới Hoàn Toàn (10 Tenant + 10 Photo)</h1><p>Mỗi mẫu là một bố cục, điều hướng và hệ chuyển động độc lập — không sửa lại giao diện cũ.</p></div>
+    <div class="tab-group">
+      <button type="button" class="tab-btn" id="tab-tenant" aria-pressed="false">10 Mẫu Tenant (✓ Đã chọn #01)</button>
+      <button type="button" class="tab-btn" id="tab-photo" aria-pressed="true">10 Mẫu Photo (Shop In Ảnh · Thiết Kế Mới)</button>
+    </div>
+  </header>
+  <div class="hub-grid">
+    <aside class="list-col" id="card-list"></aside>
+    <section class="stage-col">
+      <div class="stage-toolbar">
+        <div><strong id="active-title"></strong><div id="active-sub" style="font-size:12px;color:var(--muted);"></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="vp-btn" data-w="100%" aria-pressed="true">Desktop</button>
+          <button type="button" class="vp-btn" data-w="768px" aria-pressed="false">Tablet 768px</button>
+          <button type="button" class="vp-btn" data-w="375px" aria-pressed="false">Mobile 375px</button>
+          <a class="action-btn" id="open-tab" href="./photo/01-stride-3d-travelling.html" target="_blank" rel="noreferrer">Mở toàn màn hình ↗</a>
+          <button type="button" class="action-btn primary" id="copy-pick">Chọn mẫu này</button>
+        </div>
+      </div>
+      <div class="frame-shell"><iframe id="preview-frame" title="Preview"></iframe></div>
+    </section>
+  </div>
+  <script>
+    const DATA = { tenant: [{"id":"01-command-rail","num":"01","name":"Command Rail & Bento","tag":"Dark Raycast · Icon Rail + Bento Grid","summary":"Thay sidebar truyền thống bằng Icon Rail 64px, thanh Command tìm kiếm nhanh trên đỉnh và 3 ô Bento trực quan.","motion":"Radial Spotlight + Staggered Bento Reveal","scheme":"dark","swatch":["#09090f","#151520","#8b5cf6","#f4f4f5"],"group":"tenant","href":"./tenant/01-command-rail.html"},{"id":"02-floating-dock-macos","num":"02","name":"Spatial Glass & Bottom Dock","tag":"visionOS / macOS · Floating Windows + Dock","summary":"Cửa sổ kính mờ lơ lửng trên nền cực quang, điều hướng bằng thanh Dock đáy đàn hồi khi rê chuột.","motion":"Dock Icon Magnification + Elastic Glass","scheme":"light","swatch":["#dbeafe","#ffffff","#0284c7","#0f172a"],"group":"tenant","href":"./tenant/02-floating-dock-macos.html"},{"id":"03-kanban-slide-drawer","num":"03","name":"Operations Kanban & Drawer","tag":"Notion Ops · Status Columns + Slide Drawer","summary":"Hiển thị toàn bộ công ty theo cột trạng thái (Sẵn sàng / Đang khởi tạo / Đã khóa); bấm thẻ mở Drawer từ cạnh phải.","motion":"Card Elevation + Right Slide-Over Drawer","scheme":"light","swatch":["#f8fafc","#ffffff","#0f766e","#0f172a"],"group":"tenant","href":"./tenant/03-kanban-slide-drawer.html"},{"id":"04-expandable-data-grid","num":"04","name":"Airtable Expandable Table","tag":"High-Density Grid · Inline Accordion","summary":"Thanh KPI 4 chỉ số + Bảng dữ liệu toàn chiều rộng; click từng dòng mở ngay panel thành viên & store bên dưới.","motion":"Inline Row Expand + KPI Entrance","scheme":"light","swatch":["#f1f5f9","#ffffff","#2563eb","#0f172a"],"group":"tenant","href":"./tenant/04-expandable-data-grid.html"},{"id":"05-mercury-dual-canvas","num":"05","name":"Fintech Dark Sidebar & Dual Pane","tag":"Mercury Style · Always-On 2-Column Detail","summary":"Sidebar đen mực tối giản + Dropdown chọn công ty; bên phải chia 2 cột xem Thành viên & App Store song song.","motion":"Parallel Card Lift + Dropdown Popover","scheme":"light","swatch":["#111827","#ffffff","#10b981","#111827"],"group":"tenant","href":"./tenant/05-mercury-dual-canvas.html"},{"id":"06-mosaic-two-tier","num":"06","name":"Vercel Two-Tier App Matrix","tag":"Tile Gallery Top + Morphing Workbench","summary":"Tầng trên là 4 thẻ Công ty bật/tắt App nhanh; tầng dưới trượt đổi chi tiết thành viên & cài đặt theo công ty đang chọn.","motion":"View-Transition Header Morph + Crisp Tabs","scheme":"light","swatch":["#fafafa","#ffffff","#000000","#18181b"],"group":"tenant","href":"./tenant/06-mosaic-two-tier.html"},{"id":"07-devops-three-column","num":"07","name":"DevOps 3-Column Console","tag":"Supabase Style · Tree + Members + Telemetry","summary":"Giao diện tối Dark Tech 3 cột cân đối: Cây Công ty/App, Danh sách Thành viên và Cột Telemetry & Khóa công ty trực tiếp.","motion":"Neon Pulse LED + Tree Collapse Motion","scheme":"dark","swatch":["#0b1120","#131d33","#06b6d4","#f1f5f9"],"group":"tenant","href":"./tenant/07-devops-three-column.html"},{"id":"08-brutalist-editorial","num":"08","name":"Swiss Neo-Brutalist Blocks","tag":"Gumroad / Figma · Bold Borders & Hard Shadow","summary":"Tương phản mạnh nền kem vàng, viền đen 2px, đổ bóng cứng 4px, khối pastel Mint/Lavender/Peach phân khu rõ rệt.","motion":"Snappy Offset Shadow Pop + Sticker Bounce","scheme":"light","swatch":["#fcfbf5","#a7f3d0","#111111","#f472b6"],"group":"tenant","href":"./tenant/08-brutalist-editorial.html"},{"id":"09-single-axis-carousel","num":"09","name":"Single-Axis Focus Stream","tag":"Arc Flow · Horizontal Company Pills + Stack","summary":"Bỏ hoàn toàn chia cột phức tạp: dải chọn công ty scroll-snap ngang ở giữa, bên dưới trượt ngang mượt từng tab nghiệp vụ.","motion":"Horizontal Pill Snap + Directional Slide","scheme":"light","swatch":["#f7f5f0","#fffefb","#d97706","#292524"],"group":"tenant","href":"./tenant/09-single-axis-carousel.html"},{"id":"10-midnight-executive-hud","num":"10","name":"Midnight Gold Executive HUD","tag":"Luxury Dark · Floating Pill Nav + Asymmetric HUD","summary":"Thanh điều hướng nổi bo tròn trên nền Graphite trầm + Vàng đồng, hiệu ứng metallic shine quét qua nút và viền sáng.","motion":"Metallic Shine Sweep + Asymmetric HUD Reveal","scheme":"dark","swatch":["#101014","#1a1a22","#f59e0b","#fafaf9"],"group":"tenant","href":"./tenant/10-midnight-executive-hud.html"}], photo: [{"id":"01-stride-3d-travelling","num":"01","name":"Bản 1 · Photo & Photocopy 3D (Đã tinh chỉnh)","tag":"In ảnh & Ảnh thẻ 15p · Thẻ in 3D tỉ lệ 4R · VietQR & Lịch sử giao dịch","summary":"Thiết kế lại hoàn toàn cho tiệm In Ảnh & Photocopy Việt Nam: bỏ dáng túi kẹo sang thẻ/bảng ảnh phẳng 1:1.36, ưu tiên In ảnh lụa 4R, Ảnh thẻ lấy liền 15p, Polaroid, Photo A4 và tích hợp Chuyển khoản VietQR ghi nhận giao dịch trực tiếp.","motion":"Three.js Print Board 3D · Circle Wipe · 180° Spec Flip · VietQR Transaction Ledger","scheme":"light","swatch":["#f0e8e0","#d396a7","#94bdb4","#191a1e"],"group":"photo","href":"./photo/01-stride-3d-travelling.html"},{"id":"02-vell-studio-configurator","num":"02","name":"Bản 2 · VELL Studio Configurator","tag":"Virtual Studio HUD · Smoked Glass + Scan-Line Wipe + Filter/Library","summary":"Kiến trúc VELL 1600×900: Phông nền Parallax phòng tranh, tia quét đứng từ trên xuống đổi khung/ảnh, bảng tinh chỉnh kính mờ, Radar cân màu, Lịch sử Undo/Redo & Thư viện lưu mẫu.","motion":"Top-to-Bottom Laser Scan Wipe · Undo/Redo History · Filter Grading","scheme":"dark","swatch":["#222025","#343238","#ffffff","#cfd2d4"],"group":"photo","href":"./photo/02-vell-studio-configurator.html"},{"id":"03-nordic-architect-bento","num":"03","name":"Nordic Gallery Bento","tag":"Pure Daylight · Floating Pill Nav + Irregular Bento + Frame Sizer","summary":"Không gian phòng trưng bày Bắc Âu trắng sạch kết hợp xanh rừng thông: thanh Pill nổi, lưới Bento nhịp điệu bất đối xứng & trình dựng khung theo kích thước thật (10×15 → 60×90).","motion":"Dynamic Scale Frame Sizer · Staggered Bento Filter","scheme":"light","swatch":["#ffffff","#f4f3ef","#1f4e3d","#111111"],"group":"photo","href":"./photo/03-nordic-architect-bento.html"},{"id":"04-paris-bridal-maison","num":"04","name":"Maison Bridal Couture","tag":"French Alabaster · Masthead + Triple Arch + 180° Book Turner","summary":"Mặt tiền tạp chí cưới Haute Couture cổ điển với Masthead kẻ đôi, bộ 3 khung vòm đối xứng, trình lật Photobook 180° thật và bảng so sánh 3 trọn gói cưới/gia đình.","motion":"180° Lay-Flat Page Transition · Silk Category Filter","scheme":"light","swatch":["#fbf8f3","#f2ebe0","#8b6434","#221d1a"],"group":"photo","href":"./photo/04-paris-bridal-maison.html"},{"id":"05-swiss-typo-catalog","num":"05","name":"Swiss Grid Monograph","tag":"Dieter Rams · Structural Slab Nav + Vertical Accordions","summary":"Kỷ luật lưới Thụy Sĩ trên nền giấy kem và đỏ son in ấn: Poster 50/50 tràn cạnh, 3 nhóm danh mục Accordion mở theo chiều dọc với bảng giá sỉ minh bạch & máy tính chiết khấu.","motion":"Crisp Structural Accordions · Bulk Tier Price Estimator","scheme":"light","swatch":["#f7f7f4","#ffffff","#c83222","#121212"],"group":"photo","href":"./photo/05-swiss-typo-catalog.html"},{"id":"06-mixtiles-living-room","num":"06","name":"Living Room Wall Studio","tag":"Daylight Interior · Live Wall Builder + Bench Shadows","summary":"Ứng dụng ướm tường phòng khách thật: chuyển đổi 4 bố cục treo (Bộ 3 / Lưới 4 / Lưới 6 / Polaroid), đổi 4 màu sơn tường, đổi màu viền khung & gõ chữ lên Polaroid.","motion":"Live Hanging Layout Switcher · Wall Paint & Frame Morph","scheme":"light","swatch":["#f8f6f2","#ebe6dc","#b55336","#1e2421"],"group":"photo","href":"./photo/06-mixtiles-living-room.html"},{"id":"07-cobalt-express-cockpit","num":"07","name":"Coastal Lab Workbench","tag":"Clean Cobalt · Split Quote & DPI Gauge + 3×2 Catalog","summary":"Giao diện xưởng in hiện đại sáng rõ lấy sắc xanh biển làm điểm nhấn: Máy tính kích thước & kiểm tra độ nét DPI ngay đầu trang + lưới sản phẩm 3×2 không cuộn ngang.","motion":"Real-Time DPI Meter · Category Filter View Transitions","scheme":"light","swatch":["#f7f9fc","#ffffff","#1d4ed8","#0f172a"],"group":"photo","href":"./photo/07-cobalt-express-cockpit.html"},{"id":"08-wabi-sabi-handcraft","num":"08","name":"Wabi-Sabi Paper Journal","tag":"Rice Paper & Pine · Long Essay Story + Alternating Full Spreads","summary":"Cảm hứng giấy dó Nhật Bản ấm áp và mộc mạc: mở đầu bằng lá thư xưởng thủ công, 6 dòng ấn phẩm được trình bày thành 6 chương tạp chí cỡ lớn nối tiếp nhau êm dịu.","motion":"Architectural Reading Flow · Subtle Matte Reveal","scheme":"light","swatch":["#f4efe6","#eae3d5","#4a5e47","#23211e"],"group":"photo","href":"./photo/08-wabi-sabi-handcraft.html"},{"id":"09-gallery-index-cursor","num":"09","name":"Obsidian Archive Index","tag":"Monochrome Bronze · Tight Display + Cursor Plate Preview","summary":"Phong cách danh bạ triển lãm nghệ thuật tối giản: dòng tiêu đề cổ điển khổ lớn, bảng mục lục kẻ mảnh (rê chuột hiện tấm ảnh đóng khung bên cạnh) và phòng thử 3 nguồn đèn.","motion":"Cursor Floating Framed Plate · Inline Spec Expansion","scheme":"dark","swatch":["#10100f","#181816","#b59461","#f3efe6"],"group":"photo","href":"./photo/09-gallery-index-cursor.html"},{"id":"10-three-stage-monolith","num":"10","name":"Tactile 3D Frame Monolith","tag":"Warm Limestone · Morphing Capsule Nav + 3D Rotating Oak/Crystal","summary":"Trải nghiệm chạm tay sản phẩm 3D bằng chuột ngay Hero: xoay nghiêng khung Gỗ Sồi bo trắng / Khối Pha Lê 5mm / Photobook trong không gian ba chiều + chọn cỡ ngay trên từng thẻ.","motion":"Interactive 3D Physical Frame Rotation · Morphing Pill Nav","scheme":"light","swatch":["#f5f4f0","#eae8e1","#b36b2c","#16191d"],"group":"photo","href":"./photo/10-three-stage-monolith.html"}] };
+    let group = 'photo', selected = { tenant: DATA.tenant[0], photo: DATA.photo[0] };
+    function renderList() {
+      const items = DATA[group], cur = selected[group];
+      document.getElementById('card-list').innerHTML = items.map(item => `
+        <button type="button" class="theme-card" data-id="${item.id}" aria-current="${item.id===cur.id}">
+          <div class="card-top"><strong style="font-size:14.5px;">#${item.num} · ${item.name}${item.group==='tenant'&&item.num==='01'?' <span style="font-size:11px;color:#10b981;">(✓ Đã chọn)</span>':''}</strong><span class="swatches">${item.swatch.map(c=>`<span class="swatch" style="background:${c}"></span>`).join('')}</span></div>
+          <span style="font-size:11.5px;font-weight:700;color:var(--accent);">${item.tag}</span>
+          <span style="font-size:12.5px;color:var(--muted);line-height:1.4;">${item.summary}</span>
+        </button>`).join('');
+      document.querySelectorAll('.theme-card').forEach(b => b.addEventListener('click', () => { selected[group] = items.find(x=>x.id===b.dataset.id); renderList(); syncStage(); }));
+    }
+    function syncStage() {
+      const cur = selected[group];
+      document.getElementById('active-title').textContent = (group==='tenant'?'Tenant ':'Photo ') + '#' + cur.num + ': ' + cur.name;
+      document.getElementById('active-sub').textContent = cur.tag + ' · ' + cur.motion;
+      document.getElementById('open-tab').href = cur.href;
+      document.getElementById('preview-frame').src = cur.href;
+    }
+    document.getElementById('tab-tenant').addEventListener('click', () => { group='tenant'; document.getElementById('tab-tenant').setAttribute('aria-pressed','true'); document.getElementById('tab-photo').setAttribute('aria-pressed','false'); renderList(); syncStage(); });
+    document.getElementById('tab-photo').addEventListener('click', () => { group='photo'; document.getElementById('tab-tenant').setAttribute('aria-pressed','false'); document.getElementById('tab-photo').setAttribute('aria-pressed','true'); renderList(); syncStage(); });
+    document.querySelectorAll('.vp-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.vp-btn').forEach(b=>b.setAttribute('aria-pressed',String(b===btn))); document.getElementById('preview-frame').style.width = btn.dataset.w; }));
+    document.getElementById('copy-pick').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(`Tôi chọn UI: Tenant #${selected.tenant.num} (${selected.tenant.name}) & Photo #${selected.photo.num} (${selected.photo.name})`); } catch {}
+      const btn = document.getElementById('copy-pick'); btn.textContent='✓ Đã copy!'; setTimeout(()=>btn.textContent='Chọn mẫu này',1800);
+    });
+    renderList(); syncStage();
+  </script>
+</body>
+</html>

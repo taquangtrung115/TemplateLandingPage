@@ -1,5 +1,66 @@
 import { getPhotoBox } from '../../utils/photoQuality';
 
+export const printBoardRatio = 1.36;
+
+export function drawPrintBoard(canvas, image, board, back = false) {
+  canvas.width = 640;
+  canvas.height = Math.round(canvas.width * printBoardRatio);
+  const { width, height } = canvas;
+  const context = canvas.getContext('2d');
+  context.fillStyle = back ? '#f0e8e0' : '#fcfaf6';
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = board.color;
+  context.lineWidth = 4;
+  context.beginPath();
+  context.roundRect(15, 15, width - 30, height - 30, 22);
+  context.stroke();
+  context.beginPath();
+  context.roundRect(33, 28, 168, 31, 15);
+  context.fillStyle = board.color;
+  context.fill();
+  context.fillStyle = '#1c1a1f';
+  context.font = '700 14px "JetBrains Mono", monospace';
+  context.fillText((back ? 'Quy cách tại quầy' : board.badge).toUpperCase(), 46, 49, 145);
+  context.textAlign = 'right';
+  context.fillStyle = '#5e5964';
+  context.fillText(board.brand.toUpperCase(), 607, 49, 300);
+  context.textAlign = 'left';
+  if (!back) {
+    context.save();
+    context.beginPath();
+    context.roundRect(33, 77, 574, 567, 12);
+    context.clip();
+    drawPhoto(context, image, 33, 77, 574, 567, { fitMode: 'Fill' });
+    context.restore();
+    context.fillStyle = '#1c1a1f';
+    context.font = '900 39px "Be Vietnam Pro", system-ui, sans-serif';
+    context.fillText(board.short.toUpperCase(), 34, 700, 365);
+    context.textAlign = 'right';
+    context.fillText(board.price || 'Xem giá', 607, 700, 175);
+    context.font = '500 15px "JetBrains Mono", monospace';
+    context.fillStyle = '#5e5964';
+    context.fillText(board.unit || '', 607, 728, 255);
+    context.textAlign = 'left';
+    context.fillText(board.spec, 34, 728, 320);
+  } else {
+    context.font = '700 44px "Be Vietnam Pro", system-ui, sans-serif';
+    context.fillText(board.title, 34, 142, 572);
+    context.font = '400 30px "Inter", system-ui, sans-serif';
+    board.details.forEach((detail, index) => {
+      const y = 228 + 108 * index;
+      context.fillStyle = '#ddd4c8';
+      context.fillRect(34, y - 52, 572, 2);
+      context.fillStyle = '#1c1a1f';
+      context.fillText(detail, 34, y, 572);
+    });
+    context.font = '600 32px "JetBrains Mono", monospace';
+    context.fillText(board.price || 'Giá theo quy cách', 34, 725, 572);
+  }
+  context.fillStyle = '#5e5964';
+  context.font = '400 20px "JetBrains Mono", monospace';
+  if (back) context.fillText('GIẤY ẢNH · THÔNG SỐ MẪU', 34, height - 40, 572);
+}
+
 export function loadImage(src) {
   if (!src) return Promise.resolve(null);
   return new Promise(resolve => {
