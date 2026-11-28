@@ -3,6 +3,7 @@ export const paths = {
   trackOrder: '/orders/track', support: '/support', login: '/login', register: '/register',
   admin: '/admin', adminServices: '/admin/services', adminDemos: '/admin/demos',
   adminOrders: '/admin/orders', adminSupport: '/admin/support', adminSettings: '/admin/settings',
+  adminPayments: '/admin/payments',
   adminMembers: '/admin/settings/members', adminRegistration: '/admin/settings/registration',
 };
 

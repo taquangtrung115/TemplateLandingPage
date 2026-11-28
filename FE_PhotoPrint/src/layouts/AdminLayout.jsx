@@ -1,4 +1,4 @@
-import { Aperture, ArrowUpRight, Box, Building2, LayoutDashboard, LogOut, MessagesSquare, Package, ReceiptText, Settings } from 'lucide-react';
+import { Aperture, ArrowUpRight, Box, Building2, LayoutDashboard, LogOut, MessagesSquare, Package, QrCode, ReceiptText, Settings } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { UiverseButton, UiverseIconLabel } from '@oneportal/uiverse-ui';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,7 +8,7 @@ import { WorkspaceOptions } from '../components/common/WorkspaceGate';
 import { paths } from '../routes/paths';
 
 const menus = [[paths.admin, 'Tổng quan', LayoutDashboard], [paths.adminServices, 'Sản phẩm', Package], [paths.adminDemos, 'Mẫu 3D', Box],
-  [paths.adminOrders, 'Đơn in', ReceiptText], [paths.adminSupport, 'Hỗ trợ', MessagesSquare], [paths.adminSettings, 'Cài đặt', Settings]];
+  [paths.adminOrders, 'Đơn in', ReceiptText], [paths.adminPayments, 'Giao dịch QR', QrCode], [paths.adminSupport, 'Hỗ trợ', MessagesSquare], [paths.adminSettings, 'Cài đặt', Settings]];
 
 export default function AdminLayout() {
   const auth = useAuth();

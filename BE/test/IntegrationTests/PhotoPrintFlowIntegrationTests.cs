@@ -18,7 +18,7 @@ public sealed class PhotoPrintFlowIntegrationTests(PostgresApiFixture fixture)
         using var categories = await guest.GetAsync(Root + "/categories");
         categories.EnsureSuccessStatusCode();
         using var family = await ApiTestJson.ReadAsync(categories);
-        Assert.Equal(6, family.RootElement.GetProperty("value").GetArrayLength());
+        Assert.Equal(7, family.RootElement.GetProperty("value").GetArrayLength());
         using var products = await guest.GetAsync(Root + "/products?search=15x10&usage=memories");
         products.EnsureSuccessStatusCode();
         using var catalog = await ApiTestJson.ReadAsync(products);
@@ -59,7 +59,7 @@ public sealed class PhotoPrintFlowIntegrationTests(PostgresApiFixture fixture)
             customerName = "Khách thử ảnh", customerPhone = "0901234567", deliveryMethod = "Pickup", paymentMethod = "Cash",
             items = new[] { new
             {
-                productId, sizeLabel = "10 × 15 cm", widthCm = 10, heightCm = 15, surfaceName = "Giấy Fujifilm bóng",
+                productId, sizeLabel = "10 × 15 cm", widthCm = 10, heightCm = 15, surfaceName = "Giấy ảnh lụa Fujicolor",
                 turnaroundMode = "Standard", quantity = 2, lineTotal = 1,
                 photoFiles = new[] { new { fileUrl, originalFileName = "sample.png", widthPx = 3000, heightPx = 4000,
                     computedDpi = 1, fitMode = "Fill", focalX = .3, focalY = .8, printQty = 2, note = "Cân sáng" } },
@@ -69,7 +69,7 @@ public sealed class PhotoPrintFlowIntegrationTests(PostgresApiFixture fixture)
         using var confirmed = await ApiTestJson.ReadAsync(order);
         var result = confirmed.RootElement.GetProperty("value");
         var code = result.GetProperty("orderCode").GetString();
-        Assert.Equal(5000, result.GetProperty("grandTotal").GetInt32());
+        Assert.Equal(6000, result.GetProperty("grandTotal").GetInt32());
         Assert.Equal(2, result.GetProperty("totalPhotoCount").GetInt32());
         Assert.Equal(System.Text.Json.JsonValueKind.Null, result.GetProperty("items")[0].GetProperty("photoFilesJson").ValueKind);
 
@@ -102,6 +102,83 @@ public sealed class PhotoPrintFlowIntegrationTests(PostgresApiFixture fixture)
         update.EnsureSuccessStatusCode();
         using var conflict = await admin.PutAsJsonAsync($"{Root}/orders/{orderId}/status", new { status = "Completed", expectedRevision = 0 });
         Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
+    }
+
+    [Fact]
+    public async Task VietQr_RecordsTheServerPricedComboAndRequiresAdminReconciliation()
+    {
+        var owner = await fixture.AddUserAsync("User", isPlatformAdmin: true);
+        using var admin = fixture.CreateClientFor(owner.Id, "User");
+        using var guest = fixture.CreateAnonymousClient();
+        var key = "photo-qr-" + Guid.NewGuid().ToString("N");
+        using var tenant = await admin.PostAsJsonAsync("/api/v1/platform/tenants", new { key, name = "Photo QR test", applications = new[] { "photoprint" }, adminEmail = owner.Email });
+        tenant.EnsureSuccessStatusCode();
+        var root = $"/t/{key}/api/v1/photoprint";
+        const string account = "0000000000";
+        using var bank = await admin.PutAsJsonAsync(root + "/contact-config", new
+        {
+            brandName = "Photo QR test", vietQrEnabled = true, bankCode = "MB", bankAccountNumber = account, bankAccountName = "PHOTO TEST",
+        });
+        bank.EnsureSuccessStatusCode();
+        var comboGroupId = Guid.NewGuid();
+        var items = new List<object>();
+        foreach (var slug in new[] { "anh-the", "in-anh-10x15", "in-mau-photo-a4" })
+        {
+            using var response = await guest.GetAsync(root + "/products/" + slug);
+            response.EnsureSuccessStatusCode();
+            using var json = await ApiTestJson.ReadAsync(response);
+            var product = json.RootElement.GetProperty("value");
+            using var sizes = System.Text.Json.JsonDocument.Parse(product.GetProperty("printSizesJson").GetString()!);
+            using var surfaces = System.Text.Json.JsonDocument.Parse(product.GetProperty("paperOrSurfaceOptionsJson").GetString()!);
+            var size = sizes.RootElement[0];
+            items.Add(new
+            {
+                productId = product.GetProperty("id").GetGuid(),
+                sizeLabel = size.GetProperty("label").GetString(), widthCm = size.GetProperty("widthCm").GetDecimal(), heightCm = size.GetProperty("heightCm").GetDecimal(),
+                surfaceName = surfaces.RootElement[0].GetProperty("name").GetString(),
+                quantity = 1, turnaroundMode = "Standard", sendAlbumLater = true, comboGroupId, lineTotal = 1,
+            });
+        }
+        const string phone = "0904567890";
+        using var order = await guest.PostAsJsonAsync(root + "/orders", new { customerName = "Combo test", customerPhone = phone, deliveryMethod = "Pickup", paymentMethod = "VietQr", items });
+        order.EnsureSuccessStatusCode();
+        using var orderData = await ApiTestJson.ReadAsync(order);
+        var saved = orderData.RootElement.GetProperty("value");
+        var orderCode = saved.GetProperty("orderCode").GetString();
+        var transferMemo = saved.GetProperty("transferMemo").GetString();
+        var amount = saved.GetProperty("grandTotal").GetInt32();
+        Assert.Equal(40800, amount);
+        Assert.Equal(7200, saved.GetProperty("comboDiscountTotal").GetInt32());
+
+        object Payment(int value, string customerPhone = phone) =>
+            new { orderCode, customerPhone, bankCode = "MB", bankAccountNumber = account, amount = value, transferMemo, note = "Đơn test" };
+
+        using var wrong = await guest.PostAsJsonAsync(root + "/payments/vietqr-confirm", Payment(amount - 1));
+        Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);
+        using var otherPhone = await guest.PostAsJsonAsync(root + "/payments/vietqr-confirm", Payment(amount, "0911111111"));
+        Assert.Equal(HttpStatusCode.NotFound, otherPhone.StatusCode);
+        using var confirmation = await guest.PostAsJsonAsync(root + "/payments/vietqr-confirm", Payment(amount));
+        confirmation.EnsureSuccessStatusCode();
+        using var repeat = await guest.PostAsJsonAsync(root + "/payments/vietqr-confirm", Payment(amount));
+        repeat.EnsureSuccessStatusCode();
+        using var firstData = await ApiTestJson.ReadAsync(confirmation);
+        using var repeatedData = await ApiTestJson.ReadAsync(repeat);
+        Assert.Equal(ApiTestJson.StringValue(firstData.RootElement, "value", "transactionCode"), ApiTestJson.StringValue(repeatedData.RootElement, "value", "transactionCode"));
+        using var forbidden = await guest.GetAsync(root + "/payments");
+        Assert.Equal(HttpStatusCode.Unauthorized, forbidden.StatusCode);
+        using var list = await admin.GetAsync(root + "/payments?status=PendingVerify&search=" + orderCode);
+        list.EnsureSuccessStatusCode();
+        using var ledger = await ApiTestJson.ReadAsync(list);
+        var records = ledger.RootElement.GetProperty("value").GetProperty("items");
+        Assert.Equal(1, records.GetArrayLength());
+        var id = records[0].GetProperty("id").GetGuid();
+        using var verified = await admin.PutAsJsonAsync($"{root}/payments/{id}/verify", new { status = "Verified", expectedRevision = 0 });
+        verified.EnsureSuccessStatusCode();
+        using var stale = await admin.PutAsJsonAsync($"{root}/payments/{id}/verify", new { status = "Rejected", expectedRevision = 0 });
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        using var track = await guest.GetAsync($"{root}/orders/track?code={orderCode}&phone={phone}");
+        using var tracking = await ApiTestJson.ReadAsync(track);
+        Assert.Equal("Paid", ApiTestJson.StringValue(tracking.RootElement, "value", "paymentStatus"));
     }
 
     [Fact]

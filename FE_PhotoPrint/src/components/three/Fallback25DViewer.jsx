@@ -1,5 +1,6 @@
 import { useImperativeHandle } from 'react';
-import { drawPrintSurface, loadImage } from './photoCanvas';
+import { drawPrintBoard, drawPrintSurface, loadImage } from './photoCanvas';
+import StridePrintBoard from './StridePrintBoard';
 
 export default function Fallback25DViewer({ ref, options }) {
   const { model, src, rightSrc, frameColor, hasMatboard, fitMode, focalX, focalY, caption, captionFont, borderTone, widthCm, heightCm, warm } = options;
@@ -8,10 +9,17 @@ export default function Fallback25DViewer({ ref, options }) {
     async captureSnapshot() {
       const images = await Promise.all([loadImage(src), loadImage(rightSrc)]);
       const canvas = document.createElement('canvas');
-      drawPrintSurface(canvas, images, { ...options, paintFrame: true });
+      if (options.board) drawPrintBoard(canvas, images[0], options.board, options.flipped);
+      else drawPrintSurface(canvas, images, { ...options, paintFrame: true });
       return canvas.toDataURL('image/png');
     },
   }), [options, src, rightSrc]);
+  if (options.board) {
+    const { board, flipped } = options;
+    return <div className="fallback-stage board-stage" aria-label="Xem trước ảnh 2.5D">
+      <StridePrintBoard board={board} flipped={Boolean(flipped)} />
+    </div>;
+  }
   const ratio = Math.min(4, Math.max(0.25, widthCm / heightCm || 1));
   const position = { objectFit: fitMode === 'Fit' ? 'contain' : 'cover', objectPosition: (focalX ?? 0.5) * 100 + '% ' + (focalY ?? 0.5) * 100 + '%' };
   return <div className={'fallback-stage' + (warm ? ' warm' : '')} aria-label="Xem trước ảnh 2.5D">

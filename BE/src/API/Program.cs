@@ -120,6 +120,14 @@ builder.Services.AddRateLimiter(options =>
         limiter.PermitLimit = builder.Configuration.GetValue("PhotoPrint:UploadsPerMinute", 180);
         limiter.Window = TimeSpan.FromMinutes(1);
     });
+    options.AddPolicy(PhotoPaymentsApi.ConfirmRatePolicy, context => RateLimitPartition.GetFixedWindowLimiter(
+        (context.Connection.RemoteIpAddress?.ToString(), (context.Items[TenantRoutingMiddleware.SelectionKey] as ValueTuple<string, string>?)?.Item1),
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = builder.Configuration.GetValue("PhotoPrint:PaymentConfirmationsPerMinute", 180),
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
     options.OnRejected = (context, _) =>
     {
         if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))

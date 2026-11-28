@@ -26,6 +26,7 @@ client.interceptors.response.use(assertCurrentScope, error => {
   const fallback = status === 404 ? 'Máy chủ chưa có dữ liệu hoặc chưa bật Photo Print cho workspace này.'
     : status === 401 || status === 403 ? 'Phiên đăng nhập chưa có quyền thực hiện thao tác này.'
       : status === 409 ? 'Dữ liệu vừa được cập nhật. Vui lòng kiểm tra lại.'
+        : status === 429 ? 'Bạn vừa gửi quá nhiều yêu cầu. Vui lòng thử lại sau.'
         : 'Không thể kết nối hoặc xử lý yêu cầu lúc này.';
   throw Object.assign(new Error(messageOf(error.response?.data) || fallback), { status });
 });

@@ -6,6 +6,7 @@ using OnePortal.Contract.Services.V1.PhotoPrint.Demos;
 using OnePortal.Contract.Services.V1.PhotoPrint.Orders;
 using OnePortal.Contract.Services.V1.PhotoPrint.Support;
 using OnePortal.Contract.Services.V1.PhotoPrint.Contact;
+using OnePortal.Contract.Services.V1.PhotoPrint.Payments;
 using OnePortal.Contract.Abstractions.Shared;
 
 public interface IPhotoPrintStore
@@ -30,4 +31,7 @@ public interface IPhotoPrintStore
     Task<Result<object>> SetSupportStatusAsync(Guid id, PhotoStatusInput input, CancellationToken cancellationToken);
     Task<Result<object>> GetContactConfigAsync(CancellationToken cancellationToken);
     Task<Result<object>> SaveContactConfigAsync(PhotoContactInput input, CancellationToken cancellationToken);
+    Task<Result<object>> CreateVietQrPaymentAsync(ConfirmVietQrPaymentInput input, CancellationToken cancellationToken);
+    Task<Result<object>> GetPaymentsAsync(PhotoPaymentFilter filter, CancellationToken cancellationToken);
+    Task<Result<object>> VerifyPaymentAsync(Guid id, VerifyPhotoPaymentInput input, CancellationToken cancellationToken);
 }

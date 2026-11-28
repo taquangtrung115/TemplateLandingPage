@@ -16,4 +16,11 @@ public interface ITenantStore
     Task<Result<TenantDto>> UpdateAsync(Guid tenantId, string name, bool isActive, CancellationToken cancellationToken);
     Task<Result<TenantDto>> ConfigureApplicationAsync(Guid tenantId, string appKey, bool isEnabled, bool allowSelfRegistration, CancellationToken cancellationToken);
     Task<Result<TenantMemberDto>> SetMembershipAsync(Guid tenantId, string appKey, string email, string role, bool isActive, CancellationToken cancellationToken);
+    Task<TenantDto?> GetDetailAsync(Guid? tenantId, string? tenantKey, CancellationToken cancellationToken);
+    Task<Result<GetTenantUsersResult>> GetTenantUsersAsync(Guid tenantId, string? search, int page, int pageSize, CancellationToken cancellationToken);
+    Task<Result<bool>> DeleteAsync(Guid tenantId, string confirmKey, bool force, CancellationToken cancellationToken);
+    Task<Result<TenantDto>> UninstallApplicationAsync(Guid tenantId, string appKey, bool purgeData, CancellationToken cancellationToken);
+    Task<Result<bool>> RemoveMembershipAsync(Guid tenantId, string appKey, Guid userId, CancellationToken cancellationToken);
+    Task<Result<TenantMemberDto>> UpdateMemberProfileAsync(Guid tenantId, Guid userId, string fullName, string? passwordHash, CancellationToken cancellationToken, string? appKey = null);
+    Task<Result<bool>> SetWorkspaceMembershipAsync(Guid tenantId, string email, string? role, string? fullName, string? passwordHash, CancellationToken cancellationToken);
 }

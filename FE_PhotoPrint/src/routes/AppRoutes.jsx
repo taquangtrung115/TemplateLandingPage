@@ -20,6 +20,7 @@ const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
 const AdminDashboardPage = lazy(() => import('../pages/admin/AdminDashboardPage'));
 const AdminCatalogPage = lazy(() => import('../pages/admin/AdminCatalogPage'));
 const AdminOrdersPage = lazy(() => import('../pages/admin/AdminOrdersPage'));
+const AdminPaymentsPage = lazy(() => import('../pages/admin/AdminPaymentsPage'));
 const AdminSupportBoardPage = lazy(() => import('../pages/admin/AdminSupportBoardPage'));
 const AdminContactSettingsPage = lazy(() => import('../pages/admin/AdminContactSettingsPage'));
 const AdminWorkspacePage = lazy(() => import('../pages/admin/AdminWorkspacePage'));
@@ -51,6 +52,7 @@ export default function AppRoutes() {
           <Route path={paths.adminServices} element={<AdminCatalogPage key="products" kind="products" />} />
           <Route path={paths.adminDemos} element={<AdminCatalogPage key="demos" kind="demos" />} />
           <Route path={paths.adminOrders} element={<AdminOrdersPage />} />
+          <Route path={paths.adminPayments} element={<AdminPaymentsPage />} />
           <Route path={paths.adminSupport} element={<AdminSupportBoardPage />} />
           <Route path={paths.adminSettings} element={<AdminContactSettingsPage />} />
           <Route path={paths.adminMembers} element={<AdminWorkspacePage key="members" />} />

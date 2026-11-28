@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>Photo 10 — Tactile 3D Frame Monolith · Minh Tâm Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Playfair+Display:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&family=Syne:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <style>
+    @layer tokens, base, components, layout, motion;
+    @layer tokens {
+      :root {
+        color-scheme: light;
+        --in-oklab: ;
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --subtle: #eae8e1;
+      --ink: #16191d;
+      --muted: #5c6066;
+      --line: #dedbd2;
+      --accent: #b36b2c;
+      --on-accent: #ffffff;
+      --radius: 6px;
+      }
+      @supports (background: linear-gradient(in oklab, white, black)) {
+        :root { --in-oklab: in oklab; }
+      }
+    }
+    @layer base {
+      html, body, main, section, aside, article, header, nav, footer, div, ul, ol, li, figure, figcaption, blockquote, h1, h2, h3, h4, p, a, button, input, label, dialog, span, del, strong, small, table, tr, td, th, dl, dt, dd { box-sizing: border-box; }
+      html { scroll-behavior: smooth; overflow-x: clip; }
+      body {
+        margin: 0; overflow-x: clip; font-family: var(--font-body, 'Plus Jakarta Sans', system-ui, sans-serif);
+        line-height: 1.56; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; position: relative;
+      }
+      img, svg { max-width: 100%; display: block; }
+      button, input { font: inherit; color: inherit; }
+      button { cursor: pointer; border: 0; background: transparent; }
+      a { color: inherit; }
+      :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      h1, h2, h3, h4, p, figure, blockquote { margin: 0; font-style: normal; }
+      h1, h2, h3 { text-wrap: balance; overflow-wrap: anywhere; min-width: 0; font-weight: 500; }
+      p { text-wrap: pretty; }
+      .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+      .serif { font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif; }
+      .num { font-variant-numeric: tabular-nums; }
+      .uv-ico { flex-shrink: 0; display: inline-block; vertical-align: middle; }
+
+      .btn-pri, .btn-sec {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        min-block-size: 44px; padding: 10px 22px; border-radius: var(--radius, 4px);
+        font-size: 0.9rem; font-weight: 500; text-decoration: none; white-space: nowrap;
+        transition: background-color 180ms ease-out, border-color 180ms ease-out, color 180ms ease-out, transform 140ms ease-out;
+      }
+      .btn-pri { background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); }
+      .btn-pri:hover { background: color-mix(in oklab, var(--accent) 86%, var(--ink)); border-color: color-mix(in oklab, var(--accent) 86%, var(--ink)); }
+      .btn-pri:active, .btn-sec:active { transform: scale(0.985); }
+      .btn-sec { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+      .btn-sec:hover { border-color: var(--ink); background: var(--subtle); }
+      .btn-quiet {
+        display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; min-block-size: 38px;
+        border-radius: var(--radius, 4px); border: 1px solid var(--line); background: var(--surface);
+        font-size: 0.84rem; font-weight: 500; white-space: nowrap;
+        transition: border-color 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out;
+      }
+      .btn-quiet:hover { border-color: var(--ink); }
+      .btn-quiet.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+      .pv-dock {
+        position: fixed; left: 16px; bottom: 16px; z-index: 70;
+        display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px;
+        border-radius: 999px; background: color-mix(in oklab, var(--surface) 88%, transparent);
+        backdrop-filter: blur(12px); border: 1px solid var(--line);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); font-size: 0.78rem;
+      }
+      .pv-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-block-size: 30px; min-inline-size: 30px; padding: 0 8px;
+        border-radius: 999px; text-decoration: none; color: var(--ink); font-weight: 500;
+      }
+      .pv-btn:hover { background: var(--subtle); }
+      .pv-label { padding: 0 6px; color: var(--muted); font-size: 0.75rem; }
+
+      .toast-box {
+        position: fixed; right: 20px; bottom: 20px; z-index: 75;
+        display: flex; align-items: center; gap: 8px;
+        padding: 12px 16px; border-radius: var(--radius, 6px);
+        background: var(--ink); color: var(--bg); font-size: 0.85rem; font-weight: 500;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+      }
+      .toast-box[hidden] { display: none; }
+
+      .compare-box { position: relative; aspect-ratio: 1.65; border-radius: var(--radius, 4px); overflow: hidden; --pos: 52%; border: 1px solid var(--line); }
+      .compare-box img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      .compare-before { filter: brightness(0.62) saturate(0.45); clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
+      .compare-line { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 1.5px; background: #fff; pointer-events: none; }
+      .compare-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 32px; height: 32px; border-radius: 50%; background: #fff; color: #111; display: grid; place-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+      .compare-box input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+      
+  dialog.uv-modal {
+    margin: auto; border: 1px solid var(--line); border-radius: calc(var(--radius, 14px) + 4px);
+    background: var(--surface); color: var(--ink); width: min(calc(100% - 32px), 480px); padding: 24px;
+    box-shadow: 0 28px 70px rgba(0,0,0,0.35); opacity: 0;
+    transition-property: opacity, transform, display, overlay;
+    transition-duration: 240ms; transition-timing-function: cubic-bezier(.22,1,.36,1);
+    transition-behavior: allow-discrete;
+  }
+  dialog.uv-modal:modal { overscroll-behavior: contain; }
+  dialog.uv-modal::backdrop {
+    background: rgba(2, 6, 23, 0); backdrop-filter: blur(0px);
+    overflow: hidden; overscroll-behavior: contain;
+    transition-property: background-color, backdrop-filter, display, overlay;
+    transition-duration: 240ms; transition-behavior: allow-discrete;
+  }
+  dialog.uv-modal[open]:where(:not([data-closing])) { opacity: 1; }
+  dialog.uv-modal[open]:where(:not([data-closing]))::backdrop { background: rgba(2, 6, 23, 0.56); backdrop-filter: blur(6px); }
+  @starting-style {
+    dialog.uv-modal[open]:where(:not([data-closing])) { opacity: 0; }
+    dialog.uv-modal[open]:where(:not([data-closing]))::backdrop { background: rgba(2, 6, 23, 0); backdrop-filter: blur(0px); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    dialog.uv-modal { transform: translateY(12px) scale(0.96); }
+    dialog.uv-modal[open]:where(:not([data-closing])) { transform: translateY(0) scale(1); }
+    @starting-style { dialog.uv-modal[open]:where(:not([data-closing])) { transform: translateY(12px) scale(0.96); } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+    dialog.uv-modal, dialog.uv-modal::backdrop { transition-duration: 80ms; }
+  }
+
+    }
+    @layer components {}
+    @layer layout { 
+        .mn-nav { position: sticky; top: 0; z-index: 45; padding: 0; transition: padding 220ms ease; }
+        .mn-nav.scrolled { padding: 10px 24px 0; }
+        .mn-nav-in { max-width: 1320px; margin: 0 auto; padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; background: color-mix(in oklab, var(--surface) 90%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); transition: border-radius 220ms ease, border-color 220ms ease; }
+        .mn-nav.scrolled .mn-nav-in { border: 1px solid var(--line); border-radius: 999px; box-shadow: 0 8px 26px rgba(0,0,0,0.06); }
+        .mn-nav a { text-decoration: none; color: var(--muted); } .mn-nav a:hover { color: var(--ink); }
+        .mn-hero { max-width: 1320px; margin: 0 auto; padding: 52px 28px 64px; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 38px; align-items: center; }
+        .mn-hero h1 { font-size: clamp(2.1rem, 1.3rem + 2.4vw, 3.7rem); line-height: 1.07; }
+        .mn-stage3d { min-block-size: 420px; background: var(--subtle); border: 1px solid var(--line); border-radius: 12px; display: grid; place-items: center; padding: 32px; gap: 18px; perspective: 1000px; }
+        .mn-object { width: min(100%, 340px); aspect-ratio: 1.15; padding: 16px; background: #c59b6d; box-shadow: 14px 24px 44px rgba(22,25,29,0.22); transition: transform 180ms ease-out, background-color 220ms ease, padding 220ms ease; }
+        .mn-object.crystal { background: #e2e8f0; padding: 8px; }
+        .mn-object.book { background: #4a453f; padding: 10px 14px; border-radius: 4px; }
+        .mn-mat { background: #fff; padding: 14px; width: 100%; height: 100%; }
+        .mn-object.crystal .mn-mat, .mn-object.book .mn-mat { padding: 0; }
+        .mn-mat img { width: 100%; height: 100%; object-fit: cover; }
+        .mn-main { max-width: 1320px; margin: 0 auto; padding: 12px 28px 80px; display: grid; gap: 28px; }
+        .mn-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+        .mn-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; display: grid; grid-template-rows: 220px minmax(0, 1fr); }
+        .mn-card figure img { width: 100%; height: 100%; object-fit: cover; }
+        .mn-cbody { padding: 18px; display: grid; align-content: space-between; gap: 10px; }
+        .mn-cbody h3 { font-size: 1.04rem; font-weight: 600; }
+        .mn-sz-row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .mn-footer { max-width: 1320px; margin: 0 auto; padding: 40px 28px 64px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; }
+        @media (max-width: 920px) { .mn-hero, .mn-cards { grid-template-columns: 1fr; } }
+        @media (max-width: 580px) { .mn-nav-in, .mn-hero, .mn-main, .mn-footer { padding-inline: 18px; } }
+       }
+    @layer motion {
+      @media (prefers-reduced-motion: no-preference) {
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        @supports ((animation-timeline: view()) and (animation-range: entry)) {
+          .scroll-reveal { animation: fadeSlideUp auto ease-out both; animation-timeline: view(); animation-range: entry 4% cover 20%; }
+        }
+        .reveal-once { animation: fadeSlideUp 420ms ease-out backwards; }
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="pv-dock" role="region" aria-label="Điều hướng xem trước giao diện">
+    <a class="pv-btn" href="../index.html" title="Quay về Hub tổng hợp">Hub</a>
+    <a class="pv-btn" href="./09-gallery-index-cursor.html" aria-label="Mẫu trước"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></a>
+    <span class="pv-label mono">10 / 10</span>
+    <a class="pv-btn" href="./01-stride-3d-travelling.html" aria-label="Mẫu tiếp theo"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
+  </div>
+  
+        <header class="mn-nav" id="mn-nav">
+          <div class="mn-nav-in">
+            <a href="#" style="font-weight:600;text-decoration:none;">Monolith Print Lab</a>
+            <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;font-size:0.88rem;">
+              <a href="#mn-3d">Vật thể 3D</a>
+              <a href="#mn-grid">Chọn cỡ &amp; giá</a>
+              <button type="button" class="js-open-qr" style="color:var(--muted);">Zalo HD</button>
+              <button type="button" class="btn-quiet js-open-cart"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span>Giỏ (<span class="js-cart-count num">2</span>)</span></button>
+            </div>
+          </div>
+        </header>
+
+        <section id="mn-3d" class="mn-hero">
+          <div style="display:grid;gap:16px;align-content:center;">
+            <p class="mono" style="color:var(--accent);font-size:0.78rem;">Trình diễn vật liệu 3D trực tiếp</p>
+            <h1 class="serif">Xoay nghiêng khung gỗ và khối pha lê ngay trên tay bạn.</h1>
+            <p style="color:var(--muted);max-width:46ch;">Di chuyển chuột lên mô hình bên phải để quan sát độ dày khung gỗ sồi, độ vát kính pha lê 5mm và gáy album trước khi đặt hàng.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;" id="mn-objs">
+              <button type="button" class="btn-quiet on" onclick="setMnObj('frame','photo-texture.webp','Khung gỗ sồi tự nhiên · Bản 2.2cm',this)">Khung Gỗ Sồi</button>
+              <button type="button" class="btn-quiet" onclick="setMnObj('crystal','photo-texture-alt.webp','Khối pha lê để bàn · Dày 5mm',this)">Khối Pha Lê</button>
+              <button type="button" class="btn-quiet" onclick="setMnObj('book','photo-book.webp','Photobook mở phẳng · 350gsm',this)">Photobook 180°</button>
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
+              <a href="#mn-grid" class="btn-pri">Chọn sản phẩm &amp; cỡ ảnh <svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+              <button type="button" class="btn-sec js-open-qr"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg><span>Zalo HD</span></button>
+            </div>
+          </div>
+          <div class="mn-stage3d">
+            <div class="mn-object frame" id="mn-obj">
+              <div class="mn-mat"><img src="../../../../../FE_PhotoPrint/public/assets/photo-texture.webp" onerror="this.src='data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20560%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23e8dfd1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23c4b092%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22560%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22115%22%20y%3D%2275%22%20width%3D%22570%22%20height%3D%22410%22%20rx%3D%2214%22%20fill%3D%22%23fffdf8%22%20stroke%3D%22%23222%22%20stroke-width%3D%2212%22%2F%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22215%22%20r%3D%2248%22%20fill%3D%22%23d97757%22%2F%3E%3Cpath%20d%3D%22M155%20430%20L330%20265%20L455%20375%20L560%20285%20L645%20430%20Z%22%20fill%3D%22%231e564d%22%20opacity%3D%220.86%22%2F%3E%3C%2Fsvg%3E'" alt="Mô hình khung ảnh 3D"  id="mn-obj-img" /></div>
+            </div>
+            <span class="mono" id="mn-obj-label" style="font-size:0.78rem;color:var(--muted);">Khung gỗ sồi tự nhiên · Bản 2.2cm</span>
+          </div>
+        </section>
+
+        <main id="mn-grid" class="mn-main scroll-reveal">
+          <div style="display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--line);">
+            <h2 class="serif" style="font-size:clamp(1.8rem,1.2rem+1.6vw,2.6rem);">Chọn nhanh kích thước trên từng sản phẩm</h2>
+            <span style="font-size:0.86rem;color:var(--muted);">Bấm cỡ bất kỳ để cập nhật giá trước khi thêm giỏ</span>
+          </div>
+          <div class="mn-cards">
+            
+              <article class="mn-card" data-price="2500" data-sz="10×15">
+                <figure><img src="../../../../../FE_PhotoPrint/public/assets/photo-prints.webp" onerror="this.src='data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20560%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23e8dfd1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23c4b092%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22560%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22115%22%20y%3D%2275%22%20width%3D%22570%22%20height%3D%22410%22%20rx%3D%2214%22%20fill%3D%22%23fffdf8%22%20stroke%3D%22%23222%22%20stroke-width%3D%2212%22%2F%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22215%22%20r%3D%2248%22%20fill%3D%22%23d97757%22%2F%3E%3Cpath%20d%3D%22M155%20430%20L330%20265%20L455%20375%20L560%20285%20L645%20430%20Z%22%20fill%3D%22%231e564d%22%20opacity%3D%220.86%22%2F%3E%3C%2Fsvg%3E'" alt="Ảnh lụa mờ Fujifilm 10×15"   /></figure>
+                <div class="mn-cbody">
+                  <h3>Ảnh lụa mờ Fujifilm 10×15</h3>
+                  <p style="font-size:0.86rem;color:var(--muted);">Bề mặt lụa chống vân tay và chống lóa, bảo toàn độ chuyển vùng tối và tông da tự nhiên.</p>
+                  <div class="mn-sz-row">
+                    <button type="button" class="btn-quiet on" style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 2500, '10×15')">10×15</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 4500, '13×18')">13×18</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 18000, '20×30')">20×30</button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);">
+                    <strong class="mono js-mn-price" style="color:var(--accent);font-size:1.05rem;">2.500đ</strong>
+                    <button type="button" class="btn-pri" style="min-block-size:38px;padding:6px 14px;" onclick="addMnCard(this, 'Ảnh lụa mờ Fujifilm 10×15', 'photo-prints.webp')"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Thêm</span></button>
+                  </div>
+                </div>
+              </article>
+            
+              <article class="mn-card" data-price="240000" data-sz="30×45">
+                <figure><img src="../../../../../FE_PhotoPrint/public/assets/photo-crystal.webp" onerror="this.src='data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20560%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23e8dfd1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23c4b092%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22560%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22115%22%20y%3D%2275%22%20width%3D%22570%22%20height%3D%22410%22%20rx%3D%2214%22%20fill%3D%22%23fffdf8%22%20stroke%3D%22%23222%22%20stroke-width%3D%2212%22%2F%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22215%22%20r%3D%2248%22%20fill%3D%22%23d97757%22%2F%3E%3Cpath%20d%3D%22M155%20430%20L330%20265%20L455%20375%20L560%20285%20L645%20430%20Z%22%20fill%3D%22%231e564d%22%20opacity%3D%220.86%22%2F%3E%3C%2Fsvg%3E'" alt="Tranh pha lê tráng gương 40×60"   /></figure>
+                <div class="mn-cbody">
+                  <h3>Tranh pha lê tráng gương 40×60</h3>
+                  <p style="font-size:0.86rem;color:var(--muted);">Ảnh in 12 màu ép nhiệt lên đế MDF chống ẩm, phủ lớp acrylic pha lê vát cạnh bắt sáng sâu.</p>
+                  <div class="mn-sz-row">
+                    <button type="button" class="btn-quiet on" style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 165000, '30×45')">30×45</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 240000, '40×60')">40×60</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 480000, '60×90')">60×90</button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);">
+                    <strong class="mono js-mn-price" style="color:var(--accent);font-size:1.05rem;">165.000đ</strong>
+                    <button type="button" class="btn-pri" style="min-block-size:38px;padding:6px 14px;" onclick="addMnCard(this, 'Tranh pha lê tráng gương 40×60', 'photo-crystal.webp')"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Thêm</span></button>
+                  </div>
+                </div>
+              </article>
+            
+              <article class="mn-card" data-price="490000" data-sz="20 trang">
+                <figure><img src="../../../../../FE_PhotoPrint/public/assets/photo-book.webp" onerror="this.src='data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20560%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23e8dfd1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23c4b092%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22560%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22115%22%20y%3D%2275%22%20width%3D%22570%22%20height%3D%22410%22%20rx%3D%2214%22%20fill%3D%22%23fffdf8%22%20stroke%3D%22%23222%22%20stroke-width%3D%2212%22%2F%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22215%22%20r%3D%2248%22%20fill%3D%22%23d97757%22%2F%3E%3Cpath%20d%3D%22M155%20430%20L330%20265%20L455%20375%20L560%20285%20L645%20430%20Z%22%20fill%3D%22%231e564d%22%20opacity%3D%220.86%22%2F%3E%3C%2Fsvg%3E'" alt="Photobook vải Linen Bỉ 30 trang"   /></figure>
+                <div class="mn-cbody">
+                  <h3>Photobook vải Linen Bỉ 30 trang</h3>
+                  <p style="font-size:0.86rem;color:var(--muted);">Đóng gáy lay-flat mở phẳng hoàn toàn không mất chi tiết rãnh giữa, bìa vải dệt thủ công.</p>
+                  <div class="mn-sz-row">
+                    <button type="button" class="btn-quiet on" style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 390000, '20 trang')">20 trang</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 490000, '30 trang')">30 trang</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 620000, '40 trang')">40 trang</button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);">
+                    <strong class="mono js-mn-price" style="color:var(--accent);font-size:1.05rem;">390.000đ</strong>
+                    <button type="button" class="btn-pri" style="min-block-size:38px;padding:6px 14px;" onclick="addMnCard(this, 'Photobook vải Linen Bỉ 30 trang', 'photo-book.webp')"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Thêm</span></button>
+                  </div>
+                </div>
+              </article>
+            
+              <article class="mn-card" data-price="89000" data-sz="20 tấm">
+                <figure><img src="../../../../../FE_PhotoPrint/public/assets/photo-polaroid.webp" onerror="this.src='data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20560%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23e8dfd1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23c4b092%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22560%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22115%22%20y%3D%2275%22%20width%3D%22570%22%20height%3D%22410%22%20rx%3D%2214%22%20fill%3D%22%23fffdf8%22%20stroke%3D%22%23222%22%20stroke-width%3D%2212%22%2F%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22215%22%20r%3D%2248%22%20fill%3D%22%23d97757%22%2F%3E%3Cpath%20d%3D%22M155%20430%20L330%20265%20L455%20375%20L560%20285%20L645%20430%20Z%22%20fill%3D%22%231e564d%22%20opacity%3D%220.86%22%2F%3E%3C%2Fsvg%3E'" alt="Bộ 20 ảnh Polaroid kẹp dây trang trí"   /></figure>
+                <div class="mn-cbody">
+                  <h3>Bộ 20 ảnh Polaroid kẹp dây trang trí</h3>
+                  <p style="font-size:0.86rem;color:var(--muted);">In chuẩn khung viền trắng Instax trên giấy dày 300gsm, tặng dây thừng gai và 20 kẹp gỗ.</p>
+                  <div class="mn-sz-row">
+                    <button type="button" class="btn-quiet on" style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 89000, '20 tấm')">20 tấm</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 159000, '40 tấm')">40 tấm</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 225000, '60 tấm')">60 tấm</button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);">
+                    <strong class="mono js-mn-price" style="color:var(--accent);font-size:1.05rem;">89.000đ</strong>
+                    <button type="button" class="btn-pri" style="min-block-size:38px;padding:6px 14px;" onclick="addMnCard(this, 'Bộ 20 ảnh Polaroid kẹp dây trang trí', 'photo-polaroid.webp')"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Thêm</span></button>
+                  </div>
+                </div>
+              </article>
+            
+              <article class="mn-card" data-price="185000" data-sz="20×30">
+                <figure><img src="../../../../../FE_PhotoPrint/public/assets/photo-frame.webp" onerror="this.src='data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20560%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23e8dfd1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23c4b092%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22560%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22115%22%20y%3D%2275%22%20width%3D%22570%22%20height%3D%22410%22%20rx%3D%2214%22%20fill%3D%22%23fffdf8%22%20stroke%3D%22%23222%22%20stroke-width%3D%2212%22%2F%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22215%22%20r%3D%2248%22%20fill%3D%22%23d97757%22%2F%3E%3Cpath%20d%3D%22M155%20430%20L330%20265%20L455%20375%20L560%20285%20L645%20430%20Z%22%20fill%3D%22%231e564d%22%20opacity%3D%220.86%22%2F%3E%3C%2Fsvg%3E'" alt="Khung gỗ sồi bo trắng bảo tàng 30×45"   /></figure>
+                <div class="mn-cbody">
+                  <h3>Khung gỗ sồi bo trắng bảo tàng 30×45</h3>
+                  <p style="font-size:0.86rem;color:var(--muted);">Gỗ sồi tự nhiên vát góc 45°, đi kèm bo giấy acid-free 4cm chống ố vàng theo thời gian.</p>
+                  <div class="mn-sz-row">
+                    <button type="button" class="btn-quiet on" style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 135000, '20×30')">20×30</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 185000, '30×45')">30×45</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 340000, '50×70')">50×70</button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);">
+                    <strong class="mono js-mn-price" style="color:var(--accent);font-size:1.05rem;">135.000đ</strong>
+                    <button type="button" class="btn-pri" style="min-block-size:38px;padding:6px 14px;" onclick="addMnCard(this, 'Khung gỗ sồi bo trắng bảo tàng 30×45', 'photo-frame.webp')"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Thêm</span></button>
+                  </div>
+                </div>
+              </article>
+            
+              <article class="mn-card" data-price="35000" data-sz="3×4 (12 tấm)">
+                <figure><img src="../../../../../FE_PhotoPrint/public/assets/photo-id.webp" onerror="this.src='data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20560%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23e8dfd1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23c4b092%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22560%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22115%22%20y%3D%2275%22%20width%3D%22570%22%20height%3D%22410%22%20rx%3D%2214%22%20fill%3D%22%23fffdf8%22%20stroke%3D%22%23222%22%20stroke-width%3D%2212%22%2F%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22215%22%20r%3D%2248%22%20fill%3D%22%23d97757%22%2F%3E%3Cpath%20d%3D%22M155%20430%20L330%20265%20L455%20375%20L560%20285%20L645%20430%20Z%22%20fill%3D%22%231e564d%22%20opacity%3D%220.86%22%2F%3E%3C%2Fsvg%3E'" alt="Ảnh thẻ / Hộ chiếu / Visa chuẩn lãnh sự"   /></figure>
+                <div class="mn-cbody">
+                  <h3>Ảnh thẻ / Hộ chiếu / Visa chuẩn lãnh sự</h3>
+                  <p style="font-size:0.86rem;color:var(--muted);">Cân chỉnh ánh sáng khuôn mặt tự nhiên, đổi phông trắng hoặc xanh và gửi kèm file số gốc.</p>
+                  <div class="mn-sz-row">
+                    <button type="button" class="btn-quiet on" style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 35000, '3×4 (12 tấm)')">3×4 (12 tấm)</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 35000, '4×6 (8 tấm)')">4×6 (8 tấm)</button><button type="button" class="btn-quiet " style="min-block-size:32px;padding:4px 10px;font-size:0.78rem;" onclick="pickMnSize(this, 40000, 'Visa (6 tấm)')">Visa (6 tấm)</button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);">
+                    <strong class="mono js-mn-price" style="color:var(--accent);font-size:1.05rem;">35.000đ</strong>
+                    <button type="button" class="btn-pri" style="min-block-size:38px;padding:6px 14px;" onclick="addMnCard(this, 'Ảnh thẻ / Hộ chiếu / Visa chuẩn lãnh sự', 'photo-id.webp')"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Thêm</span></button>
+                  </div>
+                </div>
+              </article>
+            
+          </div>
+        </main>
+
+        <footer class="mn-footer">
+          <div>
+            <strong class="serif" style="font-size:1.5rem;">Monolith Print Lab</strong>
+            <p style="color:var(--muted);max-width:36ch;margin-top:6px;">Xưởng rửa ảnh lụa, pha lê và Photobook mở phẳng 180°. Kiểm tra file gốc miễn phí trước khi in.</p>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;background:var(--surface);border:1px solid var(--line);border-radius:8px;">
+            <svg width="64" height="64" viewBox="0 0 21 21" aria-label="Mã QR Zalo nhanh" style="shape-rendering:crispEdges;background:#fff;padding:4px;"><rect width="21" height="21" fill="#fff"/><path fill="#111" d="M1 1h7v7H1zm2 2v3h3V3zm10-2h7v7h-7zm2 2v3h3V3zM1 13h7v7H1zm2 2v3h3v-3zm6-12h2v2H9zm0 4h2v2H9zm4 2h2v2h-2zm-4 2h2v2H9zm2 2h2v2h-2zm4-2h2v2h-2zm2 2h2v2h-2zm-6 2h2v2h-2zm4 2h2v2h-2zm2-4h2v2h-2z"/></svg>
+            <div style="font-size:0.84rem;"><strong>Zalo HD: 090 123 4567</strong><p style="color:var(--muted);margin-top:2px;">Quét mã gửi ảnh nguyên gốc</p></div>
+          </div>
+        </footer>
+  <div id="toast" class="toast-box" hidden role="status"></div>
+
+  <dialog id="cart-dialog" class="uv-modal" closedby="any" aria-labelledby="cart-title">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line);">
+      <h2 id="cart-title" style="font-size:1.1rem;font-weight:600;">Giỏ hàng in ảnh</h2>
+      <button type="button" class="btn-quiet js-close-cart" id="cart-close"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg><span>Đóng</span></button>
+    </div>
+    <div id="cart-items" style="display:grid;gap:10px;margin-bottom:18px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--line);gap:12px;flex-wrap:wrap;">
+      <span style="font-size:0.9rem;">Tạm tính: <strong class="mono" id="cart-total"></strong></span>
+      <button type="button" class="btn-pri js-open-qr" style="min-block-size:40px;" id="cart-checkout-btn">Gửi đơn qua Zalo HD <svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+    </div>
+  </dialog>
+
+  <dialog id="qr-dialog" class="uv-modal" closedby="any" aria-labelledby="qr-title">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);">
+      <h2 id="qr-title" style="font-size:1.1rem;font-weight:600;">Gửi ảnh gốc HD</h2>
+      <button type="button" class="btn-quiet js-close-qr" id="qr-close"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg><span>Đóng</span></button>
+    </div>
+    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:16px;">Quét mã QR bằng ứng dụng Zalo và chọn chế độ HD để giữ trọn độ phân giải gốc từ máy ảnh hoặc điện thoại.</p>
+    <div style="display:grid;place-items:center;padding:18px;background:#fff;border-radius:8px;border:1px solid var(--line);margin-bottom:16px;">
+      <svg width="148" height="148" viewBox="0 0 21 21" aria-label="Mã QR Zalo" style="shape-rendering:crispEdges"><rect width="21" height="21" fill="#fff"/><path fill="#111" d="M1 1h7v7H1zm2 2v3h3V3zm10-2h7v7h-7zm2 2v3h3V3zM1 13h7v7H1zm2 2v3h3v-3zm6-12h2v2H9zm0 4h2v2H9zm4 2h2v2h-2zm-4 2h2v2H9zm2 2h2v2h-2zm4-2h2v2h-2zm2 2h2v2h-2zm-6 2h2v2h-2zm4 2h2v2h-2zm2-4h2v2h-2z"/></svg>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <a class="btn-pri" href="https://zalo.me/0901234567" target="_blank" rel="noreferrer" style="min-block-size:40px;"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg> Mở Zalo</a>
+      <a class="btn-sec" href="https://m.me/atelierminhtam" target="_blank" rel="noreferrer" style="min-block-size:40px;"><svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg> Mở Messenger</a>
+    </div>
+  </dialog>
+
+  <script>
+    
+  let __dispSupport;
+  function canTransitionDisplay() {
+    if (__dispSupport !== undefined) return __dispSupport;
+    if (!window.CSS?.supports?.('transition-behavior', 'allow-discrete') || !document.body) return false;
+    const p = document.createElement('div');
+    p.style.cssText = 'transition: display 1s allow-discrete !important; display: block;';
+    document.body.appendChild(p); getComputedStyle(p).display; p.style.display = 'none';
+    __dispSupport = getComputedStyle(p).display === 'block'; p.remove();
+    return __dispSupport;
+  }
+  async function closeTopLayer(dlg) {
+    if (!(window.CSS?.supports?.('overlay', 'auto') && canTransitionDisplay())) {
+      dlg.setAttribute('data-closing', '');
+      const anims = dlg.getAnimations({ subtree: true });
+      if (anims.length) await Promise.race([Promise.allSettled(anims.map(a => a.finished)), new Promise(r => setTimeout(r, 600))]);
+      dlg.removeAttribute('data-closing');
+    }
+    dlg.close();
+  }
+  function wireDialog(dlg, openers, closers) {
+    openers.forEach(sel => document.querySelectorAll(sel).forEach(el => el.addEventListener('click', e => { e.preventDefault(); dlg.showModal(); })));
+    closers.forEach(sel => document.querySelectorAll(sel).forEach(el => el.addEventListener('click', () => closeTopLayer(dlg))));
+    dlg.addEventListener('cancel', e => { e.preventDefault(); closeTopLayer(dlg); });
+  }
+  function runTransition(fn, focusEl) {
+    if (document.startViewTransition && matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+      const t = document.startViewTransition(fn);
+      if (focusEl) t.finished.finally(() => focusEl.focus?.({ preventScroll: true }));
+    } else {
+      fn();
+      if (focusEl) focusEl.focus?.({ preventScroll: true });
+    }
+  }
+
+    const CART = [
+      { name: 'Bộ 20 ảnh Polaroid kẹp dây trang trí', price: 89000, qty: 1, img: 'photo-polaroid.webp' },
+      { name: 'Ảnh lụa mờ Fujifilm 10×15', price: 2500, qty: 20, img: 'photo-prints.webp' },
+    ];
+    function renderCart() {
+      const cnt = CART.reduce((s, x) => s + x.qty, 0);
+      document.querySelectorAll('.js-cart-count').forEach(el => { el.textContent = String(cnt); });
+      document.getElementById('cart-total').textContent = CART.reduce((s, x) => s + x.price * x.qty, 0).toLocaleString('vi-VN') + 'đ';
+      document.getElementById('cart-items').innerHTML = CART.map((x, idx) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--line);border-radius:6px;">
+          <img src="../../../../../FE_PhotoPrint/public/assets/${x.img}" onerror="this.src='data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20560%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23e8dfd1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23c4b092%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22560%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22115%22%20y%3D%2275%22%20width%3D%22570%22%20height%3D%22410%22%20rx%3D%2214%22%20fill%3D%22%23fffdf8%22%20stroke%3D%22%23222%22%20stroke-width%3D%2212%22%2F%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22215%22%20r%3D%2248%22%20fill%3D%22%23d97757%22%2F%3E%3Cpath%20d%3D%22M155%20430%20L330%20265%20L455%20375%20L560%20285%20L645%20430%20Z%22%20fill%3D%22%231e564d%22%20opacity%3D%220.86%22%2F%3E%3C%2Fsvg%3E'" alt="" style="width:48px;height:48px;border-radius:4px;object-fit:cover;" />
+          <div style="flex:1;min-width:0;"><strong style="display:block;font-size:0.86rem;font-weight:500;">${x.name}</strong><small class="mono" style="color:var(--muted);">${x.price.toLocaleString('vi-VN')}đ</small></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button type="button" class="btn-quiet" style="min-block-size:32px;padding:0 10px;" onclick="chQty(${idx},-1)">−</button>
+            <span class="mono" style="font-size:0.85rem;min-width:20px;text-align:center;">${x.qty}</span>
+            <button type="button" class="btn-quiet" style="min-block-size:32px;padding:0 10px;" onclick="chQty(${idx},1)">+</button>
+          </div>
+        </div>`).join('');
+    }
+    window.chQty = (idx, d) => { CART[idx].qty = Math.max(1, CART[idx].qty + d); renderCart(); };
+    window.addCart = (name, price, img) => {
+      const ex = CART.find(x => x.name === name);
+      if (ex) ex.qty += 1; else CART.unshift({ name, price, qty: 1, img });
+      renderCart();
+      const t = document.getElementById('toast');
+      t.innerHTML = '<svg class="uv-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Đã thêm: ' + name + '</span>';
+      t.hidden = false;
+      clearTimeout(window.__ptToast); window.__ptToast = setTimeout(() => { t.hidden = true; }, 2400);
+    };
+    if (!CSS.supports?.('(animation-timeline: view()) and (animation-range: entry)') && matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+      const revs = document.querySelectorAll('.scroll-reveal');
+      revs.forEach(el => { el.style.opacity='0'; el.style.transform='translateY(14px)'; el.style.transition='opacity 400ms ease-out, transform 400ms ease-out'; });
+      const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; io.unobserve(e.target); } }), { threshold: 0.08 });
+      revs.forEach(el => io.observe(el));
+    }
+    const cartDlg = document.getElementById('cart-dialog'), qrDlg = document.getElementById('qr-dialog');
+    wireDialog(cartDlg, ['.js-open-cart'], ['#cart-close']);
+    wireDialog(qrDlg, ['.js-open-qr'], ['#qr-close']);
+    document.getElementById('cart-checkout-btn')?.addEventListener('click', () => closeTopLayer(cartDlg));
+    document.querySelectorAll('.compare-box').forEach(box => box.querySelector('input')?.addEventListener('input', e => box.style.setProperty('--pos', e.target.value + '%')));
+    renderCart();
+    
+        addEventListener('scroll', () => document.getElementById('mn-nav').classList.toggle('scrolled', scrollY > 40), { passive: true });
+        window.setMnObj = (cls, f, lbl, btn) => {
+          const obj = document.getElementById('mn-obj'); obj.className = 'mn-object ' + cls;
+          document.getElementById('mn-obj-img').src = '../../../../../FE_PhotoPrint/public/assets/' + f;
+          document.getElementById('mn-obj-label').textContent = lbl;
+          document.querySelectorAll('#mn-objs .btn-quiet').forEach(b => b.classList.toggle('on', b === btn));
+        };
+        const stg = document.querySelector('.mn-stage3d'), ob = document.getElementById('mn-obj');
+        if (matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+          stg.addEventListener('pointermove', e => { const r = stg.getBoundingClientRect(); ob.style.transform = `rotateX(${((e.clientY-r.top)/r.height-.5)*-14}deg) rotateY(${((e.clientX-r.left)/r.width-.5)*18}deg)`; });
+          stg.addEventListener('pointerleave', () => { ob.style.transform = ''; });
+        }
+        window.pickMnSize = (btn, price, label) => {
+          const card = btn.closest('.mn-card');
+          card.dataset.price = String(price); card.dataset.sz = label;
+          card.querySelector('.js-mn-price').textContent = price.toLocaleString('vi-VN') + 'đ';
+          card.querySelectorAll('.mn-sz-row .btn-quiet').forEach(b => b.classList.toggle('on', b === btn));
+        };
+        window.addMnCard = (btn, name, img) => {
+          const card = btn.closest('.mn-card');
+          addCart(name + ' (' + card.dataset.sz + ')', +card.dataset.price, img);
+        };
+      
+  </script>
+</body>
+</html>

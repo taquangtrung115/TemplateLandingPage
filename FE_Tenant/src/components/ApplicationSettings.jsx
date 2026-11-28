@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Building2, CircleAlert, Database, LoaderCircle, LockKeyhole, LockKeyholeOpen, RotateCcw, Save, ShieldCheck, ToggleRight, UserPlus, X } from "lucide-react";
+import { Building2, CircleAlert, Database, LoaderCircle, LockKeyhole, LockKeyholeOpen, RotateCcw, Save, ShieldCheck, ToggleRight, UserPlus } from "lucide-react";
 import Field from "./Field";
 import { UiverseIconLabel as IconLabel } from "@oneportal/uiverse-ui";
 export default function ApplicationSettings({
@@ -9,13 +9,15 @@ export default function ApplicationSettings({
   busy,
   onConfigure,
   onUpdate,
+  onChangeAccess,
+  onUninstall,
+  onDelete,
 }) {
   const [enabled, setEnabled] = useState(application?.isEnabled || false),
     [registration, setRegistration] = useState(
       application?.allowSelfRegistration || false,
     ),
-    [name, setName] = useState(tenant.name),
-    [confirmLock, setConfirmLock] = useState(false);
+    [name, setName] = useState(tenant.name);
   return (
     <div className="form-stack">
       <form
@@ -113,35 +115,17 @@ export default function ApplicationSettings({
             ? "Khóa công ty sẽ chặn truy cập tất cả ứng dụng của công ty."
             : "Công ty đang bị khóa truy cập."}
         </p>
-        {confirmLock ? (
-          <div className="form-actions uv-view-enter">
-            <button
-              className="portal-secondary"
-              disabled={busy}
-              onClick={() => setConfirmLock(false)}
-            >
-              <IconLabel icon={X}>Hủy</IconLabel>
-            </button>
-            <button
-              className="portal-secondary"
-              disabled={busy}
-              onClick={() =>
-                onUpdate({ name: tenant.name, isActive: !tenant.isActive })
-              }
-            >
-              <IconLabel icon={tenant.isActive ? LockKeyhole : LockKeyholeOpen}>Xác nhận {tenant.isActive ? "khóa" : "mở"}</IconLabel>
-            </button>
-          </div>
-        ) : (
-          <button
-            className="portal-secondary"
-            disabled={busy}
-            onClick={() => setConfirmLock(true)}
-          >
-            <IconLabel icon={tenant.isActive ? LockKeyhole : LockKeyholeOpen}>{tenant.isActive ? "Khóa công ty" : "Mở công ty"}</IconLabel>
-          </button>
-        )}
+        <button type="button" className="portal-secondary" disabled={busy} onClick={onChangeAccess}>
+          <IconLabel icon={tenant.isActive ? LockKeyhole : LockKeyholeOpen}>{tenant.isActive ? "Khóa công ty" : "Mở công ty"}</IconLabel>
+        </button>
       </div>
+      <section className="tenant-lock">
+        <h3 className="font-semibold mb-2">Vùng nguy hiểm</h3>
+        <div className="workspace-actions">
+          {onUninstall && <button type="button" className="portal-secondary danger-text" onClick={onUninstall} disabled={busy}>Gỡ cài đặt</button>}
+          <button type="button" className="portal-danger" onClick={onDelete} disabled={busy}>Xóa công ty</button>
+        </div>
+      </section>
     </div>
   );
 }

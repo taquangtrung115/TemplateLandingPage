@@ -53,11 +53,46 @@ export function priceConfiguration(product, config) {
 
 export function orderItemPayload(item) {
   const { productId, sizeLabel, widthCm, heightCm, surfaceName, finishingNames, turnaroundMode,
-    quantity, photoFiles, sendAlbumLater, albumUrl, productOptions } = item;
+    quantity, photoFiles, sendAlbumLater, albumUrl, productOptions, comboGroupId } = item;
   return {
     productId, sizeLabel, widthCm, heightCm, surfaceName, finishingNames, turnaroundMode, quantity,
-    photoFiles: photoFiles.map(({ id, thumbnailUrl, ...photo }) => photo), sendAlbumLater, albumUrl, productOptions,
+    photoFiles: photoFiles.map(({ id, thumbnailUrl, ...photo }) => photo), sendAlbumLater, albumUrl, productOptions, comboGroupId,
   };
+}
+
+export const counterServiceSlugs = ['anh-the', 'in-anh-10x15', 'anh-polaroid', 'in-mau-photo-a4'];
+
+export function counterOrderLine(product, quantity = 1) {
+  const size = product.printSizes[0];
+  if (!size) return null;
+  const config = {
+    productId: product.id, productSlug: product.slug, productName: product.name, thumbnailUrl: product.thumbnailUrl,
+    sizeLabel: size.label, widthCm: size.widthCm, heightCm: size.heightCm, surfaceName: product.paperOrSurfaceOptions[0]?.name ?? null,
+    finishingNames: [], turnaroundMode: 'Standard', quantity, photoFiles: [], sendAlbumLater: product.supportsBatchUpload, albumUrl: null,
+  };
+  return { ...config, ...priceConfiguration(product, config) };
+}
+
+export function validCombo(group) {
+  return group.length === 3 && new Set(group.map(line => line.productSlug)).size === 3
+    && group.every(line => line.turnaroundMode === 'Standard' && counterServiceSlugs.includes(line.productSlug));
+}
+
+export function comboGroups(items) {
+  const groups = new Map();
+  for (const item of items) {
+    if (!item.comboGroupId) continue;
+    const group = groups.get(item.comboGroupId) ?? [];
+    group.push(item);
+    groups.set(item.comboGroupId, group);
+  }
+  return [...groups.values()];
+}
+
+export function comboDiscountFor(items) {
+  return comboGroups(items).reduce((sum, group) => validCombo(group)
+    ? sum + currency(amount(group.reduce((total, line) => total + line.lineTotal, 0)).mul(0.15))
+    : sum, 0);
 }
 
 const moneyFormat = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });

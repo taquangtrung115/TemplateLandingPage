@@ -1,9 +1,11 @@
 :root {
-  --color-paper: #ffffff; --color-canvas: #f5f7fa; --color-subtle: #eef2f6;
-  --color-ink: #172b43; --color-muted: #52657a; --color-rule: #dce3eb;
-  --color-accent: #1d4ed8; --color-accent-hover: #1e40af; --color-accent-soft: #eff6ff;
-  --color-focus: #2563eb; --color-success: #166534; --color-success-soft: #f0fdf4;
-  --color-error: #b91c1c; --color-error-soft: #fef2f2; --color-overlay: #172b4366;
+  color-scheme: dark;
+  --color-paper: #13131c; --color-canvas: #09090f; --color-subtle: #1b1b28;
+  --color-ink: #f4f4f5; --color-muted: #a1a1aa; --color-rule: #262636;
+  --color-accent: #8b5cf6; --color-accent-hover: #a78bfa; --color-accent-soft: #26203b;
+  --color-focus: #a78bfa; --color-success: #6ee7b7; --color-success-soft: #10b98122;
+  --color-error: #fca5a5; --color-error-soft: #ef444422; --color-overlay: #09090fb8;
+  --color-waiting: #fcd34d; --color-waiting-soft: #f59e0b22; --radius: 12px;
   --font-body: Inter, system-ui, sans-serif; --font-display: var(--font-body);
   --space-xs: 4px; --space-sm: 8px; --space-md: 16px; --space-lg: 24px; --space-xl: 32px;
 }

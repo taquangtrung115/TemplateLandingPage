@@ -5,6 +5,7 @@ import { photoOrderApi } from '../../api/photoOrderApi';
 import { photoAssetUrl } from '../../api/photoUploadApi';
 import { OrderStates, parseArray } from '../../models/photoPrint';
 import { formatMoney } from '../../utils/photoPricing';
+import { paymentStatuses } from '../../utils/vietQr';
 import useRequest from '../../hooks/useRequest';
 import useDebounce from '../../hooks/useDebounce';
 import PageHeading from '../../components/common/PageHeading';
@@ -64,7 +65,9 @@ export default function AdminOrdersPage() {
     <RequestState result={orders}>
       {orders.data?.items.length ? <ul className="admin-list panel">{orders.data.items.map(order => <li key={order.id}>
         <div><strong className="mono">{order.orderCode}</strong><p>{order.customerName} · {order.totalPhotoCount} bản</p></div>
-        <UiverseBadge>{OrderStates[order.status] || order.status}</UiverseBadge><strong>{formatMoney(order.grandTotal)}</strong>
+        <div className="action-row"><UiverseBadge>{OrderStates[order.status] || order.status}</UiverseBadge>
+          {order.transferMemo && <UiverseBadge tone={order.paymentStatus === 'Paid' ? 'emerald' : 'neutral'}>{paymentStatuses[order.paymentStatus]}</UiverseBadge>}</div>
+        <strong className="mono">{formatMoney(order.grandTotal)}</strong>
         <UiverseButton icon={<Eye className="control-icon" aria-hidden="true" />} variant="outline" size="small" onClick={() => setSelected(order)}>Chi tiết</UiverseButton>
       </li>)}</ul> : <p className="notice">Chưa có đơn phù hợp.</p>}
       <Pagination page={page} pageSize={pageSize} totalCount={orders.data?.totalCount} onPage={setPage} />
@@ -73,6 +76,11 @@ export default function AdminOrdersPage() {
       onClose={() => setSelected(null)} onChanged={() => { setSelected(null); orders.reload(); }} onConflict={orders.reload}>
       <div><strong>{selected.customerName}</strong><p>{selected.customerPhone}{selected.customerEmail ? ' · ' + selected.customerEmail : ''}</p>
         {selected.deliveryAddress && <p>{selected.deliveryAddress}</p>}{selected.notes && <p>{selected.notes}</p>}</div>
+      {selected.paymentReceipt && <section className="panel"><h3>Biên lai VietQR</h3><dl className="price-summary">
+        <div><dt>Mã giao dịch</dt><dd>{selected.paymentReceipt.transactionCode}</dd></div>
+        <div><dt>Trạng thái</dt><dd>{paymentStatuses[selected.paymentReceipt.status]}</dd></div>
+        <div><dt>Số tiền</dt><dd>{formatMoney(selected.paymentReceipt.amount)}</dd></div>
+      </dl></section>}
       {selected.items?.map((item, index) => <OrderItem key={item.id || index} item={item} />)}
     </StateEditor>}
   </>;

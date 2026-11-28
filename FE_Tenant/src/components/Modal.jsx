@@ -8,7 +8,7 @@ export default function Modal({ title, icon, onClose, busy, children }) {
     const dialog = ref.current;
     const opener = document.activeElement;
     if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
-    dialog.querySelector('input, select')?.focus();
+    (dialog.querySelector('input, select') || dialog.querySelector('button'))?.focus();
     return () => {
       if (dialog.open && typeof dialog.close === 'function') dialog.close();
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true });

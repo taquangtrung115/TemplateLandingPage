@@ -13,7 +13,7 @@ export default function ThreeStageCanvas({ ref, options }) {
   const fallback = useRef(null);
   const currentOptions = useRef(options);
   currentOptions.current = options;
-  const [failed, setFailed] = useState(() => !isWebGLAvailable());
+  const [failed, setFailed] = useState(() => Boolean(options.board && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) || !isWebGLAvailable());
 
   useImperativeHandle(ref, () => ({
     resetCamera: () => stage.current?.controls.reset() ?? fallback.current?.resetCamera(),
@@ -60,6 +60,10 @@ export default function ThreeStageCanvas({ ref, options }) {
     const resize = () => {
       const width = element.clientWidth || 320, height = element.clientHeight || 240;
       camera.aspect = width / height;
+      if (currentOptions.current.board) {
+        camera.position.set(0, 0, Math.max(4.04, 2.97 / camera.aspect));
+        controls.target.set(0, 0, 0);
+      }
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
     };
@@ -69,18 +73,28 @@ export default function ThreeStageCanvas({ ref, options }) {
 
     let frame;
     function render() {
-      controls.autoRotate = Boolean(currentOptions.current.autoRotate) && !motion.matches;
+      const { autoRotate, board, flipped } = currentOptions.current;
+      controls.enabled = !board;
+      controls.enableDamping = !motion.matches;
+      controls.autoRotate = Boolean(autoRotate && !board) && !motion.matches;
+      if (state.mesh) {
+        const angle = flipped ? Math.PI : 0;
+        state.mesh.rotation.y = motion.matches ? angle : THREE.MathUtils.lerp(state.mesh.rotation.y, angle, 0.12);
+      }
       controls.update();
       renderer.render(scene, camera);
       frame = requestAnimationFrame(render);
     }
     function loseContext(event) { event.preventDefault(); setFailed(true); }
+    function reduceMotion(event) { if (event.matches && currentOptions.current.board) setFailed(true); }
     canvas.addEventListener('webglcontextlost', loseContext);
+    motion.addEventListener?.('change', reduceMotion);
     render();
     return () => {
       cancelAnimationFrame(frame);
       observer?.disconnect();
       canvas.removeEventListener('webglcontextlost', loseContext);
+      motion.removeEventListener?.('change', reduceMotion);
       controls.dispose();
       disposeScene(scene);
       renderer.dispose();
@@ -90,7 +104,7 @@ export default function ThreeStageCanvas({ ref, options }) {
     };
   }, [failed]);
 
-  const { model, widthCm, heightCm, src, rightSrc, fitMode, focalX, focalY, caption, captionFont, borderTone, frameColor, hasMatboard, warm } = options;
+  const { model, widthCm, heightCm, src, rightSrc, fitMode, focalX, focalY, caption, captionFont, borderTone, frameColor, hasMatboard, warm, board } = options;
   useEffect(() => {
     const state = stage.current;
     if (failed || !state) return;
@@ -100,16 +114,18 @@ export default function ThreeStageCanvas({ ref, options }) {
       state.scene.add(state.mesh);
       state.model = model;
     }
-    updateDimensions(state.mesh, widthCm, heightCm);
-    updateFrameColor(state.mesh, frameColor);
+    if (!board) {
+      updateDimensions(state.mesh, widthCm, heightCm);
+      updateFrameColor(state.mesh, frameColor);
+    }
     state.key.color.set(warm ? 0xffbc75 : 0xfff7e7);
     state.key.intensity = warm ? 3.4 : 2.1;
     state.ambient.intensity = warm ? 1.15 : 2.45;
     let active = true;
-    applyPhotoTexture(state.mesh, { model, widthCm, heightCm, src, rightSrc, fitMode, focalX, focalY, caption, captionFont, borderTone, frameColor, hasMatboard }, state.renderer, () => active)
+    applyPhotoTexture(state.mesh, { model, widthCm, heightCm, src, rightSrc, fitMode, focalX, focalY, caption, captionFont, borderTone, frameColor, hasMatboard, board }, state.renderer, () => active)
       .catch(() => { if (active) setFailed(true); });
     return () => { active = false; };
-  }, [failed, model, widthCm, heightCm, src, rightSrc, fitMode, focalX, focalY, caption, captionFont, borderTone, frameColor, hasMatboard, warm]);
+  }, [failed, model, widthCm, heightCm, src, rightSrc, fitMode, focalX, focalY, caption, captionFont, borderTone, frameColor, hasMatboard, warm, board]);
 
   return failed ? <Fallback25DViewer ref={fallback} options={options} /> : <div className={'three-stage' + (warm ? ' warm' : '')} ref={host} />;
 }

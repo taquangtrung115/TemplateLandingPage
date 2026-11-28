@@ -15,6 +15,84 @@ public sealed class TenantWorkflowIntegrationTests(PostgresApiFixture fixture)
 {
     #region Full workflows
     [Fact]
+    public async Task PlatformUsers_InheritWorkspaceRolesAndCanOverrideIndividualApps()
+    {
+        var owner = await fixture.AddUserAsync("User", isPlatformAdmin: true);
+        var person = await fixture.AddUserAsync();
+        using var admin = fixture.CreateClientFor(owner.Id, "User");
+        using var user = fixture.CreateClientFor(person.Id, "User");
+        var tenant = await CreateAsync(admin, owner.Email, "landing", "quoting");
+        var other = await CreateAsync(admin, owner.Email, "landing");
+        var platform = $"/api/v1/platform/tenants/{tenant.Id}";
+        using var grant = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Put, platform + "/workspace-membership", new { email = person.Email, role = "Admin" });
+        grant.EnsureSuccessStatusCode();
+        foreach (var app in new[] { "landing", "quoting" })
+        {
+            using var profile = await user.GetAsync(Root(tenant, app) + "/auth/me");
+            profile.EnsureSuccessStatusCode();
+            using var context = await user.GetAsync(Root(tenant, app) + "/context");
+            (await ValueAsync(context)).GetProperty("role").GetString().Should().Be("Admin");
+        }
+        using var denied = await user.GetAsync(Root(other, "landing") + "/auth/me");
+        denied.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        using var overrideRole = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Put, platform + "/applications/quoting/members",
+            new { email = person.Email, role = "User", isActive = false });
+        overrideRole.EnsureSuccessStatusCode();
+        using var blocked = await user.GetAsync(Root(tenant, "quoting") + "/auth/me");
+        blocked.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        var persisted = await fixture.WithDatabaseAsync(database => new OnePortal.Persistence.Repositories.Tenancy.TenantStore(database)
+            .GetTenantUsersAsync(tenant.Id, person.Email, 1, 20, default));
+        persisted.Value.Items.Should().ContainSingle(account => account.Id == person.Id);
+        using var roster = await admin.GetAsync(platform + "/members?search=" + Uri.EscapeDataString(person.Email));
+        roster.StatusCode.Should().Be(HttpStatusCode.OK, await roster.Content.ReadAsStringAsync());
+        var row = (await ValueAsync(roster)).GetProperty("items").EnumerateArray().Single();
+        row.GetProperty("workspaceRole").GetString().Should().Be("Admin");
+        row.GetProperty("applications")[0].GetProperty("isActive").GetBoolean().Should().BeFalse();
+        using var removeOverride = await admin.DeleteAsync(platform + $"/applications/quoting/members/{person.Id}");
+        removeOverride.EnsureSuccessStatusCode();
+        using var restored = await user.GetAsync(Root(tenant, "quoting") + "/context");
+        (await ValueAsync(restored)).GetProperty("role").GetString().Should().Be("Admin");
+    }
+
+    [Fact]
+    public async Task PlatformRemoval_ScopesPurgeAndPreservesGlobalAccounts()
+    {
+        var owner = await fixture.AddUserAsync("User", isPlatformAdmin: true);
+        using var admin = fixture.CreateClientFor(owner.Id, "User");
+        var tenant = await CreateAsync(admin, owner.Email, "landing", "quoting", "photoprint");
+        var platform = $"/api/v1/platform/tenants/{tenant.Id}";
+        var application = platform + "/applications/photoprint";
+        using var lastAdmin = await admin.DeleteAsync(application + $"/members/{owner.Id}");
+        lastAdmin.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        using var disable = await admin.DeleteAsync(application + "?purgeData=false");
+        disable.EnsureSuccessStatusCode();
+        using var inaccessible = await admin.GetAsync(Root(tenant, "photoprint") + "/products");
+        inaccessible.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        using var reinstall = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Put, application, new { isEnabled = true, allowSelfRegistration = false });
+        reinstall.EnsureSuccessStatusCode();
+        using var purge = await admin.DeleteAsync(application + "?purgeData=true");
+        purge.EnsureSuccessStatusCode();
+        await fixture.WithTenantDatabaseAsync(tenant.Id, "photoprint", async database =>
+        {
+            (await database.PhotoProducts.AnyAsync()).Should().BeFalse();
+            (await database.TenantMemberships.AnyAsync()).Should().BeFalse();
+            return true;
+        });
+        using var otherApp = await admin.GetAsync(Root(tenant, "quoting") + "/templates");
+        otherApp.EnsureSuccessStatusCode();
+        using var afterPurge = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Put, application, new { isEnabled = true, allowSelfRegistration = false });
+        afterPurge.EnsureSuccessStatusCode();
+        using var wrong = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Delete, platform, new { confirmKey = "wrong" });
+        wrong.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        using var delete = await ApiTestJson.SendJsonAsync(admin, HttpMethod.Delete, platform, new { confirmKey = tenant.Key });
+        delete.EnsureSuccessStatusCode();
+        using var missing = await admin.GetAsync(platform);
+        missing.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        using var account = await admin.GetAsync("/api/v1/auth/me");
+        account.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task Portal_OnlyListsReadyEnabledAppsForTheRequestedActiveWorkspace()
     {
         var owner = await fixture.AddUserAsync("User", isPlatformAdmin: true);

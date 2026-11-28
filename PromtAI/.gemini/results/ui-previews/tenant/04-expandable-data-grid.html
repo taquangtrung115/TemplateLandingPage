@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>Tenant #04 — Airtable Expandable Table</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+  <style>
+    @layer tokens, base, layout, motion;
+    @layer tokens {
+      :root {
+        color-scheme: light;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --subtle: #f8fafc;
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #cbd5e1;
+      --accent: #2563eb;
+      --on-accent: #ffffff;
+      --radius: 10px;
+      }
+    }
+    @layer base {
+      html, body, main, section, aside, article, header, nav, div, ul, li, h1, h2, h3, h4, p, button, input, select, label, dialog, form, table, tr, td, th { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100dvh; overflow-x: clip; font-family: var(--font, 'Plus Jakarta Sans', system-ui, sans-serif); background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
+      button, input, select { font: inherit; color: inherit; }
+      button { cursor: pointer; border: 0; background: transparent; }
+      button:disabled { opacity: .55; cursor: not-allowed; }
+      :focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+      h1, h2, h3, h4, p { margin: 0; }
+      .mono { font-family: 'JetBrains Mono', monospace; }
+      .preview-strip {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+        padding: 8px 18px; font-size: 12px; background: var(--subtle); border-bottom: 1px solid var(--line); color: var(--muted);
+      }
+      .preview-strip strong { color: var(--ink); }
+      .strip-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+      .strip-btn {
+        padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+        font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;
+      }
+      .strip-btn:hover { border-color: var(--accent); }
+      .badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+      .badge.ready { background: #10b98122; color: #10b981; }
+      .badge.init { background: #f59e0b22; color: #f59e0b; }
+      .badge.locked, .badge.none { background: #ef444422; color: #ef4444; }
+      .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+      .btn-pri, .btn-sec {
+        display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 7px 14px;
+        border-radius: var(--radius, 10px); font-size: 13px; font-weight: 700; transition: transform 160ms cubic-bezier(.22,1,.36,1), background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+      }
+      .btn-pri { background: var(--accent); color: var(--on-accent); }
+      .btn-pri:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); }
+      .btn-sec { background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+      .btn-sec:hover:not(:disabled) { border-color: var(--accent); }
+      .toast-box {
+        position: fixed; right: 20px; bottom: 20px; z-index: 60; padding: 11px 16px; border-radius: var(--radius, 10px);
+        background: var(--surface); border: 1.5px solid var(--accent); box-shadow: 0 18px 40px rgba(0,0,0,0.22); font-size: 13px; font-weight: 700;
+      }
+      
+  dialog.uv-modal {
+    margin: auto; border: 1px solid var(--line); border-radius: calc(var(--radius, 14px) + 4px);
+    background: var(--surface); color: var(--ink); width: min(calc(100% - 32px), 480px); padding: 24px;
+    box-shadow: 0 28px 70px rgba(0,0,0,0.35); opacity: 0;
+    transition-property: opacity, transform, display, overlay;
+    transition-duration: 240ms; transition-timing-function: cubic-bezier(.22,1,.36,1);
+    transition-behavior: allow-discrete;
+  }
+  dialog.uv-modal:modal { overscroll-behavior: contain; }
+  dialog.uv-modal::backdrop {
+    background: rgba(2, 6, 23, 0); backdrop-filter: blur(0px);
+    overflow: hidden; overscroll-behavior: contain;
+    transition-property: background-color, backdrop-filter, display, overlay;
+    transition-duration: 240ms; transition-behavior: allow-discrete;
+  }
+  dialog.uv-modal[open]:where(:not([data-closing])) { opacity: 1; }
+  dialog.uv-modal[open]:where(:not([data-closing]))::backdrop { background: rgba(2, 6, 23, 0.56); backdrop-filter: blur(6px); }
+  @starting-style {
+    dialog.uv-modal[open]:where(:not([data-closing])) { opacity: 0; }
+    dialog.uv-modal[open]:where(:not([data-closing]))::backdrop { background: rgba(2, 6, 23, 0); backdrop-filter: blur(0px); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    dialog.uv-modal { transform: translateY(12px) scale(0.96); }
+    dialog.uv-modal[open]:where(:not([data-closing])) { transform: translateY(0) scale(1); }
+    @starting-style { dialog.uv-modal[open]:where(:not([data-closing])) { transform: translateY(12px) scale(0.96); } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+    dialog.uv-modal, dialog.uv-modal::backdrop { transition-duration: 80ms; }
+  }
+
+    }
+    @layer layout {
+      
+      .dg-wrap { max-width: 1240px; margin: 0 auto; padding: 24px; display: grid; gap: 20px; }
+      .dg-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+      .dg-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+      .kpi { padding: 16px 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 6px; }
+      .kpi span { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+      .kpi strong { font-size: 26px; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+      .dg-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+      .dg-filters { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; background: var(--subtle); }
+      .dg-row { border-bottom: 1px solid var(--line); }
+      .dg-row-head {
+        width: 100%; text-align: left; padding: 14px 18px; display: grid; grid-template-columns: 1.4fr 1fr 1fr 120px; align-items: center; gap: 12px;
+        transition: background-color 140ms ease;
+      }
+      .dg-row-head:hover { background: #eff6ff; }
+      .dg-expand { padding: 16px 18px; background: #f8fafc; border-top: 1px dashed var(--line); display: grid; gap: 12px; }
+      @media (max-width: 720px) { .dg-row-head { grid-template-columns: 1fr; } }
+    
+    }
+    @layer motion {
+      @media (prefers-reduced-motion: no-preference) {
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseDot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.45); opacity: 0.5; } }
+        .anim-item { animation: fadeUp 340ms cubic-bezier(.22,1,.36,1) backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+        .badge.init .dot { animation: pulseDot 1.5s ease-in-out infinite; }
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-strip">
+    <div><strong>Tenant #04 · Airtable Expandable Table</strong> <span>(High-Density Grid · Inline Accordion)</span></div>
+    <div class="strip-actions">
+      <a class="strip-btn" href="../index.html">← Hub 20 mẫu</a>
+      <a class="strip-btn" href="./03-kanban-slide-drawer.html">‹ #03</a>
+      <a class="strip-btn" href="./05-mercury-dual-canvas.html">#05 ›</a>
+      <button type="button" class="strip-btn" id="replay-btn">↻ Replay</button>
+    </div>
+  </div>
+  
+      <main class="dg-wrap">
+        <header class="dg-top">
+          <div><h1 style="font-size:24px;">OnePortal Data Grid</h1><p style="color:var(--muted);font-size:13.5px;">Bảng quản trị toàn chiều rộng, bấm vào dòng công ty để mở rộng quản lý trực tiếp.</p></div>
+          <button type="button" class="btn-pri js-open-create">+ Thêm công ty</button>
+        </header>
+        <section class="dg-kpis">
+          <div class="kpi anim-item" style="--i:0"><span>Tổng công ty</span><strong>4</strong></div>
+          <div class="kpi anim-item" style="--i:1"><span>Đang hoạt động</span><strong>3</strong></div>
+          <div class="kpi anim-item" style="--i:2"><span>Photo Print Ready</span><strong>3</strong></div>
+          <div class="kpi anim-item" style="--i:3"><span>Tổng thành viên</span><strong>8</strong></div>
+        </section>
+        <section class="dg-card">
+          <div class="dg-filters">
+            <button type="button" class="btn-sec" onclick="filterGrid('all')">Tất cả</button>
+            <button type="button" class="btn-sec" onclick="filterGrid('active')">Đang mở</button>
+            <button type="button" class="btn-sec" onclick="filterGrid('locked')">Đã khóa</button>
+          </div>
+          <div id="dg-rows"></div>
+        </section>
+      </main>
+
+  <dialog id="create-dialog" class="uv-modal" closedby="any" aria-labelledby="dlg-title">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h2 id="dlg-title" style="font-size:18px;">Thêm công ty mới</h2>
+      <button type="button" class="btn-sec" id="dlg-close">Đóng</button>
+    </div>
+    <form id="create-form" style="display:grid;gap:12px;">
+      <label style="display:grid;gap:5px;font-size:13px;font-weight:600;">Tên công ty
+        <input name="name" required placeholder="Vd: Studio Ánh Dương" style="padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg);" />
+      </label>
+      <label style="display:grid;gap:5px;font-size:13px;font-weight:600;">Mã workspace
+        <input name="key" required placeholder="anh-duong-photo" style="padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg);" />
+      </label>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+        <button type="button" class="btn-sec" id="dlg-cancel">Hủy</button>
+        <button type="submit" class="btn-pri">Tạo công ty</button>
+      </div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast-box" hidden role="status"></div>
+
+  <script>
+    
+  const TENANTS = [
+    { id: 't1', name: 'Minh Tâm Photo Lab', key: 'minh-tam-photo', active: true, apps: { photoprint: 'ready', quoting: 'ready', landing: 'none' }, members: [
+      { name: 'Nguyễn Minh Tâm', email: 'tam@minhtamphoto.vn', role: 'Admin', active: true },
+      { name: 'Lê Thảo Vy', email: 'vy.design@minhtamphoto.vn', role: 'User', active: true },
+      { name: 'Trần Hoàng Nam', email: 'nam.lab@minhtamphoto.vn', role: 'User', active: false }
+    ]},
+    { id: 't2', name: 'Sài Gòn Print & Ads', key: 'saigon-printads', active: true, apps: { photoprint: 'init', quoting: 'ready', landing: 'ready' }, members: [
+      { name: 'Phạm Quốc Bảo', email: 'bao@sgprint.vn', role: 'Admin', active: true },
+      { name: 'Võ Ngọc Mai', email: 'mai@sgprint.vn', role: 'User', active: true }
+    ]},
+    { id: 't3', name: 'Studio Cưới Ánh Dương', key: 'anh-duong-wedding', active: true, apps: { photoprint: 'ready', quoting: 'none', landing: 'ready' }, members: [
+      { name: 'Đặng Khánh Linh', email: 'linh@anhduongstudio.vn', role: 'Admin', active: true },
+      { name: 'Bùi Thanh Tùng', email: 'tung@anhduongstudio.vn', role: 'User', active: true }
+    ]},
+    { id: 't4', name: 'Xưởng In Bắc Hà', key: 'bac-ha-print', active: false, apps: { photoprint: 'ready', quoting: 'ready', landing: 'none' }, members: [
+      { name: 'Hoàng Gia Huy', email: 'huy@bachaprint.vn', role: 'Admin', active: true }
+    ]}
+  ];
+  const APPS = [
+    { key: 'photoprint', short: 'PP', name: 'Photo Print', desc: 'Cửa hàng in ảnh, kiểm tra DPI & Studio 3D' },
+    { key: 'quoting', short: 'QT', name: 'Quoting', desc: 'Danh mục, khách hàng & xuất báo giá PDF' },
+    { key: 'landing', short: 'LP', name: 'Landing Page', desc: 'Thiết kế mẫu & xuất bản landing page' }
+  ];
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = '✓ ' + msg;
+    el.hidden = false;
+    clearTimeout(window.__tTimer);
+    window.__tTimer = setTimeout(() => { el.hidden = true; }, 2600);
+  }
+  function statusMeta(t, appKey) {
+    const st = t.apps[appKey] || 'none';
+    if (!t.active) return { cls: 'locked', label: 'Công ty đã khóa' };
+    if (st === 'ready') return { cls: 'ready', label: 'Sẵn sàng' };
+    if (st === 'init') return { cls: 'init', label: 'Đang khởi tạo' };
+    return { cls: 'none', label: 'Chưa cài' };
+  }
+
+    
+  let __dispSupport;
+  function canTransitionDisplay() {
+    if (__dispSupport !== undefined) return __dispSupport;
+    if (!window.CSS?.supports?.('transition-behavior', 'allow-discrete') || !document.body) return false;
+    const p = document.createElement('div');
+    p.style.cssText = 'transition: display 1s allow-discrete !important; display: block;';
+    document.body.appendChild(p); getComputedStyle(p).display; p.style.display = 'none';
+    __dispSupport = getComputedStyle(p).display === 'block'; p.remove();
+    return __dispSupport;
+  }
+  async function closeTopLayer(dlg) {
+    if (!(window.CSS?.supports?.('overlay', 'auto') && canTransitionDisplay())) {
+      dlg.setAttribute('data-closing', '');
+      const anims = dlg.getAnimations({ subtree: true });
+      if (anims.length) await Promise.race([Promise.allSettled(anims.map(a => a.finished)), new Promise(r => setTimeout(r, 600))]);
+      dlg.removeAttribute('data-closing');
+    }
+    dlg.close();
+  }
+  function wireDialog(dlg, openers, closers) {
+    openers.forEach(sel => document.querySelectorAll(sel).forEach(el => el.addEventListener('click', e => { e.preventDefault(); dlg.showModal(); })));
+    closers.forEach(sel => document.querySelectorAll(sel).forEach(el => el.addEventListener('click', () => closeTopLayer(dlg))));
+    dlg.addEventListener('cancel', e => { e.preventDefault(); closeTopLayer(dlg); });
+  }
+  function runTransition(fn, focusEl) {
+    if (document.startViewTransition && matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+      const t = document.startViewTransition(fn);
+      if (focusEl) t.finished.finally(() => focusEl.focus?.({ preventScroll: true }));
+    } else {
+      fn();
+      if (focusEl) focusEl.focus?.({ preventScroll: true });
+    }
+  }
+
+    const dlg = document.getElementById('create-dialog');
+    wireDialog(dlg, ['#open-create', '.js-open-create'], ['#dlg-close', '#dlg-cancel']);
+    document.getElementById('create-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.currentTarget);
+      const item = { id: 't' + Date.now(), name: fd.get('name'), key: fd.get('key'), active: true, apps: { photoprint: 'init', quoting: 'none', landing: 'none' }, members: [{ name: 'Admin Khởi Tạo', email: 'admin@' + fd.get('key') + '.vn', role: 'Admin', active: true }] };
+      TENANTS.unshift(item);
+      if (window.onTenantAdded) window.onTenantAdded(item);
+      closeTopLayer(dlg); showToast('Đã tạo công ty ' + item.name); e.currentTarget.reset();
+    });
+    document.getElementById('replay-btn').addEventListener('click', () => {
+      document.querySelectorAll('.anim-item').forEach(el => { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; });
+    });
+    
+      let expanded = 't1', mode = 'all';
+      window.filterGrid = m => { mode = m; draw(); };
+      function draw() {
+        const list = TENANTS.filter(t => mode === 'all' || (mode === 'active' ? t.active : !t.active));
+        document.getElementById('dg-rows').innerHTML = list.map((t, i) => {
+          const isOpen = expanded === t.id;
+          return `<div class="dg-row anim-item" style="--i:${i}">
+            <button type="button" class="dg-row-head" onclick="toggleRow('${t.id}')">
+              <div><strong>${t.name}</strong><small class="mono" style="display:block;color:var(--muted);">${t.key}</small></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">${APPS.filter(a=>t.apps[a.key]!=='none').map(a=>`<span class="badge ready">${a.short}</span>`).join('')}</div>
+              <span style="font-size:13px;color:var(--muted);">${t.members.length} thành viên</span>
+              <span class="badge ${t.active?'ready':'locked'}">${isOpen?'▾ Thu gọn':'▸ Chi tiết'}</span>
+            </button>
+            ${isOpen ? `<div class="dg-expand">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <strong>Thành viên & Store của ${t.name}</strong>
+                <button type="button" class="btn-pri" style="min-height:34px;" onclick="showToast('Đã lưu cập nhật dòng ${t.name}')">Lưu nhanh</button>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
+                ${t.members.map(m => `<div style="padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;display:flex;justify-content:space-between;"><span>${m.name}</span><span class="mono" style="font-size:12px;">${m.role}</span></div>`).join('')}
+              </div>
+            </div>` : ''}
+          </div>`;
+        }).join('');
+      }
+      window.toggleRow = id => { expanded = expanded === id ? null : id; runTransition(draw); };
+      window.onTenantAdded = item => { expanded = item.id; draw(); };
+      draw();
+    
+  </script>
+</body>
+</html>

@@ -11,7 +11,7 @@ using OnePortal.Contract.Abstractions.Shared;
 using OnePortal.Domain.Entities.Tenancy;
 using OnePortal.Persistence.Initialization;
 
-public sealed class TenantStore(ApplicationDbContext database) : ITenantStore
+public sealed partial class TenantStore(ApplicationDbContext database) : ITenantStore
 {
     #region Queries
     public async Task<IReadOnlyList<TenantDto>> SearchAsync(int page, int pageSize, CancellationToken cancellationToken, string? search = null)
@@ -33,19 +33,18 @@ public sealed class TenantStore(ApplicationDbContext database) : ITenantStore
             .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<IReadOnlyList<TenantContextDto>> GetContextsAsync(Guid userId, string appKey, int page, int pageSize, CancellationToken cancellationToken) =>
-        await (from membership in database.TenantMemberships.IgnoreQueryFilters().AsNoTracking()
+        await (from membership in database.ApplicationRoles(appKey)
                join tenant in database.Tenants on membership.TenantId equals tenant.Id
-               join application in database.TenantApplications.IgnoreQueryFilters() on new { membership.TenantId, membership.AppKey } equals new { application.TenantId, application.AppKey }
-               where membership.UserId == userId && membership.AppKey == appKey && membership.IsActive && tenant.IsActive
+               join application in database.TenantApplications.IgnoreQueryFilters().AsNoTracking().Where(row => row.AppKey == appKey) on membership.TenantId equals application.TenantId
+               where membership.UserId == userId && membership.IsActive && tenant.IsActive
                    && application.IsEnabled && application.ProvisioningStatus == "Ready"
                orderby tenant.Name, tenant.Id
-               select new TenantContextDto(tenant.Id, tenant.Key, tenant.Name, membership.AppKey, membership.Role))
+               select new TenantContextDto(tenant.Id, tenant.Key, tenant.Name, appKey, membership.Role))
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<TenantMemberDto>> GetMembersAsync(Guid tenantId, string appKey, int page, int pageSize, CancellationToken cancellationToken) =>
-        await (from membership in database.TenantMemberships.IgnoreQueryFilters().AsNoTracking()
+        await (from membership in database.ApplicationRoles(appKey, tenantId)
                join user in database.Users on membership.UserId equals user.Id
-               where membership.TenantId == tenantId && membership.AppKey == appKey
                orderby user.Email, user.Id
                select new TenantMemberDto(user.Id, user.Email, user.FullName, membership.Role, membership.IsActive, user.IsActive))
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
@@ -58,12 +57,24 @@ public sealed class TenantStore(ApplicationDbContext database) : ITenantStore
 
     private async Task<IReadOnlyList<TenantDto>> DescribeAsync(IReadOnlyList<Tenant> tenants, CancellationToken cancellationToken)
     {
+        if (tenants.Count == 0) return [];
         var ids = tenants.Select(tenant => tenant.Id).ToList();
         var applications = await database.TenantApplications.IgnoreQueryFilters().AsNoTracking().Where(application => ids.Contains(application.TenantId)).ToListAsync(cancellationToken);
         var lookup = applications.ToLookup(application => application.TenantId);
+        var members = database.TenantMemberships.IgnoreQueryFilters().AsNoTracking().Where(member => ids.Contains(member.TenantId) && member.IsActive)
+            .Select(member => new { member.TenantId, member.UserId })
+            .Union(database.TenantWorkspaceMemberships.IgnoreQueryFilters().AsNoTracking().Where(member => ids.Contains(member.TenantId))
+                .Select(member => new { member.TenantId, member.UserId }));
+        var activeMembers = await (from member in members
+                                   join user in database.Users.AsNoTracking() on member.UserId equals user.Id
+                                   where user.IsActive
+                                   group member by member.TenantId into company
+                                   select new { company.Key, Count = company.Select(member => member.UserId).Distinct().Count() })
+            .ToDictionaryAsync(company => company.Key, company => company.Count, cancellationToken);
         return tenants.Select(tenant => new TenantDto(tenant.Id, tenant.Key, tenant.Name, tenant.IsActive,
             lookup[tenant.Id].OrderBy(application => application.AppKey).Select(application => new TenantApplicationDto(application.AppKey, application.IsEnabled,
-                application.AllowSelfRegistration, application.ProvisioningStatus, application.SeedVersion, application.LastInitializationError)).ToArray())).ToArray();
+                application.AllowSelfRegistration, application.ProvisioningStatus, application.SeedVersion, application.LastInitializationError)).ToArray(),
+            activeMembers.GetValueOrDefault(tenant.Id))).ToArray();
     }
 
     private async Task<TenantDto> DescribeAsync(Guid tenantId, CancellationToken cancellationToken) =>
@@ -107,14 +118,24 @@ public sealed class TenantStore(ApplicationDbContext database) : ITenantStore
 
     public async Task<Result<TenantDto>> ConfigureApplicationAsync(Guid tenantId, string appKey, bool isEnabled, bool allowSelfRegistration, CancellationToken cancellationToken)
     {
-        if (!await database.Tenants.AnyAsync(tenant => tenant.Id == tenantId, cancellationToken)) return Result.Failure<TenantDto>(TenancyErrors.NotFound);
         await using var scoped = NewScope(tenantId, appKey);
-        var application = await scoped.TenantApplications.SingleOrDefaultAsync(application => application.AppKey == appKey, cancellationToken);
-        if (application is null) { application = TenantApplication.Create(tenantId, appKey); scoped.TenantApplications.Add(application); }
-        application.Configure(isEnabled, allowSelfRegistration);
-        await scoped.SaveChangesAsync(cancellationToken);
+        var configured = await scoped.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        {
+            scoped.ChangeTracker.Clear();
+            await using var transaction = await scoped.Database.BeginTransactionAsync(cancellationToken);
+            await LockApplicationAsync(scoped, tenantId, appKey, cancellationToken);
+            if (!await scoped.Tenants.AnyAsync(tenant => tenant.Id == tenantId, cancellationToken)) return false;
+            var application = await scoped.TenantApplications.SingleOrDefaultAsync(application => application.AppKey == appKey, cancellationToken);
+            if (application is null) { application = TenantApplication.Create(tenantId, appKey); scoped.TenantApplications.Add(application); }
+            application.Configure(isEnabled, allowSelfRegistration);
+            await scoped.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        });
+        if (!configured) return Result.Failure<TenantDto>(TenancyErrors.NotFound);
         if (isEnabled) await DatabaseInitializer.ProvisionAsync(scoped, cancellationToken);
-        return Result.Success(await DescribeAsync(tenantId, cancellationToken));
+        var tenant = await GetDetailAsync(tenantId, null, cancellationToken);
+        return tenant is null ? Result.Failure<TenantDto>(TenancyErrors.NotFound) : Result.Success(tenant);
     }
 
     public async Task<Result<TenantMemberDto>> SetMembershipAsync(Guid tenantId, string appKey, string email, string role, bool isActive, CancellationToken cancellationToken)
@@ -127,11 +148,15 @@ public sealed class TenantStore(ApplicationDbContext database) : ITenantStore
         {
             scoped.ChangeTracker.Clear();
             await using var transaction = await scoped.Database.BeginTransactionAsync(cancellationToken);
-            await scoped.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({tenantId.ToString() + ":" + appKey}, 0))", cancellationToken);
-            if (!await scoped.TenantApplications.AnyAsync(application => application.AppKey == appKey, cancellationToken)) return Result.Failure<TenantMemberDto>(TenancyErrors.NotFound);
+            await LockApplicationAsync(scoped, tenantId, appKey, cancellationToken);
+            if (!await scoped.TenantApplications.AnyAsync(application => application.AppKey == appKey && application.IsEnabled, cancellationToken))
+                return Result.Failure<TenantMemberDto>(TenancyErrors.NotFound);
             var membership = await scoped.TenantMemberships.SingleOrDefaultAsync(membership => membership.AppKey == appKey && membership.UserId == user.Id, cancellationToken);
-            if (membership is { IsActive: true, Role: "Admin" } && (!isActive || role != "Admin")
-                && !await scoped.TenantMemberships.AnyAsync(other => other.AppKey == appKey && other.IsActive && other.Role == "Admin" && other.UserId != user.Id && scoped.Users.Any(account => account.Id == other.UserId && account.IsActive), cancellationToken))
+            var wasAdmin = membership is null
+                ? await scoped.TenantWorkspaceMemberships.AnyAsync(entry => entry.UserId == user.Id && entry.Role == "Admin", cancellationToken)
+                : membership is { IsActive: true, Role: "Admin" };
+            if (user.IsActive && wasAdmin && (!isActive || role != "Admin")
+                && !await HasOtherAdminAsync(scoped, tenantId, appKey, user.Id, cancellationToken))
                 return Result.Failure<TenantMemberDto>(TenancyErrors.LastAdmin);
             if (membership is null) { membership = TenantMembership.Create(tenantId, user.Id, appKey, role); scoped.TenantMemberships.Add(membership); }
             membership.Update(role, isActive);

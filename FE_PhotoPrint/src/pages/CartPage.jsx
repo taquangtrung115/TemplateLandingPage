@@ -1,13 +1,16 @@
-import { ArrowRight, ShoppingBag, Trash2, Plus } from 'lucide-react';
+import { ArrowRight, QrCode, ShoppingBag, Trash2, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import { useContactConfig } from '../contexts/ContactConfigContext';
 import PageHeading from '../components/common/PageHeading';
 import PhotoImage from '../components/common/PhotoImage';
 import { formatMoney } from '../utils/photoPricing';
 import { paths, servicePath } from '../routes/paths';
+import { canUseVietQr } from '../utils/vietQr';
 
 export default function CartPage() {
   const cart = useCart();
+  const { config } = useContactConfig();
   return <div className="shell page-section">
     <PageHeading title="Giỏ hàng" trail="Giỏ hàng" description={cart.items.length ? cart.items.length + ' cấu hình · ' + cart.photoCount + ' bản in' : ''} />
     {cart.items.length ? <div className="detail-grid">
@@ -18,7 +21,8 @@ export default function CartPage() {
           <div><h2><Link to={servicePath(item.productSlug)}>{item.productName}</Link></h2>
             <p>{item.sizeLabel || item.widthCm + ' × ' + item.heightCm + ' cm'} · {item.surfaceName} · {item.quantity} bản</p>
             {!!item.finishingNames.length && <p>{item.finishingNames.join(', ')}</p>}
-            {item.sendAlbumLater && <p>Gửi album sau khi đặt</p>}
+            {item.sendAlbumLater && <p>Gửi file qua Zalo hoặc Drive sau khi đặt</p>}
+            {item.comboGroupId && <p className="mono">Combo 3</p>}
             {low > 0 && <p className="warning-text">{low} ảnh dưới 150 DPI</p>}
             {item.photoFiles.length > 1 && <div className="cart-strip">{item.photoFiles.slice(1, 6).map((photo, index) => <PhotoImage key={index} src={photo.thumbnailUrl} />)}</div>}
           </div>
@@ -26,8 +30,10 @@ export default function CartPage() {
         </li>;
       })}</ul>
       <aside className="panel form-stack"><h2>Tóm tắt đơn in</h2><dl className="price-summary"><div><dt>Số bản</dt><dd>{cart.photoCount}</dd></div>
+        {cart.comboDiscount > 0 && <div><dt>Giảm giá Combo 3</dt><dd>−{formatMoney(cart.comboDiscount)}</dd></div>}
         <div className="price-total"><dt>Tạm tính</dt><dd>{formatMoney(cart.total)}</dd></div></dl>
         <Link to={paths.checkout} className="uv-button uv-button--push3d">Tiếp tục đặt in <ArrowRight size={17} /></Link>
+        {canUseVietQr(config) && <Link to={paths.checkout} className="uv-button uv-button--outline"><QrCode size={17} /> Thanh toán VietQR</Link>}
         <Link to={paths.services} className="text-link"><Plus className="control-icon" aria-hidden="true" /> Chọn thêm sản phẩm</Link>
       </aside>
     </div> : <div className="panel empty-panel"><ShoppingBag size={34} /><h2>Giỏ hàng đang trống</h2><p>Chọn một sản phẩm và tải ảnh để bắt đầu.</p>

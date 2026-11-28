@@ -1,4 +1,4 @@
-import { ArrowDownWideNarrow, Layers, Search, Target } from 'lucide-react';
+import { ArrowDownWideNarrow, Search, Target } from 'lucide-react';
 import { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PageHeading from '../components/common/PageHeading';
@@ -8,7 +8,7 @@ import Pagination from '../components/common/Pagination';
 import { UiverseInput } from '@oneportal/uiverse-ui';
 import useDebounce from '../hooks/useDebounce';
 import useRequest from '../hooks/useRequest';
-import { UsageTypes } from '../models/photoPrint';
+import { printServicePresets, UsageTypes } from '../models/photoPrint';
 import { photoProductApi } from '../api/photoProductApi';
 
 const pageSize = 12;
@@ -25,6 +25,14 @@ export default function ServicesPage() {
   const load = useCallback(signal => photoProductApi.search({ search: debounced, categorySlug: category, usage, sort, page, pageSize }, signal),
     [debounced, category, usage, sort, page]);
   const products = useRequest(load);
+  const presetCategories = new Map(printServicePresets.map(item => [item.category, item]));
+  const categoryItems = [...(categories.data ?? [])].sort((a, b) => {
+    const order = slug => {
+      const index = printServicePresets.findIndex(item => item.category === slug);
+      return index < 0 ? printServicePresets.length : index;
+    };
+    return order(a.slug) - order(b.slug);
+  });
 
   function filter(name, value) {
     setParams(previous => {
@@ -38,11 +46,13 @@ export default function ServicesPage() {
 
   return <div className="shell page-section">
     <PageHeading title="Sản phẩm & in ảnh" trail="Sản phẩm" description="Chọn cỡ, chất liệu và kiểu hoàn thiện. Xem giá trước khi gửi ảnh." />
-    <div className="filter-bar">
+    <div className="category-chips" aria-label="Nhóm sản phẩm">
+      <button type="button" aria-pressed={!category} onClick={() => filter('category', '')}>Tất cả</button>
+      {categoryItems.map(item => <button key={item.id} type="button" data-tone={presetCategories.get(item.slug)?.tone}
+        aria-pressed={category === item.slug} onClick={() => filter('category', item.slug)}>{presetCategories.get(item.slug)?.label || item.name}</button>)}
+    </div>
+    <div className="filter-bar catalog-filters">
       <UiverseInput labelIcon={Search} label="Tìm theo tên hoặc kích thước" type="search" placeholder="10x15, Polaroid, khung gỗ…" value={search} onChange={event => filter('q', event.target.value)} />
-      <UiverseInput as="select" labelIcon={Layers} label="Nhóm sản phẩm" value={category} onChange={event => filter('category', event.target.value)}>
-        <option value="">Tất cả</option>{categories.data?.map(item => <option key={item.id} value={item.slug}>{item.name}</option>)}
-      </UiverseInput>
       <UiverseInput as="select" labelIcon={Target} label="Mục đích" value={usage} onChange={event => filter('usage', event.target.value)}>
         <option value="">Tất cả</option>{Object.entries(UsageTypes).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </UiverseInput>

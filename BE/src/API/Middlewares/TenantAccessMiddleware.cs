@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using OnePortal.Application.Services.Tenancy;
 using OnePortal.Persistence;
+using OnePortal.Persistence.Repositories.Tenancy;
 
 public sealed class TenantAccessMiddleware(RequestDelegate next)
 {
@@ -40,7 +41,7 @@ public sealed class TenantAccessMiddleware(RequestDelegate next)
             scope.Initialize(application.TenantId, selection.Item2, selection.Item1);
             if (authenticated)
             {
-                role = await database.TenantMemberships.AsNoTracking().Where(membership => membership.UserId == userId && membership.AppKey == scope.AppKey && membership.IsActive)
+                role = await database.ApplicationRoles(selection.Item2, application.TenantId).Where(membership => membership.UserId == userId && membership.IsActive)
                     .Select(membership => membership.Role).SingleOrDefaultAsync(context.RequestAborted);
                 if (role is null && context.GetEndpoint()?.Metadata.GetOrderedMetadata<IAuthorizeData>().Count > 0)
                 { await FailAsync(context, 403, "Tenancy.MembershipRequired"); return; }

@@ -44,3 +44,15 @@ export function initialConfiguration(product, draft) {
     albumUrl: '', productOptions: { pageCount: 20, coverType: 'Bìa cứng' },
   };
 }
+export const printServicePresets = [
+  { slug: 'anh-the', category: 'anh-the', title: 'In ảnh thẻ 15p', short: 'Ảnh thẻ', spec: '3×4 · 4×6 · Visa', label: 'Ảnh thẻ 15p', badge: 'Lấy liền 15p', tone: 'mint', color: '#94bdb4',
+    image: '/assets/photo-id.webp', details: ['3 × 4 cm · 4 × 6 cm', 'Ảnh visa và hộ chiếu', 'Cắt sẵn · Gửi file qua Zalo'] },
+  { slug: 'in-anh-10x15', category: 'anh-le', title: 'In ảnh lụa 4R', short: 'Ảnh lụa 4R', spec: '10×15 cm', label: 'Ảnh lụa 4R', badge: 'Bán chạy nhất', tone: 'rose', color: '#d396a7',
+    image: '/assets/photo-prints.webp', details: ['10 × 15 cm · Khổ 4R', 'Giấy ảnh lụa', 'In lẻ hoặc 10 tấm'] },
+  { slug: 'anh-polaroid', category: 'polaroid', title: 'Polaroid kỷ niệm', short: 'Polaroid', spec: 'Ảnh viền trắng', label: 'Polaroid & Plastic', badge: 'Ép Plastic', tone: 'lilac', color: '#ab9ac4',
+    image: '/assets/photo-polaroid.webp', details: ['Ảnh viền trắng', 'Thêm lời nhắn dưới ảnh', 'Ép Plastic theo mẫu'] },
+  { slug: 'in-mau-photo-a4', category: 'photocopy', title: 'In màu & Photo A4', short: 'Photo A4', spec: 'Scan PDF · Đóng cuốn', label: 'In màu & Photo A4', badge: 'Photocopy', tone: 'gold', color: '#d1ad6c',
+    image: '/assets/photo-book.webp', details: ['A4 · In màu laser', 'Scan PDF và gửi file', 'Đóng cuốn · Ép dẻo'] },
+  { slug: 'khung-anh-go-soi', category: 'khung-canvas', title: 'Khung & pha lê', short: 'Khung ảnh', spec: 'Gỗ sồi · Tráng gương', label: 'Khung & đặt trước', badge: 'Đặt trước', tone: 'oak', color: '#b79474',
+    image: '/assets/photo-frame.webp', details: ['Khung gỗ sồi · Ảnh tráng gương', 'Chọn kích thước và bề mặt', 'Hẹn lịch nhận tại tiệm'] },
+];

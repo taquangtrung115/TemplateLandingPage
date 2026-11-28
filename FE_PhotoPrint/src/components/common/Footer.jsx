@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Aperture } from 'lucide-react';
 import { useContactConfig } from '../../contexts/ContactConfigContext';
-import { paths } from '../../routes/paths';
+import { paths, withQuery } from '../../routes/paths';
+import { canUseVietQr } from '../../utils/vietQr';
 import { sanitizePhone } from '../../utils/safeUrl';
 import { resolveZaloUrl } from '../../utils/socialLinks';
 import { useChannelQr } from '../social/SocialConnectModal';
@@ -16,7 +17,7 @@ export default function Footer() {
   const qr = config.zaloEnabled && (photoAssetUrl(config.zaloQrImageUrl) || generated.value);
   return <footer className="site-footer"><div className="shell footer-grid">
     <div><Link className="brand" to={paths.home}><span className="brand-mark"><Aperture size={20} /></span>{config.brandName || 'Photo Print'}</Link>
-      <p>Tiệm in ảnh cho khoảnh khắc bạn muốn giữ lại.</p>
+      <p>In ảnh thẻ, ảnh lụa, photocopy và đặt in theo quy cách.</p>
     </div>
     <div><h2>Đặt in</h2><Link to={paths.services}>Tất cả sản phẩm</Link><Link to={paths.demo}>Studio 3D</Link><Link to={paths.trackOrder}>Tra cứu đơn</Link><Link to={paths.support}>Hỗ trợ</Link></div>
     <div><h2>Liên hệ</h2>{config.address && <p>{config.address}</p>}{config.workingHours && <p>{config.workingHours}</p>}
@@ -25,5 +26,7 @@ export default function Footer() {
       <ContactActions />
     </div>
     {qr && <div><h2>Zalo nhận ảnh HD</h2><img src={qr} className="footer-qr" alt="QR Zalo của tiệm" /></div>}
+    {canUseVietQr(config) && <div><h2>Ngân hàng VietQR</h2><p>{config.bankName} · <span className="mono">{config.bankAccountNumber}</span></p>
+      <p>{config.bankAccountName}</p><Link to={withQuery(paths.trackOrder, { payment: 'vietqr' })}>Mở QR theo mã đơn</Link></div>}
   </div></footer>;
 }

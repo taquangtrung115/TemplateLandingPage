@@ -1,5 +1,30 @@
 import * as THREE from 'three';
-import { drawPrintSurface, loadImage } from './photoCanvas';
+import { drawPrintBoard, drawPrintSurface, loadImage, printBoardRatio } from './photoCanvas';
+
+export function makePrintBoardGeometry() {
+  const width = 2, height = width * printBoardRatio, inset = 0.018;
+  const shape = new THREE.Shape();
+  shape.moveTo(inset - width / 2, inset - height / 2);
+  shape.lineTo(width / 2 - inset, inset - height / 2);
+  shape.lineTo(width / 2 - inset, height / 2 - inset);
+  shape.lineTo(inset - width / 2, height / 2 - inset);
+  shape.closePath();
+  return new THREE.ExtrudeGeometry(shape, { depth: 0.032, bevelEnabled: true, bevelThickness: 0.012, bevelSize: inset, bevelSegments: 2 }).translate(0, 0, -0.016);
+}
+
+function createPrintBoard() {
+  const group = new THREE.Group();
+  const backing = new THREE.Mesh(makePrintBoardGeometry(), new THREE.MeshStandardMaterial({ color: '#d7cabc', roughness: 0.75 }));
+  const geometry = new THREE.PlaneGeometry(1.978, 1.978 * printBoardRatio);
+  const surface = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: '#fcfaf6', toneMapped: false }));
+  const back = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: '#f0e8e0', toneMapped: false }));
+  surface.position.z = 0.029;
+  back.position.z = -0.029;
+  back.rotation.y = Math.PI;
+  group.add(backing, surface, back);
+  group.userData = { backing, surface, back, edges: [] };
+  return group;
+}
 
 function materialFor(model) {
   if (model === 'crystal_mirror') return new THREE.MeshPhysicalMaterial({
@@ -9,6 +34,7 @@ function materialFor(model) {
 }
 
 export function createPhotoMesh(model, frameColor) {
+  if (model === 'print_board') return createPrintBoard();
   const group = new THREE.Group();
   const thickness = { framed_photo: 0.17, crystal_mirror: 0.16, canvas_wrap: 0.22, polaroid_card: 0.03, photobook_open: 0.13 }[model] || 0.1;
   const backing = new THREE.Mesh(new THREE.BoxGeometry(2.15, 2.15, thickness), new THREE.MeshStandardMaterial({
@@ -47,23 +73,30 @@ export function updateFrameColor(group, value) {
 export async function applyPhotoTexture(group, options, renderer, stillCurrent) {
   const images = await Promise.all([loadImage(options.src), loadImage(options.rightSrc)]);
   if (!stillCurrent()) return;
-  const canvas = document.createElement('canvas');
-  drawPrintSurface(canvas, images, options);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const material = group.userData.surface.material;
-  material.map?.dispose();
-  material.map = texture;
-  material.needsUpdate = true;
+  const materials = [group.userData.surface.material];
+  if (options.board) materials.push(group.userData.back.material);
+  materials.forEach((material, index) => {
+    const canvas = document.createElement('canvas');
+    if (options.board) drawPrintBoard(canvas, images[0], options.board, index === 1);
+    else drawPrintSurface(canvas, images, options);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    material.map?.dispose();
+    material.map = texture;
+    material.color.set('#ffffff');
+    material.needsUpdate = true;
+  });
 }
 
 export function disposeScene(scene) {
   const materials = new Set();
+  const geometries = new Set();
   scene.traverse(object => {
-    object.geometry?.dispose();
+    if (object.geometry) geometries.add(object.geometry);
     if (object.material) materials.add(object.material);
   });
+  for (const geometry of geometries) geometry.dispose();
   for (const material of materials) {
     material.map?.dispose();
     material.dispose();
